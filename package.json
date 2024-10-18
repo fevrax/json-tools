@@ -1,0 +1,52 @@
+{
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@9.9.0",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite --port 3333 --open",
+    "lint": "eslint .",
+    "typecheck": "vue-tsc --noEmit",
+    "preview": "vite preview",
+    "up": "taze major -I",
+    "postinstall": "npx simple-git-hooks"
+  },
+  "dependencies": {
+    "@vueuse/core": "^11.1.0",
+    "vue": "^3.5.12",
+    "vue-router": "^4.4.5"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "^3.8.0",
+    "@iconify-json/carbon": "^1.2.3",
+    "@types/node": "^22.7.6",
+    "@vitejs/plugin-vue": "^5.1.4",
+    "@vue-macros/volar": "^0.28.2",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^9.12.0",
+    "eslint-plugin-format": "^0.1.2",
+    "jsdom": "^25.0.1",
+    "lint-staged": "^15.2.10",
+    "naive-ui": "^2.40.1",
+    "pnpm": "^9.12.2",
+    "postcss": "^8.4.47",
+    "simple-git-hooks": "^2.11.1",
+    "tailwindcss": "^3.4.14",
+    "taze": "^0.16.9",
+    "typescript": "^5.6.3",
+    "unplugin-auto-import": "^0.18.3",
+    "unplugin-vue-components": "^0.27.4",
+    "unplugin-vue-macros": "^2.13.0",
+    "unplugin-vue-router": "^0.10.8",
+    "vfonts": "^0.0.3",
+    "vite": "^5.4.9",
+    "vite-plugin-vue-devtools": "^7.5.2",
+    "vue-tsc": "^2.1.6"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged"
+  },
+  "lint-staged": {
+    "*": "eslint --fix"
+  }
+}
