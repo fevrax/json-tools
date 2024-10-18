@@ -1,6 +1,10 @@
+<script setup lang="ts">
+</script>
+
 <template>
-  <main font-sans p="x-4 y-10">
-    <RouterView />
-    <TheFooter />
+  <main font-sans>
+    <Layout>
+      <RouterView />
+    </Layout>
   </main>
 </template>

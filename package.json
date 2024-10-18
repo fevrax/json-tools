@@ -12,6 +12,7 @@
     "postinstall": "npx simple-git-hooks"
   },
   "dependencies": {
+    "@vicons/ionicons5": "^0.12.0",
     "@vueuse/core": "^11.1.0",
     "vue": "^3.5.12",
     "vue-router": "^4.4.5"

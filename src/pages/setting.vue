@@ -1,6 +1,6 @@
 <script setup lang="ts" generic="T extends any, O extends any">
 defineOptions({
-  name: 'IndexPage',
+  name: 'SettingPage',
 })
 
 // const name = ref('')
@@ -14,6 +14,6 @@ defineOptions({
 
 <template>
   <div class="text-black">
-    文本视图
+    设置
   </div>
 </template>
