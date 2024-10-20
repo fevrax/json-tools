@@ -1,9 +1,6 @@
 <script setup lang="ts">
 
-import {
-  SunnyOutline,
-  MoonOutline
-} from '@vicons/ionicons5'
+
 import {toggleDark} from "~/composables";
 
 
@@ -17,12 +14,13 @@ const toggleTheme = () => {
 </script>
 
 <template>
-  <n-icon v-if="isDark" size="20" color="#fff" @click="toggleTheme">
-    <MoonOutline/>
-  </n-icon>
-  <n-icon v-else size="20" color="rgb(51, 54, 57)" @click="toggleTheme">
-    <SunnyOutline/>
-  </n-icon>
+<!--  <n-icon v-if="isDark" size="20" color="#fff" @click="toggleTheme">-->
+<!--    <MoonOutline/>-->
+<!--  </n-icon>-->
+<!--  <n-icon v-else size="20" color="rgb(51, 54, 57)" @click="toggleTheme">-->
+<!--    <SunnyOutline/>-->
+<!--  </n-icon>-->
+  <div>555</div>
 </template>
 
 <style scoped>

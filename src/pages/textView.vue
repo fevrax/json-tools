@@ -1,55 +1,37 @@
 <script setup lang="ts">
-const value = ref(1)
-const panels = ref([1, 2, 3, 4, 5, 7,8,9,10,11])
-const addable = computed(() => {
-  return {
-    disabled: panels.value.length >= 20
-  }
-})
-const closable = computed(() => {
-  return panels.value.length > 1
-})
 
-function handleAdd() {
-  const newValue = Math.max(...panels.value) + 1
-  panels.value.push(newValue)
-  value.value = newValue
-}
-
-function handleClose(name: number) {
-  const { value: panels } = panels
-  const nameIndex = panels.findIndex(panelName => panelName === name)
-  if (!~nameIndex)
-    return
-  panels.splice(nameIndex, 1)
-  if (name === value.value) {
-    value.value = panels[Math.min(nameIndex, panels.length - 1)]
-  }
-}
+import {UserOutlined} from "@ant-design/icons-vue";
 </script>
 
 <template>
   <div>
-    <n-tabs
-      v-model:value="value"
-      type="card"
-      :addable="addable"
-      :closable="closable"
-      tab-style="min-width: 80px;"
-      @close="handleClose"
-      @add="handleAdd"
-      class="overflow-auto"
-    >
-      <n-tab-pane v-for="panel in panels" :key="panel" :name="panel">
-        {{ panel }}
-      </n-tab-pane>
-<!--      <template #prefix>-->
-<!--        Prefix-->
-<!--      </template>-->
-<!--      <template #suffix>-->
-<!--        Suffix-->
-<!--      </template>-->
-    </n-tabs>
+    <div>textView</div>
+    <a-space wrap>
+      <a-button type="primary">Primary Button</a-button>
+      <a-button>Default Button</a-button>
+      <a-button type="dashed">Dashed Button</a-button>
+      <a-button type="text">Text Button</a-button>
+      <a-button type="link">Link Button</a-button>
+    </a-space>
+    <a-dropdown-button @click="handleButtonClick" class="inline-block p-0 m-0 w-5 h-5">
+      Dropdown
+      <template #overlay>
+        <a-menu @click="handleMenuClick">
+          <a-menu-item key="1">
+            <UserOutlined />
+            1st menu item
+          </a-menu-item>
+          <a-menu-item key="2">
+            <UserOutlined />
+            2nd menu item
+          </a-menu-item>
+          <a-menu-item key="3">
+            <UserOutlined />
+            3rd item
+          </a-menu-item>
+        </a-menu>
+      </template>
+    </a-dropdown-button>
   </div>
 </template>
 

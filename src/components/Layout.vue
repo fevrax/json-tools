@@ -1,103 +1,91 @@
-<script setup lang="ts">
-import type {MenuOption} from 'naive-ui'
-import {darkTheme} from 'naive-ui'
+<script setup lang="ts" xmlns="http://www.w3.org/1999/html">
 import {
-  CodeSlashOutline,
-  SettingsOutline,
-  // LogoDropbox
-} from '@vicons/ionicons5'
-import {NIcon} from 'naive-ui'
-import {RouterLink} from 'vue-router'
-import PageWrapper from "~/components/PageWrapper.vue";
+  SettingOutlined
+} from '@ant-design/icons-vue';
+import {ref} from 'vue';
 
-const theme = ref<GlobalTheme | null>(null)
+import {renderIcon} from "~/composables/icon";
+import { useRouter } from 'vue-router'
+import {useNavigation} from "~/composables/router";
 
+// 在 setup 函数或 <script setup> 中
+const router = useRouter()
+
+
+const selectedKeys = ref<string[]>(['1']);
 const collapsed = ref<boolean>(true)
 
-// 监听夜间模式开关
-watch(isDark, (newValue, oldValue) => {
-  theme.value = newValue ? darkTheme : null
-}, { immediate: true }) // 设置 immediate: true 可以立即执行一次
+onMounted(() => {
+  // 设置 侧边栏宽度
+  document.documentElement.style.setProperty('--sider-width', '58px');
+})
 
-const menuOptions: MenuOption[] = [
-  {
-    label: () =>
-      h(
-        RouterLink,
-        {
-          to: {
-            name: '/textView',
-            params: {
-              lang: 'zh-CN',
-            },
-          },
-        },
-        {default: () => '文本视图'},
-      ),
-    key: 'text-view',
-    icon: renderIcon(CodeSlashOutline),
-  },
-  // {
-  //   label: 'AI 工具箱',
-  //   key: 'ai-toolbox',
-  //   icon: renderIcon(LogoDropbox),
-  //   disabled: true,
-  // },
-  {
-    label: () =>
-      h(
-        RouterLink,
-        {
-          to: {
-            name: '/setting',
-            params: {
-              lang: 'zh-CN',
-            },
-          },
-        },
-        {default: () => '设置'},
-      ),
-    key: 'setting',
-    icon: renderIcon(SettingsOutline),
-  },
-]
+
+const items = reactive([
+    {
+      key: 'textView',
+      icon: renderIcon('icon-code'),
+      label: '文本视图',
+      title: '文本视图',
+    },
+    {
+      key: 'setting',
+      icon: () => h(SettingOutlined),
+      label: '系统设置',
+      title: '系统设置',
+    }
+  ]
+)
+
+const clickMenu = (e) => {
+  useNavigation(router).navigateTo(e.key)
+  console.log(e)
+}
+
+
+const headerStyle: CSSProperties = {
+  width: '100%',
+  height: '35px',
+  lineHeight: '35px',
+};
+
+
+const siderCollapseFunc = (collapsed, type) => {
+  if (collapsed == false) {
+    document.documentElement.style.setProperty('--sider-width', '200px');
+  } else {
+    document.documentElement.style.setProperty('--sider-width', '58px');
+  }
+}
+
+const footerStyle: CSSProperties = {
+  height: '10px'
+};
 </script>
 
 <template>
-  <n-config-provider :theme="theme">
-    <PageWrapper class="full-screen-div">
-      <Header/>
-      <!--  侧边栏  -->
-      <n-layout class="h-full" has-sider position="static">
-        <n-layout-sider
-          class="h-full"
-          bordered
-          collapse-mode="width"
-          :collapsed-width="58"
-          :width="140"
-          :collapsed="collapsed"
-          show-trigger
-          @collapse="collapsed = true"
-          @expand="collapsed = false"
-        >
-          <n-menu
-            v-model:value="activeKey"
-            :collapsed="collapsed"
-            :collapsed-width="58"
-            :collapsed-icon-size="20"
-            :options="menuOptions"
-            default-value="text-view"
-          />
-        </n-layout-sider>
-        <n-layout>
-          <slot/>
-        </n-layout>
-      </n-layout>
-    </PageWrapper>
-  </n-config-provider>
+  <a-layout class="full-screen-div" >
+    <a-layout-header :style="headerStyle" class="!bg-white !px-0">
+      <Header></Header>
+    </a-layout-header>
+    <a-layout>
+      <a-layout-sider class="sider" v-model:collapsed="collapsed"
+                      @collapse="siderCollapseFunc"
+                      collapsible
+                      :theme="isDark ? 'dark' : 'light'">
+        <a-menu v-model:selectedKeys="selectedKeys" :items="items" mode="inline" @click="clickMenu">
+        </a-menu>
+      </a-layout-sider>
+      <a-layout-content>
+        <slot/>
+      </a-layout-content>
+    </a-layout>
+    <a-layout-footer :style="footerStyle">Footer</a-layout-footer>
+  </a-layout>
+
 </template>
 
-<style scoped>
+<style lang="scss">
 .full-screen-div {
   position: fixed;
   top: 0;
@@ -106,5 +94,13 @@ const menuOptions: MenuOption[] = [
   bottom: 0;
 }
 
+.sider {
+  min-width: var(--sider-width) !important;
+  max-width: var(--sider-width) !important;
+}
+
+.ant-layout-sider-trigger {
+  width: var(--sider-width) !important;
+}
 
 </style>

@@ -56,24 +56,7 @@ watch(() => props.items, (newItems) => {
 </script>
 
 <template>
-  <n-flex class="flex">
-    <NButton text  @click="handleMainClick" class="mr-4 text-xs">
-      <template #icon>
-        <component :is="renderIcon(icon)" />
-      </template>
-      <span>{{ name }}</span>
-    </NButton>
-    <NDropdown
-      v-if="items"
-      :show="showDropdown"
-      :options="props.items"
-      trigger="hover"
-      @select="handleSelect"
-      @clickoutside="showDropdown = false"
-    >
-      <div class="relative right-0"></div>
-    </NDropdown>
-  </n-flex>
+
 </template>
 
 <style scoped>

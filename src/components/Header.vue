@@ -1,54 +1,46 @@
 <script setup lang="ts">
-
-import {
-  Add,
-  CopyOutline
-} from '@vicons/ionicons5'
+import { UserOutlined, DownOutlined } from '@ant-design/icons-vue';
 
 const copyItems = ref([
   {
     key: 'compressedCopy',
     label: '压缩后复制',
-    icon: renderIcon(Add)
+    icon: renderIcon('add')
   },
   {
     key: 'escapeCopy',
     label: '转义后复制',
-    icon: renderIcon(Add)
+    icon: renderIcon('copy')
   }
 ])
 
 </script>
 
 <template>
-  <div class="border-b dark:border-b-neutral-800 w-full top-0 h-10">
-    <n-flex class="h-full px-1" align="center" justify="space-between">
-      <n-flex class="flex">
-        <n-flex style="width: 55px" justify="center">
-          <n-avatar
-            round
-            size="small"
-            src="https://minio.kl.do/picture/images/avatar-y.png"
-          />
-        </n-flex>
-        <div id="left-button" class="flex">
-          <header-menu :icon="renderIcon(Add)" name="新建"></header-menu>
-          <header-menu :icon="renderIcon(CopyOutline)" name="复制" :items="copyItems"></header-menu>
+  <div class="h-5 relative inline-block">
+    <a-dropdown-button @click="handleButtonClick" >
+      复制
+      <template #overlay>
+        <a-menu @click="handleMenuClick">
+          <a-menu-item key="1">
+            <UserOutlined />
+            压缩后复制
+          </a-menu-item>
+          <a-menu-item key="2">
+            <UserOutlined />
+            转义后复制
+          </a-menu-item>
+        </a-menu>
+      </template>
+      <template #icon>
+        <div>
+          <UserOutlined />
         </div>
-      </n-flex>
-      <div class="flex">
-        <div id="left-button" class="flex">
-          <!--          <header-menu :icon="renderIcon(Add)" name="新建"></header-menu>-->
-          <header-menu :icon="renderIcon(CopyOutline)" name="复制" :items="copyItems"></header-menu>
-        </div>
-        <n-flex justify="center" align="center" class="pr-3">
-          <theme-toggle></theme-toggle>
-        </n-flex>
-      </div>
-    </n-flex>
+      </template>
+    </a-dropdown-button>
   </div>
 </template>
 
-<style>
+<style scoped lang="scss">
 
 </style>
