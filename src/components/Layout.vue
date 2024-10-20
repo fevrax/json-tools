@@ -1,18 +1,23 @@
 <script setup lang="ts">
-import type { MenuOption } from 'naive-ui'
+import type {MenuOption} from 'naive-ui'
+import {darkTheme} from 'naive-ui'
 import {
   CodeSlashOutline,
   SettingsOutline,
   // LogoDropbox
 } from '@vicons/ionicons5'
-import { NIcon } from 'naive-ui'
-import { RouterLink } from 'vue-router'
+import {NIcon} from 'naive-ui'
+import {RouterLink} from 'vue-router'
+import PageWrapper from "~/components/PageWrapper.vue";
 
-function renderIcon(icon: Component) {
-  return () => h(NIcon, null, { default: () => h(icon) })
-}
+const theme = ref<GlobalTheme | null>(null)
 
 const collapsed = ref<boolean>(true)
+
+// 监听夜间模式开关
+watch(isDark, (newValue, oldValue) => {
+  theme.value = newValue ? darkTheme : null
+}, { immediate: true }) // 设置 immediate: true 可以立即执行一次
 
 const menuOptions: MenuOption[] = [
   {
@@ -21,13 +26,13 @@ const menuOptions: MenuOption[] = [
         RouterLink,
         {
           to: {
-            name: '/',
+            name: '/textView',
             params: {
               lang: 'zh-CN',
             },
           },
         },
-        { default: () => '文本视图' },
+        {default: () => '文本视图'},
       ),
     key: 'text-view',
     icon: renderIcon(CodeSlashOutline),
@@ -50,7 +55,7 @@ const menuOptions: MenuOption[] = [
             },
           },
         },
-        { default: () => '设置' },
+        {default: () => '设置'},
       ),
     key: 'setting',
     icon: renderIcon(SettingsOutline),
@@ -59,35 +64,37 @@ const menuOptions: MenuOption[] = [
 </script>
 
 <template>
-  <div class="full-screen-div">
-    <Header />
-    <!--  侧边栏  -->
-    <n-layout class="h-full" has-sider position="static">
-      <n-layout-sider
-        class="h-full"
-        bordered
-        collapse-mode="width"
-        :collapsed-width="58"
-        :width="140"
-        :collapsed="collapsed"
-        show-trigger
-        @collapse="collapsed = true"
-        @expand="collapsed = false"
-      >
-        <n-menu
-          v-model:value="activeKey"
-          :collapsed="collapsed"
+  <n-config-provider :theme="theme">
+    <PageWrapper class="full-screen-div">
+      <Header/>
+      <!--  侧边栏  -->
+      <n-layout class="h-full" has-sider position="static">
+        <n-layout-sider
+          class="h-full"
+          bordered
+          collapse-mode="width"
           :collapsed-width="58"
-          :collapsed-icon-size="20"
-          :options="menuOptions"
-          default-value="text-view"
-        />
-      </n-layout-sider>
-      <n-layout>
-        <slot />
+          :width="140"
+          :collapsed="collapsed"
+          show-trigger
+          @collapse="collapsed = true"
+          @expand="collapsed = false"
+        >
+          <n-menu
+            v-model:value="activeKey"
+            :collapsed="collapsed"
+            :collapsed-width="58"
+            :collapsed-icon-size="20"
+            :options="menuOptions"
+            default-value="text-view"
+          />
+        </n-layout-sider>
+        <n-layout>
+          <slot/>
+        </n-layout>
       </n-layout>
-    </n-layout>
-  </div>
+    </PageWrapper>
+  </n-config-provider>
 </template>
 
 <style scoped>
@@ -98,4 +105,6 @@ const menuOptions: MenuOption[] = [
   right: 0;
   bottom: 0;
 }
+
+
 </style>

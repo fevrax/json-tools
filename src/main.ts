@@ -10,10 +10,23 @@ import 'vfonts/Lato.css'
 // 等宽字体
 import 'vfonts/FiraCode.css'
 
+
 const app = createApp(App)
+
+// 添加重定向规则
+const redirectRoute = {
+  path: '/',
+  redirect: '/textView'
+}
+
 const router = createRouter({
-  routes,
+  routes: [
+    redirectRoute,
+    ...routes
+  ],
   history: createWebHistory(import.meta.env.BASE_URL),
 })
+
+
 app.use(router)
 app.mount('#app')

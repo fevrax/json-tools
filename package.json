@@ -1,7 +1,7 @@
 {
   "type": "module",
   "private": true,
-  "packageManager": "pnpm@9.9.0",
+  "packageManager": "pnpm@9.12.2+sha256.2ef6e547b0b07d841d605240dce4d635677831148cd30f6d564b8f4f928f73d2",
   "scripts": {
     "build": "vite build",
     "dev": "vite --port 3333 --open",
@@ -26,11 +26,14 @@
     "autoprefixer": "^10.4.20",
     "eslint": "^9.12.0",
     "eslint-plugin-format": "^0.1.2",
+    "install": "^0.13.0",
     "jsdom": "^25.0.1",
     "lint-staged": "^15.2.10",
     "naive-ui": "^2.40.1",
     "pnpm": "^9.12.2",
     "postcss": "^8.4.47",
+    "sass": "^1.80.3",
+    "sass-loader": "^16.0.2",
     "simple-git-hooks": "^2.11.1",
     "tailwindcss": "^3.4.14",
     "taze": "^0.16.9",

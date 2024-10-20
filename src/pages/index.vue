@@ -13,7 +13,7 @@ defineOptions({
 </script>
 
 <template>
-  <div class="text-black">
+  <div>
     文本视图
   </div>
 </template>
