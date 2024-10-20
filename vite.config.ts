@@ -2,7 +2,7 @@
 import path from 'node:path'
 import Vue from '@vitejs/plugin-vue'
 import AutoImport from 'unplugin-auto-import/vite'
-import { NaiveUiResolver } from 'unplugin-vue-components/resolvers'
+import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers';
 import Components from 'unplugin-vue-components/vite'
 import VueMacros from 'unplugin-vue-macros/vite'
 import { VueRouterAutoImports } from 'unplugin-vue-router'
@@ -43,13 +43,6 @@ export default defineConfig({
         {
           // add any other imports you were relying on
           'vue-router/auto': ['useLink'],
-          // naive-ui auto import
-          'naive-ui': [
-            'useDialog',
-            'useMessage',
-            'useNotification',
-            'useLoadingBar',
-          ],
         },
       ],
       dts: true,
@@ -61,7 +54,11 @@ export default defineConfig({
     // https://github.com/antfu/vite-plugin-components
     Components({
       dts: true,
-      resolvers: [NaiveUiResolver()],
+      resolvers: [
+        AntDesignVueResolver({
+          importStyle: false, // css in js
+        }),
+      ],
     }),
   ],
 

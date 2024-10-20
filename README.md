@@ -4,7 +4,7 @@
 
 <h6 align='center'>
 <a href="https://vitesse-lite.netlify.app/">Live Demo</a>
-</h6>
+</h6>1
 
 <h5 align='center'>
 <b>Lightweight version of <a href="https://github.com/antfu/vitesse">Vitesse</a></b>

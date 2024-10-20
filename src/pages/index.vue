@@ -14,6 +14,5 @@ defineOptions({
 
 <template>
   <div>
-    文本视图
   </div>
 </template>
