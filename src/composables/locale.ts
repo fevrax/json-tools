@@ -1,9 +1,9 @@
+import enUS from 'ant-design-vue/es/locale/en_US'
+import zhCN from 'ant-design-vue/es/locale/zh_CN'
 
-import zhCN from 'ant-design-vue/es/locale/zh_CN';
-import enUS from 'ant-design-vue/es/locale/en_US';
 export const locale = enUS
 
-export const toggleLocale = (language: string) => {
+export function toggleLocale(language: string) {
   switch (language) {
     case 'zh':
       locale.value = zhCN

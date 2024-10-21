@@ -1,4 +1,4 @@
-import { RouteLocationRaw, Router } from 'vue-router'
+import type { RouteLocationRaw, Router } from 'vue-router'
 
 export function useNavigation(router: Router) {
   const navigateTo = (to: RouteLocationRaw) => {
