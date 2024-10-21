@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { theme } from 'ant-design-vue';
-import {isDark} from "~/composables";
-
+import { theme } from 'ant-design-vue'
+import { isDark } from '~/composables'
 </script>
 
 <template>
@@ -9,10 +8,11 @@ import {isDark} from "~/composables";
     <a-config-provider
       :locale="locale"
       :theme="{
-      algorithm: isDark ? theme.darkAlgorithm : null,
-    }">
+        algorithm: isDark ? theme.darkAlgorithm : null,
+      }"
+    >
       <layout>
-        <RouterView/>
+        <RouterView />
       </layout>
     </a-config-provider>
   </main>

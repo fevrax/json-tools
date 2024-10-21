@@ -1,88 +1,86 @@
-<script setup lang="ts" xmlns="http://www.w3.org/1999/html">
+<script setup lang="ts">
 import {
-  SettingOutlined
-} from '@ant-design/icons-vue';
-import {ref} from 'vue';
+  SettingOutlined,
+} from '@ant-design/icons-vue'
+import { ref } from 'vue'
 
-import {renderIcon} from "~/composables/icon";
 import { useRouter } from 'vue-router'
-import {useNavigation} from "~/composables/router";
+import { renderIcon } from '~/composables/icon'
+import { useNavigation } from '~/composables/router'
 
 // 在 setup 函数或 <script setup> 中
 const router = useRouter()
 
-
-const selectedKeys = ref<string[]>(['1']);
+const selectedKeys = ref<string[]>(['1'])
 const collapsed = ref<boolean>(true)
 
 onMounted(() => {
   // 设置 侧边栏宽度
-  document.documentElement.style.setProperty('--sider-width', '58px');
+  document.documentElement.style.setProperty('--sider-width', '58px')
 })
 
-
 const items = reactive([
-    {
-      key: 'textView',
-      icon: renderIcon('icon-code'),
-      label: '文本视图',
-      title: '文本视图',
-    },
-    {
-      key: 'setting',
-      icon: () => h(SettingOutlined),
-      label: '系统设置',
-      title: '系统设置',
-    }
-  ]
+  {
+    key: 'textView',
+    icon: renderIcon('icon-code'),
+    label: '文本视图',
+    title: '文本视图',
+  },
+  {
+    key: 'setting',
+    icon: () => h(SettingOutlined),
+    label: '系统设置',
+    title: '系统设置',
+  },
+],
 )
 
-const clickMenu = (e) => {
+function clickMenu(e) {
   useNavigation(router).navigateTo(e.key)
-  console.log(e)
 }
-
 
 const headerStyle: CSSProperties = {
   width: '100%',
-  height: '35px',
-  lineHeight: '35px',
-};
+  height: '40px',
+  lineHeight: '40px',
+}
 
-
-const siderCollapseFunc = (collapsed, type) => {
-  if (collapsed == false) {
-    document.documentElement.style.setProperty('--sider-width', '200px');
-  } else {
-    document.documentElement.style.setProperty('--sider-width', '58px');
+function siderCollapseFunc(collapsed) {
+  if (collapsed === false) {
+    document.documentElement.style.setProperty('--sider-width', '200px')
+  }
+  else {
+    document.documentElement.style.setProperty('--sider-width', '58px')
   }
 }
 
 const footerStyle: CSSProperties = {
-  height: '10px'
-};
+  height: '10px',
+}
 </script>
 
 <template>
-  <a-layout class="full-screen-div" >
-    <a-layout-header :style="headerStyle" class="!bg-white !px-0">
-      <Header></Header>
+  <a-layout class="full-screen-div">
+    <a-layout-header :style="headerStyle" class="!bg-white dark:!bg-neutral-900 !px-0">
+      <Header />
     </a-layout-header>
     <a-layout>
-      <a-layout-sider class="sider" v-model:collapsed="collapsed"
-                      @collapse="siderCollapseFunc"
-                      collapsible
-                      :theme="isDark ? 'dark' : 'light'">
-        <a-menu v-model:selectedKeys="selectedKeys" :items="items" mode="inline" @click="clickMenu">
-        </a-menu>
+      <a-layout-sider
+        v-model:collapsed="collapsed" class="sider"
+        collapsible
+        theme="light"
+        @collapse="siderCollapseFunc"
+      >
+        <a-menu v-model:selected-keys="selectedKeys" :items="items" mode="inline" @click="clickMenu" />
       </a-layout-sider>
       <a-layout-content>
-        <slot/>
+        <slot />
       </a-layout-content>
     </a-layout>
-    <a-layout-footer :style="footerStyle">Footer</a-layout-footer>
+    <a-layout-footer :style="footerStyle">
+      Footer
+    </a-layout-footer>
   </a-layout>
-
 </template>
 
 <style lang="scss">
@@ -103,4 +101,7 @@ const footerStyle: CSSProperties = {
   width: var(--sider-width) !important;
 }
 
+.bb {
+  background: antiquewhite !important;
+}
 </style>

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 
-import {UserOutlined} from "@ant-design/icons-vue";
+import {CopyOutlined, DownOutlined, UserOutlined} from "@ant-design/icons-vue"
+
 </script>
 
 <template>
@@ -32,6 +33,28 @@ import {UserOutlined} from "@ant-design/icons-vue";
         </a-menu>
       </template>
     </a-dropdown-button>
+    <div class="dropdown-text h-5">
+      <a-dropdown-button type="link" placement="bottom" @click="handleButtonClick">
+        复制
+        <template #overlay>
+          <a-menu @click="handleMenuClick">
+            <a-menu-item key="1">
+              <CopyOutlined />
+              压缩后复制
+            </a-menu-item>
+            <a-menu-item key="2">
+              <CopyOutlined />
+              转义后复制
+            </a-menu-item>
+          </a-menu>
+        </template>
+        <template #icon>
+          <div>
+            <DownOutlined />
+          </div>
+        </template>
+      </a-dropdown-button>
+    </div>
   </div>
 </template>
 
