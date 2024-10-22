@@ -59,6 +59,9 @@ function createEditor() {
       //   formatJson()
       // }
     })
+
+    // 添加窗口大小变化的监听
+    window.addEventListener('resize', handleResize)
   }
 }
 
@@ -72,6 +75,14 @@ function updateFontSize(size: number) {
 // 格式化 JSON
 function format() {
   editor.getAction('editor.action.formatDocument').run()
+}
+
+// 监听窗口大小变化
+function handleResize() {
+  if (editor) {
+    // 更新布局
+    editor.layout()
+  }
 }
 
 // 监听 modelValue 变化

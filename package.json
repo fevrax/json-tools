@@ -8,8 +8,7 @@
     "lint": "eslint .",
     "typecheck": "vue-tsc --noEmit",
     "preview": "vite preview",
-    "up": "taze major -I",
-    "postinstall": "npx simple-git-hooks"
+    "up": "taze major -I"
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",

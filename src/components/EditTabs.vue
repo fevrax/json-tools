@@ -30,18 +30,9 @@ function finishEditing() {
     editingKey.value = null
   }
 }
-
-const jsonEditorRefs: Ref<{ [key: number]: typeof JsonEditor | null }> = ref({})
-function formatHandle(tabKey) {
-  const editor = jsonEditorRefs.value[`jsonEditor${tabKey}`]
-  if (editor && typeof editor.format === 'function') {
-    editor.format()
-  }
-}
 </script>
 
 <template>
-  <Header @format="formatHandle" />
   <div class="c-tab">
     <a-tabs
       v-model:active-key="tabsStore.activeKey"
@@ -68,7 +59,7 @@ function formatHandle(tabKey) {
           </span>
         </template>
         <div class="h-screen w-full">
-          <json-editor :ref="(el) => { if (el) jsonEditorRefs[`jsonEditor${tab.key}`] = el }" v-model="tab.content" language="json" :theme="isDark ? 'vs-dark' : 'vs-light'" />
+          <slot />
         </div>
       </a-tab-pane>
     </a-tabs>

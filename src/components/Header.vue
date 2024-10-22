@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { CopyOutlined, DownOutlined } from '@ant-design/icons-vue'
+import { CopyOutlined, DownOutlined, PlusOutlined, SwapOutlined } from '@ant-design/icons-vue'
 import { useTabsStore } from '~/stores/tabs'
+
+const emit = defineEmits(['format'])
 
 const tabsStore = useTabsStore()
 
@@ -9,7 +11,16 @@ function addTab() {
 }
 
 function copy() {
+  copyText(tabsStore.getActiveTab()?.content)
+}
 
+function format() {
+  emit('format', tabsStore.activeKey)
+}
+
+// 复制到剪贴板
+function copyText(text: string) {
+  navigator.clipboard.writeText(text)
 }
 
 function copySubMenuClickHandle(e) {
@@ -19,19 +30,16 @@ function copySubMenuClickHandle(e) {
 </script>
 
 <template>
-  <a-flex justify="space-between" align="center">
+  <a-flex justify="space-between" align="center" class="h-10">
     <a-flex>
-      <div class="avatar px-3">
-        <a-avatar src="https://minio.kl.do/picture/images/avatar-y.png" />
-      </div>
-      <div class="dropdown-text dark:!text-white">
+      <div class="dropdown-text dark:!text-white ml-2">
         <a-button type="link" class="!mr-2" @click="addTab">
-          新增
+          <span class="mr-1"><PlusOutlined /></span> 新增
         </a-button>
       </div>
-      <div class="dropdown-text dark:!text-white">
+      <div class="dropdown-text dark:!text-white ml-2">
         <a-dropdown-button type="link" placement="bottom" @click="copy">
-          复制
+          <span class="mr-1"><CopyOutlined /></span>复制
           <template #overlay>
             <a-menu @click="copySubMenuClickHandle">
               <a-menu-item key="compressedCopy">
@@ -51,6 +59,11 @@ function copySubMenuClickHandle(e) {
           </template>
         </a-dropdown-button>
       </div>
+      <div class="dropdown-text dark:!text-white ml-2">
+        <a-button type="link" class="!mr-2" @click="format">
+          <span class="mr-1"><SwapOutlined /></span>格式化
+        </a-button>
+      </div>
     </a-flex>
     <a-flex class="mr-4">
       <theme-toggle />
@@ -61,9 +74,8 @@ function copySubMenuClickHandle(e) {
 <style lang="scss">
 .dropdown-text {
   .ant-btn-link {
-    padding-right: 0;
-    padding-left: 0;
-    width: 40px;
+    padding-right: 5px;
+    padding-left: 5px;
     color: #333;
     border-radius: 6px;
     transition:

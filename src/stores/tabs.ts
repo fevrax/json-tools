@@ -9,7 +9,7 @@ interface Tab {
 export const useTabsStore = defineStore('tabs', {
   state: () => ({
     tabs: [] as Tab[],
-    activeKey: 0,
+    activeKey: '',
     key: 0,
   }),
   actions: {
@@ -20,6 +20,10 @@ export const useTabsStore = defineStore('tabs', {
       }
       this.tabs.push({ title, content: title, key: this.key })
       this.activeKey = this.key
+    },
+    // 获取当前激活的tab
+    getActiveTab() {
+      return this.tabs.find(t => t.key === this.activeKey)
     },
     delTab(targetKey: string) {
       let lastIndex = 0

@@ -45,12 +45,6 @@ function clickMenu(e) {
   useNavigation(router).navigateTo(e.key)
 }
 
-const headerStyle: CSSProperties = {
-  width: '100%',
-  height: '45px',
-  lineHeight: '45px',
-}
-
 function siderCollapseFunc(collapsed) {
   if (collapsed === false) {
     document.documentElement.style.setProperty('--sider-width', '200px')
@@ -67,9 +61,6 @@ const footerStyle: CSSProperties = {
 
 <template>
   <a-layout class="full-screen-div">
-    <a-layout-header :style="headerStyle" class="!bg-white dark:!bg-neutral-900 !px-0">
-      <Header />
-    </a-layout-header>
     <a-layout>
       <a-layout-sider
         v-model:collapsed="collapsed" class="sider"
@@ -77,6 +68,9 @@ const footerStyle: CSSProperties = {
         theme="light"
         @collapse="siderCollapseFunc"
       >
+        <div class="avatar px-3 py-2">
+          <a-avatar src="https://minio.kl.do/picture/images/avatar-y.png" />
+        </div>
         <a-menu v-model:selected-keys="selectedKeys" :items="items" mode="inline" @click="clickMenu" />
       </a-layout-sider>
       <a-layout-content class="bg-white dark:bg-neutral-900">
