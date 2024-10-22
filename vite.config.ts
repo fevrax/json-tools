@@ -7,6 +7,7 @@ import VueMacros from 'unplugin-vue-macros/vite'
 import { VueRouterAutoImports } from 'unplugin-vue-router'
 import VueRouter from 'unplugin-vue-router/vite'
 import { defineConfig } from 'vite'
+import monacoEditorPlugin from 'vite-plugin-monaco-editor'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
 export default defineConfig({
@@ -58,6 +59,9 @@ export default defineConfig({
           importStyle: false, // css in js
         }),
       ],
+    }),
+    monacoEditorPlugin.default({
+      languageWorkers: ['json', 'editorWorkerService'],
     }),
   ],
   css: {

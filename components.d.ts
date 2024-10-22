@@ -27,6 +27,7 @@ declare module 'vue' {
     Header: typeof import('./src/components/Header.vue')['default']
     HeaderMenu: typeof import('./src/components/HeaderMenu.vue')['default']
     IconFont: typeof import('./src/components/IconFont.vue')['default']
+    JsonEditor: typeof import('./src/components/JsonEditor.vue')['default']
     Layout: typeof import('./src/components/Layout.vue')['default']
     PageWrapper: typeof import('./src/components/PageWrapper.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

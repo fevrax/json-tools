@@ -7,6 +7,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { renderIcon } from '~/composables/icon'
 import { useNavigation } from '~/composables/router'
+import { useTabsStore } from '~/stores/tabs'
 
 // 在 setup 函数或 <script setup> 中
 const router = useRouter()
@@ -17,6 +18,11 @@ const collapsed = ref<boolean>(true)
 onMounted(() => {
   // 设置 侧边栏宽度
   document.documentElement.style.setProperty('--sider-width', '58px')
+  // 启动默认初始化一个 tab
+  const tabsStore = useTabsStore()
+  if (tabsStore.tabs.length === 0) {
+    tabsStore.addTab('')
+  }
 })
 
 const items = reactive([
@@ -41,8 +47,8 @@ function clickMenu(e) {
 
 const headerStyle: CSSProperties = {
   width: '100%',
-  height: '40px',
-  lineHeight: '40px',
+  height: '45px',
+  lineHeight: '45px',
 }
 
 function siderCollapseFunc(collapsed) {
@@ -96,7 +102,7 @@ const footerStyle: CSSProperties = {
   width: var(--sider-width) !important;
   min-width: var(--sider-width) !important;
   max-width: var(--sider-width) !important;
-  border-inline-end: 1px solid rgba(5, 5, 5, 0.06)
+  border-inline-end: 1px solid rgba(5, 5, 5, 0.06);
 }
 
 .ant-layout-sider-trigger {

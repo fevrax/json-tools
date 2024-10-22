@@ -48,8 +48,8 @@ function finishEditing() {
           </span>
           <span v-else class="editing-tab">
             <a-input
-              class="editing-tab-input"
               v-model:value="editingTitle"
+              class="editing-tab-input"
               size="small"
               @press-enter="finishEditing"
               @blur="finishEditing"
@@ -58,9 +58,12 @@ function finishEditing() {
             <CheckOutlined class="confirm-icon" @click.stop="finishEditing" />
           </span>
         </template>
-        {{ tab.content }}
+        <div class="h-screen w-full">
+          <json-editor :ref="tab.title" v-model="tab.content" language="json" :theme="isDark ? 'vs-dark' : 'vs-light'" />
+        </div>
       </a-tab-pane>
     </a-tabs>
+
   </div>
 </template>
 
@@ -69,7 +72,7 @@ function finishEditing() {
   .custom-tabs {
     .ant-tabs-nav {
       margin-bottom: 0;
-      height: 35px;
+      height: 30px;
 
       &::before {
         border-bottom: none;
@@ -96,7 +99,7 @@ function finishEditing() {
         @apply text-blue-500 dark:bg-zinc-700;
 
         .ant-tabs-tab-btn {
-          @apply dark:text-white;
+          @apply dark:text-gray-300;
         }
       }
     }
@@ -113,7 +116,7 @@ function finishEditing() {
 
   .edit-icon {
     margin-left: 8px;
-    margin-right: 4px;
+    margin-right: 4px !important;
     opacity: 0;
     transition: opacity 0.3s;
   }
