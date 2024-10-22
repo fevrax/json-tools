@@ -1,5 +1,21 @@
 <script setup lang="ts">
 import { CopyOutlined, DownOutlined } from '@ant-design/icons-vue'
+import { useTabsStore } from '~/stores/tabs'
+
+const tabsStore = useTabsStore()
+
+function addTab() {
+  tabsStore.addTab('')
+}
+
+function copy() {
+
+}
+
+function copySubMenuClickHandle(e) {
+  // eslint-disable-next-line no-console
+  console.log(e)
+}
 </script>
 
 <template>
@@ -9,10 +25,15 @@ import { CopyOutlined, DownOutlined } from '@ant-design/icons-vue'
         <a-avatar src="https://minio.kl.do/picture/images/avatar-y.png" />
       </div>
       <div class="dropdown-text dark:!text-white">
-        <a-dropdown-button type="link" placement="bottom" @click="handleButtonClick">
+        <a-button type="link" class="!mr-2" @click="addTab">
+          新增
+        </a-button>
+      </div>
+      <div class="dropdown-text dark:!text-white">
+        <a-dropdown-button type="link" placement="bottom" @click="copy">
           复制
           <template #overlay>
-            <a-menu @click="handleMenuClick">
+            <a-menu @click="copySubMenuClickHandle">
               <a-menu-item key="compressedCopy">
                 <CopyOutlined />
                 压缩后复制

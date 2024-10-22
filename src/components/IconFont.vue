@@ -3,7 +3,7 @@ import { createFromIconfontCN } from '@ant-design/icons-vue'
 
 interface Props {
   type: string
-  size?: number
+  size?: string
 }
 
 const props = defineProps<Props>()

@@ -73,11 +73,11 @@ const footerStyle: CSSProperties = {
       >
         <a-menu v-model:selected-keys="selectedKeys" :items="items" mode="inline" @click="clickMenu" />
       </a-layout-sider>
-      <a-layout-content>
+      <a-layout-content class="bg-white dark:bg-neutral-900">
         <slot />
       </a-layout-content>
     </a-layout>
-    <a-layout-footer :style="footerStyle">
+    <a-layout-footer :style="footerStyle" class="!bg-white dark:!bg-neutral-900">
       Footer
     </a-layout-footer>
   </a-layout>
@@ -93,8 +93,10 @@ const footerStyle: CSSProperties = {
 }
 
 .sider {
+  width: var(--sider-width) !important;
   min-width: var(--sider-width) !important;
   max-width: var(--sider-width) !important;
+  border-inline-end: 1px solid rgba(5, 5, 5, 0.06)
 }
 
 .ant-layout-sider-trigger {
@@ -103,5 +105,12 @@ const footerStyle: CSSProperties = {
 
 .bb {
   background: antiquewhite !important;
+}
+
+.ant-layout-sider-children {
+}
+.ant-menu-light.ant-menu-root.ant-menu-vertical {
+  border-inline-end: none !important;
+  border: none !important;
 }
 </style>
