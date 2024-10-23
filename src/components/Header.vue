@@ -23,7 +23,6 @@ enum IconStatus {
   Error = 'error',
 }
 
-
 // 复制
 const copyIcon = ref<IconStatus>(IconStatus.Default)
 const copyTextClass = computed(() => ({
@@ -50,8 +49,19 @@ function copyText(text: string) {
 }
 
 function copySubMenuClickHandle(e) {
-  // eslint-disable-next-line no-console
-  console.log(e)
+  try {
+    switch (e.key) {
+      case 'compressedCopy':
+        copyText(tabsStore.getActiveTab()?.content)
+        break
+      case 'escapeCopy':
+        copyText(escapeJson(tabsStore.getActiveTab()?.content))
+        break
+    }
+  }
+  catch (error) {
+    console.log(error.toString())
+  }
 }
 
 // 格式化
@@ -64,7 +74,6 @@ function format() {
     }, 2500)
   })
 }
-
 
 // 清空内容
 const clearContentStatus = ref(IconStatus.Default)

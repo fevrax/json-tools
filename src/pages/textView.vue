@@ -31,13 +31,19 @@ function finishEditing() {
   }
 }
 
+// 格式化并验证
 const jsonEditorRefs: Ref<{ [key: number]: typeof JsonEditor | null }> = ref({})
 async function formatHandle(tabKey: string, callback: (success: boolean) => void) {
   try {
     const editor = jsonEditorRefs.value[`jsonEditor${tabKey}`]
     if (editor && typeof editor.format === 'function') {
-      editor.format()
-      callback(true)
+      const success = editor.formatValidate()
+      if (success) {
+        callback(true)
+      }
+      else {
+        callback(false)
+      }
     }
     else {
       callback(false)

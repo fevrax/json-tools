@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import * as monaco from 'monaco-editor'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
+import type { JsonErrorInfo } from '~/utils/jsonUtils'
+import { sleep } from '~/utils/sleep'
 
 const props = defineProps<{
   modelValue: string
@@ -14,14 +16,23 @@ const emit = defineEmits<{
 
 defineExpose({
   format,
+  formatValidate,
 })
 
+const formatModelOpen = ref(false)
+const formatModelUnEscapeParseLoading = ref(false)
+const parseJsonError = ref<JsonErrorInfo>({})
+
+const formatModelError = ref('') // 二次转换后失败
+
+// 编辑器默认字体大小
 const fontSize = ref(props.fontSize || '14')
 // 编辑器容器
 const editorContainer = ref<HTMLElement | null>(null)
 
 // 编辑器对象
 let editor: monaco.editor.IStandaloneCodeEditor | null = null
+let errorDecorations: monaco.editor.IEditorDecorationsCollection | null = null;
 
 // 创建编辑器实例
 function createEditor() {
@@ -46,18 +57,23 @@ function createEditor() {
     })
 
     // 监听内容变化
-    editor.onDidChangeModelContent((e) => {
+    editor.onDidChangeModelContent(async (e) => {
       emit('update:modelValue', editor!.getValue())
-      if (e.changes[0].rangeOffset === 0 && e.changes[0].text.length > 10) {
-        // formatJson()
+      if (e.changes[0].rangeOffset < 2 && e.changes[0].text.length > 10) {
+        await sleep(100)
+        format()
       }
     })
 
     // 添加粘贴事件监听
-    editor.onDidPaste(() => {
-      // if (firstPaste.value) {
-      //   formatJson()
-      // }
+    editor.onDidPaste(async (e) => {
+      if (editor.getValue() && e.range.startLineNumber < 2) {
+        const jsonErr = jsonParseError(editor.getValue())
+        if (jsonErr) {
+          parseJsonError.value = jsonErr
+          formatModelOpen.value = true
+        }
+      }
     })
 
     // 添加窗口大小变化的监听
@@ -77,6 +93,18 @@ function format() {
   editor.getAction('editor.action.formatDocument').run()
 }
 
+// 验证格式并格式化
+function formatValidate(): boolean {
+  format()
+  const jsonErr = jsonParseError(editor.getValue())
+  if (jsonErr) {
+    parseJsonError.value = jsonErr
+    formatModelOpen.value = true
+    return false
+  }
+  return true
+}
+
 // 监听窗口大小变化
 function handleResize() {
   if (editor) {
@@ -85,6 +113,68 @@ function handleResize() {
   }
 }
 
+function formatModelCancel() {
+  formatModelOpen.value = false
+  formatModelError.value = ''
+  parseJsonError.value = ''
+}
+
+async function formatModelByUnEscapeJson() {
+  formatModelUnEscapeParseLoading.value = true
+  try {
+    // 内容可能存在转义 需要解码
+    const jsonStr = `"${editor.getValue()}"`
+    const unescapedJson = JSON.parse(jsonStr)
+    editor.setValue(unescapedJson)
+    format()
+
+    formatModelOpen.value = false
+  }
+  catch (error) {
+    formatModelError.value = error.message
+  }
+  finally {
+    formatModelUnEscapeParseLoading.value = false
+  }
+}
+
+async function formatModelByErrorLine() {
+  formatModelOpen.value = false
+  highlightErrorLine(parseJsonError.value.line)
+}
+
+// 高亮错误行
+function highlightErrorLine(lineNumber: number) {
+  if (editor) {
+    // 滚动到错误行
+    editor.revealLineInCenter(lineNumber)
+    // 如果存在旧的装饰，先清除
+    if (errorDecorations) {
+      errorDecorations.clear()
+    }
+
+    // 创建新的装饰集合
+    errorDecorations = editor.createDecorationsCollection([
+      {
+        range: new monaco.Range(lineNumber, 1, lineNumber, 1),
+        options: {
+          isWholeLine: true,
+          className: 'errorLineHighlight',
+          glyphMarginClassName: 'errorGlyphMargin',
+        },
+      },
+    ])
+
+    // 5秒后移除高亮
+    setTimeout(() => {
+      if (errorDecorations) {
+        errorDecorations.clear()
+      }
+    }, 5000)
+  }
+}
+
+// region 监听属性变化
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newValue) => {
   if (editor && newValue !== editor.getValue()) {
@@ -112,12 +202,41 @@ onUnmounted(() => {
     editor.dispose()
   }
 })
+// endregion
 </script>
 
 <template>
   <div ref="editorContainer" class="h-full w-full" />
+  <a-modal v-model:open="formatModelOpen" title="解析 JSON 错误" width="800px">
+    <p>{{ parseJsonError.message }}</p>
+    <p class="text-red-600">
+      {{ parseJsonError.context }}
+    </p>
+    <br>
+    <p v-if="formatModelError !== ''">
+      转换失败：{{ formatModelError }}
+    </p>
+    <template #footer>
+      <a-button key="back" @click="formatModelCancel">
+        取消
+      </a-button>
+      <a-button key="submit" type="primary" :loading="formatModelUnEscapeParseLoading" @click="formatModelByUnEscapeJson">
+        解析转义JSON
+      </a-button>
+      <a-button key="submit" type="primary" :loading="formatModelUnEscapeParseLoading" @click="formatModelByErrorLine">
+        一键定位
+      </a-button>
+    </template>
+  </a-modal>
 </template>
 
 <style>
-/* 确保 monaco-editor 的样式被正确加载 */
+.errorLineHighlight {
+  background-color: #ffbaba;
+  margin-left: 3px;
+  width: 100%;
+}
+.errorGlyphMargin {
+  background-color: #ff0000;
+}
 </style>
