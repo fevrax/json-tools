@@ -217,14 +217,12 @@ onUnmounted(() => {
 <template>
   <div ref="editorContainer" class="h-full w-full" />
   <a-modal v-model:open="formatModelOpen" title="解析 JSON 错误" width="800px">
-    <p>{{ parseJsonError.message }}</p>
-    <p class="text-red-600">
-      {{ parseJsonError.context }}
-    </p>
+    <pre >{{ parseJsonError.message }}</pre>
+    <pre class="text-red-600 whitespace-pre">{{ parseJsonError.context }}</pre>
     <br>
-    <p v-if="formatModelError !== ''">
+    <pre v-if="formatModelError !== ''">
       转换失败：{{ formatModelError }}
-    </p>
+    </pre>
     <template #footer>
       <a-button key="back" @click="formatModelCancel">
         取消
@@ -232,7 +230,7 @@ onUnmounted(() => {
       <a-button key="submit" type="primary" :loading="formatModelUnEscapeParseLoading" @click="formatModelByUnEscapeJson">
         解析转义JSON
       </a-button>
-      <a-button key="submit" type="primary" :loading="formatModelUnEscapeParseLoading" @click="formatModelByErrorLine">
+      <a-button key="submit" :disabled="parseJsonError.line === 0" type="primary" :loading="formatModelUnEscapeParseLoading" @click="formatModelByErrorLine">
         一键定位
       </a-button>
     </template>
