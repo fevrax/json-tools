@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { CheckOutlined, CloseOutlined, CopyOutlined, DeleteOutlined, DownOutlined, PlusOutlined, SwapOutlined } from '@ant-design/icons-vue'
 import { useTabsStore } from '~/stores/tabs'
+import { message } from "ant-design-vue";
+
 
 const emit = defineEmits<{
   (e: 'format', key: string, callback: (success: boolean) => void): void
@@ -31,10 +33,14 @@ const copyTextClass = computed(() => ({
 }))
 function copy() {
   const tab = tabsStore.getActiveTab()
+  if (tab.content === '') {
+      message.warn('暂无内容')
+      return
+  }
   setTimeout(() => {
     copyIcon.value = IconStatus.Default
   }, 2500)
-  if (tab === undefined || tab.content === '') {
+  if (tab.content === '') {
     copyIcon.value = IconStatus.Error
   }
   else {
@@ -49,18 +55,33 @@ function copyText(text: string) {
 }
 
 function copySubMenuClickHandle(e) {
+  const tab = tabsStore.getActiveTab()
+  if (tab.content === '') {
+    message.warn('暂无内容')
+    return
+  }
+  if (tab.content === '') {
+    copyIcon.value = IconStatus.Error
+    return
+  }
   try {
     switch (e.key) {
       case 'compressedCopy':
-        copyText(tabsStore.getActiveTab()?.content)
+          copyText(tabsStore.getActiveTab()?.content)
         break
       case 'escapeCopy':
         copyText(escapeJson(tabsStore.getActiveTab()?.content))
         break
     }
+    copyIcon.value = IconStatus.Success
   }
   catch (error) {
+    copyIcon.value = IconStatus.Error
     console.log(error.toString())
+  }finally {
+    setTimeout(() => {
+      copyIcon.value = IconStatus.Default
+    }, 2500)
   }
 }
 

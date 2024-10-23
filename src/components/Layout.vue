@@ -8,7 +8,6 @@ import { useRouter } from 'vue-router'
 import { renderIcon } from '~/composables/icon'
 import { useNavigation } from '~/composables/router'
 import { useTabsStore } from '~/stores/tabs'
-
 // 在 setup 函数或 <script setup> 中
 const router = useRouter()
 

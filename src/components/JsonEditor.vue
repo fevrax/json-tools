@@ -2,6 +2,7 @@
 import * as monaco from 'monaco-editor'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { sleep } from '~/utils/sleep'
+import { message } from "ant-design-vue";
 
 const props = defineProps<{
   modelValue: string
@@ -88,13 +89,21 @@ function updateFontSize(size: number) {
 }
 
 // 格式化 JSON
-function format() {
+function format():boolean {
+  if (editor?.getValue() === '') {
+    message.warn('暂无内容')
+    return false
+  }
   editor.getAction('editor.action.formatDocument').run()
+  return true
 }
 
 // 验证格式并格式化
 function formatValidate(): boolean {
-  format()
+  const formatSuccess = format()
+  if (!formatSuccess) {
+    return false
+  }
   const jsonErr = jsonParseError(editor.getValue())
   if (jsonErr) {
     console.log('jsonParseError', jsonErr)
