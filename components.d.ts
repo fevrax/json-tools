@@ -31,6 +31,8 @@ declare module 'vue' {
     PageWrapper: typeof import('./src/components/PageWrapper.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    StatusIcon: typeof import('./src/components/StatusIcon.vue')['default']
+    StatusIconButtonLink: typeof import('./src/components/StatusIconButtonLink.vue')['default']
     ThemeToggle: typeof import('./src/components/ThemeToggle.vue')['default']
   }
 }

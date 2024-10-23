@@ -18,7 +18,7 @@ export const useTabsStore = defineStore('tabs', {
       if (title === '') {
         title = `New Tab - ${this.key}`
       }
-      this.tabs.push({ title, content: title, key: this.key })
+      this.tabs.push({ title, content: '', key: this.key })
       this.activeKey = this.key
     },
     // 获取当前激活的tab
@@ -46,6 +46,12 @@ export const useTabsStore = defineStore('tabs', {
       const tab = this.tabs.find(t => t.key === key)
       if (tab) {
         tab.title = newTitle
+      }
+    },
+    clearContent(key: string) {
+      const tab = this.tabs.find(t => t.key === key)
+      if (tab) {
+        tab.content = ''
       }
     },
   },

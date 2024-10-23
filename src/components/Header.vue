@@ -1,21 +1,47 @@
 <script setup lang="ts">
-import { CopyOutlined, DownOutlined, PlusOutlined, SwapOutlined } from '@ant-design/icons-vue'
+import { CheckOutlined, CloseOutlined, CopyOutlined, DeleteOutlined, DownOutlined, PlusOutlined, SwapOutlined } from '@ant-design/icons-vue'
 import { useTabsStore } from '~/stores/tabs'
 
-const emit = defineEmits(['format'])
+const emit = defineEmits<{
+  (e: 'format', key: string, callback: (success: boolean) => void): void
+}>()
 
 const tabsStore = useTabsStore()
 
+const addStatus = ref('default')
 function addTab() {
   tabsStore.addTab('')
+  addStatus.value = 'success'
+  setTimeout(() => {
+    addStatus.value = 'default'
+  }, 2000)
 }
 
+enum IconStatus {
+  Default = 'default',
+  Success = 'success',
+  Error = 'error',
+}
+
+
+// 复制
+const copyIcon = ref<IconStatus>(IconStatus.Default)
+const copyTextClass = computed(() => ({
+  'text-success': copyIcon.value === IconStatus.Success,
+  'text-error': copyIcon.value === IconStatus.Error,
+}))
 function copy() {
-  copyText(tabsStore.getActiveTab()?.content)
-}
-
-function format() {
-  emit('format', tabsStore.activeKey)
+  const tab = tabsStore.getActiveTab()
+  setTimeout(() => {
+    copyIcon.value = IconStatus.Default
+  }, 2500)
+  if (tab === undefined || tab.content === '') {
+    copyIcon.value = IconStatus.Error
+  }
+  else {
+    copyText(tabsStore.getActiveTab()?.content)
+    copyIcon.value = IconStatus.Success
+  }
 }
 
 // 复制到剪贴板
@@ -27,19 +53,44 @@ function copySubMenuClickHandle(e) {
   // eslint-disable-next-line no-console
   console.log(e)
 }
+
+// 格式化
+const formatStatus = ref(IconStatus.Default)
+function format() {
+  emit('format', tabsStore.activeKey, (success) => {
+    formatStatus.value = success ? IconStatus.Success : IconStatus.Error
+    setTimeout(() => {
+      formatStatus.value = IconStatus.Default
+    }, 2500)
+  })
+}
+
+
+// 清空内容
+const clearContentStatus = ref(IconStatus.Default)
+function clearContent() {
+  tabsStore.clearContent(tabsStore.activeKey)
+  clearContentStatus.value = IconStatus.Success
+  setTimeout(() => {
+    clearContentStatus.value = IconStatus.Default
+  }, 2500)
+}
 </script>
 
 <template>
   <a-flex justify="space-between" align="center" class="h-10">
     <a-flex>
       <div class="dropdown-text dark:!text-white ml-2">
-        <a-button type="link" class="!mr-2" @click="addTab">
-          <span class="mr-1"><PlusOutlined /></span> 新增
-        </a-button>
+        <StatusIconButtonLink :icon="PlusOutlined" :status="addStatus" text="新增" @click="addTab" />
       </div>
       <div class="dropdown-text dark:!text-white ml-2">
-        <a-dropdown-button type="link" placement="bottom" @click="copy">
-          <span class="mr-1"><CopyOutlined /></span>复制
+        <a-dropdown-button type="link" placement="bottom" class="check-btn" @click="copy">
+          <span class="mr-1 check-icon">
+            <CopyOutlined v-if="copyIcon === 'default'" />
+            <CheckOutlined v-else-if="copyIcon === 'success'" style="color: #52c41a;" />
+            <CloseOutlined v-else-if="copyIcon === 'error'" style="color: #f5222d;" />
+          </span>
+          <span class="check-text " :class="[copyTextClass]">复制</span>
           <template #overlay>
             <a-menu @click="copySubMenuClickHandle">
               <a-menu-item key="compressedCopy">
@@ -60,9 +111,10 @@ function copySubMenuClickHandle(e) {
         </a-dropdown-button>
       </div>
       <div class="dropdown-text dark:!text-white ml-2">
-        <a-button type="link" class="!mr-2" @click="format">
-          <span class="mr-1"><SwapOutlined /></span>格式化
-        </a-button>
+        <StatusIconButtonLink :icon="SwapOutlined" :status="formatStatus" text="格式化" @click="format" />
+      </div>
+      <div class="dropdown-text dark:!text-white ml-2">
+        <StatusIconButtonLink :icon="DeleteOutlined" :status="clearContentStatus" text="清空" @click="clearContent" />
       </div>
     </a-flex>
     <a-flex class="mr-4">
@@ -98,6 +150,52 @@ function copySubMenuClickHandle(e) {
 
   .ant-dropdown-trigger {
     width: 25px;
+  }
+
+  .check-btn {
+    .check-icon {
+      transition: all 0.3s ease;
+
+      .anticon {
+        transition: all 0.3s ease;
+      }
+    }
+
+    .check-text {
+      transition: color 0.3s ease;
+
+      &.text-success {
+        color: #52c41a !important;
+      }
+
+      &.text-error {
+        color: #f5222d;
+      }
+    }
+
+    &:hover {
+      .check-text {
+        &.text-success {
+          color: #73d13d;
+        }
+
+        &.text-error {
+          color: #ff4d4f;
+        }
+      }
+    }
+  }
+
+  // 成功状态图标样式
+  .anticon-check {
+    color: #52c41a;
+    transform: scale(1.1);
+  }
+
+  // 错误状态图标样式
+  .anticon-close {
+    color: #f5222d;
+    transform: scale(1.1);
   }
 }
 </style>

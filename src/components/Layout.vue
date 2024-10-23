@@ -69,7 +69,7 @@ const footerStyle: CSSProperties = {
         @collapse="siderCollapseFunc"
       >
         <div class="avatar px-3 py-2">
-          <a-avatar src="https://minio.kl.do/picture/images/avatar-y.png" />
+          <a-avatar src="logo.png" />
         </div>
         <a-menu v-model:selected-keys="selectedKeys" :items="items" mode="inline" @click="clickMenu" />
       </a-layout-sider>

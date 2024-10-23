@@ -32,10 +32,19 @@ function finishEditing() {
 }
 
 const jsonEditorRefs: Ref<{ [key: number]: typeof JsonEditor | null }> = ref({})
-function formatHandle(tabKey) {
-  const editor = jsonEditorRefs.value[`jsonEditor${tabKey}`]
-  if (editor && typeof editor.format === 'function') {
-    editor.format()
+async function formatHandle(tabKey: string, callback: (success: boolean) => void) {
+  try {
+    const editor = jsonEditorRefs.value[`jsonEditor${tabKey}`]
+    if (editor && typeof editor.format === 'function') {
+      editor.format()
+      callback(true)
+    }
+    else {
+      callback(false)
+    }
+  }
+  catch {
+    callback(false)
   }
 }
 </script>
@@ -68,7 +77,12 @@ function formatHandle(tabKey) {
           </span>
         </template>
         <div class="h-screen w-full">
-          <json-editor :ref="(el) => { if (el) jsonEditorRefs[`jsonEditor${tab.key}`] = el }" v-model="tab.content" language="json" :theme="isDark ? 'vs-dark' : 'vs-light'" />
+          <json-editor
+            :ref="(el) => { if (el) jsonEditorRefs[`jsonEditor${tab.key}`] = el }"
+            v-model="tab.content"
+            language="json"
+            :theme="isDark ? 'vs-dark' : 'vs-light'"
+          />
         </div>
       </a-tab-pane>
     </a-tabs>
