@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import * as monaco from 'monaco-editor'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import type { JsonErrorInfo } from '~/utils/jsonUtils'
 import { sleep } from '~/utils/sleep'
 
 const props = defineProps<{
@@ -98,6 +97,7 @@ function formatValidate(): boolean {
   format()
   const jsonErr = jsonParseError(editor.getValue())
   if (jsonErr) {
+    console.log('jsonParseError', jsonErr)
     parseJsonError.value = jsonErr
     formatModelOpen.value = true
     return false

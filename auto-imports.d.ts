@@ -35,8 +35,8 @@ declare global {
   const eagerComputed: typeof import('@vueuse/core')['eagerComputed']
   const effectScope: typeof import('vue')['effectScope']
   const escapeAndParseJson: typeof import('./src/utils/stringUtils')['escapeAndParseJson']
-  const escapeJson: typeof import('./src/utils/jsonUtils')['escapeJson']
-  const escapeJsonString: typeof import('./src/utils/jsonUtils')['escapeJsonString']
+  const escapeJson: typeof import('./src/utils/json')['escapeJson']
+  const escapeJsonString: typeof import('~/utils/json')['escapeJsonString']
   const extendRef: typeof import('@vueuse/core')['extendRef']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
@@ -46,15 +46,15 @@ declare global {
   const injectLocal: typeof import('@vueuse/core')['injectLocal']
   const isDark: typeof import('./src/composables/dark')['isDark']
   const isDefined: typeof import('@vueuse/core')['isDefined']
-  const isJsonEscaped: typeof import('./src/utils/jsonUtils')['isJsonEscaped']
-  const isJsonString: typeof import('./src/utils/jsonUtils')['isJsonString']
-  const isJsonStringEscaped: typeof import('./src/utils/jsonUtils')['isJsonStringEscaped']
+  const isJsonEscaped: typeof import('~/utils/json')['isJsonEscaped']
+  const isJsonString: typeof import('./src/utils/json')['isJsonString']
+  const isJsonStringEscaped: typeof import('~/utils/json')['isJsonStringEscaped']
   const isProxy: typeof import('vue')['isProxy']
   const isReactive: typeof import('vue')['isReactive']
   const isReadonly: typeof import('vue')['isReadonly']
   const isRef: typeof import('vue')['isRef']
   const jsonParse: typeof import('./src/utils/stringUtils')['jsonParse']
-  const jsonParseError: typeof import('./src/utils/jsonUtils')['jsonParseError']
+  const jsonParseError: typeof import('./src/utils/json')['jsonParseError']
   const locale: typeof import('./src/composables/locale')['locale']
   const makeDestructurable: typeof import('@vueuse/core')['makeDestructurable']
   const markRaw: typeof import('vue')['markRaw']
@@ -106,9 +106,9 @@ declare global {
   const routerPushParams: typeof import('./src/composables/router')['routerPushParams']
   const routerPushQuery: typeof import('./src/composables/router')['routerPushQuery']
   const routerReplace: typeof import('./src/composables/router')['routerReplace']
-  const safeJsonParse: typeof import('./src/utils/jsonUtils')['safeJsonParse']
-  const safeJsonParseUnescaped: typeof import('./src/utils/jsonUtils')['safeJsonParseUnescaped']
-  const safeParseJson: typeof import('./src/utils/jsonUtils')['safeParseJson']
+  const safeJsonParse: typeof import('~/utils/json')['safeJsonParse']
+  const safeJsonParseUnescaped: typeof import('./src/utils/json')['safeJsonParseUnescaped']
+  const safeParseJson: typeof import('~/utils/json')['safeParseJson']
   const shallowReactive: typeof import('vue')['shallowReactive']
   const shallowReadonly: typeof import('vue')['shallowReadonly']
   const shallowRef: typeof import('vue')['shallowRef']
@@ -353,7 +353,7 @@ declare module 'vue' {
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
-    readonly escapeJson: UnwrapRef<typeof import('./src/utils/jsonUtils')['escapeJson']>
+    readonly escapeJson: UnwrapRef<typeof import('./src/utils/json')['escapeJson']>
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
@@ -363,12 +363,12 @@ declare module 'vue' {
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly isDark: UnwrapRef<typeof import('./src/composables/dark')['isDark']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
-    readonly isJsonString: UnwrapRef<typeof import('./src/utils/jsonUtils')['isJsonString']>
+    readonly isJsonString: UnwrapRef<typeof import('./src/utils/json')['isJsonString']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
     readonly isReactive: UnwrapRef<typeof import('vue')['isReactive']>
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
-    readonly jsonParseError: UnwrapRef<typeof import('./src/utils/jsonUtils')['jsonParseError']>
+    readonly jsonParseError: UnwrapRef<typeof import('./src/utils/json')['jsonParseError']>
     readonly locale: UnwrapRef<typeof import('./src/composables/locale')['locale']>
     readonly makeDestructurable: UnwrapRef<typeof import('@vueuse/core')['makeDestructurable']>
     readonly markRaw: UnwrapRef<typeof import('vue')['markRaw']>
@@ -413,7 +413,7 @@ declare module 'vue' {
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>
-    readonly safeJsonParseUnescaped: UnwrapRef<typeof import('./src/utils/jsonUtils')['safeJsonParseUnescaped']>
+    readonly safeJsonParseUnescaped: UnwrapRef<typeof import('./src/utils/json')['safeJsonParseUnescaped']>
     readonly shallowReactive: UnwrapRef<typeof import('vue')['shallowReactive']>
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
