@@ -105,6 +105,8 @@ export function jsonParseError(jsonString: string): JsonErrorInfo | undefined {
         const column = lines[errorLine].indexOf(errorContext) + 1;
         const startLine = Math.max(0, errorLine - 4);
         const endLine = Math.min(lines.length, errorLine + 2);
+
+        // TODO 高亮
         const context = lines.slice(startLine, endLine).join('\n');
 
         return {
@@ -117,7 +119,7 @@ export function jsonParseError(jsonString: string): JsonErrorInfo | undefined {
       }
     }
     return {
-      message: '未知JSON解析错误: ' + error.message,
+      message: '未知JSON解析错误，无法定位到错误行。 \n' + error.message,
       line: 0,
       column: 0,
       context: '',
