@@ -4,6 +4,7 @@
   "packageManager": "pnpm@9.12.2+sha256.2ef6e547b0b07d841d605240dce4d635677831148cd30f6d564b8f4f928f73d2",
   "scripts": {
     "build": "vite build",
+    "buildupxs": "vite build && node upxs-build.mjs",
     "dev": "vite --port 3333 --open",
     "lint": "eslint .",
     "typecheck": "vue-tsc --noEmit",

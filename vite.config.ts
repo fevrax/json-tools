@@ -16,6 +16,7 @@ export default defineConfig({
       '~/': `${path.resolve(__dirname, 'src')}/`,
     },
   },
+  base: './', // 这里更改打包相对绝对路径
   plugins: [
     vueDevTools(),
     VueMacros({
@@ -62,7 +63,7 @@ export default defineConfig({
       ],
     }),
     monacoEditorPlugin.default({
-      languageWorkers: ['json', 'editorWorkerService'],
+      languageWorkers: ['editorWorkerService', 'json'],
     }),
   ],
   css: {

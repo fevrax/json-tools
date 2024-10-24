@@ -1,0 +1,11 @@
+{
+  "main": "index.html",
+  "logo": "logo.png",
+  "features": [
+    {
+      "code": "json",
+      "explain": "json 工具箱",
+      "cmds":["json", "json-tools"]
+    }
+  ]
+}

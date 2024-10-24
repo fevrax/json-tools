@@ -4,7 +4,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useNavigation } from '~/composables/router'
 import { useTabsStore } from '~/stores/tabs'
-// 在 setup 函数或 <script setup> 中
+
 const router = useRouter()
 
 const selectedKeys = ref<string[]>(['1'])

@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/logo.png" type="image/svg+xml" />
     <title>JSON工具箱格式化工具 - JSON Tools</title>
     <meta name="description" content="Opinionated Vite Starter Template" />
   </head>
@@ -19,6 +19,8 @@
         if (setting === 'dark' || (prefersDark && setting !== 'light'))
           document.documentElement.classList.toggle('dark', true)
       })()
+      var currentUrl = window.location.href;
+      var baseDir = currentUrl.substring(0, currentUrl .length - 'index.html'.length)
     </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
