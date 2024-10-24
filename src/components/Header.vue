@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { CheckOutlined, CloseOutlined, CopyOutlined, DeleteOutlined, DownOutlined, PlusOutlined, SwapOutlined } from '@ant-design/icons-vue'
+import { CopyOutlined, DownOutlined } from '@ant-design/icons-vue'
+import { Icon } from '@iconify/vue'
+import { message } from 'ant-design-vue'
 import { useTabsStore } from '~/stores/tabs'
-import { message } from "ant-design-vue";
-
 
 const emit = defineEmits<{
   (e: 'format', key: string, callback: (success: boolean) => void): void
@@ -33,13 +33,14 @@ const copyTextClass = computed(() => ({
 }))
 function copy() {
   const tab = tabsStore.getActiveTab()
-  if (tab.content === '') {
-      message.warn('暂无内容')
-      return
-  }
   setTimeout(() => {
     copyIcon.value = IconStatus.Default
   }, 2500)
+  if (tab.content === '') {
+    copyIcon.value = IconStatus.Error
+    message.warn('暂无内容')
+    return
+  }
   if (tab.content === '') {
     copyIcon.value = IconStatus.Error
   }
@@ -67,7 +68,7 @@ function copySubMenuClickHandle(e) {
   try {
     switch (e.key) {
       case 'compressedCopy':
-          copyText(tabsStore.getActiveTab()?.content)
+        copyText(tabsStore.getActiveTab()?.content)
         break
       case 'escapeCopy':
         copyText(escapeJson(tabsStore.getActiveTab()?.content))
@@ -78,7 +79,8 @@ function copySubMenuClickHandle(e) {
   catch (error) {
     copyIcon.value = IconStatus.Error
     console.log(error.toString())
-  }finally {
+  }
+  finally {
     setTimeout(() => {
       copyIcon.value = IconStatus.Default
     }, 2500)
@@ -111,25 +113,31 @@ function clearContent() {
   <a-flex justify="space-between" align="center" class="h-10">
     <a-flex>
       <div class="dropdown-text dark:!text-white ml-2">
-        <StatusIconButtonLink :icon="PlusOutlined" :status="addStatus" text="新增" @click="addTab" />
+        <StatusIconButtonLink :icon="renderIconFontSize('mingcute:add-line', 17)" :status="addStatus" text="新增" @click="addTab" />
       </div>
       <div class="dropdown-text dark:!text-white ml-2">
         <a-dropdown-button type="link" placement="bottom" class="check-btn" @click="copy">
-          <span class="mr-1 check-icon">
-            <CopyOutlined v-if="copyIcon === 'default'" />
-            <CheckOutlined v-else-if="copyIcon === 'success'" style="color: #52c41a;" />
-            <CloseOutlined v-else-if="copyIcon === 'error'" style="color: #f5222d;" />
-          </span>
-          <span class="check-text " :class="[copyTextClass]">复制</span>
+          <div class="flex items-center">
+            <span class="mr-1 check-icon pb-0.5">
+              <Icon v-if="copyIcon === 'default'" icon="si:copy-line" class="text-17" />
+              <Icon v-else-if="copyIcon === 'success'" icon="icon-park-solid:success" class="text-17" style="color: #52c41a;" />
+              <icon-park-solid-error v-else-if="copyIcon === 'error'" style="color: #f5222d;" />
+            </span>
+            <span class="check-text " :class="[copyTextClass]">复制</span>
+          </div>
           <template #overlay>
             <a-menu @click="copySubMenuClickHandle">
               <a-menu-item key="compressedCopy">
-                <CopyOutlined />
-                压缩后复制
+                <div class="flex items-center">
+                  <Icon icon="f7:rectangle-compress-vertical" class="text-17" />
+                  <span class="ml-1">压缩后复制</span>
+                </div>
               </a-menu-item>
               <a-menu-item key="escapeCopy">
-                <CopyOutlined />
-                转义后复制
+                <div class="flex items-center">
+                  <Icon icon="si:swap-horiz-line" class="text-17 " />
+                  <span class="ml-1">转义后复制</span>
+                </div>
               </a-menu-item>
             </a-menu>
           </template>
@@ -141,10 +149,10 @@ function clearContent() {
         </a-dropdown-button>
       </div>
       <div class="dropdown-text dark:!text-white ml-2">
-        <StatusIconButtonLink :icon="SwapOutlined" :status="formatStatus" text="格式化" @click="format" />
+        <StatusIconButtonLink :icon="renderIconFontSize('mdi:magic', 17)" :status="formatStatus" text="格式化" @click="format" />
       </div>
       <div class="dropdown-text dark:!text-white ml-2">
-        <StatusIconButtonLink :icon="DeleteOutlined" :status="clearContentStatus" text="清空" @click="clearContent" />
+        <StatusIconButtonLink :icon="renderIconFontSize('mynaui:trash', 17)" :status="clearContentStatus" text="清空" @click="clearContent" />
       </div>
     </a-flex>
     <a-flex class="mr-4">

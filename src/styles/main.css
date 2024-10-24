@@ -19,3 +19,20 @@ html.dark {
 .ant-modal div[aria-hidden="true"] {
   display: none !important;
 }
+
+
+.text-14 {
+  font-size: 14px;
+}
+
+.text-16 {
+  font-size: 16px;
+}
+
+.text-17 {
+  font-size: 17px;
+}
+
+.text-18 {
+  font-size: 18px;
+}

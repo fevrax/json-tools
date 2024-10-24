@@ -100,53 +100,70 @@ async function formatHandle(tabKey: string, callback: (success: boolean) => void
   .custom-tabs {
     .ant-tabs-nav {
       margin-bottom: 0;
-      height: 30px;
+      height: 40px;
 
       &::before {
-        border-bottom: none;
+        border-bottom: 1px solid #e8e8e8;
+        @apply dark:border-zinc-700;
       }
     }
 
     .ant-tabs-tab {
-      @apply bg-white dark:bg-zinc-800;
-      .ant-tabs-tab-btn {
-        @apply dark:text-gray-400;
-      }
+      @apply bg-transparent dark:bg-transparent;
       border: none;
-      margin-right: 4px;
-      padding: 8px 16px;
+      margin-right: 18px; // 增加间距
+      padding: 8px 5px 8px 20px;
       transition: all 0.3s;
+      position: relative; // 为下边框定位
+
+      .ant-tabs-tab-btn {
+        @apply text-gray-600 dark:text-gray-400;
+        font-weight: 500; // 稍微加粗字体
+      }
 
       &:hover {
-        @apply bg-gray-100 dark:bg-zinc-700;
+        @apply text-blue-500 dark:text-blue-400;
       }
 
       // 选中按钮
       &.ant-tabs-tab-active {
-        background: #e6f4ff;
-        @apply text-blue-500 dark:bg-zinc-700;
+        background: transparent; // 移除背景色
 
         .ant-tabs-tab-btn {
-          @apply dark:text-gray-300;
+          @apply text-blue-500 dark:text-blue-400;
+        }
+
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 2px;
+          @apply bg-blue-500 dark:bg-blue-400;
+          transition: all 0.3s;
         }
       }
     }
 
     // 添加按钮
-    .ant-tabs-tab-btn {
-      @apply text-gray-800 dark:text-gray-200;
-    }
-
     .ant-tabs-nav-add {
-      @apply border-none bg-white dark:bg-zinc-800;
+      @apply border-none bg-transparent dark:bg-transparent text-gray-600 dark:text-gray-400;
+      padding: 8px 12px;
+      margin-left: 10px;
+      transition: all 0.3s;
+
+      &:hover {
+        @apply text-blue-500 dark:text-blue-400;
+      }
     }
   }
 
   .edit-icon {
     margin-left: 8px;
-    margin-right: 4px !important;
     opacity: 0;
     transition: opacity 0.3s;
+    @apply text-gray-400 dark:text-gray-500;
   }
 
   .ant-tabs-tab:hover .edit-icon {
@@ -160,15 +177,14 @@ async function formatHandle(tabKey: string, callback: (success: boolean) => void
     .editing-tab-input {
       width: 120px;
       margin-right: 4px;
-      @apply dark:bg-zinc-700 dark:text-gray-200;
+      @apply bg-white dark:bg-zinc-700 text-gray-800 dark:text-gray-200;
     }
 
     .confirm-icon,
     .cancel-icon {
       cursor: pointer;
       margin-left: 4px;
-      margin-right: 4px;
-      @apply dark:text-gray-200;
+      @apply text-blue-500 dark:text-blue-400;
     }
   }
 }
@@ -177,7 +193,7 @@ async function formatHandle(tabKey: string, callback: (success: boolean) => void
 .editing-tab-input {
   width: 120px;
   margin-right: 4px;
-  @apply dark:bg-zinc-700 text-blue-500 dark:text-gray-200;
+  @apply bg-white dark:bg-zinc-700 text-gray-800 dark:text-gray-200;
 }
 
 :root.dark {

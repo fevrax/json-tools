@@ -1,15 +1,16 @@
 <script setup lang="ts">
+
+import { Icon } from '@iconify/vue'
+
 function toggleTheme() {
   toggleDark()
-  // isDark.value = !isDark.value
   console.log('夜间模式', isDark.value)
-  // localStorage.setItem('theme', isDark.value ? 'dark' : 'light')
 }
 </script>
 
 <template>
-  <icon-font v-if="isDark" size="35" color="#fff" type="icon-yejian" @click="toggleTheme" />
-  <icon-font v-else size="30" color="#fff" type="icon-taiyang" @click="toggleTheme" />
+  <Icon v-if="isDark" icon="fluent-emoji-flat:crescent-moon" class="text-xl" @click="toggleTheme" />
+  <Icon v-else icon="fluent-emoji-flat:sun" class="text-xl" @click="toggleTheme" />
 </template>
 
 <style scoped>

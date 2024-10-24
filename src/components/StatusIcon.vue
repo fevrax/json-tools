@@ -1,30 +1,30 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { CheckOutlined, CloseOutlined } from '@ant-design/icons-vue'
+import IconParkSolidError from '~/components/icon/IconParkSolidError.vue'
 
 const props = defineProps<{
-  defaultIcon: any,
+  defaultIcon: any
   status: 'default' | 'success' | 'error'
 }>()
 
 const iconComponent = computed(() => {
   switch (props.status) {
     case 'success':
-      return CheckOutlined
+      return renderIconFontSize('icon-park-solid:success', 17)
     case 'error':
-      return CloseOutlined
+      return () => h(IconParkSolidError)
     default:
       return props.defaultIcon
   }
 })
 
 const iconStyle = computed(() => ({
-  color: props.status === 'success' ? '#52c41a' : props.status === 'error' ? '#f5222d' : undefined
+  color: props.status === 'success' ? '#52c41a' : props.status === 'error' ? '#f5222d' : undefined,
 }))
 </script>
 
 <template>
-    <component :is="iconComponent" :style="iconStyle" />
+  <component :is="iconComponent" :style="iconStyle" />
 </template>
 
 <style scoped>

@@ -16,15 +16,18 @@ const textClass = computed(() => ({
 
 <template>
   <a-button type="link" class="!mr-2 check-btn">
-    <span class="mr-1 check-icon">
-      <StatusIcon :default-icon="icon" :status="status" />
-    </span>
-    <span class="check-text" :class="[textClass]">{{ text }}</span>
+    <div class="flex items-center">
+      <span class="mr-1 check-icon pb-0.5">
+        <StatusIcon :default-icon="icon" :status="status" />
+      </span>
+      <span class="check-text" :class="[textClass]">{{ text }}</span>
+    </div>
   </a-button>
 </template>
 
 <style scoped lang="scss">
 .check-btn {
+  vertical-align: top;
   .check-icon {
     transition: all 0.3s ease;
 

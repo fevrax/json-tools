@@ -1,11 +1,7 @@
 <script setup lang="ts">
-import {
-  SettingOutlined,
-} from '@ant-design/icons-vue'
 import { ref } from 'vue'
 
 import { useRouter } from 'vue-router'
-import { renderIcon } from '~/composables/icon'
 import { useNavigation } from '~/composables/router'
 import { useTabsStore } from '~/stores/tabs'
 // 在 setup 函数或 <script setup> 中
@@ -27,13 +23,13 @@ onMounted(() => {
 const items = reactive([
   {
     key: 'textView',
-    icon: renderIcon('icon-code'),
+    icon: renderIconFontSize('solar:code-bold', '20'),
     label: '文本视图',
     title: '文本视图',
   },
   {
     key: 'setting',
-    icon: () => h(SettingOutlined),
+    icon: renderIconFontSize('solar:settings-linear', '20'),
     label: '系统设置',
     title: '系统设置',
   },
@@ -111,5 +107,9 @@ const footerStyle: CSSProperties = {
 .ant-menu-light.ant-menu-root.ant-menu-vertical {
   border-inline-end: none !important;
   border: none !important;
+}
+
+.ant-menu-item {
+  padding-inline: calc(50% - 15px) !important;
 }
 </style>

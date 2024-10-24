@@ -1,8 +1,8 @@
 <script setup lang="ts">
+import { message } from 'ant-design-vue';
 import * as monaco from 'monaco-editor'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { sleep } from '~/utils/sleep'
-import { message } from "ant-design-vue";
 
 const props = defineProps<{
   modelValue: string

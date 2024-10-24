@@ -96,6 +96,8 @@ declare global {
   const refThrottled: typeof import('@vueuse/core')['refThrottled']
   const refWithControl: typeof import('@vueuse/core')['refWithControl']
   const renderIcon: typeof import('./src/composables/icon')['renderIcon']
+  const renderIconFontSize: typeof import('./src/composables/icon')['renderIconFontSize']
+  const renderIconOption: typeof import('./src/composables/icon')['renderIconOption']
   const resolveComponent: typeof import('vue')['resolveComponent']
   const resolveRef: typeof import('@vueuse/core')['resolveRef']
   const resolveUnref: typeof import('@vueuse/core')['resolveUnref']
@@ -412,6 +414,8 @@ declare module 'vue' {
     readonly refThrottled: UnwrapRef<typeof import('@vueuse/core')['refThrottled']>
     readonly refWithControl: UnwrapRef<typeof import('@vueuse/core')['refWithControl']>
     readonly renderIcon: UnwrapRef<typeof import('./src/composables/icon')['renderIcon']>
+    readonly renderIconFontSize: UnwrapRef<typeof import('./src/composables/icon')['renderIconFontSize']>
+    readonly renderIconOption: UnwrapRef<typeof import('./src/composables/icon')['renderIconOption']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>
