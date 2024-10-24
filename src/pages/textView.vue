@@ -169,8 +169,8 @@ function handleContextMenuSelect(action: string) {
 .c-tab {
   .custom-tabs {
     .ant-tabs-nav {
-      margin-bottom: 0;
-      height: 40px;
+      margin-bottom: 6px;
+      height: 35px;
 
       &::before {
         border-bottom: 1px solid #e8e8e8;

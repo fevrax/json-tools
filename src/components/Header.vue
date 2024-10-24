@@ -147,7 +147,7 @@ function clearContent() {
 </script>
 
 <template>
-  <a-flex justify="space-between" align="center" class="h-10">
+  <a-flex justify="space-between" align="center" class="h-5 mt-3">
     <a-flex>
       <div class="dropdown-text dark:!text-white ml-2">
         <StatusIconButtonLink :icon="renderIconFontSize('mingcute:add-line', 17)" :status="addStatus" text="新增" @click="addTab" />
