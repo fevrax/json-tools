@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { message } from 'ant-design-vue';
+import { message } from 'ant-design-vue'
 import * as monaco from 'monaco-editor'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { sleep } from '~/utils/sleep'
@@ -17,6 +17,7 @@ const emit = defineEmits<{
 defineExpose({
   format,
   formatValidate,
+  validateContent,
 })
 
 const formatModelOpen = ref(false)
@@ -32,7 +33,7 @@ const editorContainer = ref<HTMLElement | null>(null)
 
 // 编辑器对象
 let editor: monaco.editor.IStandaloneCodeEditor | null = null
-let errorDecorations: monaco.editor.IEditorDecorationsCollection | null = null;
+let errorDecorations: monaco.editor.IEditorDecorationsCollection | null = null
 
 // 创建编辑器实例
 function createEditor() {
@@ -89,7 +90,7 @@ function updateFontSize(size: number) {
 }
 
 // 格式化 JSON
-function format():boolean {
+function format(): boolean {
   if (editor?.getValue() === '') {
     message.warn('暂无内容')
     return false
@@ -106,7 +107,21 @@ function formatValidate(): boolean {
   }
   const jsonErr = jsonParseError(editor.getValue())
   if (jsonErr) {
-    console.log('jsonParseError', jsonErr)
+    parseJsonError.value = jsonErr
+    formatModelOpen.value = true
+    return false
+  }
+  return true
+}
+
+// 验证 JSON, 不进行格式化
+function validateContent(): boolean {
+  if (editor?.getValue() === '') {
+    message.warn('暂无内容')
+    return false
+  }
+  const jsonErr = jsonParseError(editor.getValue())
+  if (jsonErr) {
     parseJsonError.value = jsonErr
     formatModelOpen.value = true
     return false
@@ -217,7 +232,7 @@ onUnmounted(() => {
 <template>
   <div ref="editorContainer" class="h-full w-full" />
   <a-modal v-model:open="formatModelOpen" title="解析 JSON 错误" width="800px">
-    <pre >{{ parseJsonError.message }}</pre>
+    <pre>{{ parseJsonError.message }}</pre>
     <pre class="text-red-600 whitespace-pre">{{ parseJsonError.context }}</pre>
     <br>
     <pre v-if="formatModelError !== ''">
@@ -237,9 +252,9 @@ onUnmounted(() => {
   </a-modal>
 </template>
 
-<style>
+<style lang="scss">
 .errorLineHighlight {
-  background-color: #ffbaba;
+  @apply bg-red-200 dark:bg-red-700;
   margin-left: 3px;
   width: 100%;
 }

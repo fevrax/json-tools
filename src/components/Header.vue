@@ -6,6 +6,7 @@ import { useTabsStore } from '~/stores/tabs'
 
 const emit = defineEmits<{
   (e: 'format', key: string, callback: (success: boolean) => void): void
+  (e: 'validate', key: string, callback: (success: boolean) => void): void
 }>()
 
 const tabsStore = useTabsStore()
@@ -22,8 +23,12 @@ function addTab() {
 enum IconStatus {
   Default = 'default',
   Success = 'success',
+  Loading = 'loading',
   Error = 'error',
 }
+// 格式化
+const formatStatus = ref(IconStatus.Default)
+const validateStatus = ref(IconStatus.Default)
 
 // 复制
 const copyIcon = ref<IconStatus>(IconStatus.Default)
@@ -55,7 +60,7 @@ function copyText(text: string) {
   navigator.clipboard.writeText(text)
 }
 
-function copySubMenuClickHandle(e) {
+async function copySubMenuClickHandle(e) {
   const tab = tabsStore.getActiveTab()
   if (tab.content === '') {
     message.warn('暂无内容')
@@ -65,10 +70,31 @@ function copySubMenuClickHandle(e) {
     copyIcon.value = IconStatus.Error
     return
   }
+
+  // 验证内容是否正确，异步方法
+  ValidateJson()
+  let success = false
+  for (let i = 0; i < 100; i++) {
+    if (validateStatus.value === IconStatus.Loading) {
+      await sleep(100)
+    }
+    else if (validateStatus.value === IconStatus.Success) {
+      success = true
+      break
+    }
+    else if (validateStatus.value === IconStatus.Error) {
+      break
+    }
+  }
+  if (!success) {
+    message.warn('复制失败，内容格式错误，请检查！')
+    return
+  }
+  const content = tabsStore.getActiveTab().content
   try {
     switch (e.key) {
       case 'compressedCopy':
-        copyText(tabsStore.getActiveTab()?.content)
+        copyText(JSON.stringify(JSON.parse(content)))
         break
       case 'escapeCopy':
         copyText(escapeJson(tabsStore.getActiveTab()?.content))
@@ -76,24 +102,35 @@ function copySubMenuClickHandle(e) {
     }
     copyIcon.value = IconStatus.Success
   }
-  catch (error) {
+  catch {
     copyIcon.value = IconStatus.Error
-    console.log(error.toString())
   }
   finally {
     setTimeout(() => {
       copyIcon.value = IconStatus.Default
+      validateStatus.value = IconStatus.Default
     }, 2500)
   }
 }
 
-// 格式化
-const formatStatus = ref(IconStatus.Default)
+// 验证编辑器内容格式并格式化编辑器内容
 function format() {
+  formatStatus.value = IconStatus.Loading
   emit('format', tabsStore.activeKey, (success) => {
     formatStatus.value = success ? IconStatus.Success : IconStatus.Error
     setTimeout(() => {
       formatStatus.value = IconStatus.Default
+    }, 2500)
+  })
+}
+
+// 验证编辑器内容格式
+function ValidateJson() {
+  validateStatus.value = IconStatus.Loading
+  emit('validate', tabsStore.activeKey, (success) => {
+    validateStatus.value = success ? IconStatus.Success : IconStatus.Error
+    setTimeout(() => {
+      validateStatus.value = IconStatus.Default
     }, 2500)
   })
 }

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { CheckOutlined, EditOutlined } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
 import { ref } from 'vue'
 import { useTabsStore } from '~/stores/tabs'
 
@@ -38,25 +39,84 @@ async function formatHandle(tabKey: string, callback: (success: boolean) => void
     const editor = jsonEditorRefs.value[`jsonEditor${tabKey}`]
     if (editor && typeof editor.format === 'function') {
       const success = editor.formatValidate()
-      if (success) {
-        callback(true)
-      }
-      else {
-        callback(false)
-      }
+      callback(success)
     }
     else {
       callback(false)
     }
   }
   catch {
+    message.error('格式化内容异常', e.message)
     callback(false)
   }
+}
+
+// 验证内容
+async function validateHandle(tabKey: string, callback: (success: boolean) => void) {
+  try {
+    const editor = jsonEditorRefs.value[`jsonEditor${tabKey}`]
+    if (editor && typeof editor.validateContent === 'function') {
+      const success = editor.validateContent()
+      callback(success)
+    }
+    else {
+      callback(false)
+    }
+  }
+  catch (e) {
+    message.error('验证内容异常', e.message)
+    callback(false)
+  }
+}
+
+const contextMenu = ref({
+  show: false,
+  x: 0,
+  y: 0,
+  tabKey: '',
+})
+
+// 右键菜单处理函数
+function handleContextMenu(event: MouseEvent, tabKey: string) {
+  event.preventDefault()
+  contextMenu.value = {
+    show: true,
+    x: event.clientX,
+    y: event.clientY,
+    tabKey,
+  }
+}
+
+// 关闭右键菜单
+function closeContextMenu() {
+  contextMenu.value.show = false
+}
+
+// 处理右键菜单选项
+function handleContextMenuSelect(action: string) {
+  const currentTabIndex = tabsStore.tabs.findIndex(tab => tab.key === contextMenu.value.tabKey)
+
+  switch (action) {
+    case 'closeLeft':
+      tabsStore.closeLeftTabs(currentTabIndex)
+      break
+    case 'closeRight':
+      tabsStore.closeRightTabs(currentTabIndex)
+      break
+    case 'closeOthers':
+      tabsStore.closeOtherTabs(currentTabIndex)
+      break
+    case 'closeAll':
+      tabsStore.closeAllTabs()
+      break
+  }
+
+  closeContextMenu()
 }
 </script>
 
 <template>
-  <Header @format="formatHandle" />
+  <Header @format="formatHandle" @validate="validateHandle" />
   <div class="c-tab">
     <a-tabs
       v-model:active-key="tabsStore.activeKey"
@@ -66,21 +126,23 @@ async function formatHandle(tabKey: string, callback: (success: boolean) => void
     >
       <a-tab-pane v-for="tab in tabsStore.tabs" :key="tab.key">
         <template #tab>
-          <span v-if="editingKey !== tab.key" @dblclick="startEditing(tab.key, tab.title)">
-            {{ tab.title }}
-            <EditOutlined class="edit-icon" @click.stop="startEditing(tab.key, tab.title)" />
-          </span>
-          <span v-else class="editing-tab">
-            <a-input
-              v-model:value="editingTitle"
-              class="editing-tab-input"
-              size="small"
-              @press-enter="finishEditing"
-              @blur="finishEditing"
-              @click.stop=""
-            />
-            <CheckOutlined class="confirm-icon" @click.stop="finishEditing" />
-          </span>
+          <div @contextmenu.prevent="handleContextMenu($event, tab.key)">
+            <span v-if="editingKey !== tab.key" @dblclick="startEditing(tab.key, tab.title)">
+              {{ tab.title }}
+              <EditOutlined class="edit-icon" @click.stop="startEditing(tab.key, tab.title)" />
+            </span>
+            <span v-else class="editing-tab">
+              <a-input
+                v-model:value="editingTitle"
+                class="editing-tab-input"
+                size="small"
+                @press-enter="finishEditing"
+                @blur="finishEditing"
+                @click.stop=""
+              />
+              <CheckOutlined class="confirm-icon" @click.stop="finishEditing" />
+            </span>
+          </div>
         </template>
         <div class="h-screen w-full">
           <json-editor
@@ -93,6 +155,14 @@ async function formatHandle(tabKey: string, callback: (success: boolean) => void
       </a-tab-pane>
     </a-tabs>
   </div>
+
+  <ContextMenu
+    :show="contextMenu.show"
+    :x="contextMenu.x"
+    :y="contextMenu.y"
+    @close="closeContextMenu"
+    @select="handleContextMenuSelect"
+  />
 </template>
 
 <style lang="scss">
@@ -118,7 +188,7 @@ async function formatHandle(tabKey: string, callback: (success: boolean) => void
 
       .ant-tabs-tab-btn {
         @apply text-gray-600 dark:text-gray-400;
-        font-weight: 500; // 稍微加粗字体
+        font-weight: 500;
       }
 
       &:hover {

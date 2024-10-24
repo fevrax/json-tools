@@ -109,7 +109,8 @@ const footerStyle: CSSProperties = {
   border: none !important;
 }
 
-.ant-menu-item {
-  padding-inline: calc(50% - 15px) !important;
+.ant-menu-item-icon {
+  position: relative !important;
+  left: -3px;
 }
 </style>

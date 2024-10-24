@@ -1,14 +1,13 @@
-
 export function validateAndFormatJSON<T>(data: unknown, schema: JSONSchemaType<T>): T {
   const validate = ajv.compile(schema)
   if (validate(data)) {
     return data as T
-  } else {
-    console.error("Validation errors:", validate.errors)
-    throw new Error("JSON validation failed")
+  }
+  else {
+    console.error('Validation errors:', validate.errors)
+    throw new Error('JSON validation failed')
   }
 }
-
 
 // 用于匹配需要转义的字符的正则表达式
 // eslint-disable-next-line no-control-regex,no-misleading-character-class
@@ -58,56 +57,56 @@ export function isJsonString(jsonString: string): boolean {
 }
 
 interface JsonErrorInfo {
-  message: string;
-  line: number;
-  column: number;
-  context: string;
-  errorToken?: string;
+  message: string
+  line: number
+  column: number
+  context: string
+  errorToken?: string
 }
 
 export function jsonParseError(jsonString: string): JsonErrorInfo | undefined {
   try {
-    JSON.parse(jsonString);
-    return undefined;
+    JSON.parse(jsonString)
+    return undefined
   }
   catch (error) {
-    let match = error.message.match(/at position (\d+) \(line (\d+) column (\d+)\)/);
-    let unexpectedTokenMatch = error.message.match(/Unexpected token '(.+)',[\s\S]*?"(.+)"[\s\S]*?is not valid JSON/);
+    const match = error.message.match(/at position (\d+) \(line (\d+) column (\d+)\)/)
+    const unexpectedTokenMatch = error.message.match(/Unexpected token '(.+)',[\s\S]*?"(.+)"[\s\S]*?is not valid JSON/)
 
     if (match) {
-      const position = Number.parseInt(match[1]);
-      const line = Number.parseInt(match[2]);
-      const column = Number.parseInt(match[3]);
+      const position = Number.parseInt(match[1])
+      const line = Number.parseInt(match[2])
+      const column = Number.parseInt(match[3])
 
-      const lines = jsonString.split('\n');
-      const startLine = Math.max(0, line - 4);
-      const endLine = Math.min(lines.length, line + 2);
-      const context = lines.slice(startLine, endLine).join('\n');
+      const lines = jsonString.split('\n')
+      const startLine = Math.max(0, line - 4)
+      const endLine = Math.min(lines.length, line + 2)
+      const context = lines.slice(startLine, endLine).join('\n')
       console.log(context)
 
       return {
         position,
-        message: `JSON解析错误：第${line}行，第${column}列 \n`+ error.message,
+        message: `JSON解析错误：第${line}行，第${column}列 \n${error.message}`,
         line,
         column,
         context,
-      };
+      }
     }
     else if (unexpectedTokenMatch) {
-      const errorToken = unexpectedTokenMatch[1];
-      const errorContext = unexpectedTokenMatch[2];
+      const errorToken = unexpectedTokenMatch[1]
+      const errorContext = unexpectedTokenMatch[2]
 
-      const lines = jsonString.split('\n');
-      const errorLine = lines.findIndex(line => line.includes(errorContext));
+      const lines = jsonString.split('\n')
+      const errorLine = lines.findIndex(line => line.includes(errorContext))
 
       if (errorLine !== -1) {
-        const line = errorLine + 1;
-        const column = lines[errorLine].indexOf(errorContext) + 1;
-        const startLine = Math.max(0, errorLine - 4);
-        const endLine = Math.min(lines.length, errorLine + 2);
+        const line = errorLine + 1
+        const column = lines[errorLine].indexOf(errorContext) + 1
+        const startLine = Math.max(0, errorLine - 4)
+        const endLine = Math.min(lines.length, errorLine + 2)
 
         // TODO 高亮
-        const context = lines.slice(startLine, endLine).join('\n');
+        const context = lines.slice(startLine, endLine).join('\n')
 
         return {
           message: `JSON解析错误：第${line}行，第${column}列，意外的标记 '${errorToken}'`,
@@ -115,14 +114,14 @@ export function jsonParseError(jsonString: string): JsonErrorInfo | undefined {
           column,
           context,
           errorToken,
-        };
+        }
       }
     }
     return {
-      message: '未知JSON解析错误，无法定位到错误行。 \n' + error.message,
+      message: `未知JSON解析错误，无法定位到错误行。 \n${error.message}`,
       line: 0,
       column: 0,
       context: '',
-    };
+    }
   }
 }

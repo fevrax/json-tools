@@ -54,5 +54,28 @@ export const useTabsStore = defineStore('tabs', {
         tab.content = ''
       }
     },
+    closeLeftTabs(index: number) {
+      this.tabs.splice(0, index)
+      if (this.tabs.length > 0) {
+        this.activeKey = this.tabs[0].key
+      }
+    },
+
+    closeRightTabs(index: number) {
+      this.tabs.splice(index + 1)
+      this.activeKey = this.tabs[index].key
+    },
+
+    closeOtherTabs(index: number) {
+      const currentTab = this.tabs[index]
+      this.tabs = [currentTab]
+      this.activeKey = currentTab.key
+    },
+
+    closeAllTabs() {
+      this.key = 0
+      this.tabs = []
+      this.addTab('') // 添加一个新的空白标签页
+    },
   },
 })
