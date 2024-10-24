@@ -57,11 +57,13 @@ export function isJsonString(jsonString: string): boolean {
 }
 
 interface JsonErrorInfo {
+  error: Error
   message: string
   line: number
   column: number
   context: string
   errorToken?: string
+  position?: number
 }
 
 export function jsonParseError(jsonString: string): JsonErrorInfo | undefined {
@@ -70,58 +72,88 @@ export function jsonParseError(jsonString: string): JsonErrorInfo | undefined {
     return undefined
   }
   catch (error) {
-    const match = error.message.match(/at position (\d+) \(line (\d+) column (\d+)\)/)
-    const unexpectedTokenMatch = error.message.match(/Unexpected token '(.+)',[\s\S]*?"(.+)"[\s\S]*?is not valid JSON/)
+    const errorPatterns = [
+      {
+        regex: /at position (\d+) \(line (\d+) column (\d+)\)/,
+        handler: (match: RegExpMatchArray) => ({
+          position: Number.parseInt(match[1]),
+          line: Number.parseInt(match[2]),
+          column: Number.parseInt(match[3]),
+          message: `JSON解析错误`,
+        }),
+      },
+      {
+        regex: /Unexpected token '(.+)',[\s\S]*?"(.+)"[\s\S]*?is not valid JSON/,
+        handler: (match: RegExpMatchArray) => ({
+          errorToken: match[1],
+          errorContext: match[2],
+          message: `JSON解析错误：意外的标记`,
+        }),
+      },
+      {
+        regex: /.*JSON at position (\d+)/,
+        handler: (match: RegExpMatchArray) => ({
+          position: Number.parseInt(match[1]),
+          message: `JSON解析错误：字符串中存在非法控制字符，`,
+        }),
+      },
+    ]
 
-    if (match) {
-      const position = Number.parseInt(match[1])
-      const line = Number.parseInt(match[2])
-      const column = Number.parseInt(match[3])
-
-      const lines = jsonString.split('\n')
-      const startLine = Math.max(0, line - 4)
-      const endLine = Math.min(lines.length, line + 2)
-      const context = lines.slice(startLine, endLine).join('\n')
-      console.log(context)
-
-      return {
-        position,
-        message: `JSON解析错误：第${line}行，第${column}列 \n${error.message}`,
-        line,
-        column,
-        context,
+    for (const pattern of errorPatterns) {
+      const match = error.message.match(pattern.regex)
+      if (match) {
+        const result = pattern.handler(match)
+        return getErrorInfo(error, jsonString, result)
       }
     }
-    else if (unexpectedTokenMatch) {
-      const errorToken = unexpectedTokenMatch[1]
-      const errorContext = unexpectedTokenMatch[2]
 
-      const lines = jsonString.split('\n')
-      const errorLine = lines.findIndex(line => line.includes(errorContext))
-
-      if (errorLine !== -1) {
-        const line = errorLine + 1
-        const column = lines[errorLine].indexOf(errorContext) + 1
-        const startLine = Math.max(0, errorLine - 4)
-        const endLine = Math.min(lines.length, errorLine + 2)
-
-        // TODO 高亮
-        const context = lines.slice(startLine, endLine).join('\n')
-
-        return {
-          message: `JSON解析错误：第${line}行，第${column}列，意外的标记 '${errorToken}'`,
-          line,
-          column,
-          context,
-          errorToken,
-        }
-      }
-    }
     return {
-      message: `未知JSON解析错误，无法定位到错误行。 \n${error.message}`,
+      error,
+      message: `未知JSON解析错误，无法定位到错误行。`,
       line: 0,
       column: 0,
       context: '',
     }
+  }
+}
+
+function getErrorInfo(error: Error, jsonString: string, result: Partial<JsonErrorInfo>): JsonErrorInfo {
+  const lines = jsonString.split('\n')
+  let line = result.line
+  let column = result.column
+
+  if (result.position !== undefined && !line) {
+    let currentPosition = 0
+    for (let i = 0; i < lines.length; i++) {
+      if (currentPosition + lines[i].length >= result.position) {
+        line = i + 1
+        column = result.position - currentPosition + 1
+        break
+      }
+      currentPosition += lines[i].length + 1 // +1 for newline character
+    }
+  }
+
+  if (result.errorContext && !line) {
+    const errorLine = lines.findIndex(l => l.includes(result.errorContext))
+    if (errorLine !== -1) {
+      line = errorLine + 1
+      column = lines[errorLine].indexOf(result.errorContext) + 1
+    }
+  }
+
+  const startLine = Math.max(0, (line || 1) - 4)
+  const endLine = Math.min(lines.length, (line || 1) + 2)
+  const context = lines.slice(startLine, endLine).join('\n')
+
+  result.message = `${result.message}`
+  return {
+    error,
+    message: result.message || '未知错误',
+    line: line || 0,
+    column: column || 0,
+    context,
+    errorToken: result.errorToken,
+    position: result.position,
   }
 }

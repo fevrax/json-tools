@@ -4,9 +4,10 @@ import { useNavigation } from '~/composables/router'
 
 const router = useRouter()
 function goBack() {
-  console.log("goBack /textView")
-  useNavigation(router).navigateTo('/textView')
+  useNavigation(router).navigateTo('/')
 }
+
+const route = useRoute()
 </script>
 
 <template>
@@ -19,7 +20,7 @@ function goBack() {
           </svg>
         </p>
         <h1 class="mt-3 text-2xl font-semibold text-gray-800 dark:text-white md:text-3xl">
-          Page not found
+          Page not found {{route.path}}
         </h1>
         <p class="mt-4 text-gray-500 dark:text-gray-400">
           The page you are looking for doesn't exist. Here are some helpful links:

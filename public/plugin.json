@@ -2,7 +2,7 @@
   "main": "index.html",
   "logo": "logo.png",
   "development": {
-    "main":"http://localhost:3333/index.html"
+    "main":"http://localhost:3333"
   },
   "features": [
     {

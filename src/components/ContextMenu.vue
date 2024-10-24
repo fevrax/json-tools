@@ -3,6 +3,12 @@
 import { Icon } from '@iconify/vue'
 import { onMounted, onUnmounted, ref } from 'vue'
 
+const props = defineProps<{
+  show: boolean
+  x: number
+  y: number
+}>()
+
 const emit = defineEmits<{
   (e: 'close'): void
   (e: 'select', action: string): void

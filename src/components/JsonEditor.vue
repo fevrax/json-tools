@@ -60,20 +60,16 @@ function createEditor() {
     // 监听内容变化
     editor.onDidChangeModelContent(async (e) => {
       emit('update:modelValue', editor!.getValue())
-      if (e.changes[0].rangeOffset < 2 && e.changes[0].text.length > 10) {
-        await sleep(100)
-        format()
-      }
+      // if (e.changes[0].rangeOffset < 2 && e.changes[0].text.length > 10) {
+      //   await sleep(100)
+      //   format()
+      // }
     })
 
     // 添加粘贴事件监听
     editor.onDidPaste(async (e) => {
       if (editor.getValue() && e.range.startLineNumber < 2) {
-        const jsonErr = jsonParseError(editor.getValue())
-        if (jsonErr) {
-          parseJsonError.value = jsonErr
-          formatModelOpen.value = true
-        }
+        formatValidate()
       }
     })
 
@@ -101,17 +97,13 @@ function format(): boolean {
 
 // 验证格式并格式化
 function formatValidate(): boolean {
-  const formatSuccess = format()
-  if (!formatSuccess) {
-    return false
-  }
   const jsonErr = jsonParseError(editor.getValue())
   if (jsonErr) {
     parseJsonError.value = jsonErr
     formatModelOpen.value = true
     return false
   }
-  return true
+  return format()
 }
 
 // 验证 JSON, 不进行格式化
@@ -143,6 +135,7 @@ function formatModelCancel() {
   parseJsonError.value = ''
 }
 
+// 解码 JSON 处理转义
 async function formatModelByUnEscapeJson() {
   formatModelUnEscapeParseLoading.value = true
   try {
@@ -162,9 +155,15 @@ async function formatModelByUnEscapeJson() {
   }
 }
 
+// 一键定位错误行
 async function formatModelByErrorLine() {
+  if (parseJsonError.value.line <= 0) {
+    message.error('定位错误行失败')
+    return
+  }
   formatModelOpen.value = false
   highlightErrorLine(parseJsonError.value.line)
+  message.success('定位错成功')
 }
 
 // 高亮错误行
@@ -231,13 +230,17 @@ onUnmounted(() => {
 
 <template>
   <div ref="editorContainer" class="h-full w-full" />
-  <a-modal v-model:open="formatModelOpen" title="解析 JSON 错误" width="800px">
-    <pre>{{ parseJsonError.message }}</pre>
-    <pre class="text-red-600 whitespace-pre">{{ parseJsonError.context }}</pre>
-    <br>
-    <pre v-if="formatModelError !== ''">
-      转换失败：{{ formatModelError }}
-    </pre>
+  <a-modal v-model:open="formatModelOpen" :title="parseJsonError.message" width="60%" style="max-width: 800px">
+    <div class="modal-content">
+      <p>错误行：第 <span class="text-amber-600">{{ parseJsonError.line }}</span> 行，第 <span class="text-amber-600">{{parseJsonError.column}}</span> 列，可能存在格式错误，请检查。</p>
+      <br>
+      <p>异常信息：<pre class="error-message">{{ parseJsonError.error ? parseJsonError.error.message : '未知' }}</pre></p>
+      <br>
+      <p>错误上下文：</p>
+      <p class="text-red-600 whitespace-pre error-context">{{ parseJsonError.context }}</p>
+      <br>
+      <p v-if="formatModelError !== ''"> 转换失败：{{ formatModelError }}</p>
+    </div>
     <template #footer>
       <a-button key="back" @click="formatModelCancel">
         取消
@@ -260,5 +263,16 @@ onUnmounted(() => {
 }
 .errorGlyphMargin {
   background-color: #ff0000;
+}
+
+.modal-content {
+  max-height: 60vh; // 设置最大高度为视窗高度的60%
+  overflow-y: auto; // 添加垂直滚动条
+  word-break: break-all; // 确保长文本换行
+  padding-right: 16px; // 为滚动条留出空间
+}
+.error-message, .error-context {
+  white-space: pre-wrap; // 保留换行和空格，但允许文本换行
+  word-wrap: break-word; // 允许长单词换行
 }
 </style>

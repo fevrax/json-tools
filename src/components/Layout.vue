@@ -22,12 +22,14 @@ onMounted(() => {
 
 const items = reactive([
   {
-    key: 'textView',
+    path: '/',
+    key: 'index',
     icon: renderIconFontSize('solar:code-bold', '20'),
     label: '文本视图',
     title: '文本视图',
   },
   {
+    path: 'setting',
     key: 'setting',
     icon: renderIconFontSize('solar:settings-linear', '20'),
     label: '系统设置',
@@ -37,7 +39,8 @@ const items = reactive([
 )
 
 function clickMenu(e) {
-  useNavigation(router).navigateTo(e.key)
+  console.log(e)
+  useNavigation(router).navigateTo(e.item.path)
 }
 
 function siderCollapseFunc(collapsed) {
