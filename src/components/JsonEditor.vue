@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { message } from 'ant-design-vue'
 import * as monaco from 'monaco-editor'
-import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { sleep } from '~/utils/sleep'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { isArrayOrObject, jsonParseError } from '~/utils/json'
+import {renderIconFontSizeH, renderIconifyFontSizeH} from "~/composables/icon";
+import {Icon} from "@iconify/vue";
 
 const props = defineProps<{
   modelValue: string
@@ -58,7 +60,7 @@ function createEditor() {
     })
 
     // 监听内容变化
-    editor.onDidChangeModelContent(async (e) => {
+    editor.onDidChangeModelContent(async () => {
       emit('update:modelValue', editor!.getValue())
       // if (e.changes[0].rangeOffset < 2 && e.changes[0].text.length > 10) {
       //   await sleep(100)
@@ -138,17 +140,37 @@ function formatModelCancel() {
 // 解码 JSON 处理转义
 async function formatModelByUnEscapeJson() {
   formatModelUnEscapeParseLoading.value = true
+  // 内容可能存在转义 需要解码
+  const jsonStr = `"${editor.getValue()}"`
   try {
-    // 内容可能存在转义 需要解码
-    const jsonStr = `"${editor.getValue()}"`
+    // 第一次将解析结果为去除转移后字符串
     const unescapedJson = JSON.parse(jsonStr)
+    // 去除转义后的字符串解析为对象
+    const unescapedJsonObject = JSON.parse(unescapedJson)
+    // 判断是否为对象或数组
+    if (!isArrayOrObject(unescapedJsonObject)) {
+      formatModelError.value = '不是有效的 Json 数据，无法进行解码操作'
+      return
+    }
     editor.setValue(unescapedJson)
     format()
 
     formatModelOpen.value = false
   }
   catch (error) {
-    formatModelError.value = error.message
+    console.error(error)
+    const jsonErr = jsonParseError(jsonStr)
+    if (!jsonErr) {
+      formatModelError.value = error.message
+      return
+    }
+    console.error(jsonErr)
+    if (jsonErr.line > 0) {
+      formatModelError.value = `${jsonErr?.message} 第 ${jsonErr?.line} 行, 第 ${jsonErr?.column} 列，可能存在错误。 \n ${error.message}`
+    }
+    else {
+      formatModelError.value = error.message
+    }
   }
   finally {
     formatModelUnEscapeParseLoading.value = false
@@ -158,12 +180,12 @@ async function formatModelByUnEscapeJson() {
 // 一键定位错误行
 async function formatModelByErrorLine() {
   if (parseJsonError.value.line <= 0) {
-    message.error('定位错误行失败')
+    message.error('一键定位失败')
     return
   }
   formatModelOpen.value = false
   highlightErrorLine(parseJsonError.value.line)
-  message.success('定位错成功')
+  message.success('一键定位成功')
 }
 
 // 高亮错误行
@@ -196,6 +218,19 @@ function highlightErrorLine(lineNumber: number) {
     }, 5000)
   }
 }
+
+// 计算错误的上下文行数
+const contextLines = computed(() => {
+  if (!parseJsonError.value.context)
+    return 0
+  return parseJsonError.value.context.split('\n').length
+})
+
+const errorStartLine = computed(() => {
+  if (!parseJsonError.value.line)
+    return 0
+  return Math.max(1, parseJsonError.value.line - Math.floor(contextLines.value / 2))
+})
 
 // region 监听属性变化
 // 监听 modelValue 变化
@@ -230,28 +265,92 @@ onUnmounted(() => {
 
 <template>
   <div ref="editorContainer" class="h-full w-full" />
-  <a-modal v-model:open="formatModelOpen" :title="parseJsonError.message" width="60%" style="max-width: 800px">
+  <a-modal
+    v-model:open="formatModelOpen"
+    :title="parseJsonError.message"
+    :footer="null"
+    width="60%"
+    style="min-width: 450px; max-width: 800px"
+    class="json-error-modal"
+    @cancel="formatModelCancel"
+  >
     <div class="modal-content">
-      <p>错误行：第 <span class="text-amber-600">{{ parseJsonError.line }}</span> 行，第 <span class="text-amber-600">{{parseJsonError.column}}</span> 列，可能存在格式错误，请检查。</p>
-      <br>
-      <p>异常信息：<pre class="error-message">{{ parseJsonError.error ? parseJsonError.error.message : '未知' }}</pre></p>
-      <br>
-      <p>错误上下文：</p>
-      <p class="text-red-600 whitespace-pre error-context">{{ parseJsonError.context }}</p>
-      <br>
-      <p v-if="formatModelError !== ''"> 转换失败：{{ formatModelError }}</p>
+      <div class="body">
+        <div class="info-section">
+          <a-descriptions :column="1" size="small">
+            <a-descriptions-item label="错误位置">
+              第 <a-tag color="orange" class="ml-2">
+                {{ parseJsonError.line }}
+              </a-tag>行，
+              第 <a-tag color="orange" class="ml-2">
+                {{ parseJsonError.column }}
+              </a-tag>列
+            </a-descriptions-item>
+            <a-descriptions-item label="异常信息">
+              <a-typography-paragraph type="danger" copyable>
+                {{ parseJsonError.error ? parseJsonError.error.message : '未知' }}
+              </a-typography-paragraph>
+            </a-descriptions-item>
+          </a-descriptions>
+        </div>
+        <a-divider />
+        <div class="context-section">
+          <h3 class="context-title">
+            错误上下文:
+          </h3>
+          <div class="context-wrapper">
+            <div class="line-numbers">
+              <span
+                v-for="i in contextLines"
+                :key="i"
+                :class="{ 'error-line': errorStartLine + i - 1 === parseJsonError.line }"
+              >
+                {{ errorStartLine + i - 1 }}
+              </span>
+            </div>
+            <pre class="context-content"><code>{{ parseJsonError.context }}</code></pre>
+          </div>
+        </div>
+        <a-divider />
+        <Transition name="fade">
+          <div v-if="formatModelError">
+            <p>尝试去除转义符解码失败：</p>
+            <a-alert type="error" class="mt-4">
+              <template #description>
+                <pre>{{ formatModelError }}</pre>
+              </template>
+            </a-alert>
+          </div>
+        </Transition>
+      </div>
+      <div class="footer">
+        <a-space>
+          <a-button @click="formatModelCancel">
+            取消
+          </a-button>
+          <a-button
+            type="primary"
+            :loading="formatModelUnEscapeParseLoading"
+            @click="formatModelByUnEscapeJson"
+          >
+            <template #icon>
+              <Icon icon="iconoir:remove-link" class="text-17 inline-block mr-1.5 relative" style="bottom: 1px" />
+            </template>
+            <span>去除转义符解码</span>
+          </a-button>
+          <!--    :disabled="parseJsonError.line === 0"      -->
+          <a-button
+            type="primary"
+            @click="formatModelByErrorLine"
+          >
+            <template #icon>
+              <Icon icon="ic:outline-my-location" class="text-17 inline-block mr-1.5 relative" style="bottom: 1px" />
+            </template>
+            <span>一键定位</span>
+          </a-button>
+        </a-space>
+      </div>
     </div>
-    <template #footer>
-      <a-button key="back" @click="formatModelCancel">
-        取消
-      </a-button>
-      <a-button key="submit" type="primary" :loading="formatModelUnEscapeParseLoading" @click="formatModelByUnEscapeJson">
-        解析转义JSON
-      </a-button>
-      <a-button key="submit" :disabled="parseJsonError.line === 0" type="primary" :loading="formatModelUnEscapeParseLoading" @click="formatModelByErrorLine">
-        一键定位
-      </a-button>
-    </template>
   </a-modal>
 </template>
 
@@ -265,14 +364,91 @@ onUnmounted(() => {
   background-color: #ff0000;
 }
 
-.modal-content {
-  max-height: 60vh; // 设置最大高度为视窗高度的60%
-  overflow-y: auto; // 添加垂直滚动条
-  word-break: break-all; // 确保长文本换行
-  padding-right: 16px; // 为滚动条留出空间
-}
-.error-message, .error-context {
+.error-message,
+.error-context {
   white-space: pre-wrap; // 保留换行和空格，但允许文本换行
   word-wrap: break-word; // 允许长单词换行
+}
+
+.json-error-modal {
+  .ant-modal-content {
+    @apply rounded-lg shadow-lg overflow-hidden;
+  }
+
+  .modal-content {
+    @apply flex flex-col h-full;
+
+    .header {
+      @apply mb-4;
+    }
+
+    .body {
+      @apply flex-grow overflow-y-auto;
+
+      .info-section {
+        @apply mb-4;
+      }
+
+      .context-section {
+        h3 {
+          @apply text-lg font-semibold mb-2 dark:text-gray-200;
+        }
+
+        .error-context {
+          @apply bg-gray-100 dark:bg-gray-700 p-4 rounded-md overflow-x-auto whitespace-pre-wrap;
+        }
+      }
+    }
+
+    .footer {
+      @apply mt-4 flex justify-end;
+    }
+  }
+
+  .context-section {
+    @apply mt-6;
+    .context-title {
+      @apply text-lg font-semibold mb-3 dark:text-gray-200;
+    }
+    .context-wrapper {
+      @apply relative bg-gray-50 dark:bg-neutral-800 rounded-lg overflow-hidden flex;
+
+      .line-numbers {
+        @apply py-4 text-right text-gray-400 dark:text-gray-600 select-none bg-gray-100 dark:bg-neutral-900;
+        min-width: 3em;
+        span {
+          @apply block text-sm font-mono px-2;
+          line-height: 1.5;
+          &.error-line {
+            @apply bg-red-200 dark:bg-red-900 text-red-800 dark:text-red-200 font-bold;
+          }
+        }
+      }
+
+      .context-content {
+        @apply p-4 m-0 text-sm font-mono overflow-x-auto whitespace-pre flex-grow;
+        line-height: 1.5;
+      }
+    }
+  }
+
+  .fade-enter-active,
+  .fade-leave-active {
+    transition:
+      opacity 0.5s ease,
+      transform 0.5s ease;
+  }
+
+  .fade-enter-from,
+  .fade-leave-to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  .fade-enter-to,
+  .fade-leave-from {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 </style>
