@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { CopyOutlined, DownOutlined } from '@ant-design/icons-vue'
+import { DownOutlined } from '@ant-design/icons-vue'
 import { Icon } from '@iconify/vue'
 import { message } from 'ant-design-vue'
 import { useTabsStore } from '~/stores/tabs'

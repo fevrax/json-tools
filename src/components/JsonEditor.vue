@@ -44,7 +44,7 @@ function createEditor() {
       value: props.modelValue || '',
       language: props.language || 'json',
       minimap: {
-        enabled: true,
+        enabled: true, // 启用缩略图
       },
       colorDecorators: true, // 颜色装饰器
       readOnly: false, // 是否开启已读功能
@@ -53,7 +53,8 @@ function createEditor() {
       mouseWheelZoom: true, // 启用鼠标滚轮缩放
       formatOnPaste: true, // 粘贴时自动格式化
       formatOnType: true, // 输入时自动格式化
-      wordBasedSuggestions: true,
+      wordBasedSuggestions: true, // 启用基于单词的建议
+      scrollBeyondLastLine: false, // 禁用滚动超出最后一行
       suggestOnTriggerCharacters: true, // 在触发字符时显示建议
       acceptSuggestionOnEnter: 'smart', // 按Enter键接受建议
       wordWrap: 'on', // 自动换行
@@ -71,6 +72,7 @@ function createEditor() {
     // 添加粘贴事件监听
     editor.onDidPaste(async (e) => {
       if (editor.getValue() && e.range.startLineNumber < 2) {
+        await sleep(100)
         formatValidate()
       }
     })

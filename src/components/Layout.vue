@@ -31,6 +31,7 @@ const items = reactive([
   {
     path: 'setting',
     key: 'setting',
+    disabled: true,
     icon: renderIconFontSize('solar:settings-linear', '20'),
     label: '系统设置',
     title: '系统设置',
