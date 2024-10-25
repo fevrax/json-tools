@@ -34,8 +34,6 @@ declare module 'vue' {
     Header: typeof import('./src/components/Header.vue')['default']
     Iconify: typeof import('./src/components/Iconify.vue')['default']
     IconParkSolidError: typeof import('./src/components/icon/IconParkSolidError.vue')['default']
-    JsonEdit: typeof import('~/components/JsonEditor.vue')['default']
-    JsonEditor: typeof import('./src/components/JsonEditor.vue')['default']
     JsonMonacoEditor: typeof import('./src/components/JsonMonacoEditor.vue')['default']
     JsonTreeViewer: typeof import('./src/components/JsonTreeViewer.vue')['default']
     Layout: typeof import('./src/components/Layout.vue')['default']

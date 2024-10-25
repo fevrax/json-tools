@@ -113,6 +113,7 @@ onMounted(() => {
         <div class="h-screen w-full">
           <JsonTreeViewer
             :data="tab.content ? tab.content : ''"
+            class="ml-2"
           />
         </div>
       </a-tab-pane>

@@ -79,7 +79,7 @@ onUnmounted(() => {
         :theme="isDark ? 'dark' : 'light'"
         :item-height="26"
         :deep="5"
-        :show-icon="true"
+        :show-icon="false"
         :show-length="true"
         :show-line="false"
         :show-line-number="true"
@@ -126,7 +126,7 @@ onUnmounted(() => {
     // input 输入框
     :deep(.vjs-value input) {
       @apply bg-transparent border-0 border-b-2 border-gray-300 focus:border-blue-500 dark:border-gray-600 dark:focus:border-blue-400;
-      @apply outline-none transition-colors duration-200 ease-in-out rounded-md p-0 m-0;
+      @apply outline-none transition-all duration-200 ease-in-out rounded-md p-0 m-0;
       @apply text-sm text-gray-700 dark:text-gray-300;
     }
 
