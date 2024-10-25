@@ -6,8 +6,9 @@ const props = defineProps<IconProps>()
 </script>
 
 <template>
-  <component :is="Icon" v-bind="props" />
+  <component :is="Icon" v-bind="props" class="inline-block mr-1.5" />
 </template>
 
 <style scoped>
+
 </style>

@@ -142,8 +142,8 @@ function getErrorInfo(error: Error, jsonString: string, result: Partial<JsonErro
     }
   }
 
-  const startLine = Math.max(0, (line || 1) - 4)
-  const endLine = Math.min(lines.length, (line || 1) + 2)
+  const startLine = Math.max(0, (line || 1) - 5)
+  const endLine = Math.min(lines.length, (line || 1) + 4)
   const context = lines.slice(startLine, endLine).join('\n')
 
   result.message = `${result.message}`
@@ -156,4 +156,8 @@ function getErrorInfo(error: Error, jsonString: string, result: Partial<JsonErro
     errorToken: result.errorToken,
     position: result.position,
   }
+}
+
+export function isArrayOrObject(value: unknown): boolean {
+  return Array.isArray(value) || (typeof value === 'object' && value !== null)
 }

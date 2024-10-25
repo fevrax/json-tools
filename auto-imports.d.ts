@@ -44,6 +44,7 @@ declare global {
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
   const inject: typeof import('vue')['inject']
   const injectLocal: typeof import('@vueuse/core')['injectLocal']
+  const isArrayOrObject: typeof import('./src/utils/json')['isArrayOrObject']
   const isDark: typeof import('./src/composables/dark')['isDark']
   const isDefined: typeof import('@vueuse/core')['isDefined']
   const isJsonEscaped: typeof import('~/utils/json')['isJsonEscaped']
@@ -97,7 +98,10 @@ declare global {
   const refWithControl: typeof import('@vueuse/core')['refWithControl']
   const renderIcon: typeof import('./src/composables/icon')['renderIcon']
   const renderIconFontSize: typeof import('./src/composables/icon')['renderIconFontSize']
+  const renderIconFontSizeH: typeof import('./src/composables/icon')['renderIconFontSizeH']
   const renderIconOption: typeof import('./src/composables/icon')['renderIconOption']
+  const renderIconifyFontSize: typeof import('./src/composables/icon')['renderIconifyFontSize']
+  const renderIconifyFontSizeH: typeof import('./src/composables/icon')['renderIconifyFontSizeH']
   const resolveComponent: typeof import('vue')['resolveComponent']
   const resolveRef: typeof import('@vueuse/core')['resolveRef']
   const resolveUnref: typeof import('@vueuse/core')['resolveUnref']
@@ -365,6 +369,7 @@ declare module 'vue' {
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
+    readonly isArrayOrObject: UnwrapRef<typeof import('./src/utils/json')['isArrayOrObject']>
     readonly isDark: UnwrapRef<typeof import('./src/composables/dark')['isDark']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
     readonly isJsonString: UnwrapRef<typeof import('./src/utils/json')['isJsonString']>
@@ -416,6 +421,8 @@ declare module 'vue' {
     readonly renderIcon: UnwrapRef<typeof import('./src/composables/icon')['renderIcon']>
     readonly renderIconFontSize: UnwrapRef<typeof import('./src/composables/icon')['renderIconFontSize']>
     readonly renderIconOption: UnwrapRef<typeof import('./src/composables/icon')['renderIconOption']>
+    readonly renderIconifyFontSize: UnwrapRef<typeof import('./src/composables/icon')['renderIconifyFontSize']>
+    readonly renderIconifyFontSizeH: UnwrapRef<typeof import('./src/composables/icon')['renderIconifyFontSizeH']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>

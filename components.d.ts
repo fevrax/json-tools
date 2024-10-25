@@ -7,9 +7,13 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    AAlert: typeof import('ant-design-vue/es')['Alert']
     AAvatar: typeof import('ant-design-vue/es')['Avatar']
     AButton: typeof import('ant-design-vue/es')['Button']
     AConfigProvider: typeof import('ant-design-vue/es')['ConfigProvider']
+    ADescriptions: typeof import('ant-design-vue/es')['Descriptions']
+    ADescriptionsItem: typeof import('ant-design-vue/es')['DescriptionsItem']
+    ADivider: typeof import('ant-design-vue/es')['Divider']
     ADropdownButton: typeof import('ant-design-vue/es')['DropdownButton']
     AFlex: typeof import('ant-design-vue/es')['Flex']
     AInput: typeof import('ant-design-vue/es')['Input']
@@ -20,8 +24,11 @@ declare module 'vue' {
     AMenu: typeof import('ant-design-vue/es')['Menu']
     AMenuItem: typeof import('ant-design-vue/es')['MenuItem']
     AModal: typeof import('ant-design-vue/es')['Modal']
+    ASpace: typeof import('ant-design-vue/es')['Space']
     ATabPane: typeof import('ant-design-vue/es')['TabPane']
     ATabs: typeof import('ant-design-vue/es')['Tabs']
+    ATag: typeof import('ant-design-vue/es')['Tag']
+    ATypographyParagraph: typeof import('ant-design-vue/es')['TypographyParagraph']
     ContextMenu: typeof import('./src/components/ContextMenu.vue')['default']
     EditTabs: typeof import('./src/components/EditTabs.vue')['default']
     Header: typeof import('./src/components/Header.vue')['default']
