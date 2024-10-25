@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { CheckOutlined, EditOutlined } from '@ant-design/icons-vue'
-import { message } from 'ant-design-vue'
-import { ref } from 'vue'
-import { useTabsStore } from '~/stores/tabs'
+import {useTabsStore} from "~/stores/tabs";
+import {ref} from "vue";
 
 const tabsStore = useTabsStore()
 const editingKey = ref<string | null>(null)
@@ -29,43 +28,6 @@ function finishEditing() {
   if (editingKey.value) {
     tabsStore.updateTabTitle(editingKey.value, editingTitle.value)
     editingKey.value = null
-  }
-}
-
-// 格式化并验证
-const jsonEditorRefs: Ref<{ [key: number]: typeof JsonEditor | null }> = ref({})
-async function formatHandle(tabKey: string, callback: (success: boolean) => void) {
-  try {
-    const editor = jsonEditorRefs.value[`jsonEditor${tabKey}`]
-    if (editor && typeof editor.format === 'function') {
-      const success = editor.formatValidate()
-      callback(success)
-    }
-    else {
-      callback(false)
-    }
-  }
-  catch {
-    message.error('格式化内容异常', e.message)
-    callback(false)
-  }
-}
-
-// 验证内容
-async function validateHandle(tabKey: string, callback: (success: boolean) => void) {
-  try {
-    const editor = jsonEditorRefs.value[`jsonEditor${tabKey}`]
-    if (editor && typeof editor.validateContent === 'function') {
-      const success = editor.validateContent()
-      callback(success)
-    }
-    else {
-      callback(false)
-    }
-  }
-  catch (e) {
-    message.error('验证内容异常', e.message)
-    callback(false)
   }
 }
 
@@ -113,10 +75,14 @@ function handleContextMenuSelect(action: string) {
 
   closeContextMenu()
 }
+
+onMounted(() => {
+  tabsStore.addTestTab()
+})
 </script>
 
 <template>
-  <Header @format="formatHandle" @validate="validateHandle" />
+  <Header />
   <div class="c-tab">
     <a-tabs
       v-model:active-key="tabsStore.activeKey"
@@ -145,11 +111,8 @@ function handleContextMenuSelect(action: string) {
           </div>
         </template>
         <div class="h-screen w-full">
-          <JsonMonacoEditor
-            :ref="(el) => { if (el) jsonEditorRefs[`jsonEditor${tab.key}`] = el }"
-            v-model="tab.content"
-            language="json"
-            :theme="isDark ? 'vs-dark' : 'vs-light'"
+          <JsonTreeViewer
+            :data="tab.content ? tab.content : ''"
           />
         </div>
       </a-tab-pane>

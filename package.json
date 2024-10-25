@@ -18,7 +18,9 @@
     "monaco-editor": "0.52.0",
     "pinia": "^2.2.4",
     "vue": "^3.5.12",
-    "vue-router": "^4.4.5"
+    "vue-json-pretty": "^2.4.0",
+    "vue-router": "^4.4.5",
+    "vuedraggable": "^2.24.3"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^3.8.0",

@@ -29,6 +29,13 @@ const items = reactive([
     title: '文本视图',
   },
   {
+    path: '/tree',
+    key: 'tree',
+    icon: renderIconFontSize('solar:code-bold', '20'),
+    label: '编辑器',
+    title: '编辑器',
+  },
+  {
     path: 'setting',
     key: 'setting',
     disabled: true,
@@ -76,7 +83,7 @@ const footerStyle: CSSProperties = {
         <slot />
       </a-layout-content>
     </a-layout>
-    <a-layout-footer :style="footerStyle" class="!bg-white dark:!bg-neutral-900">
+    <a-layout-footer v-if="false" :style="footerStyle" class="!bg-white dark:!bg-neutral-900">
       Footer
     </a-layout-footer>
   </a-layout>
