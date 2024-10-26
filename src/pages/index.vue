@@ -3,6 +3,7 @@ import { CheckOutlined, EditOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { ref } from 'vue'
 import { useTabsStore } from '~/stores/tabs'
+import MonacoJsonEditor from "~/components/MonacoJsonEditor.vue";
 
 const tabsStore = useTabsStore()
 const editingKey = ref<string | null>(null)
@@ -117,7 +118,7 @@ function handleContextMenuSelect(action: string) {
 
 <template>
   <Header @format="formatHandle" @validate="validateHandle" />
-  <div class="c-tab">
+  <div class="monaco-tab">
     <a-tabs
       v-model:active-key="tabsStore.activeKey"
       type="editable-card"
@@ -145,7 +146,7 @@ function handleContextMenuSelect(action: string) {
           </div>
         </template>
         <div class="h-screen w-full">
-          <JsonMonacoEditor
+          <MonacoJsonEditor
             :ref="(el) => { if (el) jsonEditorRefs[`jsonEditor${tab.key}`] = el }"
             v-model="tab.content"
             language="json"
@@ -166,5 +167,6 @@ function handleContextMenuSelect(action: string) {
 </template>
 
 <style lang="scss">
-@import '../styles/tabs';
+@use '../styles/monacoTabs';
+
 </style>

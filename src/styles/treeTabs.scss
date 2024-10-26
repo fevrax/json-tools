@@ -1,12 +1,12 @@
-.c-tab {
+.tree-tab {
   .custom-tabs {
     .ant-tabs-nav {
-      margin-bottom: 6px;
-      height: 35px;
+      height: 38px;
 
       &::before {
-        border-bottom: 1px solid #e8e8e8;
-        @apply dark:border-zinc-700;
+        border: none;
+        //border-bottom: 1px solid #e8e8e8;
+        //@apply dark:border-zinc-700;
       }
     }
 

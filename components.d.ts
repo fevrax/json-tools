@@ -34,13 +34,16 @@ declare module 'vue' {
     Header: typeof import('./src/components/Header.vue')['default']
     Iconify: typeof import('./src/components/Iconify.vue')['default']
     IconParkSolidError: typeof import('./src/components/icon/IconParkSolidError.vue')['default']
+    IconParkTree: typeof import('./src/components/icon/IconParkTree.vue')['default']
     JsonMonacoEditor: typeof import('./src/components/JsonMonacoEditor.vue')['default']
     JsonTreeViewer: typeof import('./src/components/JsonTreeViewer.vue')['default']
     Layout: typeof import('./src/components/Layout.vue')['default']
+    MonacoJsonEditor: typeof import('./src/components/MonacoJsonEditor.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     StatusIcon: typeof import('./src/components/StatusIcon.vue')['default']
     StatusIconButtonLink: typeof import('./src/components/StatusIconButtonLink.vue')['default']
     ThemeToggle: typeof import('./src/components/ThemeToggle.vue')['default']
+    VanillaJsonEditor: typeof import('./src/components/VanillaJsonEditor.vue')['default']
   }
 }

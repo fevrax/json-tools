@@ -3,7 +3,7 @@ import { message } from 'ant-design-vue'
 import * as monaco from 'monaco-editor'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { isArrayOrObject, jsonParseError } from '~/utils/json'
-import {renderIconFontSizeH, renderIconifyFontSizeH} from "~/composables/icon";
+import {renderIconifyFontSizeH} from "~/composables/icon";
 import {Icon} from "@iconify/vue";
 
 const props = defineProps<{

@@ -188,7 +188,7 @@ function clearContent() {
       <div class="dropdown-text dark:!text-white ml-2">
         <StatusIconButtonLink :icon="renderIconFontSize('mdi:magic', 17)" :status="formatStatus" text="格式化" @click="format" />
       </div>
-      <div class="dropdown-text dark:!text-white ml-2">
+      <div class="dropdown-text dark:!text-white">
         <StatusIconButtonLink :icon="renderIconFontSize('mynaui:trash', 17)" :status="clearContentStatus" text="清空" @click="clearContent" />
       </div>
     </a-flex>
@@ -220,7 +220,7 @@ function clearContent() {
     border-radius: 6px;
     // 夜间模式
     @apply dark:text-white;
-    @apply dark:!bg-zinc-800;
+    @apply dark:bg-zinc-800;
   }
 
   .ant-dropdown-trigger {

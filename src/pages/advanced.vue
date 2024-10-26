@@ -82,8 +82,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <Header />
-  <div class="c-tab">
+  <div class="tree-tab">
     <a-tabs
       v-model:active-key="tabsStore.activeKey"
       type="editable-card"
@@ -110,10 +109,9 @@ onMounted(() => {
             </span>
           </div>
         </template>
-        <div class="h-screen w-full">
-          <JsonTreeViewer
-            :data="tab.content ? tab.content : ''"
-            class="ml-2"
+        <div>
+          <VanillaJsonEditor
+            :model-value="tab.content ? tab.content : ''"
           />
         </div>
       </a-tab-pane>
@@ -130,5 +128,20 @@ onMounted(() => {
 </template>
 
 <style lang="scss">
-@import '../styles/tabs';
+@use '../styles/treeTabs';
+
+.tree-tab {
+  .custom-tabs {
+    .ant-tabs-nav {
+      margin-bottom: 2px;
+
+      .ant-tabs-nav-wrap{
+        position: absolute;
+        top: 40px;
+        z-index: 9999;
+      }
+    }
+
+  }
+}
 </style>
