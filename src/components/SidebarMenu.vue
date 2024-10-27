@@ -5,6 +5,7 @@ import {
   DeleteOutlined,
   EditOutlined,
   EllipsisOutlined,
+  PlusOutlined,
   PushpinFilled,
   PushpinOutlined,
 } from '@ant-design/icons-vue'
@@ -15,12 +16,14 @@ import type { MenuItem } from '~/stores/sidebar'
 // 新增: 定义props
 const props = defineProps<{
   items: MenuItem[]
+  selectedItemId: string
 }>()
 
 // 新增: 定义emit
 const emit = defineEmits<{
   (e: 'update:items', items: MenuItem[]): void
   (e: 'select', itemId: string): void
+  (e: 'add'): void
 }>()
 
 const menuItems = ref<MenuItem[]>(props.items)
@@ -34,7 +37,6 @@ const editingItemId = ref<string | null>(null)
 const editingInput = ref<HTMLInputElement | null>(null)
 const sidebarWidth = ref(200)
 const activeItemId = ref<string | null>(null)
-const selectedItemId = ref<string | null>(null)
 
 const isNarrow = computed(() => sidebarWidth.value < 60)
 
@@ -103,20 +105,24 @@ function handleContextMenuAction(key: string, item: MenuItem) {
   activeItemId.value = null
 }
 
-function truncateTitle(title: string, maxLength: number = 4) {
+function truncateTitle(title: string, maxLength: number = 5) {
   return title.length > maxLength
     ? `${title.slice(0, maxLength)}...`
     : title
 }
 
 function selectItem(itemId: string) {
-  selectedItemId.value = itemId
   emit('select', itemId)
 }
 
 // 新增: 更新menuItems并触发emit
 function updateMenuItems() {
   emit('update:items', menuItems.value)
+}
+
+// 新增: 添加新菜单项
+function addNewMenuItem() {
+  emit('add')
 }
 
 // Resize observer to update sidebar width
@@ -189,8 +195,8 @@ defineExpose({
               class="block truncate"
             >
               <span v-if="isNarrow">
-                <a-tooltip :title="item.title" placement="right">
-                  <span>{{ truncateTitle(item.title, 4) }}</span>
+                <a-tooltip :title="item.title" placement="right" class="text-13">
+                  <span>{{ truncateTitle(item.title, 6) }}</span>
                 </a-tooltip>
               </span>
               <span v-else class="flex items-center">
@@ -226,6 +232,15 @@ defineExpose({
         </div>
       </li>
     </ul>
+    <!-- 新增: 添加新菜单项按钮 -->
+    <a-button
+      v-if="isNarrow"
+      type="text"
+      class="w-full mt-2 flex justify-center items-center hover:bg-gray-200 dark:hover:bg-neutral-800"
+      @click.stop="addNewMenuItem"
+    >
+      <PlusOutlined />
+    </a-button>
   </div>
 </template>
 

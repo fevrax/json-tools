@@ -27,7 +27,7 @@ export const useSidebarStore = defineStore('sidebar', {
   actions: {
     addTab(title: string = '', editor: Editor = Editor.Monaco) {
       const id = `menuItem-${this.nextId++}`
-      title = title || `New Tab - ${this.nextId}`
+      title = title || `Tab-${this.nextId}`
       this.menuItems.push({ id, title, editor, isPinned: false, content: '' })
       this.activeId = id
     },

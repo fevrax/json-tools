@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-
+import { useSidebarStore } from '~/stores/sidebar'
 import { useTabsStore } from '~/stores/tabs'
 
 const tabsStore = useTabsStore()
+
+const sidebarStore = useSidebarStore()
 
 const collapsed = ref<boolean>(false)
 
@@ -13,6 +15,9 @@ onMounted(() => {
   // 启动默认初始化一个 tab
   if (tabsStore.tabs.length === 0) {
     tabsStore.addTab('')
+  }
+  for (let i = 0; i < 18; i++) {
+    sidebarStore.addTab()
   }
 })
 
@@ -24,11 +29,13 @@ function siderCollapseFunc(collapsed) {
   }
 }
 
-const menuItems = ref<MenuItem[]>([
-  { id: '1', title: 'New Tab 1', isPinned: false },
-  { id: '2', title: 'Menu Item 2', isPinned: false },
-  { id: '3', title: 'Menu Item 3 with a very long title that should be truncated', isPinned: false },
-])
+function addItem() {
+  sidebarStore.addTab('')
+}
+
+function selectItem(id) {
+  sidebarStore.activeId = id
+}
 
 const footerStyle: CSSProperties = {
   height: '10px',
@@ -47,8 +54,7 @@ const footerStyle: CSSProperties = {
         <div class="avatar px-3 py-2">
           <a-avatar src="logo.png" />
         </div>
-
-        <SidebarMenu :items="menuItems" />
+        <SidebarMenu :items="sidebarStore.menuItems" :selected-item-id="sidebarStore.activeId" @add="addItem" @select="selectItem" />
       </a-layout-sider>
       <a-layout-content class="bg-white dark:bg-neutral-900">
         <slot />
@@ -80,12 +86,11 @@ const footerStyle: CSSProperties = {
   width: var(--sider-width) !important;
 }
 
-.bb {
-  background: antiquewhite !important;
+.ant-layout-sider-children {
+  overflow: hidden;
+  padding-bottom: 48px !important;
 }
 
-.ant-layout-sider-children {
-}
 .ant-menu-light.ant-menu-root.ant-menu-vertical {
   border-inline-end: none !important;
   border: none !important;
