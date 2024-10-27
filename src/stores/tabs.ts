@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 
-interface Tab {
+export interface Tab {
   title: string
   content: string
   key: string
@@ -18,7 +18,7 @@ export const useTabsStore = defineStore('tabs', {
   actions: {
     addTab(title: string) {
       this.key++
-      if (title === '') {
+      if (title === '' || title === undefined) {
         title = `New Tab - ${this.key}`
       }
       this.tabs.push({ title, content: '', key: this.key })
@@ -33,6 +33,15 @@ export const useTabsStore = defineStore('tabs', {
     getActiveTab() {
       return this.tabs.find(t => t.key === this.activeKey)
     },
+    updateTabContent(key: string, content: string) {
+      const tab = this.tabs.find(t => t.key === key)
+      if (tab) {
+        tab.content = content
+      }
+    },
+    updateCurrentTabContent(content: string) {
+      this.updateTabContent(this.activeKey, content)
+    },
     delTab(targetKey: string) {
       let lastIndex = 0
       this.tabs.forEach((pane, i) => {
@@ -44,10 +53,13 @@ export const useTabsStore = defineStore('tabs', {
       if (this.tabs.length && this.activeKey === targetKey) {
         if (lastIndex >= 0) {
           this.activeKey = this.tabs[lastIndex].key
-        }
-        else {
+        } else {
           this.activeKey = this.tabs[0].key
         }
+      }
+      // 至少有一个tab
+      if (this.tabs.length === 0) {
+        this.addTab('')
       }
     },
     updateTabTitle(key: string, newTitle: string) {

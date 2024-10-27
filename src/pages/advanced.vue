@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { CheckOutlined, EditOutlined } from '@ant-design/icons-vue'
-import {useTabsStore} from "~/stores/tabs";
-import {ref} from "vue";
+import { ref } from 'vue'
+import type { Tab } from '~/stores/tabs'
+import { useTabsStore } from '~/stores/tabs'
 
 const tabsStore = useTabsStore()
 const editingKey = ref<string | null>(null)
@@ -11,8 +12,7 @@ const editingTitle = ref('')
 function onTabEdit(targetKey: string | MouseEvent, action: string) {
   if (action === 'add') {
     tabsStore.addTab('')
-  }
-  else {
+  } else {
     tabsStore.delTab(targetKey)
   }
 }
@@ -76,8 +76,26 @@ function handleContextMenuSelect(action: string) {
   closeContextMenu()
 }
 
+function jsonTextUpdate(jsonText: string) {
+  console.log('jsonTextUpdate', jsonText)
+  tabsStore.updateCurrentTabContent(jsonText)
+}
+
+function parseEditJsonData(tab: Tab) {
+  let currentTabContent = ''
+  try {
+    currentTabContent = JSON.parse(tab?.content)
+    console.log('currentTabContent', currentTabContent.value)
+  } catch (e) {
+    console.error(e)
+  }
+  return currentTabContent
+}
+
 onMounted(() => {
-  tabsStore.addTestTab()
+  // tabsStore.addTestTab()
+  // if
+
 })
 </script>
 
@@ -111,7 +129,8 @@ onMounted(() => {
         </template>
         <div>
           <VanillaJsonEditor
-            :model-value="tab.content ? tab.content : ''"
+            :model-value="parseEditJsonData(tab)"
+            @update:model-value="jsonTextUpdate"
           />
         </div>
       </a-tab-pane>
@@ -135,13 +154,12 @@ onMounted(() => {
     .ant-tabs-nav {
       margin-bottom: 2px;
 
-      .ant-tabs-nav-wrap{
+      .ant-tabs-nav-wrap {
         position: absolute;
         top: 40px;
         z-index: 9999;
       }
     }
-
   }
 }
 </style>

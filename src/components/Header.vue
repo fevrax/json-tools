@@ -48,8 +48,7 @@ function copy() {
   }
   if (tab.content === '') {
     copyIcon.value = IconStatus.Error
-  }
-  else {
+  } else {
     copyText(tabsStore.getActiveTab()?.content)
     copyIcon.value = IconStatus.Success
   }
@@ -77,12 +76,10 @@ async function copySubMenuClickHandle(e) {
   for (let i = 0; i < 100; i++) {
     if (validateStatus.value === IconStatus.Loading) {
       await sleep(100)
-    }
-    else if (validateStatus.value === IconStatus.Success) {
+    } else if (validateStatus.value === IconStatus.Success) {
       success = true
       break
-    }
-    else if (validateStatus.value === IconStatus.Error) {
+    } else if (validateStatus.value === IconStatus.Error) {
       break
     }
   }
@@ -101,11 +98,9 @@ async function copySubMenuClickHandle(e) {
         break
     }
     copyIcon.value = IconStatus.Success
-  }
-  catch {
+  } catch {
     copyIcon.value = IconStatus.Error
-  }
-  finally {
+  } finally {
     setTimeout(() => {
       copyIcon.value = IconStatus.Default
       validateStatus.value = IconStatus.Default

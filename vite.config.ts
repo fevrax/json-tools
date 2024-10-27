@@ -17,6 +17,9 @@ export default defineConfig({
     },
   },
   base: './', // 这里更改打包相对绝对路径
+  optimizeDeps: {
+    include: ['vanilla-jsoneditor-cn'],
+  },
   plugins: [
     vueDevTools(),
     VueMacros({

@@ -258,6 +258,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  console.log('销毁编辑器')
   if (editor) {
     editor.dispose()
   }
