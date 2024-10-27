@@ -2,8 +2,8 @@
 import { CheckOutlined, EditOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { ref } from 'vue'
+import MonacoJsonEditor from '~/components/MonacoJsonEditor.vue'
 import { useTabsStore } from '~/stores/tabs'
-import MonacoJsonEditor from "~/components/MonacoJsonEditor.vue";
 
 const tabsStore = useTabsStore()
 const editingKey = ref<string | null>(null)
@@ -13,8 +13,7 @@ const editingTitle = ref('')
 function onTabEdit(targetKey: string | MouseEvent, action: string) {
   if (action === 'add') {
     tabsStore.addTab('')
-  }
-  else {
+  } else {
     tabsStore.delTab(targetKey)
   }
 }
@@ -41,12 +40,10 @@ async function formatHandle(tabKey: string, callback: (success: boolean) => void
     if (editor && typeof editor.format === 'function') {
       const success = editor.formatValidate()
       callback(success)
-    }
-    else {
+    } else {
       callback(false)
     }
-  }
-  catch {
+  } catch {
     message.error('格式化内容异常', e.message)
     callback(false)
   }
@@ -59,12 +56,10 @@ async function validateHandle(tabKey: string, callback: (success: boolean) => vo
     if (editor && typeof editor.validateContent === 'function') {
       const success = editor.validateContent()
       callback(success)
-    }
-    else {
+    } else {
       callback(false)
     }
-  }
-  catch (e) {
+  } catch (e) {
     message.error('验证内容异常', e.message)
     callback(false)
   }
@@ -168,5 +163,4 @@ function handleContextMenuSelect(action: string) {
 
 <style lang="scss">
 @use '../styles/monacoTabs';
-
 </style>

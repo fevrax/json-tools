@@ -1,65 +1,34 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-import { useRouter } from 'vue-router'
-import { useNavigation } from '~/composables/router'
 import { useTabsStore } from '~/stores/tabs'
 
-const router = useRouter()
+const tabsStore = useTabsStore()
 
-const selectedKeys = ref<string[]>(['1'])
-const collapsed = ref<boolean>(true)
+const collapsed = ref<boolean>(false)
 
 onMounted(() => {
   // 设置 侧边栏宽度
-  document.documentElement.style.setProperty('--sider-width', '58px')
+  siderCollapseFunc(collapsed.value)
   // 启动默认初始化一个 tab
-  const tabsStore = useTabsStore()
   if (tabsStore.tabs.length === 0) {
     tabsStore.addTab('')
   }
 })
 
-const items = reactive([
-  {
-    path: '/',
-    key: 'index',
-    icon: renderIconFontSize('solar:code-bold', '20'),
-    label: '文本视图',
-    title: '文本视图',
-  },
-  {
-    path: '/advanced',
-    key: 'advanced',
-    // icon: () => h(IconParkTree),
-    icon: renderIconFontSize('ph:tree-evergreen', '20'),
-    label: '高级视图',
-    title: '高级视图',
-  },
-  // {
-  //   path: 'setting',
-  //   key: 'setting',
-  //   // disabled: true,
-  //   icon: renderIconFontSize('solar:settings-linear', '20'),
-  //   label: '系统设置',
-  //   title: '系统设置',
-  // },
-],
-)
-
-function clickMenu(e) {
-  console.log(e)
-  useNavigation(router).navigateTo(e.item.path)
-}
-
 function siderCollapseFunc(collapsed) {
   if (collapsed === false) {
-    document.documentElement.style.setProperty('--sider-width', '200px')
-  }
-  else {
+    document.documentElement.style.setProperty('--sider-width', '180px')
+  } else {
     document.documentElement.style.setProperty('--sider-width', '58px')
   }
 }
+
+const menuItems = ref<MenuItem[]>([
+  { id: '1', title: 'New Tab 1', isPinned: false },
+  { id: '2', title: 'Menu Item 2', isPinned: false },
+  { id: '3', title: 'Menu Item 3 with a very long title that should be truncated', isPinned: false },
+])
 
 const footerStyle: CSSProperties = {
   height: '10px',
@@ -78,7 +47,8 @@ const footerStyle: CSSProperties = {
         <div class="avatar px-3 py-2">
           <a-avatar src="logo.png" />
         </div>
-        <a-menu v-model:selected-keys="selectedKeys" :items="items" mode="inline" @click="clickMenu" />
+
+        <SidebarMenu :items="menuItems" />
       </a-layout-sider>
       <a-layout-content class="bg-white dark:bg-neutral-900">
         <slot />
@@ -105,7 +75,7 @@ const footerStyle: CSSProperties = {
   max-width: var(--sider-width) !important;
   border-inline-end: 1px solid rgba(5, 5, 5, 0.06);
 }
-
+//
 .ant-layout-sider-trigger {
   width: var(--sider-width) !important;
 }
