@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import type { JsonEditor, JSONEditorPropsOptional, MenuItem } from 'vanilla-jsoneditor-cn'
+import type { Content, JsonEditor, JSONEditorPropsOptional, MenuItem } from 'vanilla-jsoneditor-cn'
 import { message } from 'ant-design-vue'
 import { createJSONEditor } from 'vanilla-jsoneditor-cn'
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useTabsStore } from '~/stores/tabs'
+import { useSidebarStore } from '~/stores/sidebar'
 // import { parse, stringify } from 'lossless-json'
+import type { MenuItem as SidebarMenuItem } from '~/stores/sidebar'
 
 interface Props {
-  modelValue: any
+  modelValue: Content
   options?: JSONEditorPropsOptional
   minHeight?: string
 }
@@ -16,9 +17,7 @@ const props = withDefaults(defineProps<Props>(), {
   minHeight: '200px',
 })
 
-const emit = defineEmits(['update:modelValue'])
-
-const tabsStore = useTabsStore()
+const sidebarStore = useSidebarStore()
 
 const editorContainer = ref<HTMLElement | null>(null)
 let editor: JsonEditor | null = null
@@ -29,7 +28,7 @@ const addButtonItem = {
   text: '新增',
   icon: { iconName: '', prefix: '', icon: [24, 24, [], '', 'M11 20a1 1 0 1 0 2 0v-7h7a1 1 0 1 0 0-2h-7V4a1 1 0 1 0-2 0v7H4a1 1 0 1 0 0 2h7z'] },
   onClick: () => {
-    tabsStore.addTab()
+    sidebarStore.addTab()
   },
   title: '新增一个标签页',
   className: 'jse-group-text-button',
@@ -73,15 +72,16 @@ const options: JSONEditorPropsOptional = {
   target: editorContainer.value,
   onChange: (content: Content, previousContent: Content, changeStatus: { contentErrors: ContentErrors | undefined, patchResult: JSONPatchResult | undefined }) => {
     console.log('onChange', 'content', content, 'previousContent', previousContent, 'changeStatus', changeStatus)
-    let jsonText = ''
-    if (content.json !== undefined) {
-      console.log('当前 tree 模式更新数据', 'content.json', content.json)
-      jsonText = JSON.stringify(content.json, null, 2)
-    } else if (content.text !== undefined) {
-      console.log('当前 text 模式更新数据', 'content.text', content.text)
-      jsonText = content.text
-    }
-    emit('update:modelValue', jsonText)
+    // let jsonText = ''
+    // if (content.json !== undefined) {
+    //   console.log('当前 tree 模式更新数据', 'content.json', content.json)
+    //   jsonText = JSON.stringify(content.json, null, 2)
+    // } else if (content.text !== undefined) {
+    //   console.log('当前 text 模式更新数据', 'content.text', content.text)
+    //   jsonText = content.text
+    // }
+    // emit('update:modelValue', jsonText)
+    sidebarStore.activeTab.vanilla = content
   },
   onRenderMenu: (menu: MenuItem[], context) => {
     // console.log('menu', menu, context)
@@ -137,12 +137,33 @@ onMounted(() => {
   nextTick(() => {
     initEditor()
     updateEditorHeight()
+    window.addEventListener('resize', updateEditorHeight)
     if (editor) {
       // 更新文本
       console.log('onMounted modelValue 更新', props.modelValue)
-      editor.set({ json: props.modelValue })
+      // 如果值都为空
+      if (!props.modelValue || !props.modelValue.json || !props.modelValue.text) {
+        console.log('vanilla 接收的值为空，设置 {}')
+        editor.set({ json: {} })
+        return
+      }
+      if (props.modelValue.json) {
+        editor.set({ json: props.modelValue })
+        console.log('vanilla 接收的值为 json')
+        return
+      }
+      if (props.modelValue.text) {
+        console.log('vanilla 接收的值为 text, 解析为 json 对象')
+        let jsonObject = {}
+        try {
+          jsonObject = JSON.parse(props.modelValue)
+          console.log('vanilla 解析为 json 对象', json)
+        } catch (error) {
+          console.error('vanilla 解析为 json 对象失败', error)
+        }
+        editor.set({ json: jsonObject })
+      }
     }
-    window.addEventListener('resize', updateEditorHeight)
   })
 })
 
@@ -152,11 +173,11 @@ onBeforeUnmount(() => {
   }
 })
 
-// watch(() => props.modelValue, (newValue) => {
-//   if (editor) {
-//     console.log('watch modelValue 更新', newValue)
-//   }
-// }, { deep: true })
+watch(() => sidebarStore.activeTab.vanilla, (newValue) => {
+  if (editor) {
+    editor.set(sidebarStore.activeTab.vanilla)
+  }
+}, { deep: true })
 </script>
 
 <template>
@@ -182,10 +203,9 @@ onBeforeUnmount(() => {
   // 菜单栏
   .jse-menu {
     background: none !important;
-    padding: 6px 16px 4px 16px !important;
+    padding: 2px 16px 2px 16px !important;
     @apply text-black dark:text-white !important;
     position: absolute;
-    top: -40px;
     border-bottom: 1px solid #e8e8e8;
     @apply dark:border-zinc-800;
 

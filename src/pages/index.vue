@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { message } from 'ant-design-vue'
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import MonacoJsonEditor from '~/components/MonacoJsonEditor.vue'
+import type { MenuItem } from '~/stores/sidebar'
 import { Editor, useSidebarStore } from '~/stores/sidebar'
 
 const sidebarStore = useSidebarStore()
@@ -11,6 +11,42 @@ const jsonEditorRefs: Ref<{ [key: number]: typeof JsonEditor | null }> = ref({})
 function updateEditorHand(editor: string) {
   sidebarStore.activeTab.editor = editor
 }
+
+function jsonTextUpdate(jsonText: string) {
+  console.log('jsonTextUpdate', jsonText)
+  sidebarStore.updateCurrentTabContent(jsonText)
+}
+
+watch(() => sidebarStore.activeTab.editor, (newValue) => {
+  console.log('watch editor change ', newValue, sidebarStore.activeTab)
+  const activeItem = sidebarStore.activeTab
+  if (newValue === Editor.Monaco) {
+    if (!activeItem.vanilla) {
+      return undefined
+    }
+    if (activeItem.vanilla && activeItem.vanilla.json) {
+      activeItem.content = JSON.stringify(activeItem.vanilla.json, null, 2)
+    }
+    if (activeItem.vanilla && activeItem.vanilla.text) {
+      activeItem.content = activeItem.vanilla.text
+      console.log('Vanilla 存在更新文本')
+    }
+  } else if (newValue === Editor.Vanilla) {
+    if (!activeItem.content) {
+      activeItem.vanilla = { json: {} }
+      return undefined
+    }
+    jsonEditorRefs.value[`jsonEditor${activeItem.id}`].validateContent()
+    try {
+      activeItem.vanilla = { json: JSON.parse(activeItem.content) }
+      console.log('jsonTextUpdate 解析成功', activeItem.vanilla)
+    } catch (e) {
+      console.log('jsonTextUpdate 解析失败', e)
+      activeItem.vanilla = { text: activeItem.content }
+    }
+  }
+  // TODO 需要覆盖
+})
 </script>
 
 <template>
@@ -28,7 +64,10 @@ function updateEditorHand(editor: string) {
         </div>
       </div>
       <div v-show="item.editor === Editor.Vanilla" class="c-vanilla">
-        Vanilla
+        <VanillaJsonEditor
+          :model-value="item.vanilla"
+          @update:model-value="jsonTextUpdate"
+        />
       </div>
     </div>
   </template>

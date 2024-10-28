@@ -1,3 +1,4 @@
+import type { Content } from 'vanilla-jsoneditor-cn'
 import { defineStore } from 'pinia'
 
 export interface MenuItem {
@@ -6,6 +7,7 @@ export interface MenuItem {
   editor: 'monaco' | 'vanilla'
   isPinned: boolean
   content?: string
+  vanilla?: Content
 }
 
 export enum Editor {
@@ -26,13 +28,13 @@ export const useSidebarStore = defineStore('sidebar', {
   },
   actions: {
     addTab(title: string = '', editor: Editor = Editor.Monaco) {
-      const id = `tab${this.nextId++}`
+      const id = `tab${++this.nextId}`
       title = title || `Tab${this.nextId}`
       this.menuItems.push({ id, title, editor, isPinned: false, content: '' })
       this.activeId = id
     },
     addTestTab() {
-      const id = `menuItem-${this.nextId++}`
+      const id = `menuItem-${++this.nextId}`
       this.menuItems.push({ id, title: 'Test Tab', editor: Editor.Monaco, isPinned: false, content: testJson })
       this.activeId = id
     },
@@ -66,6 +68,12 @@ export const useSidebarStore = defineStore('sidebar', {
       const menuItem = this.menuItems.find(t => t.id === id)
       if (menuItem) {
         menuItem.title = newTitle
+      }
+    },
+    updateCurrentMenuItem(item: MenuItem) {
+      const index = this.menuItems.findIndex(t => t.id === item.id)
+      if (index !== -1) {
+        this.menuItems.splice(index, 1, item)
       }
     },
     clearContent(id: string) {
