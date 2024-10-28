@@ -129,7 +129,7 @@ function clearContent() {
 </script>
 
 <template>
-  <a-flex justify="space-between" align="center" class="h-12">
+  <a-flex justify="space-between" align="center" class="h-9">
     <a-flex>
       <div class="dropdown-text dark:!text-white ml-2">
         <a-dropdown-button type="link" placement="bottom" class="check-btn" @click="copy">

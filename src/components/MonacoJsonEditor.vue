@@ -273,7 +273,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <MonacoHeader class="border-b mb-2" @format="headerFormatHandle" @validate="headerValidateContentHandle" />
+  <MonacoHeader class="border-b dark:border-b-neutral-800 mb-2" @format="headerFormatHandle" @validate="headerValidateContentHandle" />
   <div ref="editorContainer" class="h-full w-full" />
   <a-modal
     v-model:open="formatModelOpen"

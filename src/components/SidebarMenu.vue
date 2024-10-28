@@ -169,7 +169,7 @@ defineExpose({
         class="group relative pl-2 pr-1 py-2 transition-all duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-neutral-800"
         :class="{
           'pr-0': isNarrow,
-          'bg-neutral-200 dark:bg-neutral-800': sidebarStore.activeId === item.id,
+          'bg-gray-200 dark:bg-neutral-800': sidebarStore.activeId === item.id,
         }"
         @click="selectItem(item.id)"
       >
@@ -193,7 +193,7 @@ defineExpose({
             <span
               v-else
               :class="{ 'font-semibold': item.isPinned }"
-              class="block truncate"
+              class="block truncate select-none"
             >
               <span v-if="isNarrow">
                 <a-tooltip :title="item.title" placement="right" class="text-13">

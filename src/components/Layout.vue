@@ -7,7 +7,7 @@ const tabsStore = useTabsStore()
 
 const sidebarStore = useSidebarStore()
 
-const collapsed = ref<boolean>(false)
+const collapsed = ref<boolean>(true)
 
 onMounted(() => {
   // 设置 侧边栏宽度
@@ -50,7 +50,7 @@ const footerStyle: CSSProperties = {
         theme="light"
         @collapse="siderCollapseFunc"
       >
-        <div class="flex items-center justify-between px-3 pt-3 pb-2">
+        <div class="flex items-center justify-between px-3 pt-3 pb-2 select-none">
           <a-avatar src="logo.png" />
           <div v-show="!collapsed" class="flex justify-center rounded-lg px-2 py-1 hover:bg-gray-200 dark:hover:bg-neutral-800 cursor-pointer" @click="addItem">
             <Iconify class="text-xl" icon="mingcute:add-line" />

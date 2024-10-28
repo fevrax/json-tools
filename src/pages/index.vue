@@ -16,7 +16,7 @@ function updateEditorHand(editor: string) {
 <template>
   <template v-for="item in sidebarStore.menuItems" :key="item.id">
     <div v-show="item.id === sidebarStore.activeId">
-      <Header :editor="item.editor" @update:editor="updateEditorHand" class="border-b" />
+      <Header :editor="item.editor" class="border-b dark:border-b-neutral-800" @update:editor="updateEditorHand" />
       <div v-show="item.editor === Editor.Monaco" class="c-monaco">
         <div class="h-screen w-full">
           <MonacoJsonEditor

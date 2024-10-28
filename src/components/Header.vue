@@ -1,6 +1,5 @@
-
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { Editor } from '~/stores/sidebar'
 
 const props = defineProps<{
@@ -21,7 +20,7 @@ const editors = [
   { value: Editor.Vanilla, label: '高级' },
 ]
 
-const handleSwitch = (value: Editor) => {
+function handleSwitch(value: Editor) {
   if (value !== currentEditor.value) {
     currentEditor.value = value
   }
@@ -29,14 +28,14 @@ const handleSwitch = (value: Editor) => {
 </script>
 
 <template>
-  <div class="editor-switch-container">
+  <div class="editor-switch-container select-none">
     <div class="editor-switch">
       <button
         v-for="editor in editors"
         :key="editor.value"
-        @click="handleSwitch(editor.value)"
         class="editor-button"
         :class="{ 'editor-button-active': currentEditor === editor.value }"
+        @click="handleSwitch(editor.value)"
       >
         {{ editor.label }}
       </button>
@@ -47,19 +46,21 @@ const handleSwitch = (value: Editor) => {
 
 <style scoped lang="scss">
 .editor-switch-container {
-  @apply flex justify-between items-center py-2 px-3 bg-gray-100 dark:bg-gray-800;
+  @apply flex justify-between items-center py-1 px-3 bg-gray-100 dark:bg-neutral-900;
 }
 
 .editor-switch {
-  @apply relative inline-flex rounded-full bg-gray-200 dark:bg-gray-700 p-0.5;
+  @apply relative inline-flex rounded-full bg-gray-200 dark:bg-neutral-800 p-0.5;
 }
 
 .editor-button {
-  @apply relative z-10 px-3 py-1 text-xs font-medium rounded-full transition-all duration-200 ease-in-out outline-none focus:ring-0;
+  width: 55px;
+  font-size: 12px;
+  @apply relative z-10 px-2 py-1 font-medium rounded-full transition-all duration-200 ease-in-out outline-none focus:ring-0;
   @apply text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white active:bg-gray-300 dark:active:bg-gray-500;
 
   &-active {
-    @apply text-gray-800 dark:text-white bg-white dark:bg-gray-600 shadow;
+    @apply text-gray-800 dark:text-white bg-white dark:bg-neutral-700 shadow;
   }
 }
 </style>
