@@ -16,25 +16,24 @@ onMounted(() => {
   if (tabsStore.tabs.length === 0) {
     tabsStore.addTab('')
   }
-  for (let i = 0; i < 18; i++) {
-    sidebarStore.addTab()
+  // 启动默认初始化一个 tab
+  if (sidebarStore.menuItems.length === 0) {
+    sidebarStore.addTab('')
   }
 })
 
 function siderCollapseFunc(collapsed) {
   if (collapsed === false) {
-    document.documentElement.style.setProperty('--sider-width', '180px')
+    document.documentElement.style.setProperty('--sider-width', '150px')
   } else {
-    document.documentElement.style.setProperty('--sider-width', '58px')
+    document.documentElement.style.setProperty('--sider-width', '60px')
   }
 }
 
-function addItem() {
-  sidebarStore.addTab('')
-}
+const sidebarRef = ref(null)
 
-function selectItem(id) {
-  sidebarStore.activeId = id
+function addItem() {
+  sidebarRef.value.addNewMenuItem()
 }
 
 const footerStyle: CSSProperties = {
@@ -51,10 +50,13 @@ const footerStyle: CSSProperties = {
         theme="light"
         @collapse="siderCollapseFunc"
       >
-        <div class="avatar px-3 py-2">
+        <div class="flex items-center justify-between px-3 pt-3 pb-2">
           <a-avatar src="logo.png" />
+          <div v-show="!collapsed" class="flex justify-center rounded-lg px-2 py-1 hover:bg-gray-200 dark:hover:bg-neutral-800 cursor-pointer" @click="addItem">
+            <Iconify class="text-xl" icon="mingcute:add-line" />
+          </div>
         </div>
-        <SidebarMenu :items="sidebarStore.menuItems" :selected-item-id="sidebarStore.activeId" @add="addItem" @select="selectItem" />
+        <SidebarMenu ref="sidebarRef" class="mt-1" />
       </a-layout-sider>
       <a-layout-content class="bg-white dark:bg-neutral-900">
         <slot />
@@ -81,13 +83,13 @@ const footerStyle: CSSProperties = {
   max-width: var(--sider-width) !important;
   border-inline-end: 1px solid rgba(5, 5, 5, 0.06);
 }
-//
+
 .ant-layout-sider-trigger {
+  overflow-y: hidden;
   width: var(--sider-width) !important;
 }
 
 .ant-layout-sider-children {
-  overflow: hidden;
   padding-bottom: 48px !important;
 }
 

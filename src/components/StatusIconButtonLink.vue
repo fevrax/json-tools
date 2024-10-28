@@ -20,7 +20,7 @@ const textClass = computed(() => ({
       <span class="mr-1 check-icon pb-0.5">
         <StatusIcon :default-icon="icon" :status="status" />
       </span>
-      <span class="check-text" :class="[textClass]">{{ text }}</span>
+      <span v-if="text" class="check-text" :class="[textClass]">{{ text }}</span>
     </div>
   </a-button>
 </template>

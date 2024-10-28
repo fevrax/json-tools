@@ -1,10 +1,9 @@
 <script setup lang="ts">
+import { Icon } from '@iconify/vue'
 import { message } from 'ant-design-vue'
 import * as monaco from 'monaco-editor'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { isArrayOrObject, jsonParseError } from '~/utils/json'
-import {renderIconifyFontSizeH} from "~/composables/icon";
-import {Icon} from "@iconify/vue";
 
 const props = defineProps<{
   modelValue: string
@@ -125,6 +124,16 @@ function validateContent(): boolean {
   return true
 }
 
+// 格式化并验证 菜单按钮点击
+async function headerFormatHandle(callback: (success: boolean) => void) {
+  callback(formatValidate())
+}
+
+// 验证内容 菜单按钮点击
+async function headerValidateContentHandle(callback: (success: boolean) => void) {
+  callback(validateContent())
+}
+
 // 监听窗口大小变化
 function handleResize() {
   if (editor) {
@@ -158,8 +167,7 @@ async function formatModelByUnEscapeJson() {
     format()
 
     formatModelOpen.value = false
-  }
-  catch (error) {
+  } catch (error) {
     console.error(error)
     const jsonErr = jsonParseError(jsonStr)
     if (!jsonErr) {
@@ -169,12 +177,10 @@ async function formatModelByUnEscapeJson() {
     console.error(jsonErr)
     if (jsonErr.line > 0) {
       formatModelError.value = `${jsonErr?.message} 第 ${jsonErr?.line} 行, 第 ${jsonErr?.column} 列，可能存在错误。 \n ${error.message}`
-    }
-    else {
+    } else {
       formatModelError.value = error.message
     }
-  }
-  finally {
+  } finally {
     formatModelUnEscapeParseLoading.value = false
   }
 }
@@ -267,6 +273,7 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <MonacoHeader class="border-b mb-2" @format="headerFormatHandle" @validate="headerValidateContentHandle" />
   <div ref="editorContainer" class="h-full w-full" />
   <a-modal
     v-model:open="formatModelOpen"

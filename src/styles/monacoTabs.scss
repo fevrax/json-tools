@@ -1,4 +1,4 @@
-.monaco-tab {
+.monaco-editor {
   .custom-tabs {
     .ant-tabs-nav {
       margin-bottom: 6px;
@@ -92,19 +92,3 @@
 }
 
 
-// 输入框样式
-.editing-tab-input {
-  width: 120px;
-  margin-right: 4px;
-  @apply bg-white dark:bg-zinc-700 text-gray-800 dark:text-gray-200;
-}
-
-:root.dark {
-  .ant-tabs-content {
-    @apply bg-zinc-800 text-gray-200;
-  }
-
-  .ant-tabs-ink-bar {
-    @apply bg-blue-400;
-  }
-}

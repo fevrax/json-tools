@@ -10,28 +10,11 @@ import {
   PushpinOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import type { MenuItem } from '~/stores/sidebar'
+import { useSidebarStore } from '~/stores/sidebar'
 
-// 新增: 定义props
-const props = defineProps<{
-  items: MenuItem[]
-  selectedItemId: string
-}>()
-
-// 新增: 定义emit
-const emit = defineEmits<{
-  (e: 'update:items', items: MenuItem[]): void
-  (e: 'select', itemId: string): void
-  (e: 'add'): void
-}>()
-
-const menuItems = ref<MenuItem[]>(props.items)
-
-// 监听props变化
-watch(() => props.items, (newItems) => {
-  menuItems.value = newItems
-}, { deep: true })
+const sidebarStore = useSidebarStore()
 
 const editingItemId = ref<string | null>(null)
 const editingInput = ref<HTMLInputElement | null>(null)
@@ -41,9 +24,9 @@ const activeItemId = ref<string | null>(null)
 const isNarrow = computed(() => sidebarWidth.value < 60)
 
 const sortedMenuItems = computed(() => {
-  return [...menuItems.value].sort((a, b) => {
+  return [...sidebarStore.menuItems].sort((a, b) => {
     if (a.isPinned === b.isPinned) {
-      return menuItems.value.findIndex(item => item.id === a.id) - menuItems.value.findIndex(item => item.id === b.id)
+      return sidebarStore.menuItems.findIndex(item => item.id === a.id) - sidebarStore.menuItems.findIndex(item => item.id === b.id)
     }
     return a.isPinned ? -1 : 1
   })
@@ -58,31 +41,31 @@ function startEditing(item: MenuItem) {
 function stopEditing(item: MenuItem, newTitle: string) {
   if (newTitle && newTitle.trim()) {
     item.title = newTitle.trim()
-    updateMenuItems()
   }
   editingItemId.value = null
 }
 
 function togglePin(item: MenuItem) {
   item.isPinned = !item.isPinned
-  updateMenuItems()
 }
 
 function copyItem(item: MenuItem) {
-  const newItem: MenuItem = { ...item, id: Date.now().toString(), isPinned: false }
-  menuItems.value.push(newItem)
-  updateMenuItems()
-  message.success('Item copied successfully')
+  const id = `tab${sidebarStore.nextId++}`
+  const newItem: MenuItem = { ...item, id, isPinned: false }
+  newItem.title += '-copy'
+  sidebarStore.menuItems.push(newItem)
+  sidebarStore.activeId = id
+  scrollToSelectedItem()
+  message.success('复制成功')
 }
 
 function deleteItem(item: MenuItem) {
   Modal.confirm({
-    title: 'Are you sure you want to delete this item?',
-    content: 'This action cannot be undone.',
+    title: '您确定要删除此项吗？',
+    content: '该操作无法撤销。',
     onOk: () => {
-      menuItems.value = menuItems.value.filter(i => i.id !== item.id)
-      updateMenuItems()
-      message.success('Item deleted successfully')
+      sidebarStore.menuItems = sidebarStore.menuItems.filter(i => i.id !== item.id)
+      message.success('删除成功')
     },
   })
 }
@@ -112,20 +95,42 @@ function truncateTitle(title: string, maxLength: number = 5) {
 }
 
 function selectItem(itemId: string) {
-  emit('select', itemId)
+  sidebarStore.activeId = itemId
 }
 
-// 新增: 更新menuItems并触发emit
-function updateMenuItems() {
-  emit('update:items', menuItems.value)
-}
-
-// 新增: 添加新菜单项
 function addNewMenuItem() {
-  emit('add')
+  sidebarStore.addTab()
+  scrollToAddSelectedItem()
 }
 
-// Resize observer to update sidebar width
+// 滚动到选中的菜单项
+function scrollToSelectedItem() {
+  nextTick(() => {
+    const selectedElement = document.querySelector(`[data-item-id="${sidebarStore.activeId}"]`)
+    if (selectedElement) {
+      selectedElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    }
+  })
+}
+
+// 新增后滚动到选中项
+function scrollToAddSelectedItem() {
+  nextTick(() => {
+    if (isNarrow.value) {
+      const selectedElement = document.querySelector(`.addItemButton`)
+      if (selectedElement) {
+        selectedElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }
+    } else {
+      const selectedElement = document.querySelector(`[data-item-id="${sidebarStore.activeId}"]`)
+      if (selectedElement) {
+        selectedElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }
+    }
+  })
+}
+
+// 调整观察者的大小以更新侧边栏宽度
 let resizeObserver: ResizeObserver
 onMounted(() => {
   const sidebarElement = document.querySelector('.sidebar-menu')
@@ -137,6 +142,9 @@ onMounted(() => {
     })
     resizeObserver.observe(sidebarElement)
   }
+
+  // 初始滚动到选中项
+  scrollToSelectedItem()
 })
 
 onUnmounted(() => {
@@ -145,30 +153,23 @@ onUnmounted(() => {
   }
 })
 
-// 新增: 暴露方法给父组件
 defineExpose({
-  addMenuItem: (item: MenuItem) => {
-    menuItems.value.push(item)
-    updateMenuItems()
-  },
-  removeMenuItem: (itemId: string) => {
-    menuItems.value = menuItems.value.filter(item => item.id !== itemId)
-    updateMenuItems()
-  },
-  getSelectedItemId: () => selectedItemId.value,
+  addNewMenuItem,
+  getSelectedItemId: () => sidebarStore.activeId,
 })
 </script>
 
 <template>
-  <div class="sidebar-menu h-full overflow-y-auto transition-all duration-300 ease-in-out">
+  <div class="sidebar-menu h-full transition-all duration-300 ease-in-out">
     <ul>
       <li
         v-for="item in sortedMenuItems"
         :key="item.id"
-        class="group relative px-2 py-2 transition-all duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-neutral-800"
+        :data-item-id="item.id"
+        class="group relative pl-2 pr-1 py-2 transition-all duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-neutral-800"
         :class="{
           'pr-0': isNarrow,
-          'bg-neutral-200 dark:bg-neutral-800': selectedItemId === item.id,
+          'bg-neutral-200 dark:bg-neutral-800': sidebarStore.activeId === item.id,
         }"
         @click="selectItem(item.id)"
       >
@@ -205,7 +206,6 @@ defineExpose({
               </span>
             </span>
           </div>
-          <!-- 右侧操作按钮 -->
           <div v-if="!isNarrow && editingItemId !== item.id" class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <a-dropdown :trigger="['click']">
               <a class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
@@ -231,22 +231,24 @@ defineExpose({
           </div>
         </div>
       </li>
+      <li>
+        <a-button
+          v-if="isNarrow"
+          type="text"
+          class="addItemButton w-full mt-2 flex justify-center items-center hover:bg-gray-200 dark:hover:bg-neutral-800"
+          @click.stop="addNewMenuItem"
+        >
+          <PlusOutlined />
+        </a-button>
+      </li>
     </ul>
-    <!-- 新增: 添加新菜单项按钮 -->
-    <a-button
-      v-if="isNarrow"
-      type="text"
-      class="w-full mt-2 flex justify-center items-center hover:bg-gray-200 dark:hover:bg-neutral-800"
-      @click.stop="addNewMenuItem"
-    >
-      <PlusOutlined />
-    </a-button>
   </div>
 </template>
 
 <style scoped lang="scss">
 .sidebar-menu {
   width: 100%;
+  overflow-y: auto;
   li {
     &:hover {
       .ant-dropdown-trigger {
@@ -269,6 +271,14 @@ defineExpose({
     transition: all 0.2s ease-in-out;
   }
 }
+
+/* 隐藏默认滚动条 */
+@supports (scrollbar-width: none) {
+  .sidebar-menu {
+    scrollbar-width: none;
+  }
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;

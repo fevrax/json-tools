@@ -1,271 +1,61 @@
 <script setup lang="ts">
-import { DownOutlined } from '@ant-design/icons-vue'
-import { Icon } from '@iconify/vue'
-import { message } from 'ant-design-vue'
-import { useTabsStore } from '~/stores/tabs'
+import { CheckOutlined } from '@ant-design/icons-vue'
+import { Radio } from 'ant-design-vue'
+import { computed } from 'vue'
+import { Editor } from '~/stores/sidebar'
 
-const emit = defineEmits<{
-  (e: 'format', key: string, callback: (success: boolean) => void): void
-  (e: 'validate', key: string, callback: (success: boolean) => void): void
+const props = defineProps<{
+  editor: Editor
 }>()
 
-const tabsStore = useTabsStore()
+const emit = defineEmits<{
+  (e: 'update:editor', value: Editor): void
+}>()
 
-const addStatus = ref('default')
-function addTab() {
-  tabsStore.addTab('')
-  addStatus.value = 'success'
-  setTimeout(() => {
-    addStatus.value = 'default'
-  }, 2000)
-}
+const currentEditor = computed({
+  get: () => props.editor,
+  set: value => emit('update:editor', value),
+})
 
-enum IconStatus {
-  Default = 'default',
-  Success = 'success',
-  Loading = 'loading',
-  Error = 'error',
-}
-// 格式化
-const formatStatus = ref(IconStatus.Default)
-const validateStatus = ref(IconStatus.Default)
-
-// 复制
-const copyIcon = ref<IconStatus>(IconStatus.Default)
-const copyTextClass = computed(() => ({
-  'text-success': copyIcon.value === IconStatus.Success,
-  'text-error': copyIcon.value === IconStatus.Error,
-}))
-function copy() {
-  const tab = tabsStore.getActiveTab()
-  setTimeout(() => {
-    copyIcon.value = IconStatus.Default
-  }, 2500)
-  if (tab.content === '') {
-    copyIcon.value = IconStatus.Error
-    message.warn('暂无内容')
-    return
-  }
-  if (tab.content === '') {
-    copyIcon.value = IconStatus.Error
-  } else {
-    copyText(tabsStore.getActiveTab()?.content)
-    copyIcon.value = IconStatus.Success
-  }
-}
-
-// 复制到剪贴板
-function copyText(text: string) {
-  navigator.clipboard.writeText(text)
-}
-
-async function copySubMenuClickHandle(e) {
-  const tab = tabsStore.getActiveTab()
-  if (tab.content === '') {
-    message.warn('暂无内容')
-    return
-  }
-  if (tab.content === '') {
-    copyIcon.value = IconStatus.Error
-    return
-  }
-
-  // 验证内容是否正确，异步方法
-  ValidateJson()
-  let success = false
-  for (let i = 0; i < 100; i++) {
-    if (validateStatus.value === IconStatus.Loading) {
-      await sleep(100)
-    } else if (validateStatus.value === IconStatus.Success) {
-      success = true
-      break
-    } else if (validateStatus.value === IconStatus.Error) {
-      break
-    }
-  }
-  if (!success) {
-    message.warn('复制失败，内容格式错误，请检查！')
-    return
-  }
-  const content = tabsStore.getActiveTab().content
-  try {
-    switch (e.key) {
-      case 'compressedCopy':
-        copyText(JSON.stringify(JSON.parse(content)))
-        break
-      case 'escapeCopy':
-        copyText(escapeJson(tabsStore.getActiveTab()?.content))
-        break
-    }
-    copyIcon.value = IconStatus.Success
-  } catch {
-    copyIcon.value = IconStatus.Error
-  } finally {
-    setTimeout(() => {
-      copyIcon.value = IconStatus.Default
-      validateStatus.value = IconStatus.Default
-    }, 2500)
-  }
-}
-
-// 验证编辑器内容格式并格式化编辑器内容
-function format() {
-  formatStatus.value = IconStatus.Loading
-  emit('format', tabsStore.activeKey, (success) => {
-    formatStatus.value = success ? IconStatus.Success : IconStatus.Error
-    setTimeout(() => {
-      formatStatus.value = IconStatus.Default
-    }, 2500)
-  })
-}
-
-// 验证编辑器内容格式
-function ValidateJson() {
-  validateStatus.value = IconStatus.Loading
-  emit('validate', tabsStore.activeKey, (success) => {
-    validateStatus.value = success ? IconStatus.Success : IconStatus.Error
-    setTimeout(() => {
-      validateStatus.value = IconStatus.Default
-    }, 2500)
-  })
-}
-
-// 清空内容
-const clearContentStatus = ref(IconStatus.Default)
-function clearContent() {
-  tabsStore.clearContent(tabsStore.activeKey)
-  clearContentStatus.value = IconStatus.Success
-  setTimeout(() => {
-    clearContentStatus.value = IconStatus.Default
-  }, 2500)
-}
+const editors = [
+  { value: Editor.Monaco, label: '性能模式' },
+  { value: Editor.Vanilla, label: '高级模式' },
+]
 </script>
 
 <template>
-  <a-flex justify="space-between" align="center" class="h-5 mt-3">
-    <a-flex>
-      <div class="dropdown-text dark:!text-white ml-2">
-        <StatusIconButtonLink :icon="renderIconFontSize('mingcute:add-line', 17)" :status="addStatus" text="新增" @click="addTab" />
-      </div>
-      <div class="dropdown-text dark:!text-white ml-2">
-        <a-dropdown-button type="link" placement="bottom" class="check-btn" @click="copy">
-          <div class="flex items-center">
-            <span class="mr-1 check-icon pb-0.5">
-              <Icon v-if="copyIcon === 'default'" icon="si:copy-line" class="text-17" />
-              <Icon v-else-if="copyIcon === 'success'" icon="icon-park-solid:success" class="text-17" style="color: #52c41a;" />
-              <icon-park-solid-error v-else-if="copyIcon === 'error'" style="color: #f5222d;" />
-            </span>
-            <span class="check-text " :class="[copyTextClass]">复制</span>
-          </div>
-          <template #overlay>
-            <a-menu @click="copySubMenuClickHandle">
-              <a-menu-item key="compressedCopy">
-                <div class="flex items-center">
-                  <Icon icon="f7:rectangle-compress-vertical" class="text-17" />
-                  <span class="ml-1">压缩后复制</span>
-                </div>
-              </a-menu-item>
-              <a-menu-item key="escapeCopy">
-                <div class="flex items-center">
-                  <Icon icon="si:swap-horiz-line" class="text-17 " />
-                  <span class="ml-1">转义后复制</span>
-                </div>
-              </a-menu-item>
-            </a-menu>
-          </template>
-          <template #icon>
-            <div>
-              <DownOutlined />
-            </div>
-          </template>
-        </a-dropdown-button>
-      </div>
-      <div class="dropdown-text dark:!text-white ml-2">
-        <StatusIconButtonLink :icon="renderIconFontSize('mdi:magic', 17)" :status="formatStatus" text="格式化" @click="format" />
-      </div>
-      <div class="dropdown-text dark:!text-white">
-        <StatusIconButtonLink :icon="renderIconFontSize('mynaui:trash', 17)" :status="clearContentStatus" text="清空" @click="clearContent" />
-      </div>
-    </a-flex>
-    <a-flex class="mr-4">
-      <theme-toggle />
-    </a-flex>
-  </a-flex>
+  <div class="flex justify-between items-center py-3 px-4 bg-gray-50 dark:bg-gray-800 shadow-sm">
+    <Radio.Group v-model:value="currentEditor" button-style="solid" size="small" class="editor-switcher">
+      <Radio.Button v-for="editor in editors" :key="editor.value" :value="editor.value">
+        <span class="flex items-center space-x-1">
+          <CheckOutlined v-if="currentEditor === editor.value" class="text-xs" />
+          <span>{{ editor.label }}</span>
+        </span>
+      </Radio.Button>
+    </Radio.Group>
+    <theme-toggle />
+  </div>
 </template>
 
-<style lang="scss">
-.dropdown-text {
-  .ant-btn-link {
-    padding-right: 5px;
-    padding-left: 5px;
-    color: #333;
-    border-radius: 6px;
-    transition:
-      color 0.3s ease,
-      background-color 0.3s ease,
-      box-shadow 0.3s ease;
+<style scoped lang="scss">
+.editor-switcher {
+  @apply text-sm font-medium transition-all duration-200 ease-in-out;
+  @apply text-gray-600 dark:text-gray-300 bg-white dark:bg-gray-700;
+  @apply border-gray-200 dark:border-gray-600;
+  @apply hover:text-blue-500 dark:hover:text-blue-400;
+  @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-blue-400;
 
-    // 夜间模式
-    @apply dark:text-white;
+  &::before {
+    @apply bg-gray-200 dark:bg-gray-600;
   }
 
-  .ant-btn-link:hover {
-    color: #000;
-    background-color: rgb(232, 232, 232);
-    border-radius: 6px;
-    // 夜间模式
-    @apply dark:text-white;
-    @apply dark:bg-zinc-800;
-  }
+  &-checked {
+    @apply text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-900;
+    @apply border-blue-500 dark:border-blue-400;
 
-  .ant-dropdown-trigger {
-    width: 25px;
-  }
-
-  .check-btn {
-    .check-icon {
-      transition: all 0.3s ease;
-
-      .anticon {
-        transition: all 0.3s ease;
-      }
+    &::before {
+      @apply bg-blue-500 dark:bg-blue-400;
     }
-
-    .check-text {
-      transition: color 0.3s ease;
-
-      &.text-success {
-        color: #52c41a !important;
-      }
-
-      &.text-error {
-        color: #f5222d;
-      }
-    }
-
-    &:hover {
-      .check-text {
-        &.text-success {
-          color: #73d13d;
-        }
-
-        &.text-error {
-          color: #ff4d4f;
-        }
-      }
-    }
-  }
-
-  // 成功状态图标样式
-  .anticon-check {
-    color: #52c41a;
-    transform: scale(1.1);
-  }
-
-  // 错误状态图标样式
-  .anticon-close {
-    color: #f5222d;
-    transform: scale(1.1);
   }
 }
 </style>
