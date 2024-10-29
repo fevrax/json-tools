@@ -1,17 +1,8 @@
 # JSON Tools
 
-# 部署
+# 预览
+![6vyx6jacqr-20241029174433.png](https://minio.kl.do/default/files/6vyx6jacqr-20241029174433.png)
 
-## UTools 部署
+![qe26adau9n-20241029174515.png](https://minio.kl.do/default/files/qe26adau9n-20241029174515.png)
 
-修改 dist/index.html 文件，添加如下代码
-```javascript
-    var currentUrl = window.location.href;
-    var baseDir = currentUrl.substring(0, currentUrl .length - 'index.html'.length)
-```
-修改Worker路径为
-```javascript
-"editorWorkerService": baseDir+"/monacoeditorwork/editor.worker.bundle.js",
-"json": baseDir+"/monacoeditorwork/json.worker.bundle.js"
-```
-![3bb4yk585q-20241024173215.png](https://minio.kl.do/default/files/3bb4yk585q-20241024173215.png)
+![6uqi7m1sdr-20241029174528.png](https://minio.kl.do/default/files/6uqi7m1sdr-20241029174528.png)
