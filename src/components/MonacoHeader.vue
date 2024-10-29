@@ -178,6 +178,7 @@ function clearContent() {
 
 <style lang="scss">
 .dropdown-text {
+  @apply text-xs;
   .ant-btn-link {
     padding-right: 5px;
     padding-left: 5px;

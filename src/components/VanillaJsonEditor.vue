@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Content, JsonEditor, JSONEditorPropsOptional, MenuItem } from 'vanilla-jsoneditor-cn'
+import {Content, JsonEditor, JSONEditorPropsOptional, MenuItem, Mode} from 'vanilla-jsoneditor-cn'
 import { message } from 'ant-design-vue'
 import { createJSONEditor } from 'vanilla-jsoneditor-cn'
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
@@ -9,6 +9,7 @@ import type { MenuItem as SidebarMenuItem } from '~/stores/sidebar'
 
 interface Props {
   modelValue: Content
+  mode: string
   options?: JSONEditorPropsOptional
   minHeight?: string
 }
@@ -66,7 +67,7 @@ const clearButtonItem = {
 
 // 编辑器参数
 const options: JSONEditorPropsOptional = {
-  mode: 'tree',
+  mode: props.mode,
   // parser
   content: { json: props.modelValue ? props.modelValue : {} },
   target: editorContainer.value,
@@ -82,6 +83,9 @@ const options: JSONEditorPropsOptional = {
     // }
     // emit('update:modelValue', jsonText)
     sidebarStore.activeTab.vanilla = content
+  },
+  onChangeMode: (mode: Mode) => {
+    sidebarStore.activeTab.vanillaMode = mode
   },
   onRenderMenu: (menu: MenuItem[], context) => {
     // console.log('menu', menu, context)
@@ -139,25 +143,19 @@ onMounted(() => {
     updateEditorHeight()
     window.addEventListener('resize', updateEditorHeight)
     if (editor) {
-      // 更新文本
-      console.log('onMounted modelValue 更新', props.modelValue)
       // 如果值都为空
       if (!props.modelValue || !props.modelValue.json || !props.modelValue.text) {
-        console.log('vanilla 接收的值为空，设置 {}')
         editor.set({ json: {} })
         return
       }
       if (props.modelValue.json) {
         editor.set({ json: props.modelValue })
-        console.log('vanilla 接收的值为 json')
         return
       }
       if (props.modelValue.text) {
-        console.log('vanilla 接收的值为 text, 解析为 json 对象')
         let jsonObject = {}
         try {
           jsonObject = JSON.parse(props.modelValue)
-          console.log('vanilla 解析为 json 对象', json)
         } catch (error) {
           console.error('vanilla 解析为 json 对象失败', error)
         }
@@ -173,9 +171,14 @@ onBeforeUnmount(() => {
   }
 })
 
+// 监听 activeTab.vanilla
 watch(() => sidebarStore.activeTab.vanilla, (newValue) => {
   if (editor) {
+    const options: JSONEditorPropsOptional = {
+      mode: props.mode,
+    }
     editor.set(sidebarStore.activeTab.vanilla)
+    editor.updateProps(options)
   }
 }, { deep: true })
 </script>

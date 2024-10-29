@@ -3,6 +3,7 @@
 # 部署
 
 ## UTools 部署
+
 修改 dist/index.html 文件，添加如下代码
 ```javascript
     var currentUrl = window.location.href;

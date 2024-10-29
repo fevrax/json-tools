@@ -8,11 +8,11 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:editor', value: Editor): void
+  (e: 'switch', value: Editor)
 }>()
 
 const currentEditor = computed({
   get: () => props.editor,
-  set: value => emit('update:editor', value),
 })
 
 const editors = [
@@ -21,9 +21,7 @@ const editors = [
 ]
 
 function handleSwitch(value: Editor) {
-  if (value !== currentEditor.value) {
-    currentEditor.value = value
-  }
+  emit('switch', value)
 }
 </script>
 
@@ -46,7 +44,7 @@ function handleSwitch(value: Editor) {
 
 <style scoped lang="scss">
 .editor-switch-container {
-  @apply flex justify-between items-center py-1 px-3 bg-gray-100 dark:bg-neutral-900;
+  @apply flex justify-between items-center py-1 px-3 bg-gray-100 dark:bg-neutral-900 text-xs;
 }
 
 .editor-switch {

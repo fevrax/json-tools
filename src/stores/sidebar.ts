@@ -8,11 +8,16 @@ export interface MenuItem {
   isPinned: boolean
   content?: string
   vanilla?: Content
+  vanillaMode: VanillaMode
 }
 
 export enum Editor {
   Monaco = 'monaco',
   Vanilla = 'vanilla',
+}
+export enum VanillaMode {
+  Text = 'text',
+  Tree = 'tree',
 }
 
 export const useSidebarStore = defineStore('sidebar', {
@@ -30,12 +35,12 @@ export const useSidebarStore = defineStore('sidebar', {
     addTab(title: string = '', editor: Editor = Editor.Monaco) {
       const id = `tab${++this.nextId}`
       title = title || `Tab${this.nextId}`
-      this.menuItems.push({ id, title, editor, isPinned: false, content: '' })
+      this.menuItems.push({ id, title, editor, isPinned: false, content: '', editor: Editor.Monaco, vanillaMode: VanillaMode.Text })
       this.activeId = id
     },
     addTestTab() {
       const id = `menuItem-${++this.nextId}`
-      this.menuItems.push({ id, title: 'Test Tab', editor: Editor.Monaco, isPinned: false, content: testJson })
+      this.menuItems.push({ id, title: 'Test Tab', editor: Editor.Monaco, isPinned: false, content: testJson, editor: Editor.Monaco, vanillaMode: VanillaMode.Text })
       this.activeId = id
     },
     updateTabContent(id: string, content: string) {
@@ -120,6 +125,36 @@ export const useSidebarStore = defineStore('sidebar', {
       const menuItem = this.menuItems.find(t => t.id === id)
       if (menuItem) {
         menuItem.editor = editor
+      }
+    },
+    // Vanilla 转换为 json 文本
+    vanilla2JsonContent() {
+      if (!this.activeTab.vanilla) {
+        return undefined
+      }
+      if (!this.activeTab.vanilla) {
+        return undefined
+      }
+      if (this.activeTab.vanillaMode === VanillaMode.Tree && this.activeTab.vanilla.json) {
+        this.activeTab.content = JSON.stringify(this.activeTab.vanilla.json, null, 2)
+      }
+      if (this.activeTab.vanillaMode === VanillaMode.Text) {
+        this.activeTab.content = this.activeTab.vanilla.text ? this.activeTab.vanilla.text : ''
+      }
+    },
+    jsonContent2VanillaContent() {
+      if (!this.activeTab.content) {
+        this.activeTab.vanilla = { json: {} }
+        this.activeTab.vanillaMode = VanillaMode.Text
+        return
+      }
+      try {
+        this.activeTab.vanilla = { json: JSON.parse(this.activeTab.content) }
+        this.activeTab.vanillaMode = VanillaMode.Tree
+      } catch (e) {
+        console.log('jsonTextUpdate 解析失败', e)
+        this.activeTab.vanillaMode = VanillaMode.Text
+        this.activeTab.vanilla = { text: this.activeTab.content }
       }
     },
   },
