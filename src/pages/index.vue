@@ -6,7 +6,8 @@ import { Editor, useSidebarStore } from '~/stores/sidebar'
 
 const sidebarStore = useSidebarStore()
 
-const jsonEditorRefs: Ref<{ [key: number]: typeof JsonEditor | null }> = ref({})
+const monacoRefs: Ref<{ [key: number]: typeof JsonEditor | null }> = ref({})
+const vanillaRefs: Ref = ref([])
 
 function switchEditor(editor: string) {
   console.log('switchEditor editor ', editor, sidebarStore.activeTab)
@@ -15,6 +16,8 @@ function switchEditor(editor: string) {
     sidebarStore.activeTab.editor = Editor.Monaco
   } else if (editor === Editor.Vanilla) {
     sidebarStore.jsonContent2VanillaContent()
+    vanillaRefs.value[`vanilla${sidebarStore.activeId}`].updateEditorContentAndMode()
+    console.log(vanillaRefs)
     sidebarStore.activeTab.editor = Editor.Vanilla
     return undefined
   }
@@ -33,7 +36,7 @@ function jsonTextUpdate(jsonText: string) {
       <div v-show="item.editor === Editor.Monaco" class="c-monaco">
         <div class="h-screen w-full">
           <MonacoJsonEditor
-            :ref="(el) => { if (el) jsonEditorRefs[`jsonEditor${item.id}`] = el }"
+            :ref="(el) => { if (el) monacoRefs[`jsonEditor${item.id}`] = el }"
             v-model="item.content"
             language="json"
             :theme="isDark ? 'vs-dark' : 'vs-light'"
@@ -42,6 +45,7 @@ function jsonTextUpdate(jsonText: string) {
       </div>
       <div v-show="item.editor === Editor.Vanilla" class="c-vanilla">
         <VanillaJsonEditor
+          :ref="(el) => { if (el) vanillaRefs[`vanilla${item.id}`] = el }"
           :model-value="item.vanilla"
           :mode="item.vanillaMode"
           @update:model-value="jsonTextUpdate"

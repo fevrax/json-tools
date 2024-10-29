@@ -97,6 +97,10 @@ async function copySubMenuClickHandle(e) {
 
 // 验证编辑器内容格式并格式化编辑器内容
 function format() {
+  if (sidebarStore.activeTab.content === '') {
+    message.warn('暂无内容')
+    return
+  }
   formatStatus.value = IconStatus.Loading
   emit('format', (success) => {
     formatStatus.value = success ? IconStatus.Success : IconStatus.Error

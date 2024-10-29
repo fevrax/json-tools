@@ -1,11 +1,19 @@
 <script setup lang="ts">
-import {Content, JsonEditor, JSONEditorPropsOptional, MenuItem, Mode} from 'vanilla-jsoneditor-cn'
+import type { Content, JsonEditor, JSONEditorPropsOptional, MenuItem, Mode } from 'vanilla-jsoneditor-cn'
 import { message } from 'ant-design-vue'
 import { createJSONEditor } from 'vanilla-jsoneditor-cn'
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useSidebarStore } from '~/stores/sidebar'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useSidebarStore, VanillaMode } from '~/stores/sidebar'
+
+const props = withDefaults(defineProps<Props>(), {
+  minHeight: '200px',
+})
+
 // import { parse, stringify } from 'lossless-json'
-import type { MenuItem as SidebarMenuItem } from '~/stores/sidebar'
+
+defineExpose({
+  updateEditorContentAndMode,
+})
 
 interface Props {
   modelValue: Content
@@ -14,26 +22,12 @@ interface Props {
   minHeight?: string
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  minHeight: '200px',
-})
-
 const sidebarStore = useSidebarStore()
 
 const editorContainer = ref<HTMLElement | null>(null)
 let editor: JsonEditor | null = null
 
 const separatorItem = { type: 'separator' } // 分隔符
-const addButtonItem = {
-  type: 'button',
-  text: '新增',
-  icon: { iconName: '', prefix: '', icon: [24, 24, [], '', 'M11 20a1 1 0 1 0 2 0v-7h7a1 1 0 1 0 0-2h-7V4a1 1 0 1 0-2 0v7H4a1 1 0 1 0 0 2h7z'] },
-  onClick: () => {
-    sidebarStore.addTab()
-  },
-  title: '新增一个标签页',
-  className: 'jse-group-text-button',
-}
 const copyButtonItem = {
   type: 'button',
   text: '复制',
@@ -41,15 +35,25 @@ const copyButtonItem = {
   onClick: () => {
     const content = editor.get()
     if (!content) {
+      message.error('复制失败, 获取编辑器内容失败')
+      return undefined
+    }
+    let copyText
+    if (content.json) {
+      copyText = JSON.stringify(content.json, null, 2)
+    } else if (content.text) {
+      copyText = content.text
+    } else {
       message.error('复制失败')
       return undefined
     }
-    if (content.json) {
-      const text = JSON.stringify(content.json, null, 2)
-      navigator.clipboard.writeText(text).then(() => {
-        message.success('复制成功')
-      })
+    if (!copyText) {
+      message.warn('复制失败, 暂无内容')
+      return undefined
     }
+    navigator.clipboard.writeText(copyText).then(() => {
+      message.success('复制成功')
+    })
   },
   title: '复制当前全部内容',
   className: 'jse-group-text-button',
@@ -59,7 +63,11 @@ const clearButtonItem = {
   text: '清空',
   icon: { iconName: '', prefix: '', icon: [24, 24, [], '', 'M15 2H9c-1.103 0-2 .897-2 2v2H3v2h2v12c0 1.103.897 2 2 2h10c1.103 0 2-.897 2-2V8h2V6h-4V4c0-1.103-.897-2-2-2M9 4h6v2H9zm8 16H7V8h10z'] },
   onClick: () => {
-    editor?.set({ json: {}, text: '' })
+    if (sidebarStore.activeTab.vanillaMode === VanillaMode.Tree) {
+      editor?.set({ json: {} })
+    } else if (sidebarStore.activeTab.vanillaMode === VanillaMode.Text) {
+      editor.set({ text: '' })
+    }
   },
   title: '清空当前内容',
   className: 'jse-group-text-button',
@@ -92,9 +100,8 @@ const options: JSONEditorPropsOptional = {
     menu.splice(2, 1); // 删除表格模式
     [menu[0], menu[1]] = [menu[1], menu[0]] // 第一个为树形模式，第二个为文本模式
     menu.splice(2, 0, separatorItem)
-    menu.splice(3, 0, addButtonItem)
-    menu.splice(4, 0, copyButtonItem)
-    menu.splice(5, 0, clearButtonItem)
+    menu.splice(3, 0, copyButtonItem)
+    menu.splice(4, 0, clearButtonItem)
 
     for (let i = 0; i < menu.length; i++) {
       if (menu[i].title?.includes('格式化JSON')) {
@@ -114,7 +121,7 @@ const options: JSONEditorPropsOptional = {
     return menu
   },
   onError(err: Error) {
-    console.error('Error in JSONEditor:', err)
+    console.error('error in VanillaEditor:', err)
   },
 }
 
@@ -134,6 +141,16 @@ function updateEditorHeight() {
     const newHeight = Math.max(Number.parseInt(props.minHeight), windowHeight - containerRect.top - 20 - 30)
     editorContainer.value.style.height = `${newHeight}px`
     editor?.refresh()
+  }
+}
+
+function updateEditorContentAndMode() {
+  if (editor) {
+    const options: JSONEditorPropsOptional = {
+      mode: props.mode,
+    }
+    editor.set(sidebarStore.activeTab.vanilla)
+    editor.updateProps(options)
   }
 }
 
@@ -170,17 +187,6 @@ onBeforeUnmount(() => {
     editor.destroy()
   }
 })
-
-// 监听 activeTab.vanilla
-watch(() => sidebarStore.activeTab.vanilla, (newValue) => {
-  if (editor) {
-    const options: JSONEditorPropsOptional = {
-      mode: props.mode,
-    }
-    editor.set(sidebarStore.activeTab.vanilla)
-    editor.updateProps(options)
-  }
-}, { deep: true })
 </script>
 
 <template>

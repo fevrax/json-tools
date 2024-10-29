@@ -135,10 +135,9 @@ export const useSidebarStore = defineStore('sidebar', {
       if (!this.activeTab.vanilla) {
         return undefined
       }
-      if (this.activeTab.vanillaMode === VanillaMode.Tree && this.activeTab.vanilla.json) {
-        this.activeTab.content = JSON.stringify(this.activeTab.vanilla.json, null, 2)
-      }
-      if (this.activeTab.vanillaMode === VanillaMode.Text) {
+      if (this.activeTab.vanilla.json) {
+        this.activeTab.content = JSON.stringify(this.activeTab.vanilla.json, null, 4)
+      } else if (this.activeTab.vanilla.text) {
         this.activeTab.content = this.activeTab.vanilla.text ? this.activeTab.vanilla.text : ''
       }
     },
