@@ -32,15 +32,15 @@ export const useSidebarStore = defineStore('sidebar', {
     },
   },
   actions: {
-    addTab(title: string = '', editor: Editor = Editor.Monaco) {
+    addTab(title: string = '') {
       const id = `tab${++this.nextId}`
       title = title || `Tab${this.nextId}`
-      this.menuItems.push({ id, title, editor, isPinned: false, content: '', editor: Editor.Monaco, vanillaMode: VanillaMode.Text })
+      this.menuItems.push({ id, title, isPinned: false, content: '', editor: Editor.Monaco, vanillaMode: VanillaMode.Text })
       this.activeId = id
     },
     addTestTab() {
       const id = `menuItem-${++this.nextId}`
-      this.menuItems.push({ id, title: 'Test Tab', editor: Editor.Monaco, isPinned: false, content: testJson, editor: Editor.Monaco, vanillaMode: VanillaMode.Text })
+      this.menuItems.push({ id, title: 'Test Tab', isPinned: false, content: testJson, editor: Editor.Monaco, vanillaMode: VanillaMode.Text })
       this.activeId = id
     },
     updateTabContent(id: string, content: string) {

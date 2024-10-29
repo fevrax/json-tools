@@ -212,6 +212,7 @@ onBeforeUnmount(() => {
   // 菜单栏
   .jse-menu {
     background: none !important;
+    @apply dark:bg-neutral-900 !important;
     padding: 2px 16px 2px 16px !important;
     @apply text-black dark:text-white !important;
     position: absolute;

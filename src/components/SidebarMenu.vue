@@ -64,7 +64,7 @@ function deleteItem(item: MenuItem) {
     title: '您确定要删除此项吗？',
     content: '该操作无法撤销。',
     onOk: () => {
-      sidebarStore.menuItems = sidebarStore.menuItems.filter(i => i.id !== item.id)
+      sidebarStore.delTab(item.id)
       message.success('删除成功')
     },
   })
