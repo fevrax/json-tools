@@ -29,6 +29,7 @@ const formatModelError = ref('') // 二次转换后失败
 
 // 编辑器默认字体大小
 const fontSize = ref(props.fontSize || '14')
+
 // 编辑器容器
 const editorContainer = ref<HTMLElement | null>(null)
 const editorHeight = ref('100%')
@@ -87,7 +88,8 @@ function createEditor() {
 // 调整编辑器高度
 function adjustEditorHeight() {
   if (editorContainer.value) {
-    const containerHeight = window.innerHeight - 37 - 36 - 10
+    const containerRect = editorContainer.value.getBoundingClientRect()
+    const containerHeight = window.innerHeight - containerRect.top - 2
     editorHeight.value = `${containerHeight}px`
     if (editor) {
       editor.layout()

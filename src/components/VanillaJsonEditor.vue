@@ -6,7 +6,6 @@ import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useSidebarStore, VanillaMode } from '~/stores/sidebar'
 
 const props = withDefaults(defineProps<Props>(), {
-  minHeight: '200px',
 })
 
 // import { parse, stringify } from 'lossless-json'
@@ -18,13 +17,13 @@ defineExpose({
 interface Props {
   modelValue: Content
   options?: JSONEditorPropsOptional
-  minHeight?: string
 }
 
 const sidebarStore = useSidebarStore()
 
 const editorContainer = ref<HTMLElement | null>(null)
 let editor: JsonEditor | null = null
+const editorHeight = ref('600px')
 
 const separatorItem = { type: 'separator' } // 分隔符
 const copyButtonItem = {
@@ -133,13 +132,20 @@ function initEditor() {
   }
 }
 
-function updateEditorHeight() {
+async function updateEditorHeight() {
   if (editorContainer.value) {
     const windowHeight = window.innerHeight
-    const containerRect = editorContainer.value.getBoundingClientRect()
-    const newHeight = Math.max(Number.parseInt(props.minHeight), windowHeight - containerRect.top)
-    editorContainer.value.style.height = `${newHeight}px`
-    editor?.refresh()
+    for (let i = 0; i < 200; i++) {
+      // 这里编辑器可能未初始化，所以需要多次尝试
+      const containerRect = editorContainer.value.getBoundingClientRect()
+      if (containerRect.height > 0) {
+        const newHeight = windowHeight - containerRect.top
+        editorHeight.value = `${newHeight}px`
+        console.log('updateEditorHeight', 'newHeight', newHeight, i)
+        break
+      }
+      await sleep(50)
+    }
   }
 }
 
@@ -189,7 +195,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="editorContainer" class="json-editor" :class="{ 'jse-theme-dark': isDark }" />
+  <div ref="editorContainer" class="json-editor" :class="{ 'jse-theme-dark': isDark }" :style="{ height: editorHeight }" />
 </template>
 
 <style lang="scss">
@@ -201,7 +207,7 @@ onBeforeUnmount(() => {
 
 .json-editor {
   flex: 1;
-  min-height: v-bind('props.minHeight');
+  //min-height: v-bind('editorHeight.value');
   @apply dark:bg-zinc-900 !important;
 
   .jse-contents {

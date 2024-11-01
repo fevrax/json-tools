@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import MonacoJsonEditor from '~/components/MonacoJsonEditor.vue'
-import type { MenuItem } from '~/stores/sidebar'
 import { Editor, useSidebarStore } from '~/stores/sidebar'
 
 const sidebarStore = useSidebarStore()
