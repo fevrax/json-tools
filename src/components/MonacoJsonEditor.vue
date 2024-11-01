@@ -31,6 +31,7 @@ const formatModelError = ref('') // 二次转换后失败
 const fontSize = ref(props.fontSize || '14')
 // 编辑器容器
 const editorContainer = ref<HTMLElement | null>(null)
+const editorHeight = ref('100%')
 
 // 编辑器对象
 let editor: monaco.editor.IStandaloneCodeEditor | null = null
@@ -78,6 +79,19 @@ function createEditor() {
 
     // 添加窗口大小变化的监听
     window.addEventListener('resize', handleResize)
+    // 初始调整大小
+    adjustEditorHeight()
+  }
+}
+
+// 调整编辑器高度
+function adjustEditorHeight() {
+  if (editorContainer.value) {
+    const containerHeight = window.innerHeight - 37 - 36 - 10
+    editorHeight.value = `${containerHeight}px`
+    if (editor) {
+      editor.layout()
+    }
   }
 }
 
@@ -138,7 +152,7 @@ async function headerValidateContentHandle(callback: (success: boolean) => void)
 function handleResize() {
   if (editor) {
     // 更新布局
-    editor.layout()
+    adjustEditorHeight()
   }
 }
 
@@ -261,6 +275,12 @@ watch(() => props.fontSize, (newValue) => {
 
 onMounted(() => {
   createEditor()
+  const resizeObserver = new ResizeObserver(() => {
+    adjustEditorHeight()
+  })
+  if (editorContainer.value) {
+    resizeObserver.observe(editorContainer.value)
+  }
 })
 
 onUnmounted(() => {
@@ -268,13 +288,14 @@ onUnmounted(() => {
   if (editor) {
     editor.dispose()
   }
+  window.removeEventListener('resize', handleResize)
 })
 // endregion
 </script>
 
 <template>
   <MonacoHeader class="border-b dark:border-b-neutral-800 mb-2" @format="headerFormatHandle" @validate="headerValidateContentHandle" />
-  <div ref="editorContainer" class="h-full w-full" />
+  <div ref="editorContainer" class="w-full" :style="{ height: editorHeight }" />
   <a-modal
     v-model:open="formatModelOpen"
     :title="parseJsonError.message"

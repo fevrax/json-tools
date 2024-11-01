@@ -17,7 +17,6 @@ function switchEditor(editor: string) {
   } else if (editor === Editor.Vanilla) {
     sidebarStore.jsonContent2VanillaContent()
     vanillaRefs.value[`vanilla${sidebarStore.activeId}`].updateEditorContentAndMode()
-    console.log(vanillaRefs)
     sidebarStore.activeTab.editor = Editor.Vanilla
     return undefined
   }

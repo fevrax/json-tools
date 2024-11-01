@@ -17,7 +17,6 @@ defineExpose({
 
 interface Props {
   modelValue: Content
-  mode: string
   options?: JSONEditorPropsOptional
   minHeight?: string
 }
@@ -75,7 +74,7 @@ const clearButtonItem = {
 
 // 编辑器参数
 const options: JSONEditorPropsOptional = {
-  mode: props.mode,
+  mode: sidebarStore.activeTab.vanillaMode,
   // parser
   content: { json: props.modelValue ? props.modelValue : {} },
   target: editorContainer.value,
@@ -138,7 +137,7 @@ function updateEditorHeight() {
   if (editorContainer.value) {
     const windowHeight = window.innerHeight
     const containerRect = editorContainer.value.getBoundingClientRect()
-    const newHeight = Math.max(Number.parseInt(props.minHeight), windowHeight - containerRect.top - 20 - 30)
+    const newHeight = Math.max(Number.parseInt(props.minHeight), windowHeight - containerRect.top)
     editorContainer.value.style.height = `${newHeight}px`
     editor?.refresh()
   }
@@ -147,7 +146,7 @@ function updateEditorHeight() {
 function updateEditorContentAndMode() {
   if (editor) {
     const options: JSONEditorPropsOptional = {
-      mode: props.mode,
+      mode: sidebarStore.activeTab.vanillaMode,
     }
     editor.set(sidebarStore.activeTab.vanilla)
     editor.updateProps(options)
