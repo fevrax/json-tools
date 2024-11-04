@@ -20,6 +20,15 @@ onMounted(() => {
   if (sidebarStore.menuItems.length === 0) {
     sidebarStore.addTab('')
   }
+  console.log(11111111, window.utools)
+  if (window.utools) {
+    window.utools.onPluginEnter(({ code, type, payload, option }) => {
+      if (type === 'regex') {
+        // 匹配内容则写入到编辑器
+        sidebarStore.activeTab.content = payload
+      }
+    })
+  }
 })
 
 function siderCollapseFunc(collapsed) {
