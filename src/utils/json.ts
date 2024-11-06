@@ -161,3 +161,20 @@ function getErrorInfo(error: Error, jsonString: string, result: Partial<JsonErro
 export function isArrayOrObject(value: unknown): boolean {
   return Array.isArray(value) || (typeof value === 'object' && value !== null)
 }
+
+export function sortJson(obj: Record<object>, order: 'asc' | 'desc' = 'asc') {
+  const sortedKeys = Object.keys(obj).sort((a, b) => {
+    if (order === 'asc') {
+      return a.localeCompare(b)
+    } else {
+      return b.localeCompare(a)
+    }
+  })
+
+  const sortedObj: Record<string, any> = {}
+  sortedKeys.forEach((key) => {
+    sortedObj[key] = obj[key]
+  })
+
+  return JSON.stringify(sortedObj, null, 4)
+}

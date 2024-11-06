@@ -130,6 +130,34 @@ function clearContent() {
     clearContentStatus.value = IconStatus.Default
   }, 2500)
 }
+
+const sortIcon = ref<IconStatus>(IconStatus.Default)
+const sortClass = computed(() => ({
+  'text-success': sortIcon.value === IconStatus.Success,
+  'text-error': sortIcon.value === IconStatus.Error,
+}))
+
+// 字段排序
+function fieldSortHandleMenuClick(e) {
+  sortIcon.value = IconStatus.Loading
+  setTimeout(() => {
+    sortIcon.value = IconStatus.Default
+  }, 2500)
+  try {
+    const content = sidebarStore.activeTab.content
+    const jsonObj = JSON.parse(content)
+    if (e.key === 'asc') {
+      sidebarStore.activeTab.content = sortJson(jsonObj, 'asc')
+    } else if (e.key === 'desc') {
+      sidebarStore.activeTab.content = sortJson(jsonObj, 'desc')
+    }
+    message.success('字段排序成功')
+  } catch (e) {
+    ValidateJson()
+    sortIcon.value = IconStatus.Error
+    console.error(e)
+  }
+}
 </script>
 
 <template>
@@ -155,7 +183,7 @@ function clearContent() {
               </a-menu-item>
               <a-menu-item key="escapeCopy">
                 <div class="flex items-center">
-                  <Icon icon="si:swap-horiz-line" class="text-17 " />
+                  <Icon icon="si:swap-horiz-line" class="text-17" />
                   <span class="ml-1">转义后复制</span>
                 </div>
               </a-menu-item>
@@ -168,20 +196,52 @@ function clearContent() {
           </template>
         </a-dropdown-button>
       </div>
-      <div class="dropdown-text dark:!text-white ml-2">
+      <div class="dropdown-text dark:!text-white">
         <StatusIconButtonLink :icon="renderIconFontSize('mdi:magic', 17)" :status="formatStatus" text="格式化" @click="format" />
       </div>
       <div class="dropdown-text dark:!text-white">
         <StatusIconButtonLink :icon="renderIconFontSize('mynaui:trash', 17)" :status="clearContentStatus" text="清空" @click="clearContent" />
       </div>
+      <div class="dropdown-text dark:!text-white">
+        <a-dropdown>
+          <template #overlay>
+            <a-menu @click="fieldSortHandleMenuClick">
+              <a-menu-item key="asc">
+                <div class="flex items-center">
+                  <Icon icon="fluent:text-sort-ascending-20-filled" class="text-17" />
+                  <span class="ml-1">字段升序</span>
+                </div>
+              </a-menu-item>
+              <a-menu-item key="desc">
+                <div class="flex items-center">
+                  <Icon icon="fluent:text-sort-descending-20-filled" class="text-17" />
+                  <span class="ml-1">字段降序</span>
+                </div>
+              </a-menu-item>
+            </a-menu>
+          </template>
+          <div class="flex items-center !w-auto px-2">
+            <span class="mr-1 check-icon pb-0.5">
+              <Icon v-if="sortIcon === 'default'" icon="mi:sort" class="text-17" />
+              <Icon v-else-if="sortIcon === 'success'" icon="icon-park-solid:success" class="text-17" style="color: #52c41a;" />
+              <icon-park-solid-error v-else-if="sortIcon === 'error'" style="color: #f5222d;" />
+            </span>
+            <span class="check-text " :class="[sortClass]">字段排序</span>
+          </div>
+        </a-dropdown>
+      </div>
     </a-flex>
-    <a-flex class="mr-4">
-    </a-flex>
+    <a-flex class="mr-4" />
   </a-flex>
 </template>
 
 <style lang="scss">
 .dropdown-text {
+  width: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 4px;
   @apply text-xs;
   .ant-btn-link {
     padding-right: 5px;
