@@ -12,6 +12,7 @@ const props = withDefaults(defineProps<Props>(), {
 
 defineExpose({
   updateEditorContentAndMode,
+  updateEditorHeight,
 })
 
 interface Props {
@@ -141,7 +142,6 @@ async function updateEditorHeight() {
       if (containerRect.height > 0) {
         const newHeight = windowHeight - containerRect.top
         editorHeight.value = `${newHeight}px`
-        console.log('updateEditorHeight', 'newHeight', newHeight, i)
         break
       }
       await sleep(50)
@@ -162,8 +162,11 @@ function updateEditorContentAndMode() {
 onMounted(() => {
   nextTick(() => {
     initEditor()
-    updateEditorHeight()
     window.addEventListener('resize', updateEditorHeight)
+    updateEditorHeight()
+    setTimeout(() => {
+      updateEditorHeight()
+    }, 1200)
     if (editor) {
       // 如果值都为空
       if (!props.modelValue || !props.modelValue.json || !props.modelValue.text) {

@@ -9,20 +9,19 @@ const monacoRefs: Ref<{ [key: number]: typeof JsonEditor | null }> = ref({})
 const vanillaRefs: Ref = ref([])
 
 function switchEditor(editor: string) {
-  console.log('switchEditor editor ', editor, sidebarStore.activeTab)
   if (editor === Editor.Monaco) {
     sidebarStore.vanilla2JsonContent()
     sidebarStore.activeTab.editor = Editor.Monaco
   } else if (editor === Editor.Vanilla) {
     sidebarStore.jsonContent2VanillaContent()
     vanillaRefs.value[`vanilla${sidebarStore.activeId}`].updateEditorContentAndMode()
+    vanillaRefs.value[`vanilla${sidebarStore.activeId}`].updateEditorHeight()
     sidebarStore.activeTab.editor = Editor.Vanilla
     return undefined
   }
 }
 
 function jsonTextUpdate(jsonText: string) {
-  console.log('jsonTextUpdate', jsonText)
   sidebarStore.updateCurrentTabContent(jsonText)
 }
 </script>
@@ -30,7 +29,7 @@ function jsonTextUpdate(jsonText: string) {
 <template>
   <template v-for="item in sidebarStore.menuItems" :key="item.id">
     <div v-show="item.id === sidebarStore.activeId">
-      <Header :editor="item.editor" class="border-b dark:border-b-neutral-800" @switch="switchEditor" />
+      <Header :editor="item.editor" class="border-b dark:border-b-neutral-800 !py-1.5" @switch="switchEditor" />
       <div v-show="item.editor === Editor.Monaco" class="c-monaco">
         <div class="h-screen w-full">
           <MonacoJsonEditor

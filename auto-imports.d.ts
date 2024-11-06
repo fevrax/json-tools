@@ -16,6 +16,7 @@ declare global {
   const computedWithControl: typeof import('@vueuse/core')['computedWithControl']
   const controlledComputed: typeof import('@vueuse/core')['controlledComputed']
   const controlledRef: typeof import('@vueuse/core')['controlledRef']
+  const countLines: typeof import('./src/utils/json')['countLines']
   const createApp: typeof import('vue')['createApp']
   const createEventHook: typeof import('@vueuse/core')['createEventHook']
   const createGlobalState: typeof import('@vueuse/core')['createGlobalState']
@@ -41,6 +42,7 @@ declare global {
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
   const h: typeof import('vue')['h']
+  const hasJsonComments: typeof import('./src/utils/json')['hasJsonComments']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
   const inject: typeof import('vue')['inject']
   const injectLocal: typeof import('@vueuse/core')['injectLocal']
@@ -54,6 +56,7 @@ declare global {
   const isReactive: typeof import('vue')['isReactive']
   const isReadonly: typeof import('vue')['isReadonly']
   const isRef: typeof import('vue')['isRef']
+  const json: typeof import('./src/utils/json')['default']
   const jsonParse: typeof import('./src/utils/stringUtils')['jsonParse']
   const jsonParseError: typeof import('./src/utils/json')['jsonParseError']
   const locale: typeof import('./src/composables/locale')['locale']
@@ -96,12 +99,14 @@ declare global {
   const refDefault: typeof import('@vueuse/core')['refDefault']
   const refThrottled: typeof import('@vueuse/core')['refThrottled']
   const refWithControl: typeof import('@vueuse/core')['refWithControl']
+  const removeJsonComments: typeof import('./src/utils/json')['removeJsonComments']
   const renderIcon: typeof import('./src/composables/icon')['renderIcon']
   const renderIconFontSize: typeof import('./src/composables/icon')['renderIconFontSize']
   const renderIconFontSizeH: typeof import('./src/composables/icon')['renderIconFontSizeH']
   const renderIconOption: typeof import('./src/composables/icon')['renderIconOption']
   const renderIconifyFontSize: typeof import('./src/composables/icon')['renderIconifyFontSize']
   const renderIconifyFontSizeH: typeof import('./src/composables/icon')['renderIconifyFontSizeH']
+  const repairJson: typeof import('./src/utils/json')['repairJson']
   const resolveComponent: typeof import('vue')['resolveComponent']
   const resolveRef: typeof import('@vueuse/core')['resolveRef']
   const resolveUnref: typeof import('@vueuse/core')['resolveUnref']
@@ -346,6 +351,7 @@ declare module 'vue' {
     readonly computedWithControl: UnwrapRef<typeof import('@vueuse/core')['computedWithControl']>
     readonly controlledComputed: UnwrapRef<typeof import('@vueuse/core')['controlledComputed']>
     readonly controlledRef: UnwrapRef<typeof import('@vueuse/core')['controlledRef']>
+    readonly countLines: UnwrapRef<typeof import('./src/utils/json')['countLines']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly createEventHook: UnwrapRef<typeof import('@vueuse/core')['createEventHook']>
     readonly createGlobalState: UnwrapRef<typeof import('@vueuse/core')['createGlobalState']>
@@ -367,6 +373,7 @@ declare module 'vue' {
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
+    readonly hasJsonComments: UnwrapRef<typeof import('./src/utils/json')['hasJsonComments']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
@@ -419,11 +426,13 @@ declare module 'vue' {
     readonly refDefault: UnwrapRef<typeof import('@vueuse/core')['refDefault']>
     readonly refThrottled: UnwrapRef<typeof import('@vueuse/core')['refThrottled']>
     readonly refWithControl: UnwrapRef<typeof import('@vueuse/core')['refWithControl']>
+    readonly removeJsonComments: UnwrapRef<typeof import('./src/utils/json')['removeJsonComments']>
     readonly renderIcon: UnwrapRef<typeof import('./src/composables/icon')['renderIcon']>
     readonly renderIconFontSize: UnwrapRef<typeof import('./src/composables/icon')['renderIconFontSize']>
     readonly renderIconOption: UnwrapRef<typeof import('./src/composables/icon')['renderIconOption']>
     readonly renderIconifyFontSize: UnwrapRef<typeof import('./src/composables/icon')['renderIconifyFontSize']>
     readonly renderIconifyFontSizeH: UnwrapRef<typeof import('./src/composables/icon')['renderIconifyFontSizeH']>
+    readonly repairJson: UnwrapRef<typeof import('./src/utils/json')['repairJson']>
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>

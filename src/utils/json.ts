@@ -2,8 +2,7 @@ export function validateAndFormatJSON<T>(data: unknown, schema: JSONSchemaType<T
   const validate = ajv.compile(schema)
   if (validate(data)) {
     return data as T
-  }
-  else {
+  } else {
     console.error('Validation errors:', validate.errors)
     throw new Error('JSON validation failed')
   }
@@ -38,8 +37,7 @@ export function escapeJson(input: string): string {
         return meta[a]
       })
       : jsonString
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Invalid JSON string:', error)
     throw error
   }
@@ -50,8 +48,7 @@ export function isJsonString(jsonString: string): boolean {
     // 首先尝试直接解析
     JSON.parse(jsonString)
     return true
-  }
-  catch {
+  } catch {
     return false
   }
 }
@@ -70,8 +67,7 @@ export function jsonParseError(jsonString: string): JsonErrorInfo | undefined {
   try {
     JSON.parse(jsonString)
     return undefined
-  }
-  catch (error) {
+  } catch (error) {
     const errorPatterns = [
       {
         regex: /at position (\d+) \(line (\d+) column (\d+)\)/,
@@ -162,6 +158,7 @@ export function isArrayOrObject(value: unknown): boolean {
   return Array.isArray(value) || (typeof value === 'object' && value !== null)
 }
 
+// 递归地按键名排序对象
 export function sortJson(obj: Record<object>, order: 'asc' | 'desc' = 'asc') {
   const sortedKeys = Object.keys(obj).sort((a, b) => {
     if (order === 'asc') {
@@ -177,4 +174,167 @@ export function sortJson(obj: Record<object>, order: 'asc' | 'desc' = 'asc') {
   })
 
   return JSON.stringify(sortedObj, null, 4)
+}
+
+/**
+ * 检查JSON文本中是否包含注释
+ * @param jsonText 要检查的JSON文本
+ * @returns 如果包含注释返回true,否则返回false
+ */
+export function hasJsonComments(jsonText: string): boolean {
+  // 检查多行注释
+  const multiLineCommentRegex = /\/\*[\s\S]*?\*\//
+  if (multiLineCommentRegex.test(jsonText)) {
+    return true
+  }
+
+  // 检查单行注释
+  const singleLineCommentRegex = /("(?:\\.|[^"\\])*")|\/\/.*$/gm
+  let hasComment = false
+  jsonText.replace(singleLineCommentRegex, (match, group) => {
+    if (!group) {
+      // 如果匹配到的不是引号内的内容,说明是注释
+      hasComment = true
+    }
+    return match // 这里的返回值不重要,我们只是利用replace来遍历所有匹配
+  })
+
+  return hasComment
+}
+
+/**
+ * 删除 JSON 文本中的注释
+ * @param jsonText 包含注释的 JSON 文本
+ * @returns 删除注释后的 JSON 文本
+ */
+export function removeJsonComments(jsonText: string): string {
+  // 移除多行注释
+  jsonText = jsonText.replace(/\/\*[\s\S]*?\*\//g, '')
+
+  // 移除单行注释（考虑到可能在引号内的情况）
+  const regex = /("(?:\\.|[^"\\])*")|\/\/.*$/gm
+  jsonText = jsonText.replace(regex, (match, group) => {
+    if (group) {
+      // 如果匹配到的是引号内的内容，保留它
+      return group
+    }
+    // 否则，它是一个注释，将其替换为空字符串
+    return ''
+  })
+
+  // 移除可能剩余的空行
+  jsonText = jsonText.replace(/^\s*[\r\n]/gm, '')
+
+  return jsonText
+}
+
+// 计算文本行数
+export function countLines(text: string): number {
+  if (!text) {
+    return 0
+  }
+  return text.split('\n').length
+}
+
+// TODO
+const autoFixFunc = [
+  removeComments, // 移除注释
+  // fixQuotes, // 修复引号
+  // fixCommas, // 修复逗号
+  // fixColons, // 修复逗号
+  // fixBrackets, // 修复括号
+  // fixValues, // 修复值
+]
+
+export function repairJson(input: string): string {
+  let result = input.trim()
+
+  try {
+    JSON.parse(result)
+    return result
+  } catch (e) {
+    console.error('原始文本解析失败', e.message)
+  }
+  for (const func of autoFixFunc) {
+    result = func(result)
+    console.log(result)
+    try {
+      JSON.parse(result)
+      return result
+    } catch (e) {
+      console.error('修复后文本解析失败', e.message)
+    }
+  }
+  throw new Error('Unable to repair JSON string')
+}
+
+// 移除注释
+function removeComments(input: string): string {
+  if (hasJsonComments(input) && countLines(input) > 2) {
+    return removeJsonComments(input)
+  }
+}
+
+function fixQuotes(input: string): string {
+  let inString = false
+  let lastQuote = ''
+  return input.split('').map((char, index, array) => {
+    if (char === '"' || char === '\'') {
+      if (!inString) {
+        inString = true
+        lastQuote = char
+        return '"'
+      } else if (char === lastQuote && array[index - 1] !== '\\') {
+        inString = false
+        return '"'
+      }
+    }
+    return char
+  }).join('')
+}
+
+function fixCommas(input: string): string {
+  return input.replace(/,\s*([}\]])/g, '$1').replace(/([{[,])\s*,/g, '$1')
+}
+
+function fixColons(input: string): string {
+  return input.replace(/(['"])\s*:\s*/g, '$1:')
+}
+
+function fixBrackets(input: string): string {
+  const stack: string[] = []
+  let result = input
+
+  for (let i = 0; i < result.length; i++) {
+    if (result[i] === '{' || result[i] === '[') {
+      stack.push(result[i])
+    } else if (result[i] === '}' || result[i] === ']') {
+      if (stack.length === 0) {
+        result = result.slice(0, i) + result.slice(i + 1)
+        i--
+      } else {
+        const last = stack.pop()
+        if ((last === '{' && result[i] === ']') || (last === '[' && result[i] === '}')) {
+          result = result.slice(0, i) + (last === '{' ? '}' : ']') + result.slice(i + 1)
+        }
+      }
+    }
+  }
+
+  while (stack.length > 0) {
+    const last = stack.pop()
+    result += last === '{' ? '}' : ']'
+  }
+
+  return result
+}
+
+function fixValues(input: string): string {
+  return input.replace(/:\s*(['"])?([^'",}\]]+)(['"])?\s*([,}\]])/g, (match, q1, value, q2, end) => {
+    if (q1 && q2)
+      return match // 已经被引号包围的值
+    if (/^(true|false|null|-?\d+(?:\.\d*)?([eE][+-]?\d+)?)$/.test(value))
+      return match // 有效的 JSON 值
+    return `: "${value.replace(/"/g, '\\"')}"${end}` // 给其他值加上引号
+  })
 }

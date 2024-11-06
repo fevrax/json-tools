@@ -158,12 +158,72 @@ function fieldSortHandleMenuClick(e) {
     console.error(e)
   }
 }
+
+const moreIcon = ref<IconStatus>(IconStatus.Default)
+const moreClass = computed(() => ({
+  'text-success': moreIcon.value === IconStatus.Success,
+  'text-error': moreIcon.value === IconStatus.Error,
+}))
+
+// 字段排序
+function moreHandleMenuClick(e) {
+  moreIcon.value = IconStatus.Loading
+  setTimeout(() => {
+    moreIcon.value = IconStatus.Default
+  }, 2500)
+  const content = sidebarStore.activeTab.content
+  switch (e.key) {
+    case 'unescape': {
+      const msg = formatModelByUnEscapeJson(content)
+      if (msg !== '') {
+        message.error(msg)
+        moreIcon.value = IconStatus.Error
+        return
+      }
+      break
+    }
+    case 'del_comment': {
+      if (!hasJsonComments(content)) {
+        message.warn('未查找到注释标识符')
+        moreIcon.value = IconStatus.Error
+        return
+      }
+      sidebarStore.activeTab.content = removeJsonComments(content)
+      break
+    }
+  }
+  moreIcon.value = IconStatus.Success
+}
+
+// 解码 JSON 处理转义
+// return '' 为正常
+function formatModelByUnEscapeJson(jsonText: string): string {
+  if (jsonText === '') {
+    return '暂无数据'
+  }
+  const jsonStr = `"${jsonText}"`
+  try {
+    // 第一次将解析结果为去除转移后字符串
+    const unescapedJson = JSON.parse(jsonStr)
+    // 去除转义后的字符串解析为对象
+    const unescapedJsonObject = JSON.parse(unescapedJson)
+    // 判断是否为对象或数组
+    if (!isArrayOrObject(unescapedJsonObject)) {
+      return '不是有效的 Json 数据，无法进行解码操作'
+    }
+    sidebarStore.activeTab.content = JSON.stringify(unescapedJsonObject, null, 4)
+  } catch (error) {
+    console.error('formatModelByUnEscapeJson', error)
+    return error.message
+  }
+  return ''
+}
 </script>
 
 <template>
   <a-flex justify="space-between" align="center" class="h-9">
     <a-flex>
-      <div class="dropdown-text dark:!text-white ml-2">
+      <div class="dropdown-text ml-2">
         <a-dropdown-button type="link" placement="bottom" class="check-btn" @click="copy">
           <div class="flex items-center">
             <span class="mr-1 check-icon pb-0.5">
@@ -196,14 +256,11 @@ function fieldSortHandleMenuClick(e) {
           </template>
         </a-dropdown-button>
       </div>
-      <div class="dropdown-text dark:!text-white">
+      <div class="dropdown-text">
         <StatusIconButtonLink :icon="renderIconFontSize('mdi:magic', 17)" :status="formatStatus" text="格式化" @click="format" />
       </div>
-      <div class="dropdown-text dark:!text-white">
-        <StatusIconButtonLink :icon="renderIconFontSize('mynaui:trash', 17)" :status="clearContentStatus" text="清空" @click="clearContent" />
-      </div>
-      <div class="dropdown-text dark:!text-white">
-        <a-dropdown>
+      <div class="dropdown-text">
+        <a-dropdown class="check-btn">
           <template #overlay>
             <a-menu @click="fieldSortHandleMenuClick">
               <a-menu-item key="asc">
@@ -220,13 +277,44 @@ function fieldSortHandleMenuClick(e) {
               </a-menu-item>
             </a-menu>
           </template>
-          <div class="flex items-center !w-auto px-2">
+          <div class="dropdown-btn">
             <span class="mr-1 check-icon pb-0.5">
               <Icon v-if="sortIcon === 'default'" icon="mi:sort" class="text-17" />
               <Icon v-else-if="sortIcon === 'success'" icon="icon-park-solid:success" class="text-17" style="color: #52c41a;" />
               <icon-park-solid-error v-else-if="sortIcon === 'error'" style="color: #f5222d;" />
             </span>
-            <span class="check-text " :class="[sortClass]">字段排序</span>
+            <span class="check-text" :class="[sortClass]">字段排序</span>
+          </div>
+        </a-dropdown>
+      </div>
+      <div class="dropdown-text">
+        <StatusIconButtonLink :icon="renderIconFontSize('mynaui:trash', 17)" :status="clearContentStatus" text="清空" @click="clearContent" />
+      </div>
+      <div class="dropdown-text">
+        <a-dropdown class="check-btn">
+          <template #overlay>
+            <a-menu @click="moreHandleMenuClick">
+              <a-menu-item key="unescape">
+                <div class="flex items-center">
+                  <Icon icon="iconoir:remove-link" class="text-17" />
+                  <span class="ml-1">去除转义</span>
+                </div>
+              </a-menu-item>
+              <a-menu-item key="del_comment">
+                <div class="flex items-center">
+                  <Icon icon="tabler:notes-off" class="text-17" />
+                  <span class="ml-1">移除注释</span>
+                </div>
+              </a-menu-item>
+            </a-menu>
+          </template>
+          <div class="dropdown-btn">
+            <span class="mr-1 pb-0.5">
+              <Icon v-if="moreIcon === 'default'" icon="mingcute:more-2-fill" class="text-17" />
+              <Icon v-else-if="moreIcon === 'success'" icon="icon-park-solid:success" class="text-17" style="color: #52c41a;" />
+              <icon-park-solid-error v-else-if="moreIcon === 'error'" style="color: #f5222d;" />
+            </span>
+            <span class="check-text " :class="[moreClass]">更多</span>
           </div>
         </a-dropdown>
       </div>
@@ -242,7 +330,7 @@ function fieldSortHandleMenuClick(e) {
   align-items: center;
   justify-content: center;
   margin-right: 4px;
-  @apply text-xs;
+  @apply text-xs dark:text-white !important;
   .ant-btn-link {
     padding-right: 5px;
     padding-left: 5px;
@@ -255,6 +343,15 @@ function fieldSortHandleMenuClick(e) {
 
     // 夜间模式
     @apply dark:text-white;
+  }
+
+  .dropdown-btn {
+    @apply flex items-center w-auto px-2 rounded-md !important;
+    @apply hover:bg-neutral-200 hover:dark:bg-zinc-800;
+    padding: 6px 0;
+  }
+  .dropdown-btn:hover {
+    @apply hover:bg-neutral-200 hover:dark:bg-zinc-800;
   }
 
   .ant-btn-link:hover {

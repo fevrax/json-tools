@@ -3,7 +3,7 @@ import { Icon } from '@iconify/vue'
 import { message } from 'ant-design-vue'
 import * as monaco from 'monaco-editor'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { isArrayOrObject, jsonParseError } from '~/utils/json'
+import {countLines, hasJsonComments, isArrayOrObject, jsonParseError, removeJsonComments} from '~/utils/json'
 
 const props = defineProps<{
   modelValue: string
@@ -22,10 +22,9 @@ defineExpose({
 })
 
 const formatModelOpen = ref(false)
-const formatModelUnEscapeParseLoading = ref(false)
+const autoFixLoading = ref(false)
+const autoFixError = ref('') // 二次转换后失败
 const parseJsonError = ref<JsonErrorInfo>({})
-
-const formatModelError = ref('') // 二次转换后失败
 
 // 编辑器默认字体大小
 const fontSize = ref(props.fontSize || '14')
@@ -83,6 +82,17 @@ function createEditor() {
     // 初始调整大小
     adjustEditorHeight()
   }
+}
+
+// 设置编辑器内容，保留历史, 支持 ctrl + z 撤销
+function setEditorValue(jsonText: string) {
+  editor.executeEdits('', [
+    {
+      range: editor.getModel().getFullModelRange(),
+      text: jsonText,
+      forceMoveMarkers: true,
+    },
+  ])
 }
 
 // 调整编辑器高度
@@ -165,10 +175,12 @@ function formatModelCancel() {
 }
 
 // 解码 JSON 处理转义
-async function formatModelByUnEscapeJson() {
-  formatModelUnEscapeParseLoading.value = true
-  // 内容可能存在转义 需要解码
-  const jsonStr = `"${editor.getValue()}"`
+// return '' 为正常
+function formatModelByUnEscapeJson(jsonText: string): string {
+  if (jsonText === '') {
+    return '暂无数据'
+  }
+  const jsonStr = `"${jsonText}"`
   try {
     // 第一次将解析结果为去除转移后字符串
     const unescapedJson = JSON.parse(jsonStr)
@@ -176,29 +188,14 @@ async function formatModelByUnEscapeJson() {
     const unescapedJsonObject = JSON.parse(unescapedJson)
     // 判断是否为对象或数组
     if (!isArrayOrObject(unescapedJsonObject)) {
-      formatModelError.value = '不是有效的 Json 数据，无法进行解码操作'
-      return
+      return '不是有效的 Json 数据，无法进行解码操作'
     }
-    editor.setValue(unescapedJson)
-    format()
-
-    formatModelOpen.value = false
+    setEditorValue(JSON.stringify(unescapedJsonObject, null, 4))
   } catch (error) {
-    console.error(error)
-    const jsonErr = jsonParseError(jsonStr)
-    if (!jsonErr) {
-      formatModelError.value = error.message
-      return
-    }
-    console.error(jsonErr)
-    if (jsonErr.line > 0) {
-      formatModelError.value = `${jsonErr?.message} 第 ${jsonErr?.line} 行, 第 ${jsonErr?.column} 列，可能存在错误。 \n ${error.message}`
-    } else {
-      formatModelError.value = error.message
-    }
-  } finally {
-    formatModelUnEscapeParseLoading.value = false
+    console.error('formatModelByUnEscapeJson', error)
+    return error.message
   }
+  return ''
 }
 
 // 一键定位错误行
@@ -256,11 +253,47 @@ const errorStartLine = computed(() => {
   return Math.max(1, parseJsonError.value.line - Math.floor(contextLines.value / 2))
 })
 
+function autoFix(): boolean {
+  const jsonText = editor.getValue()
+
+  // 尝试将字符转义
+  const unEscapeErr = formatModelByUnEscapeJson(jsonText)
+  if (unEscapeErr === '') {
+    formatModelOpen.value = false
+    message.success('智能修复成功')
+    return true
+  }
+  // 移除注释
+  // if (hasJsonComments(jsonText) && countLines(jsonText) > 2) {
+  //   setEditorValue(removeJsonComments(jsonText))
+  //   formatModelOpen.value = false
+  //   message.success('智能修复成功')
+  //   return true
+  // }
+  try {
+    const repair = repairJson(jsonText)
+    setEditorValue(repair)
+    message.success('智能修复成功')
+    formatModelOpen.value = false
+    return true
+  } catch (e) {
+    console.error('repairJson', e)
+    message.error('不是有效的 Json 数据，无法进行修复。')
+    return false
+  }
+}
+
 // region 监听属性变化
 // 监听 modelValue 变化
 watch(() => props.modelValue, (newValue) => {
-  if (editor && newValue !== editor.getValue()) {
-    editor.setValue(newValue)
+  if (!editor) {
+    return
+  }
+  if (newValue === '') {
+    setEditorValue(newValue)
+  }
+  if (newValue !== editor.getValue()) {
+    setEditorValue(newValue)
   }
 })
 
@@ -326,11 +359,10 @@ onUnmounted(() => {
             </a-descriptions-item>
           </a-descriptions>
         </div>
-        <a-divider />
+        <a-divider style="margin:0">
+          错误上下文
+        </a-divider>
         <div class="context-section">
-          <h3 class="context-title">
-            错误上下文:
-          </h3>
           <div class="context-wrapper">
             <div class="line-numbers">
               <span
@@ -344,17 +376,6 @@ onUnmounted(() => {
             <pre class="context-content"><code>{{ parseJsonError.context }}</code></pre>
           </div>
         </div>
-        <a-divider />
-        <Transition name="fade">
-          <div v-if="formatModelError">
-            <p>尝试去除转义符解码失败：</p>
-            <a-alert type="error" class="mt-4">
-              <template #description>
-                <pre>{{ formatModelError }}</pre>
-              </template>
-            </a-alert>
-          </div>
-        </Transition>
       </div>
       <div class="footer">
         <a-space>
@@ -363,16 +384,16 @@ onUnmounted(() => {
           </a-button>
           <a-button
             type="primary"
-            :loading="formatModelUnEscapeParseLoading"
-            @click="formatModelByUnEscapeJson"
+            :loading="autoFixLoading"
+            @click="autoFix"
           >
             <template #icon>
-              <Icon icon="iconoir:remove-link" class="text-17 inline-block mr-1.5 relative" style="bottom: 1px" />
+              <Icon icon="fluent:bot-sparkle-20-regular" class="text-17 inline-block mr-1.5 relative" style="bottom: 1px" />
             </template>
-            <span>去除转义符解码</span>
+            <span>智能修复</span>
           </a-button>
-          <!--    :disabled="parseJsonError.line === 0"      -->
           <a-button
+            danger
             type="primary"
             @click="formatModelByErrorLine"
           >
