@@ -19,11 +19,11 @@ defineExpose({
   format,
   formatValidate,
   validateContent,
+  formatValidateAfterOpenDialog,
 })
 
 const formatModelOpen = ref(false)
 const autoFixLoading = ref(false)
-const autoFixError = ref('') // 二次转换后失败
 const parseJsonError = ref<JsonErrorInfo>({})
 
 // 编辑器默认字体大小
@@ -72,8 +72,10 @@ function createEditor() {
     // 添加粘贴事件监听
     editor.onDidPaste(async (e) => {
       if (editor.getValue() && e.range.startLineNumber < 2) {
-        await sleep(100)
-        formatValidate()
+        const ok = formatValidate()
+        if (!ok) {
+          showAutoFixNotify()
+        }
       }
     })
 
@@ -129,31 +131,21 @@ function formatValidate(): boolean {
   const jsonErr = jsonParseError(editor.getValue())
   if (jsonErr) {
     parseJsonError.value = jsonErr
-    formatModelOpen.value = true
+    showAutoFixNotify()
     return false
   }
   return format()
 }
 
-// 显示格式异常通知
-function showAutoFixNotify() {
-  notification.open({
-    message: '格式异常',
-    description: 'JSON 数据格式可能存在错误',
-    btn: () =>
-      h(
-        Button,
-        {
-          type: 'primary',
-          size: 'small',
-          onClick: () => {
-            formatModelOpen.value = true
-          },
-        },
-        { default: () => '查看详情' },
-      ),
-    key: 'autoFixNotify',
-  })
+// 验证格式并格式化 通知
+function formatValidateAfterOpenDialog(): boolean {
+  const jsonErr = jsonParseError(editor.getValue())
+  if (jsonErr) {
+    parseJsonError.value = jsonErr
+    formatModelOpen.value = true
+    return false
+  }
+  return format()
 }
 
 // 验证 JSON, 不进行格式化
@@ -171,9 +163,33 @@ function validateContent(): boolean {
   return true
 }
 
+// 显示格式异常通知
+function showAutoFixNotify() {
+  notification.warning({
+    message: `第 ${parseJsonError.value.line} 行，第 ${parseJsonError.value.column} 列，格式错误`,
+    description: `${parseJsonError.value.message}`,
+    maxCoun: 1,
+    placement: 'bottomRight',
+    bottom: '0px',
+    btn: () =>
+      h(
+        Button,
+        {
+          type: 'primary',
+          size: 'small',
+          onClick: () => {
+            formatModelOpen.value = true
+          },
+        },
+        { default: () => '查看详情' },
+      ),
+    key: 'autoFixNotify',
+  })
+}
+
 // 格式化并验证 菜单按钮点击
 async function headerFormatHandle(callback: (success: boolean) => void) {
-  callback(formatValidate())
+  callback(formatValidateAfterOpenDialog())
 }
 
 // 验证内容 菜单按钮点击
@@ -255,12 +271,12 @@ function autoFix(): boolean {
     const jsonText = editor.getValue()
     const repair = repairJson(jsonText)
     setEditorValue(repair)
-    message.success('智能修复成功')
+    message.success('修复成功')
     formatModelOpen.value = false
     return true
   } catch (e) {
     console.error('repairJson', e)
-    message.error('可能不是有效的 Json 数据，无法修复。')
+    message.error('修复失败，可能不是有效的 Json 数据。')
     return false
   }
 }

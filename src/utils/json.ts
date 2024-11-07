@@ -275,8 +275,8 @@ export function repairJson(input: string): string {
     result = func(result)
     console.log('func', func.name, result)
     try {
-      JSON.parse(result)
-      return result
+      const obj = JSON.parse(result)
+      return JSON.stringify(obj, null, 4)
     } catch (e) {
       // console.error('修复后文本解析失败', e.message)
     }

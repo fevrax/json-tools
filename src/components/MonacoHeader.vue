@@ -256,7 +256,7 @@ function formatModelByUnEscapeJson(jsonText: string): string {
           </template>
         </a-dropdown-button>
       </div>
-      <div class="dropdown-text">
+      <div class="dropdown-text ml-2">
         <StatusIconButtonLink :icon="renderIconFontSize('mdi:magic', 17)" :status="formatStatus" text="格式化" @click="format" />
       </div>
       <div class="dropdown-text">
@@ -287,7 +287,7 @@ function formatModelByUnEscapeJson(jsonText: string): string {
           </div>
         </a-dropdown>
       </div>
-      <div class="dropdown-text">
+      <div class="dropdown-text ml-2">
         <StatusIconButtonLink :icon="renderIconFontSize('mynaui:trash', 17)" :status="clearContentStatus" text="清空" @click="clearContent" />
       </div>
       <div class="dropdown-text">
@@ -330,11 +330,11 @@ function formatModelByUnEscapeJson(jsonText: string): string {
   align-items: center;
   justify-content: center;
   margin-right: 4px;
-  @apply text-xs dark:text-white !important;
+  @apply dark:text-white !important;
   .ant-btn-link {
     padding-right: 5px;
     padding-left: 5px;
-    color: #333;
+    color: #000;
     border-radius: 6px;
     transition:
       color 0.3s ease,
