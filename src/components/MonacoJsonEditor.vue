@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
-import { message } from 'ant-design-vue'
+import { Button, message, notification } from 'ant-design-vue'
 import * as monaco from 'monaco-editor'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import {countLines, hasJsonComments, isArrayOrObject, jsonParseError, removeJsonComments} from '~/utils/json'
+import { jsonParseError } from '~/utils/json'
 
 const props = defineProps<{
   modelValue: string
@@ -135,6 +135,27 @@ function formatValidate(): boolean {
   return format()
 }
 
+// 显示格式异常通知
+function showAutoFixNotify() {
+  notification.open({
+    message: '格式异常',
+    description: 'JSON 数据格式可能存在错误',
+    btn: () =>
+      h(
+        Button,
+        {
+          type: 'primary',
+          size: 'small',
+          onClick: () => {
+            formatModelOpen.value = true
+          },
+        },
+        { default: () => '查看详情' },
+      ),
+    key: 'autoFixNotify',
+  })
+}
+
 // 验证 JSON, 不进行格式化
 function validateContent(): boolean {
   if (editor?.getValue() === '') {
@@ -144,7 +165,7 @@ function validateContent(): boolean {
   const jsonErr = jsonParseError(editor.getValue())
   if (jsonErr) {
     parseJsonError.value = jsonErr
-    formatModelOpen.value = true
+    showAutoFixNotify()
     return false
   }
   return true
@@ -173,7 +194,6 @@ function formatModelCancel() {
   formatModelError.value = ''
   parseJsonError.value = ''
 }
-
 
 // 一键定位错误行
 async function formatModelByErrorLine() {
