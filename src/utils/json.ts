@@ -79,6 +79,7 @@ export function jsonParseError(jsonString: string): JsonErrorInfo | undefined {
         }),
       },
       {
+        // eslint-disable-next-line regexp/no-super-linear-backtracking
         regex: /Unexpected token '(.+)',[\s\S]*?"(.+)"[\s\S]*?is not valid JSON/,
         handler: (match: RegExpMatchArray) => ({
           errorToken: match[1],
@@ -159,21 +160,36 @@ export function isArrayOrObject(value: unknown): boolean {
 }
 
 // 递归地按键名排序对象
-export function sortJson(obj: Record<object>, order: 'asc' | 'desc' = 'asc') {
-  const sortedKeys = Object.keys(obj).sort((a, b) => {
-    if (order === 'asc') {
-      return a.localeCompare(b)
-    } else {
-      return b.localeCompare(a)
+export function sortJson(data: any, order: 'asc' | 'desc' = 'asc'): string {
+  function sortValue(value: any): any {
+    if (Array.isArray(value)) {
+      return value.map(sortValue).sort((a, b) => {
+        if (typeof a === 'string' && typeof b === 'string') {
+          return order === 'asc' ? a.localeCompare(b) : b.localeCompare(a)
+        }
+        return 0
+      })
+    } else if (typeof value === 'object' && value !== null) {
+      return sortObject(value)
     }
-  })
+    return value
+  }
 
-  const sortedObj: Record<string, any> = {}
-  sortedKeys.forEach((key) => {
-    sortedObj[key] = obj[key]
-  })
+  function sortObject(obj: Record<string, any>): Record<string, any> {
+    const sortedKeys = Object.keys(obj).sort((a, b) => {
+      return order === 'asc' ? a.localeCompare(b) : b.localeCompare(a)
+    })
 
-  return JSON.stringify(sortedObj, null, 4)
+    const sortedObj: Record<string, any> = {}
+    sortedKeys.forEach((key) => {
+      sortedObj[key] = sortValue(obj[key])
+    })
+
+    return sortedObj
+  }
+
+  const sortedResult = sortValue(data)
+  return JSON.stringify(sortedResult, null, 4)
 }
 
 /**
@@ -237,15 +253,15 @@ export function countLines(text: string): number {
 }
 
 // TODO
-const autoFixFunc = [
+const autoFixFuncArr = [
+  unEscapeJson, // 移除转义字符
   removeComments, // 移除注释
-  // fixQuotes, // 修复引号
-  // fixCommas, // 修复逗号
-  // fixColons, // 修复逗号
-  // fixBrackets, // 修复括号
-  // fixValues, // 修复值
+  fixBrackets, // 修复括号
+  fixQuotes, // 修复引号
+  fixCommas, // 修复逗号
 ]
 
+// 自动修复 JSON
 export function repairJson(input: string): string {
   let result = input.trim()
 
@@ -255,17 +271,38 @@ export function repairJson(input: string): string {
   } catch (e) {
     console.error('原始文本解析失败', e.message)
   }
-  for (const func of autoFixFunc) {
+  for (const func of autoFixFuncArr) {
     result = func(result)
-    console.log(result)
+    console.log('func', func.name, result)
     try {
       JSON.parse(result)
       return result
     } catch (e) {
-      console.error('修复后文本解析失败', e.message)
+      // console.error('修复后文本解析失败', e.message)
     }
   }
   throw new Error('Unable to repair JSON string')
+}
+
+// 解码 JSON 处理转义
+function unEscapeJson(jsonText: string): string {
+  if (jsonText === '') {
+    return jsonText
+  }
+  const jsonStr = `"${jsonText}"`
+  try {
+    // 第一次将解析结果为去除转移后字符串
+    const unescapedJson = JSON.parse(jsonStr)
+    // 去除转义后的字符串解析为对象
+    const unescapedJsonObject = JSON.parse(unescapedJson)
+    // 判断是否为对象或数组
+    if (!isArrayOrObject(unescapedJsonObject)) {
+      return jsonText
+    }
+    return JSON.stringify(unescapedJsonObject, null, 4)
+  } catch (error) {
+    return jsonText
+  }
 }
 
 // 移除注释
@@ -273,68 +310,157 @@ function removeComments(input: string): string {
   if (hasJsonComments(input) && countLines(input) > 2) {
     return removeJsonComments(input)
   }
+  return input
 }
 
+// 修复引号、冒号
 function fixQuotes(input: string): string {
-  let inString = false
-  let lastQuote = ''
-  return input.split('').map((char, index, array) => {
-    if (char === '"' || char === '\'') {
-      if (!inString) {
-        inString = true
-        lastQuote = char
-        return '"'
-      } else if (char === lastQuote && array[index - 1] !== '\\') {
-        inString = false
-        return '"'
+  // 替换全角引号和冒号为英文字符
+  input = input.replace(/((?<!")|(?<=(?<!\\)")(?:\\{2})*)([“”‘’：])(?!")|((?<!^)"(?!$))/g, (match, p1, p2, p3, p4) => {
+    if (p3) {
+      switch (p3) {
+        case '‘': return '"'
+        case '’': return '"'
+        case '“': return '"'
+        case '”': return '"'
+        case '：': return ':'
       }
     }
-    return char
-  }).join('')
+    if (p4) {
+      return match // 保持已被双引号包裹的内容不变
+    }
+    return match
+  })
+
+  // 修复键名的引号问题
+  input = input.replace(/(\s*)("?)(\w+)("?)(\s*:)/g, (match, before, openQuote, key, closeQuote, after) => {
+    if (openQuote && closeQuote) {
+      return match // 已经有正确的引号
+    }
+    if (openQuote && !closeQuote) {
+      return `${before}${openQuote}${key}${openQuote}${after}`
+    }
+    if (!openQuote && closeQuote) {
+      return `${before}${closeQuote}${key}${closeQuote}${after}`
+    }
+    return match
+  })
+
+  // 修复值的引号问题
+  // input = input.replace(/:\s*("?)([^",:}\]]*|"[^"]*")("?)(\s*[,}\]])/g, (match, openQuote, value, closeQuote, after) => {
+  // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
+  input = input.replace(/:\s*("?)([^",:}\]]*|"[^"]*")("?)(\s+[,}\]])/g, (match, openQuote, value, closeQuote, after) => {
+    console.log('math', `openQuote: ${openQuote} | value: ${value} | closeQuote: ${closeQuote}`)
+    value = value.trim()
+    if (/^(true|false|null|\d+(\.\d+)?)$/.test(value) && !openQuote && !closeQuote) {
+      return `: ${value}${after}` // 未被引号包裹的数字、布尔值或null不需要引号
+    }
+    if (openQuote && closeQuote) {
+      return match // 已经有正确的引号
+    }
+    if (openQuote && !closeQuote) {
+      console.log(match)
+      return `: ${openQuote}${value}${openQuote}${after}`
+    }
+    if (!openQuote && closeQuote) {
+      return `: ${closeQuote}${value}${closeQuote}${after}`
+    }
+    return match
+  })
+
+  // 移除多余的逗号
+  input = input.replace(/,(\s*[}\]])/g, '$1')
+
+  return input
 }
 
+
+// 修复逗号
 function fixCommas(input: string): string {
-  return input.replace(/,\s*([}\]])/g, '$1').replace(/([{[,])\s*,/g, '$1')
-}
+  // 去除字符串两端的空白
+  const result = input.trim()
 
-function fixColons(input: string): string {
-  return input.replace(/(['"])\s*:\s*/g, '$1:')
-}
-
-function fixBrackets(input: string): string {
-  const stack: string[] = []
-  let result = input
+  let inString = false
+  let escaped = false
+  let output = ''
 
   for (let i = 0; i < result.length; i++) {
-    if (result[i] === '{' || result[i] === '[') {
-      stack.push(result[i])
-    } else if (result[i] === '}' || result[i] === ']') {
-      if (stack.length === 0) {
-        result = result.slice(0, i) + result.slice(i + 1)
-        i--
+    const char = result[i]
+
+    if (inString) {
+      if (char === '"' && !escaped) {
+        inString = false
+      } else if (char === '\\' && !escaped) {
+        escaped = true
       } else {
-        const last = stack.pop()
-        if ((last === '{' && result[i] === ']') || (last === '[' && result[i] === '}')) {
-          result = result.slice(0, i) + (last === '{' ? '}' : ']') + result.slice(i + 1)
+        escaped = false
+      }
+      output += char
+    } else {
+      if (char === '"') {
+        inString = true
+        output += char
+      } else if (char === '，') {
+        // 检查前一个非空白字符
+        let j = i - 1
+        while (j >= 0 && /\s/.test(result[j])) {
+          j--
         }
+        if (j >= 0 && /["\]}0-9a-z]/i.test(result[j])) {
+          output += ','
+        } else {
+          output += char
+        }
+      } else {
+        output += char
       }
     }
   }
 
-  while (stack.length > 0) {
-    const last = stack.pop()
-    result += last === '{' ? '}' : ']'
-  }
+  // 修复缺失的逗号（在 } 或 ] 之前）
+  output = output.replace(/([}\]])\s*([{[])/g, '$1,$2')
 
-  return result
+  // 修复缺失的逗号（在非逗号、}、] 之后，{ 或 [ 之前）
+  output = output.replace(/([^,}\]]\s*)([{[])/g, '$1,$2')
+
+  // 修复缺失的逗号（在属性值之后，属性名之前）
+  output = output.replace(/([}\]"'\w])(\s*)(?="(?:\\.|[^"\\])*"\s*:)/g, '$1,$2')
+
+  // 移除对象和数组最后一个元素后的多余逗号
+  output = output.replace(/,(\s*[}\]])/g, '$1')
+
+  return output
 }
 
-function fixValues(input: string): string {
-  return input.replace(/:\s*(['"])?([^'",}\]]+)(['"])?\s*([,}\]])/g, (match, q1, value, q2, end) => {
-    if (q1 && q2)
-      return match // 已经被引号包围的值
-    if (/^(true|false|null|-?\d+(?:\.\d*)?([eE][+-]?\d+)?)$/.test(value))
-      return match // 有效的 JSON 值
-    return `: "${value.replace(/"/g, '\\"')}"${end}` // 给其他值加上引号
-  })
+// 修复括号
+function fixBrackets(input: string): string {
+  const stack: { char: string, index: number }[] = []
+  const result = input.split('')
+
+  for (let i = 0; i < result.length; i++) {
+    const char = result[i]
+
+    if (char === '{' || char === '[') {
+      stack.push({ char, index: i })
+    } else if (char === '}' || char === ']') {
+      if (stack.length === 0) {
+        // 忽略多余的右括号
+        result[i] = ''
+        continue
+      }
+      const lastOpen = stack.pop()
+      if ((lastOpen.char === '{' && char !== '}') || (lastOpen.char === '[' && char !== ']')) {
+        // 括号不匹配，使用正确的闭合括号
+        result[i] = lastOpen.char === '{' ? '}' : ']'
+      }
+    }
+  }
+
+  // 处理未闭合的左括号
+  while (stack.length > 0) {
+    const lastOpen = stack.pop()
+    result.push(lastOpen.char === '{' ? '}' : ']')
+  }
+
+  return result.join('')
 }

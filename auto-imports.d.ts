@@ -39,6 +39,7 @@ declare global {
   const escapeJson: typeof import('./src/utils/json')['escapeJson']
   const escapeJsonString: typeof import('~/utils/json')['escapeJsonString']
   const extendRef: typeof import('@vueuse/core')['extendRef']
+  const fixCommas: typeof import('./src/utils/json')['fixCommas']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
   const h: typeof import('vue')['h']

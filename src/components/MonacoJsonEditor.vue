@@ -174,29 +174,6 @@ function formatModelCancel() {
   parseJsonError.value = ''
 }
 
-// 解码 JSON 处理转义
-// return '' 为正常
-function formatModelByUnEscapeJson(jsonText: string): string {
-  if (jsonText === '') {
-    return '暂无数据'
-  }
-  const jsonStr = `"${jsonText}"`
-  try {
-    // 第一次将解析结果为去除转移后字符串
-    const unescapedJson = JSON.parse(jsonStr)
-    // 去除转义后的字符串解析为对象
-    const unescapedJsonObject = JSON.parse(unescapedJson)
-    // 判断是否为对象或数组
-    if (!isArrayOrObject(unescapedJsonObject)) {
-      return '不是有效的 Json 数据，无法进行解码操作'
-    }
-    setEditorValue(JSON.stringify(unescapedJsonObject, null, 4))
-  } catch (error) {
-    console.error('formatModelByUnEscapeJson', error)
-    return error.message
-  }
-  return ''
-}
 
 // 一键定位错误行
 async function formatModelByErrorLine() {
@@ -254,23 +231,8 @@ const errorStartLine = computed(() => {
 })
 
 function autoFix(): boolean {
-  const jsonText = editor.getValue()
-
-  // 尝试将字符转义
-  const unEscapeErr = formatModelByUnEscapeJson(jsonText)
-  if (unEscapeErr === '') {
-    formatModelOpen.value = false
-    message.success('智能修复成功')
-    return true
-  }
-  // 移除注释
-  // if (hasJsonComments(jsonText) && countLines(jsonText) > 2) {
-  //   setEditorValue(removeJsonComments(jsonText))
-  //   formatModelOpen.value = false
-  //   message.success('智能修复成功')
-  //   return true
-  // }
   try {
+    const jsonText = editor.getValue()
     const repair = repairJson(jsonText)
     setEditorValue(repair)
     message.success('智能修复成功')
@@ -278,7 +240,7 @@ function autoFix(): boolean {
     return true
   } catch (e) {
     console.error('repairJson', e)
-    message.error('不是有效的 Json 数据，无法进行修复。')
+    message.error('可能不是有效的 Json 数据，无法修复。')
     return false
   }
 }
