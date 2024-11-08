@@ -77,7 +77,6 @@ function handleContextMenuSelect(action: string) {
 }
 
 function jsonTextUpdate(jsonText: string) {
-  console.log('jsonTextUpdate', jsonText)
   tabsStore.updateCurrentTabContent(jsonText)
 }
 
@@ -85,7 +84,6 @@ function parseEditJsonData(tab: Tab) {
   let currentTabContent = ''
   try {
     currentTabContent = JSON.parse(tab?.content)
-    console.log('currentTabContent', currentTabContent.value)
   } catch (e) {
     console.error(e)
   }

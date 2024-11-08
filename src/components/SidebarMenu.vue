@@ -33,8 +33,9 @@ const sortedMenuItems = computed(() => {
 })
 
 function startEditing(item: MenuItem) {
-  if (isNarrow.value)
+  if (isNarrow.value) {
     return
+  }
   editingItemId.value = item.id
 }
 
@@ -174,7 +175,7 @@ defineExpose({
         @click="selectItem(item.id)"
       >
         <div class="flex items-center justify-between">
-          <div class="flex-grow mr-2 overflow-hidden" @dblclick="startEditing(item)">
+          <div class="flex-grow mr-2 overflow-hidden" @dblclick.stop="startEditing(item)">
             <div v-if="editingItemId === item.id && !isNarrow" class="flex items-center">
               <input
                 ref="editingInput"
@@ -200,7 +201,7 @@ defineExpose({
                   <span>{{ truncateTitle(item.title, 6) }}</span>
                 </a-tooltip>
               </span>
-              <span v-else class="flex items-center">
+              <span v-else class="flex items-center" @click.stop>
                 <PushpinFilled v-if="item.isPinned" class="mr-1 text-blue-600" />
                 {{ item.title }}
               </span>

@@ -143,7 +143,7 @@ export const useSidebarStore = defineStore('sidebar', {
     },
     jsonContent2VanillaContent() {
       if (!this.activeTab.content) {
-        this.activeTab.vanilla = { json: {} }
+        this.activeTab.vanilla = { text: '' }
         this.activeTab.vanillaMode = VanillaMode.Text
         return
       }

@@ -171,6 +171,7 @@ function showAutoFixNotify() {
     maxCoun: 1,
     placement: 'bottomRight',
     bottom: '0px',
+    duration: 2.5,
     btn: () =>
       h(
         Button,

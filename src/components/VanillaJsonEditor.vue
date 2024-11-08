@@ -79,7 +79,7 @@ const options: JSONEditorPropsOptional = {
   content: { json: props.modelValue ? props.modelValue : {} },
   target: editorContainer.value,
   onChange: (content: Content, previousContent: Content, changeStatus: { contentErrors: ContentErrors | undefined, patchResult: JSONPatchResult | undefined }) => {
-    console.log('onChange', 'content', content, 'previousContent', previousContent, 'changeStatus', changeStatus)
+    // console.log('onChange', 'content', content, 'previousContent', previousContent, 'changeStatus', changeStatus)
     // let jsonText = ''
     // if (content.json !== undefined) {
     //   console.log('当前 tree 模式更新数据', 'content.json', content.json)

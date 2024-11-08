@@ -20,7 +20,6 @@ onMounted(() => {
   if (sidebarStore.menuItems.length === 0) {
     sidebarStore.addTab('')
   }
-  console.log(11111111, window.utools)
   if (window.utools) {
     window.utools.onPluginEnter(({ code, type, payload, option }) => {
       if (type === 'regex') {
@@ -37,6 +36,11 @@ function siderCollapseFunc(collapsed) {
   } else {
     document.documentElement.style.setProperty('--sider-width', '60px')
   }
+}
+
+function toggleCollapsed() {
+  collapsed.value = !collapsed.value
+  siderCollapseFunc(collapsed.value)
 }
 
 const sidebarRef = ref(null)
@@ -60,12 +64,12 @@ const footerStyle: CSSProperties = {
         @collapse="siderCollapseFunc"
       >
         <div class="flex items-center justify-between px-3 pt-3 pb-2 select-none">
-          <a-avatar src="logo.png" />
+          <a-avatar src="logo.png" @click="addItem" />
           <div v-show="!collapsed" class="flex justify-center rounded-lg px-2 py-1 hover:bg-gray-200 dark:hover:bg-neutral-800 cursor-pointer" @click="addItem">
             <Iconify class="text-xl" icon="mingcute:add-line" />
           </div>
         </div>
-        <SidebarMenu ref="sidebarRef" class="mt-1" />
+        <SidebarMenu ref="sidebarRef" class="mt-1" @dblclick="toggleCollapsed" />
       </a-layout-sider>
       <a-layout-content class="bg-white dark:bg-neutral-900">
         <slot />
