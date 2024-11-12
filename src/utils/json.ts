@@ -338,20 +338,23 @@ function fixChineseColon(jsonStr: string): string {
 
 // 修复引号、冒号
 function fixQuotes(input: string): string {
-  // 替换全角引号和冒号为英文字符
-  input = input.replace(/((?<!")|(?<=(?<!\\)")(?:\\{2})*)([“”‘’])(?!")|((?<!^)"(?!$))/g, (match, p1, p2, p3, p4) => {
-    if (p3) {
-      switch (p3) {
-        case '‘': return '"'
-        case '’': return '"'
-        case '“': return '"'
-        case '”': return '"'
-      }
-    }
-    if (p4) {
-      return match // 保持已被双引号包裹的内容不变
-    }
-    return match
+  const TEMP_MARKER = '__QUOTED_CONTENT__'
+  let result = input
+
+  // 1. 临时保存带引号的值的键值对
+  const quotedContents: Record<string, string> = {}
+  result = result.replace(/"([^"]+)"\s*:/g, (match, key) => {
+    const value = result.substring(match.indexOf(':') + 1).trim()
+    quotedContents[key] = value
+    return `${TEMP_MARKER}${key}`
+  })
+
+  // 2. 将所有单引号和双引号替换为英文双引号
+  result = result.replace(/['‘’“”]/g, () => '"')
+
+  // 3. 恢复受保护的键值对
+  result = result.replace(new RegExp(`${TEMP_MARKER}(\\w+)`, 'g'), (_, key) => {
+    return `"${key}": ${quotedContents[key]}`
   })
 
   // 修复键名的引号问题
@@ -370,18 +373,20 @@ function fixQuotes(input: string): string {
 
   // 修复值的引号问题
   // input = input.replace(/:\s*("?)([^",:}\]]*|"[^"]*")("?)(\s*[,}\]])/g, (match, openQuote, value, closeQuote, after) => {
-  // eslint-disable-next-line regexp/no-super-linear-backtracking,regexp/no-misleading-capturing-group
-  input = input.replace(/:\s*("?)([^",:}\]]*|"[^"]*")("?)(\s+[,}\]])/g, (match, openQuote, value, closeQuote, after) => {
+  // eslint-disable-next-line regexp/no-super-linear-backtracking
+  input = input.replace(/:\s*("?)([^",:{}\]]*|"[^"]*")("?)(.*[,}\]])/g, (match, openQuote, value, closeQuote, after) => {
     console.log('math', `openQuote: ${openQuote} | value: ${value} | closeQuote: ${closeQuote}`)
     value = value.trim()
-    if (/^(true|false|null|\d+(\.\d+)?)$/.test(value) && !openQuote && !closeQuote) {
+    if (/[[\]{}]/.test(value)) {
+      return match
+    }
+    if (/^true|false|null|\d+\.\d+$/.test(value) && !openQuote && !closeQuote) {
       return `: ${value}${after}` // 未被引号包裹的数字、布尔值或null不需要引号
     }
     if (openQuote && closeQuote) {
       return match // 已经有正确的引号
     }
     if (openQuote && !closeQuote) {
-      console.log(match)
       return `: ${openQuote}${value}${openQuote}${after}`
     }
     if (!openQuote && closeQuote) {
@@ -445,9 +450,9 @@ function fixCommas(input: string): string {
   output = output.replace(/([^,}\]]\s*)([{[])/g, '$1,$2')
 
   // 修复缺失的逗号（在属性值之后，属性名之前）
-  output = output.replace(/([}\]"'\w])(\s*)(?="(?:\\.|[^"\\])*"\s*:)/g, '$1,$2')
-
-  // 移除对象和数组最后一个元素后的多余逗号
+  // output = output.replace(/([}\]"'\w])(\s*)(?="(?:\\.|[^"\\])*"\s*:)/g, '$1,$2')
+  //
+  // // 移除对象和数组最后一个元素后的多余逗号
   output = output.replace(/,(\s*[}\]])/g, '$1')
 
   return output
