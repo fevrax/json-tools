@@ -20,6 +20,7 @@ defineExpose({
   formatValidate,
   validateContent,
   formatValidateAfterOpenDialog,
+  validateContentAfterOpenDialog,
 })
 
 const formatModelOpen = ref(false)
@@ -72,6 +73,7 @@ function createEditor() {
     // 添加粘贴事件监听
     editor.onDidPaste(async (e) => {
       if (editor.getValue() && e.range.startLineNumber < 2) {
+        await sleep(150)
         const ok = formatValidate()
         if (!ok) {
           showAutoFixNotify()
@@ -137,7 +139,7 @@ function formatValidate(): boolean {
   return format()
 }
 
-// 验证格式并格式化 通知
+// 验证格式并格式化 显示错误详情
 function formatValidateAfterOpenDialog(): boolean {
   const jsonErr = jsonParseError(editor.getValue())
   if (jsonErr) {
@@ -158,6 +160,21 @@ function validateContent(): boolean {
   if (jsonErr) {
     parseJsonError.value = jsonErr
     showAutoFixNotify()
+    return false
+  }
+  return true
+}
+
+// 验证 JSON, 不进行格式化 显示错误详情
+function validateContentAfterOpenDialog(): boolean {
+  if (editor?.getValue() === '') {
+    // message.warn('暂无内容')
+    return true
+  }
+  const jsonErr = jsonParseError(editor.getValue())
+  if (jsonErr) {
+    parseJsonError.value = jsonErr
+    formatModelOpen.value = true
     return false
   }
   return true
@@ -271,7 +288,6 @@ function autoFix(): boolean {
     const jsonText = editor.getValue()
     const repair = repairJson(jsonText)
     setEditorValue(repair)
-    message.success('修复成功')
     formatModelOpen.value = false
     return true
   } catch (e) {
@@ -327,7 +343,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <MonacoHeader class="border-b dark:border-b-neutral-800 mb-2" @format="headerFormatHandle" @validate="headerValidateContentHandle" />
+  <div class="flex justify-between items-center border-b dark:border-b-neutral-800 mb-2">
+    <MonacoHeader class="dark:border-b-neutral-800" @format="headerFormatHandle" @validate="headerValidateContentHandle" />
+  </div>
   <div ref="editorContainer" class="w-full" :style="{ height: editorHeight }" />
   <a-modal
     v-model:open="formatModelOpen"
@@ -407,6 +425,20 @@ onUnmounted(() => {
 </template>
 
 <style lang="scss">
+.monaco-diff-editor-container {
+  @apply flex flex-col h-full;
+
+  .toolbar {
+    @apply bg-white dark:bg-neutral-900;
+
+    .right-tools {
+      .anticon {
+        @apply text-lg;
+      }
+    }
+  }
+}
+
 .errorLineHighlight {
   @apply bg-red-200 dark:bg-red-700;
   margin-left: 3px;

@@ -63,10 +63,12 @@ const clearButtonItem = {
   icon: { iconName: '', prefix: '', icon: [24, 24, [], '', 'M15 2H9c-1.103 0-2 .897-2 2v2H3v2h2v12c0 1.103.897 2 2 2h10c1.103 0 2-.897 2-2V8h2V6h-4V4c0-1.103-.897-2-2-2M9 4h6v2H9zm8 16H7V8h10z'] },
   onClick: () => {
     if (sidebarStore.activeTab.vanillaMode === VanillaMode.Tree) {
-      editor?.set({ json: {} })
+      editor.set({ json: {} })
     } else if (sidebarStore.activeTab.vanillaMode === VanillaMode.Text) {
       editor.set({ text: '' })
     }
+    sidebarStore.activeTab.content = ''
+    sidebarStore.activeTab.vanilla = { json: '' }
   },
   title: '清空当前内容',
   className: 'jse-group-text-button',
@@ -96,11 +98,11 @@ const options: JSONEditorPropsOptional = {
   },
   onRenderMenu: (menu: MenuItem[], context) => {
     // console.log('menu', menu, context)
-    menu.splice(2, 1); // 删除表格模式
-    [menu[0], menu[1]] = [menu[1], menu[0]] // 第一个为树形模式，第二个为文本模式
-    menu.splice(2, 0, separatorItem)
+    menu.splice(0, 1) // 删除表格模式
+    // [menu[0], menu[1]] = [menu[1], menu[0]] // 第一个为树形模式，第二个为文本模式
     menu.splice(3, 0, copyButtonItem)
     menu.splice(4, 0, clearButtonItem)
+    menu.splice(5, 0, separatorItem)
 
     for (let i = 0; i < menu.length; i++) {
       if (menu[i].title?.includes('格式化JSON')) {

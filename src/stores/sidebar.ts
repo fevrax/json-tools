@@ -13,6 +13,7 @@ export interface MenuItem {
 
 export enum Editor {
   Monaco = 'monaco',
+  MonacoDiff = 'monaco-diff',
   Vanilla = 'vanilla',
 }
 export enum VanillaMode {
@@ -132,9 +133,6 @@ export const useSidebarStore = defineStore('sidebar', {
       if (!this.activeTab.vanilla) {
         return undefined
       }
-      if (!this.activeTab.vanilla) {
-        return undefined
-      }
       if (this.activeTab.vanilla.json) {
         this.activeTab.content = JSON.stringify(this.activeTab.vanilla.json, null, 4)
       } else if (this.activeTab.vanilla.text) {
@@ -142,18 +140,11 @@ export const useSidebarStore = defineStore('sidebar', {
       }
     },
     jsonContent2VanillaContent() {
-      if (!this.activeTab.content) {
-        this.activeTab.vanilla = { text: '' }
-        this.activeTab.vanillaMode = VanillaMode.Text
-        return
-      }
       try {
         this.activeTab.vanilla = { json: JSON.parse(this.activeTab.content) }
         this.activeTab.vanillaMode = VanillaMode.Tree
       } catch (e) {
-        console.log('jsonTextUpdate 解析失败', e)
-        this.activeTab.vanillaMode = VanillaMode.Text
-        this.activeTab.vanilla = { text: this.activeTab.content }
+        console.log('jsonContent2VanillaContent 解析失败', e)
       }
     },
   },

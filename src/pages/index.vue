@@ -9,20 +9,36 @@ const monacoRefs: Ref<{ [key: number]: typeof JsonEditor | null }> = ref({})
 const vanillaRefs: Ref = ref([])
 
 function switchEditor(editor: string) {
-  if (editor === Editor.Monaco) {
-    sidebarStore.vanilla2JsonContent()
-    sidebarStore.activeTab.editor = Editor.Monaco
-  } else if (editor === Editor.Vanilla) {
-    sidebarStore.jsonContent2VanillaContent()
-    vanillaRefs.value[`vanilla${sidebarStore.activeId}`].updateEditorContentAndMode()
-    vanillaRefs.value[`vanilla${sidebarStore.activeId}`].updateEditorHeight()
-    sidebarStore.activeTab.editor = Editor.Vanilla
-    return undefined
+  switch (editor) {
+    case Editor.Monaco: {
+      sidebarStore.vanilla2JsonContent()
+      sidebarStore.activeTab.editor = Editor.Monaco
+      return undefined
+    }
+    case Editor.MonacoDiff: {
+      sidebarStore.activeTab.editor = Editor.MonacoDiff
+      break
+    }
+    case Editor.Vanilla: {
+      const ok = monacoRefs.value[`jsonEditor${sidebarStore.activeTab.id}`].validateContentAfterOpenDialog()
+      if (!ok) {
+        return undefined
+      }
+      sidebarStore.jsonContent2VanillaContent()
+      vanillaRefs.value[`vanilla${sidebarStore.activeId}`].updateEditorContentAndMode()
+      vanillaRefs.value[`vanilla${sidebarStore.activeId}`].updateEditorHeight()
+      sidebarStore.activeTab.editor = Editor.Vanilla
+      return undefined
+    }
   }
 }
 
-function jsonTextUpdate(jsonText: string) {
+function vanillaJsonEditorJsonUpdate(jsonText: string) {
   sidebarStore.updateCurrentTabContent(jsonText)
+}
+
+function monacoDiffEditorOriginUpdate(jsonText: string) {
+  sidebarStore.activeTab.content = jsonText
 }
 </script>
 
@@ -40,12 +56,24 @@ function jsonTextUpdate(jsonText: string) {
           />
         </div>
       </div>
+      <div v-show="item.editor === Editor.MonacoDiff" class="c-monaco">
+        <div class="h-screen w-full">
+          <MonacoDiffEditor
+            :ref="(el) => { if (el) monacoRefs[`jsonDiffEditor${item.id}`] = el }"
+            :original-value="item.content"
+            modified-value=""
+            language="json"
+            :theme="isDark ? 'vs-dark' : 'vs-light'"
+            @update:original-value="monacoDiffEditorOriginUpdate"
+          />
+        </div>
+      </div>
       <div v-show="item.editor === Editor.Vanilla" class="c-vanilla">
         <VanillaJsonEditor
           :ref="(el) => { if (el) vanillaRefs[`vanilla${item.id}`] = el }"
           :model-value="item.vanilla"
           :mode="item.vanillaMode"
-          @update:model-value="jsonTextUpdate"
+          @update:model-value="vanillaJsonEditorJsonUpdate"
         />
       </div>
     </div>

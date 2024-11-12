@@ -16,8 +16,9 @@ const currentEditor = computed({
 })
 
 const editors = [
-  { value: Editor.Monaco, label: '性能' },
   { value: Editor.Vanilla, label: '高级' },
+  { value: Editor.Monaco, label: '性能' },
+  { value: Editor.MonacoDiff, label: 'DIFF' },
 ]
 
 function handleSwitch(value: Editor) {
@@ -52,7 +53,7 @@ function handleSwitch(value: Editor) {
 }
 
 .editor-button {
-  width: 55px;
+  width: 60px;
   font-size: 12px;
   @apply relative z-10 px-2 py-1 font-medium rounded-full transition-all duration-200 ease-in-out outline-none focus:ring-0;
   @apply text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white active:bg-gray-300 dark:active:bg-gray-500;

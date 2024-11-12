@@ -263,10 +263,10 @@ export function countLines(text: string): number {
   return text.split('\n').length
 }
 
-// TODO
 const autoFixFuncArr = [
   unEscapeJson, // 移除转义字符
   removeComments, // 移除注释
+  fixChineseColon, // 修复中文冒号
   fixBrackets, // 修复括号
   fixQuotes, // 修复引号
   fixCommas, // 修复逗号
@@ -324,17 +324,28 @@ function removeComments(input: string): string {
   return input
 }
 
+// 修复中文冒号
+function fixChineseColon(jsonStr: string): string {
+  // 匹配JSON中的键值对模式
+  // (?<=") 使用后行断言匹配引号后面
+  // [^"\n]+ 匹配除引号和换行符之外的字符
+  // (?=") 使用先行断言匹配引号前面
+  // \s*：\s* 匹配冒号及其前后的空格
+  const pattern = /(?<=")([^"\n]+)"\s*：\s*/g
+
+  return jsonStr.replace(pattern, '$1": ')
+}
+
 // 修复引号、冒号
 function fixQuotes(input: string): string {
   // 替换全角引号和冒号为英文字符
-  input = input.replace(/((?<!")|(?<=(?<!\\)")(?:\\{2})*)([“”‘’：])(?!")|((?<!^)"(?!$))/g, (match, p1, p2, p3, p4) => {
+  input = input.replace(/((?<!")|(?<=(?<!\\)")(?:\\{2})*)([“”‘’])(?!")|((?<!^)"(?!$))/g, (match, p1, p2, p3, p4) => {
     if (p3) {
       switch (p3) {
         case '‘': return '"'
         case '’': return '"'
         case '“': return '"'
         case '”': return '"'
-        case '：': return ':'
       }
     }
     if (p4) {
@@ -384,7 +395,6 @@ function fixQuotes(input: string): string {
 
   return input
 }
-
 
 // 修复逗号
 function fixCommas(input: string): string {
