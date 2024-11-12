@@ -374,7 +374,7 @@ function fixQuotes(input: string): string {
   // 修复值的引号问题
   // input = input.replace(/:\s*("?)([^",:}\]]*|"[^"]*")("?)(\s*[,}\]])/g, (match, openQuote, value, closeQuote, after) => {
   // eslint-disable-next-line regexp/no-super-linear-backtracking
-  input = input.replace(/:\s*("?)([^",:{}\]]*|"[^"]*")("?)(.*[,}\]])/g, (match, openQuote, value, closeQuote, after) => {
+  input = input.replace(/:\s*("?)([^",:{}[\]]*|"[^"]*")("?)(.*[,}\]])/g, (match, openQuote, value, closeQuote, after) => {
     console.log('math', `openQuote: ${openQuote} | value: ${value} | closeQuote: ${closeQuote}`)
     value = value.trim()
     if (/[[\]{}]/.test(value)) {
