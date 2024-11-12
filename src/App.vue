@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import {theme} from 'ant-design-vue'
-import {isDark} from '~/composables'
+import { theme } from 'ant-design-vue'
+import { isDark } from '~/composables'
 </script>
 
 <template>
@@ -16,7 +16,7 @@ import {isDark} from '~/composables'
       }"
     >
       <layout>
-        <RouterView/>
+        <RouterView />
       </layout>
     </a-config-provider>
   </main>

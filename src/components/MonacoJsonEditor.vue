@@ -208,7 +208,6 @@ function handleResize() {
 
 function formatModelCancel() {
   formatModelOpen.value = false
-  formatModelError.value = ''
   parseJsonError.value = ''
 }
 

@@ -63,6 +63,7 @@ interface JsonErrorInfo {
   position?: number
 }
 
+// 解析JSON字符串并返回错误信息
 export function jsonParseError(jsonString: string): JsonErrorInfo | undefined {
   try {
     JSON.parse(jsonString)
@@ -79,12 +80,22 @@ export function jsonParseError(jsonString: string): JsonErrorInfo | undefined {
         }),
       },
       {
+        // Unexpected token 'l', "log out：\r\n"... is not valid JSON
         // eslint-disable-next-line regexp/no-super-linear-backtracking
-        regex: /Unexpected token '(.+)',[\s\S]*?"(.+)"[\s\S]*?is not valid JSON/,
+        regex: /Unexpected token '?(.+?)'?,\s*["'](.+?)["'].*?is not valid JSON/s,
+        handler: (match: RegExpMatchArray) => ({
+          errorToken: match[1].trim(),
+          errorContext: match[2].trim(),
+          message: `JSON解析错误：意外的字符`,
+        }),
+      },
+      {
+        // Unexpected token 'a', ...""sdaasd": asdasd }" is not valid JSON
+        regex: /Unexpected token '(.+)',[\s\S]*?"([^"]+)"[\s\S]*?is not valid JSON/,
         handler: (match: RegExpMatchArray) => ({
           errorToken: match[1],
           errorContext: match[2],
-          message: `JSON解析错误：意外的标记`,
+          message: `JSON解析错误：意外的字符`,
         }),
       },
       {
