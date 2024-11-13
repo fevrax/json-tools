@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import loader from '@monaco-editor/loader'
 import { Button, message, notification } from 'ant-design-vue'
 import * as monaco from 'monaco-editor'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
@@ -40,52 +41,58 @@ let errorDecorations: monaco.editor.IEditorDecorationsCollection | null = null
 
 // 创建编辑器实例
 function createEditor() {
-  if (editorContainer.value) {
-    editor = monaco.editor.create(editorContainer.value, {
-      value: props.modelValue || '',
-      language: props.language || 'json',
-      minimap: {
-        enabled: true, // 启用缩略图
-      },
-      colorDecorators: true, // 颜色装饰器
-      readOnly: false, // 是否开启已读功能
-      theme: props.theme || 'vs-light', // 主题
-      fontSize: fontSize.value,
-      mouseWheelZoom: true, // 启用鼠标滚轮缩放
-      formatOnPaste: true, // 粘贴时自动格式化
-      formatOnType: true, // 输入时自动格式化
-      wordBasedSuggestions: true, // 启用基于单词的建议
-      scrollBeyondLastLine: false, // 禁用滚动超出最后一行
-      suggestOnTriggerCharacters: true, // 在触发字符时显示建议
-      acceptSuggestionOnEnter: 'smart', // 按Enter键接受建议
-      wordWrap: 'on', // 自动换行
-    })
+  // 汉化
+  loader.config({ monaco })
+  loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
+  loader.init().then((monacoInstance) => {
+    // 通过loader.config({monaco})的配置后，此处的monacoInstance其实是我们 import * as monaco from 'monaco-editor'进来的npm包
+    if (editorContainer.value) {
+      editor = monacoInstance.editor.create(editorContainer.value, {
+        value: props.modelValue || '',
+        language: props.language || 'json',
+        minimap: {
+          enabled: true, // 启用缩略图
+        },
+        colorDecorators: true, // 颜色装饰器
+        readOnly: false, // 是否开启已读功能
+        theme: props.theme || 'vs-light', // 主题
+        fontSize: fontSize.value,
+        mouseWheelZoom: true, // 启用鼠标滚轮缩放
+        formatOnPaste: true, // 粘贴时自动格式化
+        formatOnType: true, // 输入时自动格式化
+        wordBasedSuggestions: true, // 启用基于单词的建议
+        scrollBeyondLastLine: false, // 禁用滚动超出最后一行
+        suggestOnTriggerCharacters: true, // 在触发字符时显示建议
+        acceptSuggestionOnEnter: 'smart', // 按Enter键接受建议
+        wordWrap: 'on', // 自动换行
+      })
 
-    // 监听内容变化
-    editor.onDidChangeModelContent(async () => {
-      emit('update:modelValue', editor!.getValue())
-      // if (e.changes[0].rangeOffset < 2 && e.changes[0].text.length > 10) {
-      //   await sleep(100)
-      //   format()
-      // }
-    })
+      // 监听内容变化
+      editor.onDidChangeModelContent(async () => {
+        emit('update:modelValue', editor!.getValue())
+        // if (e.changes[0].rangeOffset < 2 && e.changes[0].text.length > 10) {
+        //   await sleep(100)
+        //   format()
+        // }
+      })
 
-    // 添加粘贴事件监听
-    editor.onDidPaste(async (e) => {
-      if (editor.getValue() && e.range.startLineNumber < 2) {
-        await sleep(150)
-        const ok = formatValidate()
-        if (!ok) {
-          showAutoFixNotify()
+      // 添加粘贴事件监听
+      editor.onDidPaste(async (e) => {
+        if (editor.getValue() && e.range.startLineNumber < 2) {
+          await sleep(150)
+          const ok = formatValidate()
+          if (!ok) {
+            showAutoFixNotify()
+          }
         }
-      }
-    })
+      })
 
-    // 添加窗口大小变化的监听
-    window.addEventListener('resize', handleResize)
-    // 初始调整大小
-    adjustEditorHeight()
-  }
+      // 添加窗口大小变化的监听
+      window.addEventListener('resize', handleResize)
+      // 初始调整大小
+      adjustEditorHeight()
+    }
+  })
 }
 
 // 设置编辑器内容，保留历史, 支持 ctrl + z 撤销

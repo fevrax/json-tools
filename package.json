@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@ant-design/icons-vue": "^7.0.1",
+    "@monaco-editor/loader": "^1.4.0",
     "@vueuse/core": "^11.1.0",
     "ant-design-vue": "^4.2.5",
     "monaco-editor": "0.52.0",
@@ -49,7 +50,7 @@
     "vite": "^5.4.10",
     "vite-plugin-monaco-editor": "^1.1.0",
     "vite-plugin-vue-devtools": "^7.5.4",
-    "vue-tsc": "^2.1.8"
+    "vue-tsc": "^2.1.6"
   },
   "lint-staged": {
     "*": "eslint --fix"

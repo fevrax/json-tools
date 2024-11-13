@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
+import loader from '@monaco-editor/loader'
 import { message } from 'ant-design-vue'
 import * as monaco from 'monaco-editor'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
@@ -32,47 +33,52 @@ const fontSize = ref(props.fontSize || 14)
 
 // 创建差异编辑器实例
 function createDiffEditor() {
-  if (diffEditorContainer.value) {
-    // 创建差异编辑器
-    diffEditor = monaco.editor.createDiffEditor(diffEditorContainer.value, {
-      originalEditable: true, // 允许编辑原始文本
-      renderSideBySide: true, // 并排显示
-      theme: props.theme || 'vs-light',
-      fontSize: fontSize.value,
-      minimap: { enabled: true },
-      mouseWheelZoom: true, // 启用鼠标滚轮缩放
-      scrollBeyondLastLine: false,
-      wordWrap: 'on', // 自动换行
-      diffWordWrap: 'on',
-      automaticLayout: true, // 自动布局
-    })
+  loader.config({ monaco })
+  loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
+  loader.init().then((monacoInstance) => {
+    if (diffEditorContainer.value) {
+      // 创建差异编辑器
+      diffEditor = monacoInstance.editor.createDiffEditor(diffEditorContainer.value, {
+        originalEditable: true, // 允许编辑原始文本
+        renderSideBySide: true, // 并排显示
+        useInlineViewWhenSpaceIsLimited: false, // 当空间有限时使用InlineView
+        theme: props.theme || 'vs-light',
+        fontSize: fontSize.value,
+        minimap: { enabled: true },
+        mouseWheelZoom: true, // 启用鼠标滚轮缩放
+        scrollBeyondLastLine: false,
+        wordWrap: 'on', // 自动换行
+        diffWordWrap: 'on',
+        automaticLayout: true, // 自动布局
+      })
 
-    // 设置模型
-    const originalModel = monaco.editor.createModel(props.originalValue, props.language)
-    const modifiedModel = monaco.editor.createModel(props.modifiedValue, props.language)
+      // 设置模型
+      const originalModel = monaco.editor.createModel(props.originalValue, props.language)
+      const modifiedModel = monaco.editor.createModel(props.modifiedValue, props.language)
 
-    diffEditor.setModel({
-      original: originalModel,
-      modified: modifiedModel,
-    })
+      diffEditor.setModel({
+        original: originalModel,
+        modified: modifiedModel,
+      })
 
-    // 获取两个编辑器实例
-    originalEditor = diffEditor.getOriginalEditor()
-    modifiedEditor = diffEditor.getModifiedEditor()
+      // 获取两个编辑器实例
+      originalEditor = diffEditor.getOriginalEditor()
+      modifiedEditor = diffEditor.getModifiedEditor()
 
-    // 监听原始编辑器内容变化
-    originalEditor.onDidChangeModelContent(() => {
-      emit('update:originalValue', originalEditor!.getValue())
-    })
+      // 监听原始编辑器内容变化
+      originalEditor.onDidChangeModelContent(() => {
+        emit('update:originalValue', originalEditor!.getValue())
+      })
 
-    // 监听修改编辑器内容变化
-    modifiedEditor.onDidChangeModelContent(() => {
-      emit('update:modifiedValue', modifiedEditor!.getValue())
-    })
+      // 监听修改编辑器内容变化
+      modifiedEditor.onDidChangeModelContent(() => {
+        emit('update:modifiedValue', modifiedEditor!.getValue())
+      })
 
-    // 初始调整大小
-    adjustEditorHeight()
-  }
+      // 初始调整大小
+      adjustEditorHeight()
+    }
+  })
 }
 
 // 调整编辑器高度
@@ -115,12 +121,6 @@ function format(editor: monaco.editor.IStandaloneCodeEditor): boolean {
 // 格式化原始文本
 function formatOriginal(callback: (success: boolean) => void) {
   callback(format(originalEditor))
-}
-
-// 格式化修改后文本
-function formatModified(callback?: (success: boolean) => void) {
-  const success = format(modifiedEditor!)
-  callback?.(success)
 }
 
 // 验证内容
@@ -247,7 +247,7 @@ onUnmounted(() => {
             <template #icon>
               <Icon :icon="isDiffInline ? 'lucide:split' : 'lucide:split'" class="inline-block mr-2" />
             </template>
-            <span>{{ isDiffInline ? '切换为并排视图' : '切换为内联视图' }}</span>
+            <span>{{ isDiffInline ? '对比视图' : '内联视图' }}</span>
           </a-button>
         </a-tooltip>
       </div>
