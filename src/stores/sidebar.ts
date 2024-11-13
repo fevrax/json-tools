@@ -140,6 +140,11 @@ export const useSidebarStore = defineStore('sidebar', {
       }
     },
     jsonContent2VanillaContent() {
+      if (!this.activeTab.content) {
+        this.activeTab.vanilla = { json: '' }
+        this.activeTab.vanillaMode = VanillaMode.Tree
+        return undefined
+      }
       try {
         this.activeTab.vanilla = { json: JSON.parse(this.activeTab.content) }
         this.activeTab.vanillaMode = VanillaMode.Tree

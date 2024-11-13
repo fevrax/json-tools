@@ -154,6 +154,16 @@ function toggleDiffViewType() {
   })
 }
 
+// 导航到上一个差异
+function goToPreviousDiff() {
+  diffEditor?.goToDiff('previous')
+}
+
+// 导航到下一个差异
+function goToNextDiff() {
+  diffEditor?.goToDiff('next')
+}
+
 // region 监听属性变化
 watch(() => props.originalValue, (newValue) => {
   if (!originalEditor || newValue === originalEditor.getValue())
@@ -213,6 +223,18 @@ onUnmounted(() => {
     <div class="flex justify-between items-center border-b dark:border-b-neutral-800 mb-2">
       <div class="left-tools">
         <a-space>
+          <div class="flex items-center justify-center ml-2">
+            <a-tooltip title="上一个差异">
+              <div class="next-btn">
+                <Icon icon="mdi:arrow-up-bold" class="inline-block" @click="goToPreviousDiff" />
+              </div>
+            </a-tooltip>
+            <a-tooltip title="下一个差异">
+              <div class="next-btn">
+                <Icon icon="mdi:arrow-down-bold" class="inline-block" @click="goToNextDiff" />
+              </div>
+            </a-tooltip>
+          </div>
           <!-- 原始编辑器工具栏 -->
           <div class="original-tools">
             <MonacoHeader @format="formatOriginal" @validate="validateOriginal" />
@@ -253,5 +275,15 @@ onUnmounted(() => {
       }
     }
   }
+}
+
+.next-btn {
+  @apply rounded-md border dark:border-neutral-700;
+  padding: 3px 8px;
+  margin-left: 8px;
+}
+
+.next-btn:hover {
+  @apply bg-neutral-200 dark:bg-neutral-700;
 }
 </style>
