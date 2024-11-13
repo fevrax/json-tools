@@ -27,20 +27,20 @@ onUnmounted(() => {
 
 <template>
   <a-menu @click="({ key }) => handleContextMenuAction(key, item)">
-    <a-menu-item key="pin">
+    <a-menu-item key="pin" style="z-index: 19999">
       <PushpinOutlined /> {{ item.isPinned ? '取消置顶' : '置顶' }}
+    </a-menu-item>
+    <a-menu-item key="copy">
+      <CopyOutlined /> 复制
     </a-menu-item>
     <a-menu-item key="rename">
       <EditOutlined /> 重命名
     </a-menu-item>
-    <a-menu-item key="copy">
-      <CopyOutlined /> 复制标签页
-    </a-menu-item>
     <a-menu-item key="close">
-      <DeleteOutlined /> 关闭标签页
+      <DeleteOutlined /> 关闭当前
     </a-menu-item>
     <a-menu-item key="closeAll">
-      <CloseOutlined /> 关闭所有标签页
+      <CloseOutlined /> 关闭所有
     </a-menu-item>
   </a-menu>
 </template>

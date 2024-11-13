@@ -22,7 +22,7 @@ const editingInput = ref<HTMLInputElement | null>(null)
 const sidebarWidth = ref(200)
 const activeItemId = ref<string | null>(null)
 
-const isNarrow = computed(() => sidebarWidth.value < 60)
+const isNarrow = computed(() => sidebarWidth.value < 90)
 
 const sortedMenuItems = computed(() => {
   return [...sidebarStore.menuItems].sort((a, b) => {
@@ -189,7 +189,7 @@ defineExpose({
         v-for="item in sortedMenuItems"
         :key="item.id"
         :data-item-id="item.id"
-        class="group relative pl-2 pr-1 py-2 transition-all duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-neutral-800"
+        class="group relative pl-3 pr-1 transition-all duration-200 ease-in-out hover:bg-gray-200 dark:hover:bg-neutral-800"
         :class="{
           'pr-0': isNarrow,
           'bg-gray-200 dark:bg-neutral-800': sidebarStore.activeId === item.id,
@@ -197,7 +197,7 @@ defineExpose({
         @click="selectItem(item.id)"
       >
         <a-dropdown :trigger="['contextmenu']">
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between py-2">
             <div class="flex-grow mr-2 overflow-hidden" @dblclick.stop="startEditing(item)">
               <div v-if="editingItemId === item.id && !isNarrow" class="flex items-center">
                 <input
@@ -220,13 +220,14 @@ defineExpose({
                 class="block truncate select-none"
               >
                 <span v-if="isNarrow">
-                  <a-tooltip :title="item.title" placement="right" class="text-13">
+                  <a-tooltip :title="item.title" placement="right" class="">
                     <span>{{ truncateTitle(item.title, 6) }}</span>
                   </a-tooltip>
                 </span>
+                <!--       展开         -->
                 <span v-else class="flex items-center">
                   <PushpinFilled v-if="item.isPinned" class="mr-1 text-blue-600" />
-                  {{ item.title }}
+                  <span class="truncate select-none">{{ item.title }}</span>
                 </span>
               </span>
             </div>

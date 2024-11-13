@@ -1,29 +1,24 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useSidebarStore } from '~/stores/sidebar'
 import { useTabsStore } from '~/stores/tabs'
+import {Icon} from "@iconify/vue";
 
 const tabsStore = useTabsStore()
-
 const sidebarStore = useSidebarStore()
-
 const collapsed = ref<boolean>(true)
 
 onMounted(() => {
-  // 设置 侧边栏宽度
   siderCollapseFunc(collapsed.value)
-  // 启动默认初始化一个 tab
   if (tabsStore.tabs.length === 0) {
     tabsStore.addTab('')
   }
-  // 启动默认初始化一个 tab
   if (sidebarStore.menuItems.length === 0) {
     sidebarStore.addTab('')
   }
   if (window.utools) {
     window.utools.onPluginEnter(({ code, type, payload, option }) => {
       if (type === 'regex') {
-        // 匹配内容则写入到编辑器
         sidebarStore.activeTab.content = payload
       }
     })
@@ -32,11 +27,7 @@ onMounted(() => {
 
 function siderCollapseFunc(changeCollapsed) {
   collapsed.value = changeCollapsed
-  if (changeCollapsed === false) {
-    document.documentElement.style.setProperty('--sider-width', '150px')
-  } else {
-    document.documentElement.style.setProperty('--sider-width', '60px')
-  }
+  document.documentElement.style.setProperty('--sider-width', changeCollapsed ? '76px' : '150px')
 }
 
 function toggleCollapsed() {
@@ -59,18 +50,28 @@ const footerStyle: CSSProperties = {
   <a-layout class="full-screen-div">
     <a-layout>
       <a-layout-sider
-        v-model:collapsed="collapsed" class="sider"
+        v-model:collapsed="collapsed"
+        class="sider"
         collapsible
         theme="light"
         @collapse="siderCollapseFunc"
       >
-        <div class="flex items-center justify-between px-3 pt-3 pb-2 select-none">
-          <a-avatar src="logo.png" @click="addItem" />
-          <div v-show="!collapsed" class="flex justify-center rounded-lg px-2 py-1 hover:bg-gray-200 dark:hover:bg-neutral-800 cursor-pointer" @click="addItem">
-            <Iconify class="text-xl" icon="mingcute:add-line" />
-          </div>
+        <div class="h-12 border-b">
+          <transition name="fade">
+            <div v-if="collapsed" class="w-full flex items-center justify-center px-3 pt-2 pb-2 select-none absolute top-0">
+              <a-avatar class="avatar-transition" src="logo.png" @click="addItem" />
+            </div>
+          </transition>
+          <transition name="fade">
+            <div v-if="!collapsed" class="w-full flex items-center px-3 pt-2 pb-2 select-none justify-between absolute top-0">
+              <a-avatar class="avatar-transition" src="logo.png" @click="addItem" />
+              <div v-show="!collapsed" class="flex justify-center items-center rounded-lg px-1 py-1 hover:bg-gray-200 dark:hover:bg-neutral-800 cursor-pointer transition-all duration-300 ease-in-out" @click="addItem">
+                <Icon class="text-xl !text-neutral-600" icon="mingcute:add-line" />
+              </div>
+            </div>
+          </transition>
         </div>
-        <SidebarMenu ref="sidebarRef" class="mt-1" @dblclick="toggleCollapsed" @toggle-collapsed="siderCollapseFunc(false)" />
+        <SidebarMenu ref="sidebarRef" @dblclick="toggleCollapsed" @toggle-collapsed="siderCollapseFunc(false)" />
       </a-layout-sider>
       <a-layout-content class="bg-white dark:bg-neutral-900">
         <slot />
@@ -96,6 +97,7 @@ const footerStyle: CSSProperties = {
   min-width: var(--sider-width) !important;
   max-width: var(--sider-width) !important;
   border-inline-end: 1px solid rgba(5, 5, 5, 0.06);
+  position: relative;
 }
 
 .ant-layout-sider-trigger {
@@ -115,5 +117,28 @@ const footerStyle: CSSProperties = {
 .ant-menu-item-icon {
   position: relative !important;
   left: -3px;
+}
+
+.avatar-transition {
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:hover {
+    transform: scale(1.1) rotate(12deg);
+  }
+
+  &:active {
+    transform: scale(0.95) rotate(-12deg);
+  }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
