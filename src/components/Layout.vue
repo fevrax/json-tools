@@ -30,8 +30,9 @@ onMounted(() => {
   }
 })
 
-function siderCollapseFunc(collapsed) {
-  if (collapsed === false) {
+function siderCollapseFunc(changeCollapsed) {
+  collapsed.value = changeCollapsed
+  if (changeCollapsed === false) {
     document.documentElement.style.setProperty('--sider-width', '150px')
   } else {
     document.documentElement.style.setProperty('--sider-width', '60px')
@@ -69,7 +70,7 @@ const footerStyle: CSSProperties = {
             <Iconify class="text-xl" icon="mingcute:add-line" />
           </div>
         </div>
-        <SidebarMenu ref="sidebarRef" class="mt-1" @dblclick="toggleCollapsed" />
+        <SidebarMenu ref="sidebarRef" class="mt-1" @dblclick="toggleCollapsed" @toggle-collapsed="siderCollapseFunc(false)" />
       </a-layout-sider>
       <a-layout-content class="bg-white dark:bg-neutral-900">
         <slot />

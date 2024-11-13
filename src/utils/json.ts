@@ -175,8 +175,13 @@ export function sortJson(data: any, order: 'asc' | 'desc' = 'asc'): string {
   function sortValue(value: any): any {
     if (Array.isArray(value)) {
       return value.map(sortValue).sort((a, b) => {
+        // 字符串排序
         if (typeof a === 'string' && typeof b === 'string') {
           return order === 'asc' ? a.localeCompare(b) : b.localeCompare(a)
+        }
+        // 数字排序
+        if (typeof a === 'number' && typeof b === 'number') {
+          return order === 'asc' ? a - b : b - a
         }
         return 0
       })

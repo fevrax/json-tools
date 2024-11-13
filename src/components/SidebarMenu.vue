@@ -1,18 +1,19 @@
 <script setup lang="ts">
 import {
   CheckOutlined,
-  CopyOutlined,
-  DeleteOutlined,
-  EditOutlined,
   EllipsisOutlined,
   PlusOutlined,
   PushpinFilled,
-  PushpinOutlined,
 } from '@ant-design/icons-vue'
 import { message, Modal } from 'ant-design-vue'
 import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import type { MenuItem } from '~/stores/sidebar'
 import { useSidebarStore } from '~/stores/sidebar'
+
+const emit = defineEmits<{
+  // eslint-disable-next-line no-unused-vars
+  (e: 'toggleCollapsed', key: string): void
+}>()
 
 const sidebarStore = useSidebarStore()
 
@@ -33,10 +34,21 @@ const sortedMenuItems = computed(() => {
 })
 
 function startEditing(item: MenuItem) {
-  if (isNarrow.value) {
-    return
-  }
+  // if (isNarrow.value) {
+  //   return
+  // }
+  emit('toggleCollapsed', true)
   editingItemId.value = item.id
+  // 使用nextTick确保input已渲染后再focus
+  nextTick(() => {
+    // 获取input元素并focus
+    const input = document.querySelector('.editing-input') as HTMLInputElement
+    if (input) {
+      input.focus()
+      // 可选:全选文本
+      input.select()
+    }
+  })
 }
 
 function stopEditing(item: MenuItem, newTitle: string) {
@@ -60,18 +72,25 @@ function copyItem(item: MenuItem) {
   message.success('复制成功')
 }
 
-function deleteItem(item: MenuItem) {
+function closeItem(item: MenuItem) {
+  sidebarStore.delTab(item.id)
+  message.success('关闭成功')
+}
+
+function closeAllItem() {
   Modal.confirm({
-    title: '您确定要删除此项吗？',
+    title: '您确定要关闭所有标签页吗？',
     content: '该操作无法撤销。',
     onOk: () => {
-      sidebarStore.delTab(item.id)
-      message.success('删除成功')
+      sidebarStore.delAllTabs()
+      sidebarStore.addTab('')
+      message.success('关闭成功')
     },
   })
 }
 
 function handleContextMenuAction(key: string, item: MenuItem) {
+  console.log(key, item)
   switch (key) {
     case 'pin':
       togglePin(item)
@@ -82,8 +101,11 @@ function handleContextMenuAction(key: string, item: MenuItem) {
     case 'copy':
       copyItem(item)
       break
-    case 'delete':
-      deleteItem(item)
+    case 'close':
+      closeItem(item)
+      break
+    case 'closeAll':
+      closeAllItem(item)
       break
   }
   activeItemId.value = null
@@ -174,63 +196,55 @@ defineExpose({
         }"
         @click="selectItem(item.id)"
       >
-        <div class="flex items-center justify-between">
-          <div class="flex-grow mr-2 overflow-hidden" @dblclick.stop="startEditing(item)">
-            <div v-if="editingItemId === item.id && !isNarrow" class="flex items-center">
-              <input
-                ref="editingInput"
-                :value="item.title"
-                class="w-full px-2 py-1 bg-transparent border-none focus:outline-none"
-                @keyup.enter="stopEditing(item, $event.target.value)"
-                @blur="stopEditing(item, $event.target.value)"
+        <a-dropdown :trigger="['contextmenu']">
+          <div class="flex items-center justify-between">
+            <div class="flex-grow mr-2 overflow-hidden" @dblclick.stop="startEditing(item)">
+              <div v-if="editingItemId === item.id && !isNarrow" class="flex items-center">
+                <input
+                  ref="editingInput"
+                  :value="item.title"
+                  class="w-full px-2 py-1 bg-transparent border-none focus:outline-none editing-input"
+                  @blur="stopEditing(item, $event.target.value)"
+                  @keyup.enter="stopEditing(item, $event.target.value)"
+                >
+                <button
+                  class="ml-2 hover:text-green-600 transition-colors duration-200"
+                  @click="stopEditing(item, editingInput?.value || '')"
+                >
+                  <CheckOutlined />
+                </button>
+              </div>
+              <span
+                v-else
+                :class="{ 'font-semibold': item.isPinned }"
+                class="block truncate select-none"
               >
-              <button
-                class="ml-2 hover:text-green-600 transition-colors duration-200"
-                @click="stopEditing(item, editingInput?.value || '')"
-              >
-                <CheckOutlined />
-              </button>
+                <span v-if="isNarrow">
+                  <a-tooltip :title="item.title" placement="right" class="text-13">
+                    <span>{{ truncateTitle(item.title, 6) }}</span>
+                  </a-tooltip>
+                </span>
+                <span v-else class="flex items-center">
+                  <PushpinFilled v-if="item.isPinned" class="mr-1 text-blue-600" />
+                  {{ item.title }}
+                </span>
+              </span>
             </div>
-            <span
-              v-else
-              :class="{ 'font-semibold': item.isPinned }"
-              class="block truncate select-none"
-            >
-              <span v-if="isNarrow">
-                <a-tooltip :title="item.title" placement="right" class="text-13">
-                  <span>{{ truncateTitle(item.title, 6) }}</span>
-                </a-tooltip>
-              </span>
-              <span v-else class="flex items-center" @click.stop>
-                <PushpinFilled v-if="item.isPinned" class="mr-1 text-blue-600" />
-                {{ item.title }}
-              </span>
-            </span>
+            <div v-if="!isNarrow && editingItemId !== item.id" class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <a-dropdown :trigger="['hover']">
+                <a class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
+                  <EllipsisOutlined class="text-18" />
+                </a>
+                <template #overlay>
+                  <ContextMenu :item="item" @select="handleContextMenuAction" />
+                </template>
+              </a-dropdown>
+            </div>
           </div>
-          <div v-if="!isNarrow && editingItemId !== item.id" class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <a-dropdown :trigger="['click']">
-              <a class="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-200">
-                <EllipsisOutlined class="text-18" />
-              </a>
-              <template #overlay>
-                <a-menu @click="({ key }) => handleContextMenuAction(key, item)">
-                  <a-menu-item key="pin">
-                    <PushpinOutlined /> {{ item.isPinned ? '取消置顶' : '置顶' }}
-                  </a-menu-item>
-                  <a-menu-item key="rename">
-                    <EditOutlined /> 重命名
-                  </a-menu-item>
-                  <a-menu-item key="copy">
-                    <CopyOutlined /> 复制
-                  </a-menu-item>
-                  <a-menu-item key="delete">
-                    <DeleteOutlined /> 删除
-                  </a-menu-item>
-                </a-menu>
-              </template>
-            </a-dropdown>
-          </div>
-        </div>
+          <template #overlay>
+            <ContextMenu :item="item" @select="handleContextMenuAction" />
+          </template>
+        </a-dropdown>
       </li>
       <li>
         <a-button
@@ -250,17 +264,7 @@ defineExpose({
 .sidebar-menu {
   width: 100%;
   overflow-y: auto;
-  li {
-    &:hover {
-      .ant-dropdown-trigger {
-        opacity: 1;
-      }
-    }
-    .ant-dropdown-trigger {
-      opacity: 0;
-      transition: opacity 0.2s ease-in-out;
-    }
-  }
+
   input {
     transition: all 0.3s ease-in-out;
     &:focus {

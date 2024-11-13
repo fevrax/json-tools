@@ -77,6 +77,11 @@ export const useSidebarStore = defineStore('sidebar', {
         this.addTab()
       }
     },
+    delAllTabs() {
+      this.menuItems = []
+      this.activeId = ''
+      this.nextId = 0
+    },
     updateTabTitle(id: string, newTitle: string) {
       const menuItem = this.menuItems.find(t => t.id === id)
       if (menuItem) {

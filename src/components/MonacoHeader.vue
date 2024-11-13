@@ -151,7 +151,7 @@ function fieldSortHandleMenuClick(e) {
     } else if (e.key === 'desc') {
       sidebarStore.activeTab.content = sortJson(jsonObj, 'desc')
     }
-    message.success('字段排序成功')
+    message.success('排序成功')
   } catch (e) {
     ValidateJson()
     sortIcon.value = IconStatus.Error
@@ -283,7 +283,7 @@ function formatModelByUnEscapeJson(jsonText: string): string {
               <Icon v-else-if="sortIcon === 'success'" icon="icon-park-solid:success" class="text-17" style="color: #52c41a;" />
               <icon-park-solid-error v-else-if="sortIcon === 'error'" style="color: #f5222d;" />
             </span>
-            <span class="check-text" :class="[sortClass]">字段排序</span>
+            <span class="check-text" :class="[sortClass]">排序</span>
           </div>
         </a-dropdown>
       </div>
