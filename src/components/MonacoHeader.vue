@@ -214,7 +214,7 @@ function formatModelByUnEscapeJson(jsonText: string): string {
     sidebarStore.activeTab.content = JSON.stringify(unescapedJsonObject, null, 4)
   } catch (error) {
     console.error('formatModelByUnEscapeJson', error)
-    return error.message
+    return `尝试去除转义失败，${error.message}`
   }
   return ''
 }

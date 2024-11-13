@@ -229,7 +229,7 @@ function formatModelCancel() {
 }
 
 // 一键定位错误行
-async function formatModelByErrorLine() {
+async function locateErrorLine() {
   if (parseJsonError.value.line <= 0) {
     message.error('一键定位失败')
     return
@@ -284,6 +284,7 @@ const errorStartLine = computed(() => {
 })
 
 function autoFix(): boolean {
+  autoFixLoading.value = true
   try {
     const jsonText = editor.getValue()
     const repair = repairJson(jsonText)
@@ -294,6 +295,8 @@ function autoFix(): boolean {
     console.error('repairJson', e)
     message.error('修复失败，可能不是有效的 Json 数据。')
     return false
+  } finally {
+    autoFixLoading.value = false
   }
 }
 
@@ -411,7 +414,7 @@ onUnmounted(() => {
           <a-button
             danger
             type="primary"
-            @click="formatModelByErrorLine"
+            @click="locateErrorLine"
           >
             <template #icon>
               <Icon icon="ic:outline-my-location" class="text-17 inline-block mr-1.5 relative" style="bottom: 1px" />
@@ -441,7 +444,6 @@ onUnmounted(() => {
 
 .errorLineHighlight {
   @apply bg-red-200 dark:bg-red-700;
-  margin-left: 3px;
   width: 100%;
 }
 .errorGlyphMargin {

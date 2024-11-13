@@ -114,7 +114,6 @@ function format(editor: monaco.editor.IStandaloneCodeEditor): boolean {
 
 // 格式化原始文本
 function formatOriginal(callback: (success: boolean) => void) {
-  console.log(111111111)
   callback(format(originalEditor))
 }
 
@@ -162,6 +161,7 @@ function goToPreviousDiff() {
 // 导航到下一个差异
 function goToNextDiff() {
   diffEditor?.goToDiff('next')
+  console.log()
 }
 
 // region 监听属性变化
@@ -225,13 +225,13 @@ onUnmounted(() => {
         <a-space>
           <div class="flex items-center justify-center ml-2">
             <a-tooltip title="上一个差异">
-              <div class="next-btn">
-                <Icon icon="mdi:arrow-up-bold" class="inline-block" @click="goToPreviousDiff" />
+              <div class="next-btn" @click="goToPreviousDiff">
+                <Icon icon="iconamoon:arrow-up-1-bold" class="inline-block" />
               </div>
             </a-tooltip>
             <a-tooltip title="下一个差异">
-              <div class="next-btn">
-                <Icon icon="mdi:arrow-down-bold" class="inline-block" @click="goToNextDiff" />
+              <div class="next-btn" @click="goToNextDiff">
+                <Icon icon="iconamoon:arrow-down-1-bold" class="inline-block" />
               </div>
             </a-tooltip>
           </div>
@@ -284,6 +284,16 @@ onUnmounted(() => {
 }
 
 .next-btn:hover {
+  @apply bg-neutral-200 dark:bg-neutral-700;
+}
+
+.next-btn-disable {
+  @apply rounded-md border bg-neutral-100 dark:border-neutral-700;
+  padding: 3px 8px;
+  margin-left: 8px;
+}
+
+.next-btn-disable:hover {
   @apply bg-neutral-200 dark:bg-neutral-700;
 }
 </style>
