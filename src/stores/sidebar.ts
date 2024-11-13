@@ -1,5 +1,6 @@
 import type { Content } from 'vanilla-jsoneditor-cn'
 import { defineStore } from 'pinia'
+import {ref} from "vue";
 
 export interface MenuItem {
   id: string
@@ -9,6 +10,7 @@ export interface MenuItem {
   content?: string
   vanilla?: Content
   vanillaMode: VanillaMode
+  editorInitMap: object
 }
 
 export enum Editor {
@@ -36,12 +38,17 @@ export const useSidebarStore = defineStore('sidebar', {
     addTab(title: string = '') {
       const id = `tab${++this.nextId}`
       title = title || `Tab${this.nextId}`
-      this.menuItems.push({ id, title, isPinned: false, content: '', editor: Editor.Monaco, vanillaMode: VanillaMode.Text })
+      const editorInitMap = {
+        monaco: 0,
+        monacoDiff: 0,
+        vanilla: 0,
+      }
+      this.menuItems.push({ id, title, isPinned: false, content: '', editor: Editor.Monaco, vanillaMode: VanillaMode.Text, editorInitMap })
       this.activeId = id
     },
     addTestTab() {
       const id = `menuItem-${++this.nextId}`
-      this.menuItems.push({ id, title: 'Test Tab', isPinned: false, content: testJson, editor: Editor.Monaco, vanillaMode: VanillaMode.Text })
+      this.menuItems.push({ id, title: 'Test Tab', isPinned: false, content: testJson, editor: Editor.Monaco, vanillaMode: VanillaMode.Text, editorInitMap })
       this.activeId = id
     },
     updateTabContent(id: string, content: string) {

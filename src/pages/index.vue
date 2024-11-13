@@ -8,7 +8,7 @@ const sidebarStore = useSidebarStore()
 const monacoRefs: Ref<{ [key: number]: typeof JsonEditor | null }> = ref({})
 const vanillaRefs: Ref = ref([])
 
-function switchEditor(editor: string) {
+async function switchEditor(editor: string) {
   switch (editor) {
     case Editor.Monaco: {
       sidebarStore.vanilla2JsonContent()
@@ -16,6 +16,10 @@ function switchEditor(editor: string) {
       return undefined
     }
     case Editor.MonacoDiff: {
+      sidebarStore.activeTab.editorInitMap.monacoDiff++
+      if (sidebarStore.activeTab.editorInitMap.monacoDiff === 1) {
+        await sleep(100)
+      }
       sidebarStore.activeTab.editor = Editor.MonacoDiff
       break
     }
@@ -23,6 +27,10 @@ function switchEditor(editor: string) {
       const ok = monacoRefs.value[`jsonEditor${sidebarStore.activeTab.id}`].validateContentAfterOpenDialog()
       if (!ok) {
         return undefined
+      }
+      sidebarStore.activeTab.editorInitMap.vanilla++
+      if (sidebarStore.activeTab.editorInitMap.vanilla === 1) {
+        await sleep(150)
       }
       sidebarStore.jsonContent2VanillaContent()
       vanillaRefs.value[`vanilla${sidebarStore.activeId}`].updateEditorContentAndMode()
@@ -56,7 +64,7 @@ function monacoDiffEditorOriginUpdate(jsonText: string) {
           />
         </div>
       </div>
-      <div v-show="item.editor === Editor.MonacoDiff" class="c-monaco">
+      <div v-if="item.editorInitMap.monacoDiff > 0" v-show="item.editor === Editor.MonacoDiff" class="c-monaco">
         <div class="h-screen w-full">
           <MonacoDiffEditor
             :ref="(el) => { if (el) monacoRefs[`jsonDiffEditor${item.id}`] = el }"
@@ -68,7 +76,7 @@ function monacoDiffEditorOriginUpdate(jsonText: string) {
           />
         </div>
       </div>
-      <div v-show="item.editor === Editor.Vanilla" class="c-vanilla">
+      <div v-if="item.editorInitMap.vanilla > 0" v-show="item.editor === Editor.Vanilla" class="c-vanilla">
         <VanillaJsonEditor
           :ref="(el) => { if (el) vanillaRefs[`vanilla${item.id}`] = el }"
           :model-value="item.vanilla"

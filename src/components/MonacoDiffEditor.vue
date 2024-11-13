@@ -109,7 +109,6 @@ function updateFontSize(size: number) {
 // 格式化文本
 function format(editor: monaco.editor.IStandaloneCodeEditor): boolean {
   if (editor.getValue() === '') {
-    console.log(editor)
     message.warn('暂无内容')
     return false
   }
@@ -124,7 +123,6 @@ function formatOriginal(callback: (success: boolean) => void) {
 
 // 验证内容
 function validateContent(editor: monaco.editor.IStandaloneCodeEditor): boolean {
-  console.log(1)
   if (editor.getValue() === '') {
     message.warn('暂无内容')
     return false
@@ -160,7 +158,6 @@ function goToPreviousDiff() {
 // 导航到下一个差异
 function goToNextDiff() {
   diffEditor?.goToDiff('next')
-  console.log()
 }
 
 // region 监听属性变化
@@ -169,7 +166,6 @@ watch(() => props.originalValue, (newValue) => {
     return
   const position = originalEditor.getPosition()
   originalEditor.setValue(newValue)
-  console.log(position)
   if (position) {
     originalEditor.setPosition(position)
   }
