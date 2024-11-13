@@ -33,8 +33,7 @@ const fontSize = ref(props.fontSize || 14)
 
 // 创建差异编辑器实例
 function createDiffEditor() {
-  loader.config({ monaco })
-  loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
+  loader.config({ monaco, 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
   loader.init().then((monacoInstance) => {
     if (diffEditorContainer.value) {
       // 创建差异编辑器
