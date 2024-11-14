@@ -13,7 +13,7 @@ importers:
         version: 7.0.1(vue@3.5.12(typescript@5.6.3))
       '@monaco-editor/loader':
         specifier: ^1.4.0
-        version: 1.4.0(monaco-editor@0.52.0)
+        version: 1.4.0(monaco-editor@0.51.0)
       '@vueuse/core':
         specifier: ^11.1.0
         version: 11.1.0(vue@3.5.12(typescript@5.6.3))
@@ -21,8 +21,8 @@ importers:
         specifier: ^4.2.5
         version: 4.2.5(vue@3.5.12(typescript@5.6.3))
       monaco-editor:
-        specifier: 0.52.0
-        version: 0.52.0
+        specifier: 0.51.0
+        version: 0.51.0
       pinia:
         specifier: ^2.2.4
         version: 2.2.4(typescript@5.6.3)(vue@3.5.12(typescript@5.6.3))
@@ -113,7 +113,7 @@ importers:
         version: 5.4.10(@types/node@22.8.1)(sass-embedded@1.80.3)(sass@1.80.4)
       vite-plugin-monaco-editor:
         specifier: ^1.1.0
-        version: 1.1.0(monaco-editor@0.52.0)
+        version: 1.1.0(monaco-editor@0.51.0)
       vite-plugin-vue-devtools:
         specifier: ^7.5.4
         version: 7.5.4(rollup@4.24.0)(vite@5.4.10(@types/node@22.8.1)(sass-embedded@1.80.3)(sass@1.80.4))(vue@3.5.12(typescript@5.6.3))
@@ -2769,8 +2769,8 @@ packages:
   mlly@1.7.2:
     resolution: {integrity: sha512-tN3dvVHYVz4DhSXinXIk7u9syPYaJvio118uomkovAtWBT+RdbP6Lfh/5Lvo519YMmwBafwlh20IPTXIStscpA==}
 
-  monaco-editor@0.52.0:
-    resolution: {integrity: sha512-OeWhNpABLCeTqubfqLMXGsqf6OmPU6pHM85kF3dhy6kq5hnhuVS1p3VrEW/XhWHc71P2tHyS5JFySD8mgs1crw==}
+  monaco-editor@0.51.0:
+    resolution: {integrity: sha512-xaGwVV1fq343cM7aOYB6lVE4Ugf0UyimdD/x5PWcWBMKENwectaEu77FAN7c5sFiyumqeJdX1RPTh1ocioyDjw==}
 
   mrmime@2.0.0:
     resolution: {integrity: sha512-eu38+hdgojoyq63s+yTpN4XMBdt5l8HhMhc4VKLO9KM5caLIBvUm4thi7fFaxyTmCKeNnXZ5pAlBwCUnhA09uw==}
@@ -4618,9 +4618,9 @@ snapshots:
     dependencies:
       '@lezer/common': 1.2.3
 
-  '@monaco-editor/loader@1.4.0(monaco-editor@0.52.0)':
+  '@monaco-editor/loader@1.4.0(monaco-editor@0.51.0)':
     dependencies:
-      monaco-editor: 0.52.0
+      monaco-editor: 0.51.0
       state-local: 1.0.7
 
   '@nodelib/fs.scandir@2.1.5':
@@ -7044,7 +7044,7 @@ snapshots:
       pkg-types: 1.2.1
       ufo: 1.5.4
 
-  monaco-editor@0.52.0: {}
+  monaco-editor@0.51.0: {}
 
   mrmime@2.0.0: {}
 
@@ -8090,9 +8090,9 @@ snapshots:
       - rollup
       - supports-color
 
-  vite-plugin-monaco-editor@1.1.0(monaco-editor@0.52.0):
+  vite-plugin-monaco-editor@1.1.0(monaco-editor@0.51.0):
     dependencies:
-      monaco-editor: 0.52.0
+      monaco-editor: 0.51.0
 
   vite-plugin-vue-devtools@7.5.4(rollup@4.24.0)(vite@5.4.10(@types/node@22.8.1)(sass-embedded@1.80.3)(sass@1.80.4))(vue@3.5.12(typescript@5.6.3)):
     dependencies:

@@ -33,7 +33,8 @@ const fontSize = ref(props.fontSize || 14)
 
 // 创建差异编辑器实例
 function createDiffEditor() {
-  loader.config({ monaco, 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
+  loader.config({ monaco })
+  loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
   loader.init().then((monacoInstance) => {
     if (diffEditorContainer.value) {
       // 创建差异编辑器
@@ -49,11 +50,22 @@ function createDiffEditor() {
         wordWrap: 'on', // 自动换行
         diffWordWrap: 'on',
         automaticLayout: true, // 自动布局
+        suggestOnTriggerCharacters: true, // 在触发字符时显示建议
+        acceptSuggestionOnCommitCharacter: true, // 接受关于提交字符的建议
+        acceptSuggestionOnEnter: 'smart', // 按Enter键接受建议
+        wordWrap: 'on', // 自动换行
+        autoSurround: 'never', // 是否应自动环绕选择
+        cursorBlinking: 'Solid', // 光标动画样式
+        cursorSmoothCaretAnimation: true, // 是否启用光标平滑插入动画  当你在快速输入文字的时候 光标是直接平滑的移动还是直接"闪现"到当前文字所处位置
+        cursorStyle: 'UnderlineThin', // "Block"|"BlockOutline"|"Line"|"LineThin"|"Underline"|"UnderlineThin" 光标样式
+        cursorSurroundingLines: 0, // 光标环绕行数 当文字输入超过屏幕时 可以看见右侧滚动条中光标所处位置是在滚动条中间还是顶部还是底部 即光标环绕行数 环绕行数越大 光标在滚动条中位置越居中
+        cursorSurroundingLinesStyle: 'all', // "default" | "all" 光标环绕样式
+        links: true, // 是否点击链接
       })
 
       // 设置模型
-      const originalModel = monaco.editor.createModel(props.originalValue, props.language)
-      const modifiedModel = monaco.editor.createModel(props.modifiedValue, props.language)
+      const originalModel = monacoInstance.editor.createModel(props.originalValue, props.language)
+      const modifiedModel = monacoInstance.editor.createModel(props.modifiedValue, props.language)
 
       diffEditor.setModel({
         original: originalModel,
@@ -142,6 +154,11 @@ function validateOriginal(callback: (success: boolean) => void) {
 }
 
 // 切换对比视图模式
+function swapContent() {
+  console.log('切换对比视图模式')
+}
+
+// 切换对比视图模式
 const isDiffInline = ref(false)
 function toggleDiffViewType() {
   isDiffInline.value = !isDiffInline.value
@@ -219,16 +236,12 @@ onUnmounted(() => {
       <div class="left-tools">
         <a-space>
           <div class="flex items-center justify-center ml-2">
-            <a-tooltip title="上一个差异">
-              <div class="next-btn" @click="goToPreviousDiff">
-                <Icon icon="iconamoon:arrow-up-1-bold" class="inline-block" />
-              </div>
-            </a-tooltip>
-            <a-tooltip title="下一个差异">
-              <div class="next-btn" @click="goToNextDiff">
-                <Icon icon="iconamoon:arrow-down-1-bold" class="inline-block" />
-              </div>
-            </a-tooltip>
+            <div class="next-btn" @click="goToPreviousDiff">
+              <Icon icon="iconamoon:arrow-up-1-bold" class="inline-block" />
+            </div>
+            <div class="next-btn" @click="goToNextDiff">
+              <Icon icon="iconamoon:arrow-down-1-bold" class="inline-block" />
+            </div>
           </div>
           <!-- 原始编辑器工具栏 -->
           <div class="original-tools">
@@ -237,14 +250,18 @@ onUnmounted(() => {
         </a-space>
       </div>
       <div class="right-tools mr-6">
-        <a-tooltip :title="isDiffInline ? '切换为并排视图' : '切换为内联视图'">
-          <a-button type="text" @click="toggleDiffViewType">
-            <template #icon>
-              <Icon :icon="isDiffInline ? 'lucide:split' : 'lucide:split'" class="inline-block mr-2" />
-            </template>
-            <span>{{ isDiffInline ? '对比视图' : '内联视图' }}</span>
-          </a-button>
-        </a-tooltip>
+        <a-button type="text" @click="swapContent">
+          <template #icon>
+            <Icon icon="fluent:arrow-swap-24-filled" class="inline-block mr-2" />
+          </template>
+          <span>交换内容</span>
+        </a-button>
+        <a-button type="text" @click="toggleDiffViewType">
+          <template #icon>
+            <Icon :icon="isDiffInline ? 'lucide:split' : 'lucide:split'" class="inline-block mr-2" />
+          </template>
+          <span>{{ isDiffInline ? '对比视图' : '内联视图' }}</span>
+        </a-button>
       </div>
     </div>
 

@@ -41,9 +41,11 @@ let errorDecorations: monaco.editor.IEditorDecorationsCollection | null = null
 
 // 创建编辑器实例
 function createEditor() {
-  // 汉化
-  // loader.config({ monaco })
-  loader.config({ monaco, 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
+  // 汉化 0.52 版本格式化存在问题
+  // loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.51.0/min/vs' } })
+
+  loader.config({ monaco })
+  loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
   loader.init().then((monacoInstance) => {
     // 通过loader.config({monaco})的配置后，此处的monacoInstance其实是我们 import * as monaco from 'monaco-editor'进来的npm包
     if (editorContainer.value) {
@@ -63,8 +65,16 @@ function createEditor() {
         wordBasedSuggestions: true, // 启用基于单词的建议
         scrollBeyondLastLine: false, // 禁用滚动超出最后一行
         suggestOnTriggerCharacters: true, // 在触发字符时显示建议
+        acceptSuggestionOnCommitCharacter: true, // 接受关于提交字符的建议
         acceptSuggestionOnEnter: 'smart', // 按Enter键接受建议
         wordWrap: 'on', // 自动换行
+        autoSurround: 'never', // 是否应自动环绕选择
+        cursorBlinking: 'Solid', // 光标动画样式
+        cursorSmoothCaretAnimation: true, // 是否启用光标平滑插入动画  当你在快速输入文字的时候 光标是直接平滑的移动还是直接"闪现"到当前文字所处位置
+        cursorStyle: 'UnderlineThin', // "Block"|"BlockOutline"|"Line"|"LineThin"|"Underline"|"UnderlineThin" 光标样式
+        cursorSurroundingLines: 0, // 光标环绕行数 当文字输入超过屏幕时 可以看见右侧滚动条中光标所处位置是在滚动条中间还是顶部还是底部 即光标环绕行数 环绕行数越大 光标在滚动条中位置越居中
+        cursorSurroundingLinesStyle: 'all', // "default" | "all" 光标环绕样式
+        links: true, // 是否点击链接
       })
 
       // 监听内容变化

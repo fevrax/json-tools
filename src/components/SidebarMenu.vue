@@ -220,7 +220,8 @@ defineExpose({
                 class="block truncate select-none"
               >
                 <span v-if="isNarrow">
-                  <a-tooltip :title="item.title" placement="right" class="">
+                  <span v-if="item.title.length < 6">{{ truncateTitle(item.title, 6) }}</span>
+                  <a-tooltip v-else color="rgba(154, 56,252,0.7)" :title="item.title" placement="right">
                     <span>{{ truncateTitle(item.title, 6) }}</span>
                   </a-tooltip>
                 </span>
