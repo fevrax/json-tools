@@ -43,12 +43,12 @@ let errorDecorations: monaco.editor.IEditorDecorationsCollection | null = null
 function createEditor() {
   // 0.52 版本格式化存在问题
   // 0.51 diff 定位存在问题
-  loader.config({ paths: { vs: 'lib/monaco-editor-vs/min/vs' } })
-
-  // loader.config({ monaco })
-  loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
+  // loader.config({ paths: { vs: 'monaco-editor-vs/min/vs' } })
+  loader.config({ monaco })
+  // CDN 中文包
+  // loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/min/vs' } })
+  // loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
   loader.init().then((monacoInstance) => {
-    // 通过loader.config({monaco})的配置后，此处的monacoInstance其实是我们 import * as monaco from 'monaco-editor'进来的npm包
     if (editorContainer.value) {
       editor = monacoInstance.editor.create(editorContainer.value, {
         value: props.modelValue || '',

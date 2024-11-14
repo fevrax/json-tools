@@ -33,10 +33,9 @@ const fontSize = ref(props.fontSize || 14)
 
 // 创建差异编辑器实例
 function createDiffEditor() {
+  loader.config({ monaco })
   // loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/min/vs' } })
-  // loader.config({ paths: { vs: './node_modules/monaco-editor/min/vs' } })
-  loader.config({ paths: { vs: './monaco-editor-vs/min/vs' } })
-  loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
+  // loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
   loader.init().then((monacoInstance) => {
     if (diffEditorContainer.value) {
       // 创建差异编辑器
