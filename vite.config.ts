@@ -1,5 +1,6 @@
 import path from 'node:path'
 import Vue from '@vitejs/plugin-vue'
+import copy from 'rollup-plugin-copy'
 import AutoImport from 'unplugin-auto-import/vite'
 import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers'
 import Components from 'unplugin-vue-components/vite'
@@ -21,6 +22,15 @@ export default defineConfig({
     include: ['vanilla-jsoneditor-cn'],
   },
   plugins: [
+    copy({
+      targets: [
+        {
+          src: 'node_modules/monaco-editor/min/vs/**/*',
+          dest: 'public/monaco-editor-vs/min/vs',
+        },
+      ],
+      hook: 'buildStart',
+    }),
     vueDevTools(),
     VueMacros({
       defineOptions: false,

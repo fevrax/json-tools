@@ -33,7 +33,9 @@ const fontSize = ref(props.fontSize || 14)
 
 // 创建差异编辑器实例
 function createDiffEditor() {
-  loader.config({ monaco })
+  // loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/min/vs' } })
+  // loader.config({ paths: { vs: './node_modules/monaco-editor/min/vs' } })
+  loader.config({ paths: { vs: './monaco-editor-vs/min/vs' } })
   loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
   loader.init().then((monacoInstance) => {
     if (diffEditorContainer.value) {
@@ -47,7 +49,6 @@ function createDiffEditor() {
         minimap: { enabled: true },
         mouseWheelZoom: true, // 启用鼠标滚轮缩放
         scrollBeyondLastLine: false,
-        wordWrap: 'on', // 自动换行
         diffWordWrap: 'on',
         automaticLayout: true, // 自动布局
         suggestOnTriggerCharacters: true, // 在触发字符时显示建议
@@ -155,7 +156,10 @@ function validateOriginal(callback: (success: boolean) => void) {
 
 // 切换对比视图模式
 function swapContent() {
-  console.log('切换对比视图模式')
+  const originValue = originalEditor?.getValue()
+  const modifiedValue = modifiedEditor?.getValue()
+  originalEditor?.setValue(modifiedValue)
+  modifiedEditor?.setValue(originValue)
 }
 
 // 切换对比视图模式
