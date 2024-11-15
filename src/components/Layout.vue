@@ -1,12 +1,16 @@
 <script setup lang="ts">
+import { Icon } from '@iconify/vue'
 import { onMounted, ref } from 'vue'
+import { useSettingsStore } from '~/stores/settings'
 import { useSidebarStore } from '~/stores/sidebar'
 import { useTabsStore } from '~/stores/tabs'
-import {Icon} from "@iconify/vue";
 
 const tabsStore = useTabsStore()
 const sidebarStore = useSidebarStore()
-const collapsed = ref<boolean>(true)
+
+const settingsStore = useSettingsStore()
+
+const collapsed = ref<boolean>(!settingsStore.settings.expandTabs)
 
 onMounted(() => {
   siderCollapseFunc(collapsed.value)
@@ -27,7 +31,8 @@ onMounted(() => {
 
 function siderCollapseFunc(changeCollapsed) {
   collapsed.value = changeCollapsed
-  document.documentElement.style.setProperty('--sider-width', changeCollapsed ? '76px' : '150px')
+  // const isNarrow = computed(() => sidebarWidth.value 也需要修改
+  document.documentElement.style.setProperty('--sider-width', changeCollapsed ? '70px' : '130px')
 }
 
 function toggleCollapsed() {
@@ -56,14 +61,14 @@ const footerStyle: CSSProperties = {
         theme="light"
         @collapse="siderCollapseFunc"
       >
-        <div class="h-12 border-b">
+        <div class="h-10 border-b dark:border-neutral-800">
           <transition name="fade">
-            <div v-if="collapsed" class="w-full flex items-center justify-center px-3 pt-2 pb-2 select-none absolute top-0">
+            <div v-if="collapsed" class="w-full flex items-center justify-center px-3 pt-1 pb-2 select-none absolute top-0">
               <a-avatar class="avatar-transition" src="logo.png" @click="addItem" />
             </div>
           </transition>
           <transition name="fade">
-            <div v-if="!collapsed" class="w-full flex items-center px-3 pt-2 pb-2 select-none justify-between absolute top-0">
+            <div v-if="!collapsed" class="w-full flex items-center px-3 pt-1 pb-2 select-none justify-between absolute top-0">
               <a-avatar class="avatar-transition" src="logo.png" @click="addItem" />
               <div v-show="!collapsed" class="flex justify-center items-center rounded-lg px-1 py-1 hover:bg-gray-200 dark:hover:bg-neutral-800 cursor-pointer transition-all duration-300 ease-in-out" @click="addItem">
                 <Icon class="text-xl !text-neutral-600" icon="mingcute:add-line" />
@@ -73,7 +78,7 @@ const footerStyle: CSSProperties = {
         </div>
         <SidebarMenu ref="sidebarRef" @dblclick="toggleCollapsed" @toggle-collapsed="siderCollapseFunc(false)" />
       </a-layout-sider>
-      <a-layout-content class="bg-white dark:bg-neutral-900">
+      <a-layout-content class="bg-white dark:bg-dark">
         <slot />
       </a-layout-content>
     </a-layout>

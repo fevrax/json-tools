@@ -16,13 +16,14 @@ const emit = defineEmits<{
 }>()
 
 const sidebarStore = useSidebarStore()
+const router = useRouter()
 
 const editingItemId = ref<string | null>(null)
 const editingInput = ref<HTMLInputElement | null>(null)
 const sidebarWidth = ref(200)
 const activeItemId = ref<string | null>(null)
 
-const isNarrow = computed(() => sidebarWidth.value < 90)
+const isNarrow = computed(() => sidebarWidth.value < 70)
 
 const sortedMenuItems = computed(() => {
   return [...sidebarStore.menuItems].sort((a, b) => {
@@ -63,7 +64,8 @@ function togglePin(item: MenuItem) {
 }
 
 function copyItem(item: MenuItem) {
-  const id = `tab${sidebarStore.nextId++}`
+  sidebarStore.nextId += 1
+  const id = `tab${sidebarStore.nextId}`
   const newItem: MenuItem = { ...item, id, isPinned: false }
   newItem.title += '-copy'
   sidebarStore.menuItems.push(newItem)
@@ -118,6 +120,10 @@ function truncateTitle(title: string, maxLength: number = 5) {
 }
 
 function selectItem(itemId: string) {
+  // 如果当前路由不是 / 则跳转到 /
+  if (router.currentRoute.value.path !== '/') {
+    useNavigation(router).navigateTo('/')
+  }
   sidebarStore.activeId = itemId
 }
 

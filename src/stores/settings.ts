@@ -4,7 +4,7 @@ import { ref, watch } from 'vue'
 
 export interface SettingsState {
   darkMode: boolean
-  editorCDN: boolean
+  editorCDN: 'false' | 'true'
   fontSize: 'small' | 'medium' | 'large'
   expandTabs: boolean
 }
@@ -12,7 +12,7 @@ export interface SettingsState {
 export const useSettingsStore = defineStore('settings', () => {
   const defaultSettings: SettingsStatex = {
     darkMode: useDark().value,
-    editorCDN: false,
+    editorCDN: 'false',
     fontSize: 'medium',
     expandTabs: true,
   }

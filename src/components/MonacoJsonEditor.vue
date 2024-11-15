@@ -4,6 +4,7 @@ import loader from '@monaco-editor/loader'
 import { Button, message, notification } from 'ant-design-vue'
 import * as monaco from 'monaco-editor'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { useSettingsStore } from '~/stores/settings'
 import { jsonParseError } from '~/utils/json'
 
 const props = defineProps<{
@@ -24,6 +25,7 @@ defineExpose({
   validateContentAfterOpenDialog,
 })
 
+const settingsStore = useSettingsStore()
 const formatModelOpen = ref(false)
 const autoFixLoading = ref(false)
 const parseJsonError = ref<JsonErrorInfo>({})
@@ -44,10 +46,13 @@ function createEditor() {
   // 0.52 版本格式化存在问题
   // 0.51 diff 定位存在问题
   // loader.config({ paths: { vs: 'monaco-editor-vs/min/vs' } })
-  loader.config({ monaco })
   // CDN 中文包
-  // loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/min/vs' } })
-  // loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
+  if (settingsStore.settings.editorCDN === 'true') {
+    loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/min/vs' } })
+    loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
+  } else {
+    loader.config({ monaco })
+  }
   loader.init().then((monacoInstance) => {
     if (editorContainer.value) {
       editor = monacoInstance.editor.create(editorContainer.value, {

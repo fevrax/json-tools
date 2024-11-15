@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { defineComponent, defineProps } from 'vue'
-
 const props = withDefaults(defineProps<Props>(), {
   size: '17',
 })

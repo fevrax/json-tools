@@ -9,6 +9,7 @@ export default {
     extend: {
       colors: {
         'vscode-dark': '#1e1e1e',
+        'dark': '#141414',
       },
     },
   },

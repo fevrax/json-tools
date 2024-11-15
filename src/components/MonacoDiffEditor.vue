@@ -4,6 +4,7 @@ import loader from '@monaco-editor/loader'
 import { message } from 'ant-design-vue'
 import * as monaco from 'monaco-editor'
 import { onMounted, onUnmounted, ref, watch } from 'vue'
+import { useSettingsStore } from '~/stores/settings'
 import { jsonParseError } from '~/utils/json'
 
 const props = defineProps<{
@@ -13,12 +14,11 @@ const props = defineProps<{
   theme: string // vs-light|vs-dark
   fontSize?: number
 }>()
-
 const emit = defineEmits<{
   (e: 'update:originalValue', value: string): void
   (e: 'update:modifiedValue', value: string): void
 }>()
-
+const settingsStore = useSettingsStore()
 // 编辑器容器
 const diffEditorContainer = ref<HTMLElement | null>(null)
 const editorHeight = ref('100%')
@@ -33,9 +33,12 @@ const fontSize = ref(props.fontSize || 14)
 
 // 创建差异编辑器实例
 function createDiffEditor() {
-  loader.config({ monaco })
-  // loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/min/vs' } })
-  // loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
+  if (settingsStore.settings.editorCDN === 'true') {
+    loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/min/vs' } })
+    loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
+  } else {
+    loader.config({ monaco })
+  }
   loader.init().then((monacoInstance) => {
     if (diffEditorContainer.value) {
       // 创建差异编辑器

@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { Icon } from '@iconify/vue'
 import { computed } from 'vue'
+import { useNavigation } from '~/composables/router'
 import { Editor } from '~/stores/sidebar'
-import {useNavigation} from "~/composables/router";
-
-const router = useRouter()
 
 const props = defineProps<{
   editor: Editor
@@ -14,6 +12,8 @@ const emit = defineEmits<{
   (e: 'update:editor', value: Editor): void
   (e: 'switch', value: Editor)
 }>()
+
+const router = useRouter()
 
 const currentEditor = computed({
   get: () => props.editor,
@@ -56,21 +56,22 @@ function settingHandler() {
 
 <style scoped lang="scss">
 .editor-switch-container {
-  @apply flex justify-between items-center py-1 px-3 bg-gray-100 dark:bg-neutral-900 text-xs;
+  @apply flex justify-between items-center px-3 bg-white dark:bg-dark text-xs h-10;
 }
 
 .editor-switch {
-  @apply relative inline-flex rounded-full bg-gray-200 dark:bg-neutral-800 p-0.5;
+  @apply relative inline-flex rounded-full bg-gray-100 dark:bg-neutral-900 p-0.5;
 }
 
 .editor-button {
   width: 60px;
   font-size: 12px;
-  @apply relative z-10 px-2 py-1 font-medium rounded-full transition-all duration-200 ease-in-out outline-none focus:ring-0;
-  @apply text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white active:bg-gray-300 dark:active:bg-gray-500;
+  padding: 5px 0;
+  @apply relative z-10 font-medium rounded-full transition-all duration-200 ease-in-out outline-none focus:ring-0;
+  @apply text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-white active:bg-gray-300 dark:active:bg-neutral-800;
 
   &-active {
-    @apply text-gray-800 dark:text-white bg-white dark:bg-neutral-700 shadow;
+    @apply text-gray-800 dark:text-white bg-white dark:bg-neutral-800 shadow;
   }
 }
 

@@ -26,6 +26,6 @@ export function useNavigation(router: Router) {
     navigateReplace,
     goBack,
     goForward,
-    goHome
+    goHome,
   }
 }

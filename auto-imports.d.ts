@@ -379,7 +379,6 @@ declare module 'vue' {
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly isArrayOrObject: UnwrapRef<typeof import('./src/utils/json')['isArrayOrObject']>
-    readonly isDark: UnwrapRef<typeof import('./src/composables/dark')['isDark']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
     readonly isJsonString: UnwrapRef<typeof import('./src/utils/json')['isJsonString']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
