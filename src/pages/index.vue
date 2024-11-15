@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import MonacoJsonEditor from '~/components/MonacoJsonEditor.vue'
+import { useSettingsStore } from '~/stores/settings'
 import { Editor, useSidebarStore } from '~/stores/sidebar'
 
 const sidebarStore = useSidebarStore()
+const settingsStore = useSettingsStore()
 
 const monacoRefs: Ref<{ [key: number]: typeof JsonEditor | null }> = ref({})
 const vanillaRefs: Ref = ref([])
@@ -60,7 +62,7 @@ function monacoDiffEditorOriginUpdate(jsonText: string) {
             :ref="(el) => { if (el) monacoRefs[`jsonEditor${item.id}`] = el }"
             v-model="item.content"
             language="json"
-            :theme="isDark ? 'vs-dark' : 'vs-light'"
+            :theme="settingsStore.settings.darkMode ? 'vs-dark' : 'vs-light'"
           />
         </div>
       </div>
@@ -71,7 +73,7 @@ function monacoDiffEditorOriginUpdate(jsonText: string) {
             :original-value="item.content"
             modified-value=""
             language="json"
-            :theme="isDark ? 'vs-dark' : 'vs-light'"
+            :theme="settingsStore.settings.darkMode ? 'vs-dark' : 'vs-light'"
             @update:original-value="monacoDiffEditorOriginUpdate"
           />
         </div>

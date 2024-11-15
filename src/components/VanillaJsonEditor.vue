@@ -3,10 +3,13 @@ import type { Content, JsonEditor, JSONEditorPropsOptional, MenuItem, Mode } fro
 import { message } from 'ant-design-vue'
 import { createJSONEditor } from 'vanilla-jsoneditor-cn'
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useSettingsStore } from '~/stores/settings'
 import { useSidebarStore, VanillaMode } from '~/stores/sidebar'
 
 const props = withDefaults(defineProps<Props>(), {
 })
+
+const settingsStore = useSettingsStore()
 
 // import { parse, stringify } from 'lossless-json'
 
@@ -200,7 +203,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <div ref="editorContainer" class="json-editor" :class="{ 'jse-theme-dark': isDark }" :style="{ height: editorHeight }" />
+  <div ref="editorContainer" class="json-editor" :class="{ 'jse-theme-dark': settingsStore.settings.darkMode }" :style="{ height: editorHeight }" />
 </template>
 
 <style lang="scss">

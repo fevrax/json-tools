@@ -1,6 +1,10 @@
 <script setup lang="ts">
+import { Icon } from '@iconify/vue'
 import { computed } from 'vue'
 import { Editor } from '~/stores/sidebar'
+import {useNavigation} from "~/composables/router";
+
+const router = useRouter()
 
 const props = defineProps<{
   editor: Editor
@@ -24,6 +28,10 @@ const editors = [
 function handleSwitch(value: Editor) {
   emit('switch', value)
 }
+
+function settingHandler() {
+  useNavigation(router).navigateTo('/settings')
+}
 </script>
 
 <template>
@@ -39,7 +47,10 @@ function handleSwitch(value: Editor) {
         {{ editor.label }}
       </button>
     </div>
-    <theme-toggle />
+    <div class="flex items-center mr-1">
+      <theme-toggle class="rotation-icon" />
+      <Icon icon="weui:setting-filled" class="rotation-icon text-xl ml-4 cursor-pointer text-neutral-700 dark:text-neutral-400" @click="settingHandler" />
+    </div>
   </div>
 </template>
 
@@ -61,5 +72,13 @@ function handleSwitch(value: Editor) {
   &-active {
     @apply text-gray-800 dark:text-white bg-white dark:bg-neutral-700 shadow;
   }
+}
+
+.rotation-icon {
+  transition: transform 0.8s ease-in-out;
+}
+
+.rotation-icon:hover {
+  transform: rotate(360deg);
 }
 </style>
