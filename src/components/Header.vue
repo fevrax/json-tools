@@ -48,8 +48,8 @@ function settingHandler() {
       </button>
     </div>
     <div class="flex items-center mr-1">
-      <theme-toggle class="rotation-icon" />
-      <Icon icon="weui:setting-filled" class="rotation-icon text-xl ml-4 cursor-pointer text-neutral-700 dark:text-neutral-400" @click="settingHandler" />
+      <theme-toggle />
+      <Icon icon="weui:setting-filled" style="font-size: 22px" class="rotation-icon ml-4 cursor-pointer text-neutral-700 dark:text-neutral-400" @click="settingHandler" />
     </div>
   </div>
 </template>
@@ -76,7 +76,7 @@ function settingHandler() {
 }
 
 .rotation-icon {
-  transition: transform 0.8s ease-in-out;
+  transition: transform 1.5s ease-in-out;
 }
 
 .rotation-icon:hover {

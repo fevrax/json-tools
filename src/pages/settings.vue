@@ -56,10 +56,10 @@ function editorCDNChange(value: string) {
       @back="() => useNavigation(router).goBack()"
     />
 
-    <div class="py-1 max-w-4xl mx-auto h-full">
+    <div class="max-w-4xl mx-auto h-full">
       <!-- 设置组 -->
       <div
-        class="bg-white dark:bg-neutral-900 rounded-lg shadow-sm p-6 transform transition-all duration-300"
+        class="bg-white dark:bg-neutral-900 rounded-lg shadow-sm p-6 transform transition-all duration-300 h-full"
       >
         <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">
           常规设置
@@ -123,16 +123,8 @@ function editorCDNChange(value: string) {
 </template>
 
 <style scoped>
-.dark .ant-page-header-heading-title {
-  color: #fff;
-}
-
 :deep(.ant-page-header-heading-title) {
   @apply text-neutral-700 dark:text-neutral-300 text-lg;
-}
-
-:deep(.ant-switch-checked) {
-  @apply bg-blue-500;
 }
 
 :deep(.ant-radio-button-wrapper-checked) {

@@ -15,7 +15,7 @@ const textClass = computed(() => ({
 </script>
 
 <template>
-  <a-button type="link" class="!mr-2 check-btn">
+  <a-button type="link" class="check-btn">
     <div class="flex items-center">
       <span class="mr-1 check-icon pb-0.5">
         <StatusIcon :default-icon="icon" :status="status" />

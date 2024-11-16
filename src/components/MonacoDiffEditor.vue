@@ -239,9 +239,9 @@ onUnmounted(() => {
   <div class="monaco-diff-editor-container">
     <!-- 工具栏 -->
     <div class="flex justify-between items-center border-b dark:border-b-neutral-800 mb-2">
-      <div class="left-tools">
+      <div class="left-tools ml-2">
         <a-space>
-          <div class="flex items-center justify-center ml-2">
+          <div class="flex items-center justify-center">
             <div class="next-btn" @click="goToPreviousDiff">
               <Icon icon="iconamoon:arrow-up-1-bold" class="inline-block" />
             </div>
@@ -255,19 +255,21 @@ onUnmounted(() => {
           </div>
         </a-space>
       </div>
-      <div class="right-tools mr-6">
+      <div class="right-tools mr-2">
         <a-button type="text" @click="swapContent">
           <template #icon>
             <Icon icon="fluent:arrow-swap-24-filled" class="inline-block mr-2" />
           </template>
-          <span>交换内容</span>
+          <span>交换</span>
         </a-button>
-        <a-button type="text" @click="toggleDiffViewType">
-          <template #icon>
-            <Icon :icon="isDiffInline ? 'lucide:split' : 'lucide:split'" class="inline-block mr-2" />
-          </template>
-          <span>{{ isDiffInline ? '对比视图' : '内联视图' }}</span>
-        </a-button>
+        <a-tooltip :title="isDiffInline ? '切换为对比视图' : '切换为内联视图'" color="rgba(154,56,252,0.7)">
+          <a-button type="text" @click="toggleDiffViewType">
+            <template #icon>
+              <Icon :icon="isDiffInline ? 'lucide:split' : 'lucide:split'" class="inline-block mr-2" />
+            </template>
+            <span>{{ isDiffInline ? '对比' : '内联' }}</span>
+          </a-button>
+        </a-tooltip>
       </div>
     </div>
 
@@ -298,7 +300,7 @@ onUnmounted(() => {
 .next-btn {
   @apply rounded-md border dark:border-neutral-700;
   padding: 3px 8px;
-  margin-left: 8px;
+  margin-left: 2px;
 }
 
 .next-btn:hover {
@@ -313,5 +315,11 @@ onUnmounted(() => {
 
 .next-btn-disable:hover {
   @apply bg-neutral-200 dark:bg-neutral-700;
+}
+
+.right-tools {
+  :deep(.ant-btn) {
+    padding: 0 6px;
+  }
 }
 </style>

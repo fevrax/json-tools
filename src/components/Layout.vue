@@ -63,12 +63,12 @@ const footerStyle: CSSProperties = {
       >
         <div class="h-10 border-b dark:border-neutral-800">
           <transition name="fade">
-            <div v-if="collapsed" class="w-full flex items-center justify-center px-3 pt-1 pb-2 select-none absolute top-0">
+            <div v-if="collapsed" class="w-full flex items-center justify-center px-3 pt-0.5 pb-2 select-none absolute top-0">
               <a-avatar class="avatar-transition" src="logo.png" @click="addItem" />
             </div>
           </transition>
           <transition name="fade">
-            <div v-if="!collapsed" class="w-full flex items-center px-3 pt-1 pb-2 select-none justify-between absolute top-0">
+            <div v-if="!collapsed" class="w-full flex items-center px-3 pt-0.5 pb-2 select-none justify-between absolute top-0">
               <a-avatar class="avatar-transition" src="logo.png" @click="addItem" />
               <div v-show="!collapsed" class="flex justify-center items-center rounded-lg px-1 py-1 hover:bg-gray-200 dark:hover:bg-neutral-800 cursor-pointer transition-all duration-300 ease-in-out" @click="addItem">
                 <Icon class="text-xl !text-neutral-600" icon="mingcute:add-line" />

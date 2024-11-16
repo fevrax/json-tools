@@ -223,27 +223,27 @@ function formatModelByUnEscapeJson(jsonText: string): string {
 <template>
   <a-flex justify="space-between" align="center" class="h-9">
     <a-flex>
-      <div class="dropdown-text ml-2">
+      <div class="dropdown-text ml-2 dropdown-text-btn">
         <a-dropdown-button type="link" placement="bottom" class="check-btn" @click="copy">
           <div class="flex items-center">
             <span class="mr-1 check-icon pb-0.5">
-              <Icon v-if="copyIcon === 'default'" icon="si:copy-line" class="text-17" />
-              <Icon v-else-if="copyIcon === 'success'" icon="icon-park-solid:success" class="text-17" style="color: #52c41a;" />
+              <Icon v-if="copyIcon === 'default'" icon="si:copy-line" class="text-base" />
+              <Icon v-else-if="copyIcon === 'success'" icon="icon-park-solid:success" class="text-base" style="color: #52c41a;" />
               <icon-park-solid-error v-else-if="copyIcon === 'error'" style="color: #f5222d;" />
             </span>
-            <span class="check-text " :class="[copyTextClass]">复制</span>
+            <span class="check-text" :class="[copyTextClass]">复制</span>
           </div>
           <template #overlay>
             <a-menu @click="copySubMenuClickHandle">
               <a-menu-item key="compressedCopy">
                 <div class="flex items-center">
-                  <Icon icon="f7:rectangle-compress-vertical" class="text-17" />
+                  <Icon icon="f7:rectangle-compress-vertical" class="text-base" />
                   <span class="ml-1">压缩后复制</span>
                 </div>
               </a-menu-item>
               <a-menu-item key="escapeCopy">
                 <div class="flex items-center">
-                  <Icon icon="si:swap-horiz-line" class="text-17" />
+                  <Icon icon="si:swap-horiz-line" class="text-base" />
                   <span class="ml-1">转义后复制</span>
                 </div>
               </a-menu-item>
@@ -256,8 +256,8 @@ function formatModelByUnEscapeJson(jsonText: string): string {
           </template>
         </a-dropdown-button>
       </div>
-      <div class="dropdown-text ml-2">
-        <StatusIconButtonLink :icon="renderIconFontSize('mdi:magic', 17)" :status="formatStatus" text="格式化" @click="format" />
+      <div class="dropdown-text pr-1">
+        <StatusIconButtonLink :icon="renderIconFontSize('mdi:magic', 16)" :status="formatStatus" text="格式化" @click="format" />
       </div>
       <div class="dropdown-text">
         <a-dropdown class="check-btn">
@@ -265,30 +265,30 @@ function formatModelByUnEscapeJson(jsonText: string): string {
             <a-menu @click="fieldSortHandleMenuClick">
               <a-menu-item key="asc">
                 <div class="flex items-center">
-                  <Icon icon="fluent:text-sort-ascending-20-filled" class="text-17" />
+                  <Icon icon="fluent:text-sort-ascending-20-filled" class="text-base" />
                   <span class="ml-1">字段升序</span>
                 </div>
               </a-menu-item>
               <a-menu-item key="desc">
                 <div class="flex items-center">
-                  <Icon icon="fluent:text-sort-descending-20-filled" class="text-17" />
+                  <Icon icon="fluent:text-sort-descending-20-filled" class="text-base" />
                   <span class="ml-1">字段降序</span>
                 </div>
               </a-menu-item>
             </a-menu>
           </template>
           <div class="dropdown-btn">
-            <span class="mr-1 check-icon pb-0.5">
-              <Icon v-if="sortIcon === 'default'" icon="mi:sort" class="text-17" />
-              <Icon v-else-if="sortIcon === 'success'" icon="icon-park-solid:success" class="text-17" style="color: #52c41a;" />
+            <span class="check-icon mr-0.5">
+              <Icon v-if="sortIcon === 'default'" icon="mi:sort" class="text-base" />
+              <Icon v-else-if="sortIcon === 'success'" icon="icon-park-solid:success" class="text-base" style="color: #52c41a;" />
               <icon-park-solid-error v-else-if="sortIcon === 'error'" style="color: #f5222d;" />
             </span>
             <span class="check-text" :class="[sortClass]">排序</span>
           </div>
         </a-dropdown>
       </div>
-      <div class="dropdown-text ml-2">
-        <StatusIconButtonLink :icon="renderIconFontSize('mynaui:trash', 17)" :status="clearContentStatus" text="清空" @click="clearContent" />
+      <div class="dropdown-text">
+        <StatusIconButtonLink :icon="renderIconFontSize('mynaui:trash', 16)" :status="clearContentStatus" text="清空" @click="clearContent" />
       </div>
       <div class="dropdown-text">
         <a-dropdown class="check-btn">
@@ -296,25 +296,25 @@ function formatModelByUnEscapeJson(jsonText: string): string {
             <a-menu @click="moreHandleMenuClick">
               <a-menu-item key="unescape">
                 <div class="flex items-center">
-                  <Icon icon="iconoir:remove-link" class="text-17" />
+                  <Icon icon="iconoir:remove-link" class="text-base" />
                   <span class="ml-1">去除转义</span>
                 </div>
               </a-menu-item>
               <a-menu-item key="del_comment">
                 <div class="flex items-center">
-                  <Icon icon="tabler:notes-off" class="text-17" />
+                  <Icon icon="tabler:notes-off" class="text-base" />
                   <span class="ml-1">移除注释</span>
                 </div>
               </a-menu-item>
             </a-menu>
           </template>
           <div class="dropdown-btn">
-            <span class="mr-1 pb-0.5">
-              <Icon v-if="moreIcon === 'default'" icon="mingcute:more-2-fill" class="text-17" />
-              <Icon v-else-if="moreIcon === 'success'" icon="icon-park-solid:success" class="text-17" style="color: #52c41a;" />
+            <span class="mr-1">
+              <Icon v-if="moreIcon === 'default'" icon="mingcute:more-2-fill" class="text-base" />
+              <Icon v-else-if="moreIcon === 'success'" icon="icon-park-solid:success" class="text-base" style="color: #52c41a;" />
               <icon-park-solid-error v-else-if="moreIcon === 'error'" style="color: #f5222d;" />
             </span>
-            <span class="check-text " :class="[moreClass]">更多</span>
+            <span class="check-text" :class="[moreClass]">更多</span>
           </div>
         </a-dropdown>
       </div>
@@ -323,7 +323,7 @@ function formatModelByUnEscapeJson(jsonText: string): string {
   </a-flex>
 </template>
 
-<style lang="scss">
+<style scoped lang="scss">
 .dropdown-text {
   width: auto;
   display: flex;
@@ -331,7 +331,7 @@ function formatModelByUnEscapeJson(jsonText: string): string {
   justify-content: center;
   margin-right: 4px;
   @apply dark:text-white !important;
-  .ant-btn-link {
+  :deep(.ant-btn-link) {
     padding-right: 5px;
     padding-left: 5px;
     color: #000;
@@ -346,24 +346,25 @@ function formatModelByUnEscapeJson(jsonText: string): string {
   }
 
   .dropdown-btn {
-    @apply flex items-center w-auto px-2 rounded-md !important;
+    @apply flex items-center w-auto px-1 rounded-md !important;
     @apply hover:bg-neutral-200 hover:dark:bg-zinc-800;
     padding: 6px 0;
   }
   .dropdown-btn:hover {
-    @apply hover:bg-neutral-200 hover:dark:bg-zinc-800;
+    background-color: rgb(236, 236, 236);
+    @apply hover:dark:bg-zinc-800;
   }
 
-  .ant-btn-link:hover {
+  :deep(.ant-btn-link):hover {
     color: #000;
-    background-color: rgb(232, 232, 232);
+    background-color: rgb(236, 236, 236);
     border-radius: 6px;
     // 夜间模式
     @apply dark:text-white;
     @apply dark:bg-zinc-800;
   }
 
-  .ant-dropdown-trigger {
+  :deep(.ant-dropdown-trigger) {
     width: 25px;
   }
 
@@ -411,6 +412,13 @@ function formatModelByUnEscapeJson(jsonText: string): string {
   .anticon-close {
     color: #f5222d;
     transform: scale(1.1);
+  }
+}
+
+// 下拉框按钮样式
+.dropdown-text-btn {
+  :deep(.ant-btn-link):first-child {
+    padding-right: 2px;
   }
 }
 </style>
