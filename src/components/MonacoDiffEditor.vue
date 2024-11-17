@@ -34,7 +34,7 @@ const fontSize = ref(props.fontSize || 14)
 // 创建差异编辑器实例
 function createDiffEditor() {
   if (settingsStore.settings.editorCDN === 'true') {
-    loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/min/vs' } })
+    loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs' } })
     loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
   } else {
     loader.config({ monaco })
@@ -67,8 +67,8 @@ function createDiffEditor() {
       })
 
       // 设置模型
-      const originalModel = monacoInstance.editor.createModel(props.originalValue, props.language)
-      const modifiedModel = monacoInstance.editor.createModel(props.modifiedValue, props.language)
+      const originalModel = monacoInstance.editor.createModel(props.originalValue, props.language || 'json')
+      const modifiedModel = monacoInstance.editor.createModel(props.modifiedValue, props.language || 'json')
 
       diffEditor.setModel({
         original: originalModel,

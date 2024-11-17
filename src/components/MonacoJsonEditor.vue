@@ -43,12 +43,10 @@ let errorDecorations: monaco.editor.IEditorDecorationsCollection | null = null
 
 // 创建编辑器实例
 function createEditor() {
-  // 0.52 版本格式化存在问题
-  // 0.51 diff 定位存在问题
-  // loader.config({ paths: { vs: 'monaco-editor-vs/min/vs' } })
-  // CDN 中文包
   if (settingsStore.settings.editorCDN === 'true') {
-    loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/min/vs' } })
+  // CDN 中文包
+    // loader.config({ paths: { vs: './node_modules/monaco-editor/min/vs' } })
+    loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs' } })
     loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
   } else {
     loader.config({ monaco })

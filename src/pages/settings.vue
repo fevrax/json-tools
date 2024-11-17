@@ -106,7 +106,7 @@ function editorCDNChange(value: string) {
             <div class="text-sm text-gray-500 dark:text-gray-400">
               1. 本地加载，首屏加载速度快，暂不支持中文。
               <br>
-              2. CDN(需联网)，首屏加载速度慢，支持中文。
+              2. CDN(需联网)，首屏加载速度稍慢，支持中文。
             </div>
           </div>
           <a-select
