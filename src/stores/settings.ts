@@ -6,7 +6,8 @@ export interface SettingsState {
   darkMode: boolean
   editorCDN: 'false' | 'true'
   fontSize: 'small' | 'medium' | 'large'
-  expandTabs: boolean
+  expandTabs: boolean // 是否展开tab
+  editDataSaveLocal: boolean // 是否保存编辑数据到本地
 }
 
 export const useSettingsStore = defineStore('settings', () => {
@@ -15,6 +16,7 @@ export const useSettingsStore = defineStore('settings', () => {
     editorCDN: 'false',
     fontSize: 'medium',
     expandTabs: true,
+    editDataSaveLocal: true,
   }
 
   const settings = ref<SettingsState>(
@@ -33,6 +35,7 @@ export const useSettingsStore = defineStore('settings', () => {
     settings.value.darkMode = darkMode
   }
   return {
+    defaultSettings,
     settings,
     updateSetting,
     toggleDark,

@@ -3,9 +3,7 @@ import { Icon } from '@iconify/vue'
 import { onMounted, ref } from 'vue'
 import { useSettingsStore } from '~/stores/settings'
 import { useSidebarStore } from '~/stores/sidebar'
-import { useTabsStore } from '~/stores/tabs'
 
-const tabsStore = useTabsStore()
 const sidebarStore = useSidebarStore()
 
 const settingsStore = useSettingsStore()
@@ -14,9 +12,7 @@ const collapsed = ref<boolean>(!settingsStore.settings.expandTabs)
 
 onMounted(() => {
   siderCollapseFunc(collapsed.value)
-  if (tabsStore.tabs.length === 0) {
-    tabsStore.addTab('')
-  }
+  sidebarStore.initFromStorage()
   if (sidebarStore.menuItems.length === 0) {
     sidebarStore.addTab('')
   }

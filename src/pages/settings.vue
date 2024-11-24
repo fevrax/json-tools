@@ -3,6 +3,7 @@ import { Button, message, notification } from 'ant-design-vue'
 import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useSettingsStore } from '~/stores/settings'
+import {STORAGE_KEY} from "~/stores/sidebar";
 
 defineOptions({
   name: 'SettingPage',
@@ -46,6 +47,12 @@ function editorCDNChange(value: string) {
     reloadApp()
   }
 }
+
+function editDataSaveLocalChange(value: boolean) {
+  if (!value) {
+    localStorage.removeItem(STORAGE_KEY)
+  }
+}
 </script>
 
 <template>
@@ -78,6 +85,22 @@ function editorCDNChange(value: string) {
           <a-switch
             v-model:checked="settings.darkMode"
             class="transition-opacity duration-200 hover:opacity-80"
+          />
+        </div>
+        <!-- 夜间模式 -->
+        <div class="flex items-center justify-between py-3 border-b dark:border-neutral-700">
+          <div>
+            <div class="text-gray-900 dark:text-gray-100">
+              本地存储
+            </div>
+            <div class="text-sm text-gray-500 dark:text-gray-400">
+              将编辑器数据存储在本地，关闭后刷新页面数据将丢失。
+            </div>
+          </div>
+          <a-switch
+            v-model:checked="settings.editDataSaveLocal"
+            class="transition-opacity duration-200 hover:opacity-80"
+            @change="editDataSaveLocalChange"
           />
         </div>
 
