@@ -10,20 +10,17 @@ const settingsStore = useSettingsStore()
 
 const collapsed = ref<boolean>(!settingsStore.settings.expandTabs)
 
-onMounted(() => {
-  siderCollapseFunc(collapsed.value)
-  sidebarStore.initFromStorage()
-  if (sidebarStore.menuItems.length === 0) {
-    sidebarStore.addTab('')
+// 定义页面关闭事件处理函数
+function handleUnload() {
+  sidebarStore.saveToStorage()
+}
+
+// 定义可见性变化处理函数
+function handleVisibilityChange() {
+  if (document.visibilityState === 'hidden') {
+    sidebarStore.saveToStorage()
   }
-  if (window.utools) {
-    window.utools.onPluginEnter(({ code, type, payload, option }) => {
-      if (type === 'regex') {
-        sidebarStore.activeTab.content = payload
-      }
-    })
-  }
-})
+}
 
 function siderCollapseFunc(changeCollapsed) {
   collapsed.value = changeCollapsed
@@ -45,6 +42,26 @@ function addItem() {
 const footerStyle: CSSProperties = {
   height: '10px',
 }
+
+onMounted(() => {
+  siderCollapseFunc(collapsed.value)
+  sidebarStore.initFromStorage()
+  if (sidebarStore.menuItems.length === 0) {
+    sidebarStore.addTab('')
+  }
+  if (window.utools) {
+    window.utools.onPluginEnter(({ code, type, payload, option }) => {
+      if (type === 'regex') {
+        sidebarStore.activeTab.content = payload
+      }
+    })
+  }
+
+  // 添加事件监听
+  // window.addEventListener('beforeunload', handleBeforeUnload)
+  window.addEventListener('unload', handleUnload) // 页面关闭监听
+  document.addEventListener('visibilitychange', handleVisibilityChange) // 页面可见性变化监听
+})
 </script>
 
 <template>

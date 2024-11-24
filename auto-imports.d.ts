@@ -48,6 +48,7 @@ declare global {
   const inject: typeof import('vue')['inject']
   const injectLocal: typeof import('@vueuse/core')['injectLocal']
   const isArrayOrObject: typeof import('./src/utils/json')['isArrayOrObject']
+  const isDark: typeof import('./src/composables/dark')['isDark']
   const isDefined: typeof import('@vueuse/core')['isDefined']
   const isJsonEscaped: typeof import('~/utils/json')['isJsonEscaped']
   const isJsonString: typeof import('./src/utils/json')['isJsonString']
@@ -135,6 +136,7 @@ declare global {
   const toRef: typeof import('vue')['toRef']
   const toRefs: typeof import('vue')['toRefs']
   const toValue: typeof import('vue')['toValue']
+  const toggleDark: typeof import('./src/composables/dark')['toggleDark']
   const toggleLocale: typeof import('./src/composables/locale')['toggleLocale']
   const triggerRef: typeof import('vue')['triggerRef']
   const tryOnBeforeMount: typeof import('@vueuse/core')['tryOnBeforeMount']
@@ -377,6 +379,7 @@ declare module 'vue' {
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly isArrayOrObject: UnwrapRef<typeof import('./src/utils/json')['isArrayOrObject']>
+    readonly isDark: UnwrapRef<typeof import('./src/composables/dark')['isDark']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
     readonly isJsonString: UnwrapRef<typeof import('./src/utils/json')['isJsonString']>
     readonly isProxy: UnwrapRef<typeof import('vue')['isProxy']>
@@ -449,6 +452,7 @@ declare module 'vue' {
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
+    readonly toggleDark: UnwrapRef<typeof import('./src/composables/dark')['toggleDark']>
     readonly toggleLocale: UnwrapRef<typeof import('./src/composables/locale')['toggleLocale']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly tryOnBeforeMount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeMount']>

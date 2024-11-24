@@ -142,6 +142,10 @@ async function updateEditorHeight() {
   if (editorContainer.value) {
     const windowHeight = window.innerHeight
     for (let i = 0; i < 200; i++) {
+      if (!editorContainer.value) {
+        await sleep(50)
+        continue
+      }
       // 这里编辑器可能未初始化，所以需要多次尝试
       const containerRect = editorContainer.value.getBoundingClientRect()
       if (containerRect.height > 0) {

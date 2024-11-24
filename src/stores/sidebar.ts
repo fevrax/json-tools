@@ -33,7 +33,7 @@ export const useSidebarStore = defineStore('sidebar', () => {
   const nextId = ref<number>(0)
   const settingStore = useSettingsStore()
 
-  watch([menuItems, activeId, nextId], () => {
+  watch([nextId], () => {
     console.log('watch menuItems, activeId, nextId', settingStore.settings.editDataSaveLocal)
     saveToStorage()
   }, { deep: true })
