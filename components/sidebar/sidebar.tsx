@@ -223,6 +223,7 @@ const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
               isCompact || hideEndContent ? null : (item.endContent ?? null)
             }
             startContent={
+              /* 正常模式下，显示图标 和 文字 */
               isCompact ? null : item.icon ? (
                 <Icon
                   className={cn(
@@ -230,7 +231,7 @@ const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
                     iconClassName,
                   )}
                   icon={item.icon}
-                  width={24}
+                  width={20}
                 />
               ) : (
                 (item.startContent ?? null)
@@ -240,6 +241,7 @@ const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
             title={isCompact ? null : item.title}
           >
             {isCompact ? (
+              /* 紧凑模式下，只显示图标 */
               <Tooltip content={item.title} placement="right">
                 <div className="flex w-full items-center justify-center">
                   {item.icon ? (
@@ -249,7 +251,7 @@ const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
                         iconClassName,
                       )}
                       icon={item.icon}
-                      width={24}
+                      width={20}
                     />
                   ) : (
                     (item.startContent ?? null)

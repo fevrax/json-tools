@@ -68,7 +68,7 @@ export default function RootLayout({
                     "items-center px-[6px] py-4": isCollapsed,
                   },
                 )}
-                style={{ width: isCollapsed ? 62 : 170 }}
+                style={{ width: isCollapsed ? 56 : 170 }}
               >
                 <div
                   className={cn(
