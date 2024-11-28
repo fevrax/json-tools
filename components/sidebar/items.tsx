@@ -1,3 +1,5 @@
+"use client";
+
 import { type SidebarItem } from "./sidebar";
 
 /**
@@ -7,19 +9,19 @@ import { type SidebarItem } from "./sidebar";
 export const items: SidebarItem[] = [
   {
     key: "textView",
-    href: "#",
+    // href: "/",
     icon: "solar:home-2-linear",
     title: "文本视图",
   },
   {
     key: "treeView",
-    href: "#treeView",
+    // href: "/about",
     icon: "solar:widget-2-outline",
     title: "树形视图",
   },
   {
     key: "diffView",
-    href: "#diffView",
+    // href: "/diffView",
     icon: "solar:checklist-minimalistic-outline",
     title: "DIFF视图",
   },

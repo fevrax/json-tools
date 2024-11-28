@@ -1,7 +1,6 @@
 "use client";
 
 import "@/styles/globals.css";
-import { Viewport } from "next";
 import clsx from "clsx";
 import {
   Image,
@@ -14,18 +13,13 @@ import {
 import { Icon } from "@iconify/react";
 import React from "react";
 
+import { useState, ReactEventHandler  } from "react";
+
 import { Providers } from "./providers";
 
 import SidebarDrawer from "@/components/sidebar/sidebar-drawer";
 import Sidebar from "@/components/sidebar/sidebar";
 import { items } from "@/components/sidebar/items";
-
-export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "white" },
-    { media: "(prefers-color-scheme: dark)", color: "black" },
-  ],
-};
 
 export default function RootLayout({
   children,
@@ -35,14 +29,26 @@ export default function RootLayout({
   const { isOpen, onOpenChange } = useDisclosure();
   const [isCollapsed, setIsCollapsed] = React.useState(false);
 
+  const handleSelect = (
+    key: string | React.SyntheticEvent<HTMLUListElement>,
+  ) => {
+      console.log("handleSelect", key);
+    // 其他逻辑...
+  };
+
+
+
   const onToggle = React.useCallback(() => {
     setIsCollapsed((prev) => !prev);
   }, []);
 
   return (
-    <html suppressHydrationWarning lang="en">
+    <html suppressHydrationWarning lang="zh">
       <head>
-        <title>JSON Tools</title>
+        <title>JSON Tools - 多功能JSON处理助手</title>
+        <meta content="JSON Tools - 多功能JSON处理助手" name="description" />
+        <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+        <link href="/favicon.png" rel="icon" />
       </head>
       <body
         className={clsx("min-h-screen bg-background font-sans antialiased")}
@@ -62,7 +68,7 @@ export default function RootLayout({
                     "items-center px-[6px] py-4": isCollapsed,
                   },
                 )}
-                style={{ width: isCollapsed ? 62 : 200 }}
+                style={{ width: isCollapsed ? 62 : 170 }}
               >
                 <div
                   className={cn(
@@ -97,7 +103,7 @@ export default function RootLayout({
 
                 {/* 菜单项*/}
                 <Sidebar
-                  defaultSelectedKey="settings"
+                  defaultSelectedKey="textView"
                   iconClassName="group-data-[selected=true]:text-default-50"
                   isCompact={isCollapsed}
                   itemClasses={{
@@ -105,6 +111,7 @@ export default function RootLayout({
                     title: "group-data-[selected=true]:text-default-50",
                   }}
                   items={items}
+                  onSelect={handleSelect}
                 />
 
                 <Spacer y={8} />
@@ -138,7 +145,7 @@ export default function RootLayout({
                     </Tooltip>
                   )}
                   <Tooltip
-                    content="Log Out"
+                    content="更多设置"
                     isDisabled={!isCollapsed}
                     placement="right"
                   >
@@ -178,7 +185,7 @@ export default function RootLayout({
             </SidebarDrawer>
 
             {/*  Settings Content */}
-            <div className="w-full max-w-2xl flex-1 p-4" />
+            <div className="w-full max-w-2xl flex-1 p-4">{children}</div>
           </div>
         </Providers>
       </body>

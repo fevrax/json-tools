@@ -293,7 +293,6 @@ const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
         variant="flat"
         onSelectionChange={(keys) => {
           const key = Array.from(keys)[0];
-
           setSelected(key as React.Key);
           onSelect?.(key as string);
         }}
