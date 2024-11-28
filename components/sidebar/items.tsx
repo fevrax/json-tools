@@ -1,7 +1,4 @@
-import {Chip} from "@nextui-org/react";
-import {Icon} from "@iconify/react";
-
-import {type SidebarItem} from "./sidebar";
+import { type SidebarItem } from "./sidebar";
 
 /**
  * Please check the https://nextui.org/docs/guide/routing to have a seamless router integration
@@ -25,5 +22,5 @@ export const items: SidebarItem[] = [
     href: "#diffView",
     icon: "solar:checklist-minimalistic-outline",
     title: "DIFF视图",
-  }
+  },
 ];
