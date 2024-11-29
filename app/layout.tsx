@@ -12,7 +12,6 @@ import {
 } from "@nextui-org/react";
 import { Icon } from "@iconify/react";
 import React from "react";
-import NextLink from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { Providers } from "./providers";
@@ -63,13 +62,13 @@ export default function RootLayout({
           <div className="relative flex h-dvh w-full">
             {/* Sidebar */}
             <SidebarDrawer
-              hideCloseButton={true}
-              isOpen={isOpen}
-              onOpenChange={onOpenChange}
               className={cn("shrink-0", {
                 "w-[56px]": isCollapsed,
                 "w-[170px]": !isCollapsed,
               })}
+              hideCloseButton={true}
+              isOpen={isOpen}
+              onOpenChange={onOpenChange}
             >
               <div
                 className={cn(
@@ -93,11 +92,7 @@ export default function RootLayout({
                       "flex items-center justify-center rounded-full",
                     )}
                   >
-                    <Image
-                      isZoomed
-                      className="h-8 w-8 rounded-fulll"
-                      src="./logo.png"
-                    />
+                    <Image className="h-9 w-9 rounded-fulll" src="./logo.png" />
                   </div>
 
                   <div className={cn("flex-end flex", { hidden: isCollapsed })}>
@@ -109,7 +104,7 @@ export default function RootLayout({
                     />
                   </div>
                 </div>
-                <Spacer y={6} />
+                <Spacer y={4} />
 
                 {/* 菜单项*/}
                 <Sidebar
@@ -156,7 +151,7 @@ export default function RootLayout({
                   )}
 
                   {/* 主题切换 */}
-                  <ThemeSwitch isCollapsed={isCollapsed}></ThemeSwitch>
+                  <ThemeSwitch isCollapsed={isCollapsed} />
                   <Tooltip
                     content="更多设置"
                     isDisabled={!isCollapsed}

@@ -14,15 +14,7 @@ interface TabItem {
 
 const DynamicTabs: React.FC = () => {
   const [tabs, setTabs] = useState<TabItem[]>([
-    { key: "1", title: "首页", content: "首页内容", closable: true },
-    { key: "2", title: "仪表盘", content: "仪表盘内容", closable: true },
-    { key: "3", title: "仪表盘", content: "仪表盘内容", closable: true },
-    { key: "4", title: "仪表盘", content: "仪表盘内容", closable: true },
-    { key: "5", title: "仪表盘", content: "仪表盘内容", closable: true },
-    { key: "6", title: "仪表盘", content: "仪表盘内容", closable: true },
-    { key: "7", title: "仪表盘", content: "仪表盘内容", closable: true },
-    { key: "8", title: "仪表盘", content: "仪表盘内容", closable: true },
-    { key: "9", title: "仪表盘", content: "仪表盘内容", closable: true },
+    { key: "1", title: "New Tab 1", content: "首页内容", closable: true },
   ]);
   const [activeTab, setActiveTab] = useState("1");
   const tabListRef = useRef<HTMLDivElement>(null);
@@ -32,8 +24,8 @@ const DynamicTabs: React.FC = () => {
     const newTabKey = (tabs.length + 1).toString();
     const newTab: TabItem = {
       key: newTabKey,
-      title: `新标签页 ${newTabKey}`,
-      content: `新标签页 ${newTabKey} 的内容`,
+      title: `New Tab ${newTabKey}`,
+      content: `New Tab ${newTabKey} 的内容`,
       closable: true,
     };
 
@@ -60,10 +52,17 @@ const DynamicTabs: React.FC = () => {
         `[data-key="${activeTab}"]`,
       );
 
+      // 如果是添加新标签页
+      if (activeTab == "add") {
+        handleAddTab();
+
+        return;
+      }
+
       if (activeTabElement) {
         activeTabElement.scrollIntoView({
           behavior: "smooth",
-          block: "nearest",
+          block: "center",
           inline: "center",
         });
       }
@@ -92,10 +91,10 @@ const DynamicTabs: React.FC = () => {
         aria-label="动态标签页"
         classNames={{
           tabList:
-            "gap-6 w-full relative rounded-none p-0 px-2 overflow-x-auto flex-shrink-0",
-          tab: "max-w-fit px-0 h-12 flex-shrink-0",
+            "gap-6 w-full relative rounded-none p-0 px-4 overflow-x-auto flex-shrink-0",
+          tab: "max-w-fit px-0 h-9 flex-shrink-0",
           cursor: "w-full",
-          panel: "flex-grow overflow-auto border-t border-divider p-4", // 添加面板内边距和滚动
+          panel: "flex-grow overflow-auto border-t border-divider px-4", // 添加面板内边距和滚动
         }}
         selectedKey={activeTab}
         variant="underlined"
@@ -104,14 +103,15 @@ const DynamicTabs: React.FC = () => {
         {tabs.map((tab) => (
           <Tab
             key={tab.key}
+            className="z-20"
             data-key={tab.key}
             title={
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 z-40">
                 <span>{tab.title}</span>
                 {tab.closable && (
                   <div
                     aria-label="关闭标签页"
-                    className="hover:bg-default-100 rounded-full cursor-pointer flex items-center justify-center"
+                    className="hover:bg-default-100 rounded-full cursor-pointer flex items-center justify-center z-10"
                     role="button"
                     tabIndex={0}
                     onClick={(e) => {
@@ -129,9 +129,7 @@ const DynamicTabs: React.FC = () => {
               </div>
             }
           >
-            <div className="h-full overflow-auto">
-              {tab.content}
-            </div>
+            <div className="h-full overflow-auto">{tab.content}</div>
           </Tab>
         ))}
         <Tab
@@ -139,15 +137,32 @@ const DynamicTabs: React.FC = () => {
           title={
             <div
               aria-label="添加新标签页"
-              className="cursor-pointer py-3 pr-2"
+              className="cursor-pointer w-8 h-5"
               role="button"
               tabIndex={0}
-              onClick={handleAddTab}
+              onClick={(e) => {
+                handleAddTab();
+                e.stopPropagation(); // 阻止事件冒泡
+                e.preventDefault(); // 阻止默认行为
+              }}
               onKeyDown={(e) => handleKeyDown(e, handleAddTab)}
             >
-              <Icon icon="mi:add" width={24} />
+              <Icon
+                className="absolute"
+                icon="mi:add"
+                width={24}
+                onClick={(e) => {
+                  handleAddTab();
+                  e.stopPropagation(); // 阻止事件冒泡
+                  e.preventDefault(); // 阻止默认行为
+                }}
+              />
             </div>
           }
+          onClick={(e) => {
+            handleAddTab();
+            e.stopPropagation();
+          }}
         />
       </Tabs>
     </div>
@@ -155,4 +170,3 @@ const DynamicTabs: React.FC = () => {
 };
 
 export default DynamicTabs;
-

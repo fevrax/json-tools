@@ -297,6 +297,7 @@ const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
 
           if (keyArr.length === 0) {
             onSelect?.(selected as string);
+
             return;
           }
           const key = keyArr[0];
