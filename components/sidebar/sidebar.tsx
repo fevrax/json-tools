@@ -300,6 +300,7 @@ const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
             return;
           }
           const key = keyArr[0];
+
           setSelected(key as React.Key);
           onSelect?.(key as string);
         }}

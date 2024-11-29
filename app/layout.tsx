@@ -13,8 +13,6 @@ import {
 import { Icon } from "@iconify/react";
 import React from "react";
 
-import { useState, ReactEventHandler  } from "react";
-
 import { Providers } from "./providers";
 
 import SidebarDrawer from "@/components/sidebar/sidebar-drawer";
@@ -32,11 +30,9 @@ export default function RootLayout({
   const handleSelect = (
     key: string | React.SyntheticEvent<HTMLUListElement>,
   ) => {
-      console.log("handleSelect", key);
+    console.log("handleSelect", key);
     // 其他逻辑...
   };
-
-
 
   const onToggle = React.useCallback(() => {
     setIsCollapsed((prev) => !prev);
