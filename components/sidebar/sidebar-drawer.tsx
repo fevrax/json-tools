@@ -91,7 +91,7 @@ const SidebarDrawer = React.forwardRef<
           onOpenChange={onOpenChange}
         >
           <ModalContent>
-            <ModalBody>{children}</ModalBody>
+            <ModalBody></ModalBody>
           </ModalContent>
         </Modal>
         <div

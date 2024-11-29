@@ -39,7 +39,7 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
     <Component
       {...getBaseProps({
         className: clsx(
-          "px-px transition-opacity hover:opacity-80 cursor-pointer",
+          "px-px transition-opacity hover:opacity-80 cursor-pointer w-full",
           className,
           classNames?.base,
         ),
@@ -48,39 +48,41 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
       <VisuallyHidden>
         <input {...getInputProps()} />
       </VisuallyHidden>
-      {!isSelected || isSSR ? (
-        <Button
-          aria-label="日间模式"
-          className={cn(
-            "justify-start text-default-500 data-[hover=true]:text-foreground",
-            {
-              "justify-center": isCollapsed,
-            },
-          )}
-          isIconOnly={isCollapsed}
-          startContent={isCollapsed ? null : <SunFilledIcon size={24} />}
-          variant="light"
-          onPress={toggleTheme}
-        >
-          {isCollapsed ? <SunFilledIcon size={24} /> : "日间模式"}
-        </Button>
-      ) : (
-        <Button
-          aria-label="夜间模式"
-          className={cn(
-            "justify-start text-default-500 data-[hover=true]:text-foreground",
-            {
-              "justify-center": isCollapsed,
-            },
-          )}
-          isIconOnly={isCollapsed}
-          startContent={isCollapsed ? null : <MoonFilledIcon size={24} />}
-          variant="light"
-          onPress={toggleTheme}
-        >
-          {isCollapsed ? <MoonFilledIcon size={24} /> : "夜间模式"}
-        </Button>
-      )}
+      <div className={"w-60"}>
+        {!isSelected || isSSR ? (
+          <Button
+            aria-label="日间模式"
+            className={cn(
+              "justify-start text-default-500 data-[hover=true]:text-foreground w-full",
+              {
+                "justify-center": isCollapsed,
+              },
+            )}
+            isIconOnly={isCollapsed}
+            startContent={isCollapsed ? null : <SunFilledIcon size={24} />}
+            variant="light"
+            onPress={toggleTheme}
+          >
+            {isCollapsed ? <SunFilledIcon size={24} /> : "日间模式"}
+          </Button>
+        ) : (
+          <Button
+            aria-label="夜间模式"
+            className={cn(
+              "justify-start text-default-500 data-[hover=true]:text-foreground w-full",
+              {
+                "justify-center": isCollapsed,
+              },
+            )}
+            isIconOnly={isCollapsed}
+            startContent={isCollapsed ? null : <MoonFilledIcon size={24} />}
+            variant="light"
+            onPress={toggleTheme}
+          >
+            {isCollapsed ? <MoonFilledIcon size={24} /> : "夜间模式"}
+          </Button>
+        )}
+      </div>
     </Component>
   );
 };

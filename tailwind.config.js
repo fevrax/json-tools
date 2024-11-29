@@ -13,6 +13,16 @@ module.exports = {
         sans: ["var(--font-sans)"],
         mono: ["var(--font-mono)"],
       },
+      // 自定义滚动条隐藏类
+      scrollbar: {
+        hide: {
+          '-ms-overflow-style': 'none',
+          'scrollbar-width': 'none',
+          '&::-webkit-scrollbar': {
+            display: 'none'
+          }
+        }
+      }
     },
   },
   darkMode: "class",

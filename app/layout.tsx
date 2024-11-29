@@ -60,12 +60,16 @@ export default function RootLayout({
         className={clsx("min-h-screen bg-background font-sans antialiased")}
       >
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
-          <div className="flex h-dvh w-full gap-4">
+          <div className="relative flex h-dvh w-full gap-4">
             {/* Sidebar */}
             <SidebarDrawer
               hideCloseButton={true}
               isOpen={isOpen}
               onOpenChange={onOpenChange}
+              className={cn("shrink-0", {
+                "w-[56px]": isCollapsed,
+                "w-[170px]": !isCollapsed,
+              })}
             >
               <div
                 className={cn(
@@ -151,6 +155,7 @@ export default function RootLayout({
                     </Tooltip>
                   )}
 
+                  {/* 主题切换 */}
                   <ThemeSwitch isCollapsed={isCollapsed}></ThemeSwitch>
                   <Tooltip
                     content="更多设置"
@@ -196,7 +201,7 @@ export default function RootLayout({
             </SidebarDrawer>
 
             {/*  Settings Content */}
-            <div className="w-full max-w-2xl flex-1 p-4">{children}</div>
+            <div className="flex-1 overflow-auto pr-1 min-w-16">{children}</div>
           </div>
         </Providers>
       </body>

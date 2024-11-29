@@ -1,8 +1,9 @@
+import DynamicTabs from "@/components/dynamicTabs/dynamicTabs";
 
 export default function Home() {
   return (
     <div>
-      index
+      <DynamicTabs></DynamicTabs>
     </div>
   );
 }
