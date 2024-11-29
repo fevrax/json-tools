@@ -60,7 +60,7 @@ export default function RootLayout({
         className={clsx("min-h-screen bg-background font-sans antialiased")}
       >
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
-          <div className="relative flex h-dvh w-full gap-4">
+          <div className="relative flex h-dvh w-full">
             {/* Sidebar */}
             <SidebarDrawer
               hideCloseButton={true}

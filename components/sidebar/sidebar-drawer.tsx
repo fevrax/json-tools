@@ -83,7 +83,7 @@ const SidebarDrawer = React.forwardRef<
           isOpen={isOpen}
           motionProps={motionProps}
           radius="none"
-          scrollBehavior="inside"
+          // scrollBehavior="inside"
           style={{
             // @ts-ignore
             "--sidebar-width": `${sidebarWidth}px`,
