@@ -1,49 +1,14 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useRef, useEffect } from "react";
 import { Tabs, Tab } from "@nextui-org/react";
 import { Icon } from "@iconify/react";
 
-// 定义标签页接口
-interface TabItem {
-  key: string;
-  title: string;
-  content: string;
-  closable?: boolean;
-}
+import { useTabStore, TabItem } from "@/store/useTabStore";
 
 const DynamicTabs: React.FC = () => {
-  const [tabs, setTabs] = useState<TabItem[]>([
-    { key: "1", title: "New Tab 1", content: "首页内容", closable: true },
-  ]);
-  const [activeTab, setActiveTab] = useState("1");
+  const { tabs, activeTab, addTab, closeTab, setActiveTab } = useTabStore();
   const tabListRef = useRef<HTMLDivElement>(null);
-
-  // 添加新标签页的函数
-  const handleAddTab = () => {
-    const newTabKey = (tabs.length + 1).toString();
-    const newTab: TabItem = {
-      key: newTabKey,
-      title: `New Tab ${newTabKey}`,
-      content: `New Tab ${newTabKey} 的内容`,
-      closable: true,
-    };
-
-    setTabs([...tabs, newTab]);
-    setActiveTab(newTabKey);
-  };
-
-  // 关闭标签页的函数
-  const handleCloseTab = (keyToRemove: string) => {
-    const updatedTabs = tabs.filter((tab) => tab.key !== keyToRemove);
-
-    setTabs(updatedTabs);
-
-    // 如果关闭的是当前活跃标签页，则切换到最后一个标签页
-    if (keyToRemove === activeTab) {
-      setActiveTab(updatedTabs[updatedTabs.length - 1]?.key || "1");
-    }
-  };
 
   // 自动滚动到活跃标签
   const scrollToActiveTab = () => {
@@ -52,9 +17,9 @@ const DynamicTabs: React.FC = () => {
         `[data-key="${activeTab}"]`,
       );
 
-      // 如果是添加新标签页
-      if (activeTab == "add") {
-        handleAddTab();
+      if (activeTab === "add") {
+        console.log("add tab");
+        addTab();
 
         return;
       }
@@ -94,13 +59,13 @@ const DynamicTabs: React.FC = () => {
             "gap-6 w-full relative rounded-none p-0 px-4 overflow-x-auto flex-shrink-0",
           tab: "max-w-fit px-0 h-9 flex-shrink-0",
           cursor: "w-full",
-          panel: "flex-grow overflow-auto border-t border-divider px-4", // 添加面板内边距和滚动
+          panel: "flex-grow overflow-auto border-t border-divider px-4",
         }}
         selectedKey={activeTab}
         variant="underlined"
         onSelectionChange={(key) => setActiveTab(key as string)}
       >
-        {tabs.map((tab) => (
+        {tabs.map((tab: TabItem) => (
           <Tab
             key={tab.key}
             className="z-20"
@@ -116,11 +81,11 @@ const DynamicTabs: React.FC = () => {
                     tabIndex={0}
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleCloseTab(tab.key);
+                      closeTab(tab.key);
                     }}
                     onKeyDown={(e) => {
                       e.stopPropagation();
-                      handleKeyDown(e, () => handleCloseTab(tab.key));
+                      handleKeyDown(e, () => closeTab(tab.key));
                     }}
                   >
                     <Icon icon="line-md:close" width={16} />
@@ -137,30 +102,16 @@ const DynamicTabs: React.FC = () => {
           title={
             <div
               aria-label="添加新标签页"
-              className="cursor-pointer w-8 h-5"
+              className="cursor-pointer px-2 py-3"
               role="button"
               tabIndex={0}
-              onClick={(e) => {
-                handleAddTab();
-                e.stopPropagation(); // 阻止事件冒泡
-                e.preventDefault(); // 阻止默认行为
-              }}
-              onKeyDown={(e) => handleKeyDown(e, handleAddTab)}
+              onKeyDown={(e) => handleKeyDown(e, addTab)}
             >
-              <Icon
-                className="absolute"
-                icon="mi:add"
-                width={24}
-                onClick={(e) => {
-                  handleAddTab();
-                  e.stopPropagation(); // 阻止事件冒泡
-                  e.preventDefault(); // 阻止默认行为
-                }}
-              />
+              <Icon icon="mi:add" width={24} />
             </div>
           }
           onClick={(e) => {
-            handleAddTab();
+            addTab();
             e.stopPropagation();
           }}
         />
