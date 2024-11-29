@@ -1,41 +1,38 @@
-"use client";
-
-import { FC } from "react";
+import React, { FC } from "react";
 import { VisuallyHidden } from "@react-aria/visually-hidden";
 import { SwitchProps, useSwitch } from "@nextui-org/switch";
 import { useTheme } from "next-themes";
 import { useIsSSR } from "@react-aria/ssr";
 import clsx from "clsx";
+import { Button, cn } from "@nextui-org/react";
 
 import { SunFilledIcon, MoonFilledIcon } from "@/components/icons";
 
 export interface ThemeSwitchProps {
   className?: string;
   classNames?: SwitchProps["classNames"];
+  isCollapsed?: boolean;
+  switchTheme?: () => void;
 }
 
 export const ThemeSwitch: FC<ThemeSwitchProps> = ({
   className,
   classNames,
+  isCollapsed,
 }) => {
   const { theme, setTheme } = useTheme();
   const isSSR = useIsSSR();
 
-  const onChange = () => {
-    theme === "light" ? setTheme("dark") : setTheme("light");
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+
+    setTheme(newTheme);
   };
 
-  const {
-    Component,
-    slots,
-    isSelected,
-    getBaseProps,
-    getInputProps,
-    getWrapperProps,
-  } = useSwitch({
+  const { Component, isSelected, getBaseProps, getInputProps } = useSwitch({
     isSelected: theme === "light" || isSSR,
     "aria-label": `Switch to ${theme === "light" || isSSR ? "dark" : "light"} mode`,
-    onChange,
+    onChange: toggleTheme,
   });
 
   return (
@@ -51,31 +48,39 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
       <VisuallyHidden>
         <input {...getInputProps()} />
       </VisuallyHidden>
-      <div
-        {...getWrapperProps()}
-        className={slots.wrapper({
-          class: clsx(
-            [
-              "w-auto h-auto",
-              "bg-transparent",
-              "rounded-lg",
-              "flex items-center justify-center",
-              "group-data-[selected=true]:bg-transparent",
-              "!text-default-500",
-              "pt-px",
-              "px-0",
-              "mx-0",
-            ],
-            classNames?.wrapper,
-          ),
-        })}
-      >
-        {!isSelected || isSSR ? (
-          <SunFilledIcon size={22} />
-        ) : (
-          <MoonFilledIcon size={22} />
-        )}
-      </div>
+      {!isSelected || isSSR ? (
+        <Button
+          aria-label="日间模式"
+          className={cn(
+            "justify-start text-default-500 data-[hover=true]:text-foreground",
+            {
+              "justify-center": isCollapsed,
+            },
+          )}
+          isIconOnly={isCollapsed}
+          startContent={isCollapsed ? null : <SunFilledIcon size={24} />}
+          variant="light"
+          onPress={toggleTheme}
+        >
+          {isCollapsed ? <SunFilledIcon size={24} /> : "日间模式"}
+        </Button>
+      ) : (
+        <Button
+          aria-label="夜间模式"
+          className={cn(
+            "justify-start text-default-500 data-[hover=true]:text-foreground",
+            {
+              "justify-center": isCollapsed,
+            },
+          )}
+          isIconOnly={isCollapsed}
+          startContent={isCollapsed ? null : <MoonFilledIcon size={24} />}
+          variant="light"
+          onPress={toggleTheme}
+        >
+          {isCollapsed ? <MoonFilledIcon size={24} /> : "夜间模式"}
+        </Button>
+      )}
     </Component>
   );
 };

@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Accordion,
   AccordionItem,
@@ -297,6 +295,7 @@ const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
           const keyArr = Array.from(keys);
 
           if (keyArr.length === 0) {
+            onSelect?.(selected as string);
             return;
           }
           const key = keyArr[0];

@@ -12,25 +12,35 @@ import {
 } from "@nextui-org/react";
 import { Icon } from "@iconify/react";
 import React from "react";
+import NextLink from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 
 import { Providers } from "./providers";
 
 import SidebarDrawer from "@/components/sidebar/sidebar-drawer";
 import Sidebar from "@/components/sidebar/sidebar";
 import { items } from "@/components/sidebar/items";
+import { ThemeSwitch } from "@/components/theme-switch";
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
+
   const { isOpen, onOpenChange } = useDisclosure();
   const [isCollapsed, setIsCollapsed] = React.useState(false);
+
+  const pathname = usePathname();
 
   const handleSelect = (
     key: string | React.SyntheticEvent<HTMLUListElement>,
   ) => {
     console.log("handleSelect", key);
+    if (pathname !== "/") {
+      router.push("/");
+    }
     // 其他逻辑...
   };
 
@@ -140,6 +150,8 @@ export default function RootLayout({
                       </Button>
                     </Tooltip>
                   )}
+
+                  <ThemeSwitch isCollapsed={isCollapsed}></ThemeSwitch>
                   <Tooltip
                     content="更多设置"
                     isDisabled={!isCollapsed}
@@ -164,6 +176,9 @@ export default function RootLayout({
                         )
                       }
                       variant="light"
+                      onClick={() => {
+                        router.push("/settings");
+                      }}
                     >
                       {isCollapsed ? (
                         <Icon
