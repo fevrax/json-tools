@@ -33,10 +33,10 @@ export default function RootLayout({
 
   const pathname = usePathname();
 
+  // 菜单项点击事件
   const handleSelect = (
     key: string | React.SyntheticEvent<HTMLUListElement>,
   ) => {
-    console.log("handleSelect", key);
     if (pathname !== "/") {
       router.push("/");
     }
@@ -48,7 +48,7 @@ export default function RootLayout({
   }, []);
 
   return (
-    <html suppressHydrationWarning lang="zh">
+    <html lang="zh" suppressHydrationWarning={true}>
       <head>
         <title>JSON Tools - 多功能JSON处理助手</title>
         <meta content="JSON Tools - 多功能JSON处理助手" name="description" />

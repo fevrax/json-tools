@@ -9,6 +9,7 @@
 		"lint": "eslint . --ext .ts,.tsx -c .eslintrc.json --fix"
 	},
 	"dependencies": {
+		"@monaco-editor/react": "^4.6.0",
 		"@nextui-org/avatar": "^2.0.33",
 		"@nextui-org/button": "2.0.38",
 		"@nextui-org/card": "^2.0.34",
@@ -29,6 +30,7 @@
 		"framer-motion": "~11.1.1",
 		"intl-messageformat": "^10.5.0",
 		"lodash": "^4.17.21",
+		"monaco-editor": "^0.52.0",
 		"next": "14.2.4",
 		"next-themes": "^0.2.1",
 		"react": "18.3.1",
