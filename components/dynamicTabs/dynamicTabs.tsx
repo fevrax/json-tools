@@ -1,24 +1,34 @@
 "use client";
 
-import React, { useRef, useEffect } from "react";
-import { Tabs, Tab, Tooltip } from "@nextui-org/react";
+import React, { useRef, useEffect, useState } from "react";
+import { Tabs, Tab, Tooltip, Input, cn } from "@nextui-org/react";
 import { Icon } from "@iconify/react";
 
 import { useTabStore, TabItem } from "@/store/useTabStore";
+import { IcRoundClose } from "@/components/icons";
 
 const DynamicTabs: React.FC = () => {
-  const { tabs, activeTab, addTab, closeTab, setActiveTab } = useTabStore();
+  const { tabs, activeTabKey, addTab, closeTab, setActiveTab, renameTab } =
+    useTabStore();
   const tabListRef = useRef<HTMLDivElement>(null);
   const tabContainerRef = useRef<HTMLDivElement>(null);
+  const tabRenameInputRef = useRef<HTMLInputElement>(null);
+  const [editingTab, setEditingTab] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState<string>("");
+  const [inputPosition, setInputPosition] = useState<{
+    left: number;
+    top: number;
+    width: number;
+  }>({ left: 0, top: 0, width: 0 });
 
   // 精确计算标签页滚动位置
   const scrollToActiveTab = () => {
     if (tabListRef.current && tabContainerRef.current) {
       const activeTabElement = tabListRef.current.querySelector(
-        `[data-key="${activeTab}"]`,
+        `[data-key="${activeTabKey}"]`,
       ) as HTMLElement;
 
-      if (activeTab === "add") {
+      if (activeTabKey === "add") {
         addTab();
 
         return;
@@ -26,7 +36,6 @@ const DynamicTabs: React.FC = () => {
 
       if (activeTabElement) {
         const containerRect = tabContainerRef.current.getBoundingClientRect();
-        const activeTabRect = activeTabElement.getBoundingClientRect();
         const tabListRect = tabListRef.current.getBoundingClientRect();
 
         // 计算相对于容器的偏移量
@@ -57,13 +66,22 @@ const DynamicTabs: React.FC = () => {
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (tabContainerRef.current) {
       e.preventDefault();
-      tabContainerRef.current.scrollLeft += e.deltaY;
+      // 使用更平滑的滚动方式，可以调整滚动速度
+      const scrollAmount = e.deltaY > 0 ? 100 : -100;
+
+      tabContainerRef.current.scrollLeft += scrollAmount;
     }
   };
 
   useEffect(() => {
     scrollToActiveTab();
-  }, [activeTab]);
+  }, [activeTabKey]);
+
+  useEffect(() => {
+    if (editingTab && tabRenameInputRef.current) {
+      tabRenameInputRef.current.focus();
+    }
+  }, [editingTab]);
 
   // 键盘事件处理函数
   const handleKeyDown = (
@@ -74,6 +92,85 @@ const DynamicTabs: React.FC = () => {
       e.preventDefault();
       action();
     }
+  };
+
+  // 处理双击重命名
+  const handleDoubleClick = (tab: TabItem, event: React.MouseEvent) => {
+    const targetElement = event.currentTarget;
+    const rect = targetElement.getBoundingClientRect();
+
+    setEditingTab(tab.key);
+    setEditingTitle(tab.title);
+
+    // 设置输入框位置和宽度
+    setInputPosition({
+      left: rect.left,
+      top: rect.top,
+      width: rect.width,
+    });
+  };
+
+  // 处理输入框的键盘事件
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      confirmRename();
+    } else if (e.key === "Escape") {
+      setEditingTab(null);
+    }
+  };
+
+  // 确认重命名
+  const confirmRename = () => {
+    if (editingTab) {
+      renameTab(editingTab, editingTitle);
+      setEditingTab(null);
+    }
+  };
+
+  // 渲染重命名输入框
+  const renderRenameInput = () => {
+    if (!editingTab) return null;
+
+    return (
+      <div
+        className="absolute"
+        style={{
+          position: "fixed",
+          left: `${inputPosition.left}px`,
+          top: `2px`,
+          width: `${inputPosition.width}px`,
+          zIndex: 1000,
+        }}
+      >
+        <div className="flex items-center space-x-2 text-xs">
+          <Input
+            ref={tabRenameInputRef}
+            classNames={{
+              input: "text-xs !pe-0",
+              inputWrapper: "px-0 pl-0.5",
+            }}
+            endContent={
+              <Tooltip content="确认">
+                <div
+                  className="cursor-pointer hover:bg-default-100 rounded-full"
+                  role="button"
+                  tabIndex={0}
+                  onClick={confirmRename}
+                  onKeyDown={confirmRename}
+                >
+                  <Icon icon="mage:check" width={20} />
+                </div>
+              </Tooltip>
+            }
+            size="sm"
+            value={editingTitle}
+            onBlur={confirmRename}
+            onChange={(e) => setEditingTitle(e.target.value)}
+            onKeyDown={handleInputKeyDown}
+          />
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -111,36 +208,45 @@ const DynamicTabs: React.FC = () => {
               panel:
                 "flex-grow overflow-auto border-t border-divider px-0 pb-0 pt-1",
             }}
-            selectedKey={activeTab}
+            selectedKey={activeTabKey}
             variant="underlined"
             onSelectionChange={(key) => setActiveTab(key as string)}
           >
-            {tabs.map((tab: TabItem) => (
+            {tabs.map((tab: TabItem, index: number) => (
               <Tab
                 key={tab.key}
-                className="z-20"
                 data-key={tab.key}
                 title={
-                  <div className="flex items-center space-x-2 z-40">
-                    <span>{tab.title}</span>
-                    {tab.closable && (
-                      <div
-                        aria-label="关闭标签页"
-                        className="hover:bg-default-100 rounded-full cursor-pointer flex items-center justify-center z-10"
-                        role="button"
-                        tabIndex={0}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          closeTab(tab.key);
-                        }}
-                        onKeyDown={(e) => {
-                          e.stopPropagation();
-                          handleKeyDown(e, () => closeTab(tab.key));
-                        }}
-                      >
-                        <Icon icon="line-md:close" width={16} />
-                      </div>
-                    )}
+                  <div
+                    className={cn("flex items-center space-x-2 z-40", {
+                      "opacity-0": editingTab === tab.key,
+                    })}
+                    role="button"
+                    onDoubleClick={(e) => handleDoubleClick(tab, e)}
+                  >
+                    <>
+                      <span>{tab.title}</span>
+                      {tab.closable && (
+                        <div
+                          aria-label="关闭标签页"
+                          className=" rounded-full cursor-pointer flex items-center justify-center z-10 py-3 px-1 !ml-0.5"
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            closeTab(tab.key);
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                          onKeyDown={(e) => {
+                            handleKeyDown(e, () => closeTab(tab.key));
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                        >
+                          <IcRoundClose width={20} />
+                        </div>
+                      )}
+                    </>
                   </div>
                 }
               />
@@ -148,6 +254,8 @@ const DynamicTabs: React.FC = () => {
           </Tabs>
         </div>
       </div>
+      {/* 渲染重命名输入框 */}
+      {renderRenameInput()}
     </div>
   );
 };
