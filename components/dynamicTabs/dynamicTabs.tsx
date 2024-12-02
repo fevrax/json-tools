@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, forwardRef, useImperativeHandle, } from "react";
 import { Tabs, Tab, Tooltip, Input, cn } from "@nextui-org/react";
 import { Icon } from "@iconify/react";
 import {
@@ -13,7 +13,12 @@ import {
 import { useTabStore, TabItem } from "@/store/useTabStore";
 import { IcRoundClose } from "@/components/icons";
 
-const DynamicTabs: React.FC = () => {
+export interface DynamicTabsRef {
+  // 可以根据需要添加方法
+  getPositionTop: () => number;
+  // 其他可能需要暴露的方法
+}
+const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
   const {
     tabs,
     activeTabKey,
@@ -207,6 +212,16 @@ const DynamicTabs: React.FC = () => {
     }
   };
 
+  // 使用 useImperativeHandle 暴露方法
+  useImperativeHandle(ref, () => ({
+    getPositionTop: () => {
+      if (!tabContainerRef.current) return 35;
+      const containerRect = tabContainerRef.current.getBoundingClientRect();
+
+      return containerRect.bottom;
+    },
+  }));
+
   // 渲染重命名输入框
   const renderRenameInput = () => {
     if (!editingTab) return null;
@@ -323,7 +338,7 @@ const DynamicTabs: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="flex flex-col overflow-hidden">
       <div className="flex items-center relative">
         <Tooltip content="新建标签页" placement="bottom-start">
           <div
@@ -409,6 +424,7 @@ const DynamicTabs: React.FC = () => {
       {renderTabContextMenu()}
     </div>
   );
-};
+});
 
+DynamicTabs.displayName = "DynamicTabs";
 export default DynamicTabs;

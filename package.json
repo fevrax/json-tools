@@ -2,6 +2,7 @@
 	"name": "next-app-template",
 	"version": "0.0.1",
 	"private": true,
+	"type": "module",
 	"scripts": {
 		"dev": "next dev --turbo",
 		"build": "next build",
@@ -31,6 +32,7 @@
 		"intl-messageformat": "^10.5.0",
 		"lodash": "^4.17.21",
 		"monaco-editor": "^0.52.0",
+		"monaco-editor-webpack-plugin": "^7.1.0",
 		"next": "14.2.4",
 		"next-themes": "^0.2.1",
 		"react": "18.3.1",

@@ -1,75 +1,67 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { Editor } from "@monaco-editor/react";
+import { loader, Monaco } from "@monaco-editor/react";
+import * as monaco from "monaco-editor";
+import { cn } from "@nextui-org/react";
 import { editor } from "monaco-editor";
 
-const MonacoJsonEditor: React.FC = () => {
-  const [editorValue, setEditorValue] = useState<string>("{}");
-  const [editorHeight, setEditorHeight] = useState<number>(500);
+interface MonacoJsonEditorProps {
+  height?: number;
+}
+
+const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({ height }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
-  // 编辑器配置
-  const editorOptions: editor.IStandaloneEditorConstructionOptions = {
-    language: "json",
-    theme: "vs-dark",
-    automaticLayout: true,
-    minimap: { enabled: false },
-    formatOnType: true,
-    formatOnPaste: true,
-  };
+  // 初始化编辑器的函数
+  const initializeEditor = async () => {
+    // 确保只初始化一次
+    if (editorRef.current) return;
 
-  // 处理编辑器内容变化
-  const handleEditorChange = (value: string | undefined) => {
-    if (value) {
-      try {
-        // 尝试解析 JSON 以验证格式
-        JSON.parse(value);
-        setEditorValue(value);
-      } catch (error) {
-        console.error("Invalid JSON", error);
-      }
-    }
-  };
+    loader.config({ monaco });
 
-  // 处理编辑器挂载
-  const handleEditorDidMount = (editor: editor.IStandaloneCodeEditor) => {
-    // 可以在这里添加额外的编辑器配置或事件监听
-    editor.focus();
-  };
+    const monacoInstance: Monaco = await loader.init();
 
-  // 计算高度的函数
-  const calculateHeight = () => {
     if (containerRef.current) {
-      const windowHeight = window.innerHeight;
-      const containerTop = containerRef.current.getBoundingClientRect().top;
-      const newHeight = windowHeight - containerTop - 20; // 减去一些额外的边距
-      setEditorHeight(Math.max(newHeight, 300)); // 设置最小高度
+      console.log("Initializing Monaco editor");
+      const editor = monacoInstance.editor.create(containerRef.current, {
+        value: "",
+        language: "json",
+        theme: "vs-dark",
+        automaticLayout: true,
+        minimap: { enabled: false },
+        formatOnType: true,
+        formatOnPaste: true,
+      });
+
+      editorRef.current = editor;
+
+      editor.focus();
     }
   };
 
   // 添加窗口大小变化监听器
   useEffect(() => {
-    calculateHeight();
-    window.addEventListener('resize', calculateHeight);
+    // 使用 setTimeout 确保在 React 严格模式下只执行一次
+    const timeoutId = setTimeout(() => {
+      initializeEditor();
+    }, 0);
+
     return () => {
-      window.removeEventListener('resize', calculateHeight);
+      clearTimeout(timeoutId);
+      // 如果编辑器已经创建，则销毁
+      if (editorRef.current) {
+        editorRef.current.dispose();
+      }
     };
-  }, []);
+  }, []); // 空依赖数组确保只在挂载时执行
 
   return (
     <div
       ref={containerRef}
-      className="w-full flex-grow"
+      className={cn("w-full flex-grow")}
+      style={{ height: height }}
     >
-      <Editor
-        defaultLanguage="json"
-        defaultValue={editorValue}
-        height={editorHeight}
-        options={editorOptions}
-        theme="vs-dark"
-        onChange={handleEditorChange}
-        onMount={handleEditorDidMount}
-      />
     </div>
   );
 };

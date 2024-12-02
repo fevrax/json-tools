@@ -20,7 +20,7 @@ import SidebarDrawer from "@/components/sidebar/sidebar-drawer";
 import Sidebar from "@/components/sidebar/sidebar";
 import { items } from "@/components/sidebar/items";
 import { ThemeSwitch } from "@/components/theme-switch";
-
+export const dynamic = 'force-static';
 export default function RootLayout({
   children,
 }: {
