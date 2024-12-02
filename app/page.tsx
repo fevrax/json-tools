@@ -3,20 +3,21 @@
 import { cn } from "@nextui-org/react";
 import { useRef, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { useTheme } from "next-themes";
+// import MonacoJsonEditor from "@/components/MonacoEditor/monacoJsonEditor";
 
 import { TabItem, useTabStore } from "@/store/useTabStore";
 import DynamicTabs, {
   DynamicTabsRef,
 } from "@/components/dynamicTabs/dynamicTabs";
 
-// export const dynamic = "force-static";
-
-const MonacoJsonEditorWithNoSSR = dynamic(
+const MonacoJsonEditor = dynamic(
   () => import("../components/MonacoEditor/monacoJsonEditor"),
   { ssr: false },
 );
 
 export default function Home() {
+  const { theme, setTheme } = useTheme();
   const { tabs, activeTabKey } = useTabStore();
   const tabRef = useRef<DynamicTabsRef>(null);
   const [editorHeight, setEditorHeight] = useState<number>(500);
@@ -32,7 +33,6 @@ export default function Home() {
   };
 
   useEffect(() => {
-    console.log(process.env.NODE_ENV);
     calculateHeight();
     window.addEventListener("resize", calculateHeight);
 
@@ -40,6 +40,8 @@ export default function Home() {
       window.removeEventListener("resize", calculateHeight);
     };
   }, []);
+
+
 
   return (
     <>
@@ -50,7 +52,12 @@ export default function Home() {
             key={tab.key}
             className={cn({ hidden: activeTabKey !== tab.key })}
           >
-            <MonacoJsonEditorWithNoSSR key={tab.key} height={editorHeight} />
+            <MonacoJsonEditor
+              key={tab.key}
+              height={editorHeight}
+              theme={theme == "dark" ? "vs-dark" : "vs-light"}
+              value={tab.content}
+            />
           </div>
         );
       })}
