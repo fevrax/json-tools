@@ -13,6 +13,7 @@ interface TabStore {
   activeTabKey: string;
   nextKey: number;
   activeTab: () => TabItem;
+  getTabByKey: (key: string) => TabItem | undefined;
   addTab: () => void;
   closeTab: (keyToRemove: string) => void;
   setActiveTab: (key: string) => void;
@@ -34,6 +35,7 @@ export const useTabStore = create<TabStore>((set, get) => ({
 
     return activeTab || get().tabs[0];
   },
+  getTabByKey: (key: string) => get().tabs.find((tab) => tab.key === key),
   addTab: () =>
     set((state) => {
       const newTabKey = `${state.nextKey}`;

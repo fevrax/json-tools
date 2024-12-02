@@ -5,7 +5,7 @@ export default function Home() {
   return (
     <div>
       <DynamicTabs />
-      {/*<MonacoJsonEditor></MonacoJsonEditor>*/}
+      <MonacoJsonEditor></MonacoJsonEditor>
     </div>
   );
 }

@@ -29,7 +29,7 @@ export default function RootLayout({
   const router = useRouter();
 
   const { isOpen, onOpenChange } = useDisclosure();
-  const [isCollapsed, setIsCollapsed] = React.useState(false);
+  const [isCollapsed, setIsCollapsed] = React.useState(true);
 
   const pathname = usePathname();
 

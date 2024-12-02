@@ -3,18 +3,38 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Tabs, Tab, Tooltip, Input, cn } from "@nextui-org/react";
 import { Icon } from "@iconify/react";
+import {
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+} from "@nextui-org/react";
 
 import { useTabStore, TabItem } from "@/store/useTabStore";
 import { IcRoundClose } from "@/components/icons";
 
 const DynamicTabs: React.FC = () => {
-  const { tabs, activeTabKey, addTab, closeTab, setActiveTab, renameTab } =
-    useTabStore();
+  const {
+    tabs,
+    activeTabKey,
+    addTab,
+    closeTab,
+    setActiveTab,
+    renameTab,
+    closeAllTabs,
+    closeLeftTabs,
+    closeRightTabs,
+    closeOtherTabs,
+    getTabByKey,
+  } = useTabStore();
   const tabListRef = useRef<HTMLDivElement>(null);
   const tabContainerRef = useRef<HTMLDivElement>(null);
   const tabRenameInputRef = useRef<HTMLInputElement>(null);
   const [editingTab, setEditingTab] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState<string>("");
+  const [contextMenuPosition, setContextMenuPosition] = useState<number>(0);
+  const [contextMenuTabKey, setContextMenuTabKey] = useState<string>("");
+
   const [inputPosition, setInputPosition] = useState<{
     left: number;
     top: number;
@@ -110,6 +130,19 @@ const DynamicTabs: React.FC = () => {
     });
   };
 
+  const handleContextMenu = (
+    tab: TabItem,
+    event: React.MouseEvent<HTMLDivElement>,
+  ) => {
+    event.preventDefault();
+    const targetElement = event.currentTarget;
+    const rect = targetElement.getBoundingClientRect();
+
+    // 设置输入框位置和宽度
+    setContextMenuPosition(rect.left);
+    setContextMenuTabKey(tab.key);
+  };
+
   // 处理输入框的键盘事件
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
@@ -124,6 +157,53 @@ const DynamicTabs: React.FC = () => {
     if (editingTab) {
       renameTab(editingTab, editingTitle);
       setEditingTab(null);
+    }
+  };
+
+  // 菜单事件处理
+  const handleMenuAction = (action: string) => {
+    if (!contextMenuTabKey) return;
+
+    switch (action) {
+      case "rename":
+        // 触发重命名逻辑（复用现有的双击重命名逻辑）
+        const tabElement = document.querySelector(
+          `[data-key="${contextMenuTabKey}"]`,
+        );
+
+        if (tabElement) {
+          const rect = tabElement.getBoundingClientRect();
+
+          setEditingTab(contextMenuTabKey);
+          const tab = getTabByKey(contextMenuTabKey);
+
+          if (tab) {
+            setEditingTitle(tab.title);
+
+            // 设置输入框位置和宽度
+            setInputPosition({
+              left: rect.left,
+              top: rect.top,
+              width: rect.width,
+            });
+          }
+        }
+        break;
+      case "close":
+        closeTab(contextMenuTabKey);
+        break;
+      case "close-left":
+        closeLeftTabs(contextMenuTabKey);
+        break;
+      case "close-right":
+        closeRightTabs(contextMenuTabKey);
+        break;
+      case "close-others":
+        closeOtherTabs(contextMenuTabKey);
+        break;
+      case "close-all":
+        closeAllTabs();
+        break;
     }
   };
 
@@ -172,6 +252,75 @@ const DynamicTabs: React.FC = () => {
       </div>
     );
   };
+  // 渲染重命名输入框
+  const renderTabContextMenu = () => {
+    if (!contextMenuTabKey) return null;
+
+    return (
+      <Dropdown
+        isOpen={true}
+        placement="bottom-start"
+        onClose={() => setContextMenuTabKey("")}
+      >
+        <DropdownTrigger
+          style={{
+            position: "fixed",
+            left: contextMenuPosition,
+            top: 36, // 如果有bug 就采用动态获取
+          }}
+        >
+          <span />
+        </DropdownTrigger>
+        <DropdownMenu
+          aria-label="Tab Context Menu"
+          onAction={(key) => handleMenuAction(key as string)}
+        >
+          <DropdownItem
+            key="close"
+            startContent={<Icon icon="gg:close" width={18} />}
+          >
+            关闭
+          </DropdownItem>
+          <DropdownItem
+            key="rename"
+            startContent={<Icon icon="solar:pen-linear" width={18} />}
+          >
+            重命名
+          </DropdownItem>
+          <DropdownItem
+            key="close-left"
+            startContent={<Icon icon="ph:arrow-left" width={18} />}
+          >
+            关闭左侧
+          </DropdownItem>
+          <DropdownItem
+            key="close-right"
+            startContent={<Icon icon="ph:arrow-right" width={18} />}
+          >
+            关闭右侧
+          </DropdownItem>
+          <DropdownItem
+            key="close-others"
+            startContent={
+              <Icon
+                icon="material-symbols:tab-close-inactive-outline"
+                width={18}
+              />
+            }
+          >
+            关闭其他
+          </DropdownItem>
+          <DropdownItem
+            key="close-all"
+            color="danger"
+            startContent={<Icon icon="gg:close" width={18} />}
+          >
+            关闭所有
+          </DropdownItem>
+        </DropdownMenu>
+      </Dropdown>
+    );
+  };
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -199,7 +348,7 @@ const DynamicTabs: React.FC = () => {
         >
           <Tabs
             ref={tabListRef}
-            aria-label="动态标签页"
+            aria-label="标签页"
             classNames={{
               tabList:
                 "gap-6 w-full relative rounded-none p-0 pr-4 overflow-x-visible flex-shrink-0",
@@ -215,13 +364,14 @@ const DynamicTabs: React.FC = () => {
             {tabs.map((tab: TabItem, index: number) => (
               <Tab
                 key={tab.key}
-                data-key={tab.key}
                 title={
                   <div
                     className={cn("flex items-center space-x-2 z-40", {
                       "opacity-0": editingTab === tab.key,
                     })}
+                    data-key={tab.key}
                     role="button"
+                    onContextMenu={(e) => handleContextMenu(tab, e)}
                     onDoubleClick={(e) => handleDoubleClick(tab, e)}
                   >
                     <>
@@ -256,6 +406,7 @@ const DynamicTabs: React.FC = () => {
       </div>
       {/* 渲染重命名输入框 */}
       {renderRenameInput()}
+      {renderTabContextMenu()}
     </div>
   );
 };
