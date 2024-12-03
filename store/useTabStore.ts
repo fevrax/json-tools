@@ -29,9 +29,7 @@ export const useTabStore = create<TabStore>((set, get) => ({
   activeTabKey: "1",
   nextKey: 2,
   activeTab: () => {
-    const activeTab = get().tabs.find(
-      (tab) => tab.key === get().activeTabKey,
-      );
+    const activeTab = get().tabs.find((tab) => tab.key === get().activeTabKey);
 
     return activeTab || get().tabs[0];
   },
@@ -121,7 +119,7 @@ export const useTabStore = create<TabStore>((set, get) => ({
     }),
   // 关闭所有标签页，默认保留第一个标签页
   closeAllTabs: () =>
-    set((state) => {
+    set(() => {
       const defaultTab = [
         { key: "1", title: "New Tab 1", content: "首页内容", closable: true },
       ];

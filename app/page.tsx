@@ -41,8 +41,6 @@ export default function Home() {
     };
   }, []);
 
-
-
   return (
     <>
       <DynamicTabs ref={tabRef} />

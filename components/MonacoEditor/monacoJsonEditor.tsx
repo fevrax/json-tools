@@ -20,10 +20,11 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+
   useEffect(() => {
     console.log("editorHeight", height);
     if (editorRef.current) {
-      editorRef.current.layout()
+      editorRef.current.layout();
     }
     // calculateHeight();
   }, [height]);
