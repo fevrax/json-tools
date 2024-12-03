@@ -20,6 +20,7 @@ import SidebarDrawer from "@/components/sidebar/sidebar-drawer";
 import Sidebar from "@/components/sidebar/sidebar";
 import { items } from "@/components/sidebar/items";
 import { ThemeSwitch } from "@/components/theme-switch";
+import { Toaster } from "sonner";
 export const dynamic = "force-static";
 export default function RootLayout({
   children,
@@ -56,7 +57,9 @@ export default function RootLayout({
         <link href="/favicon.png" rel="icon" />
       </head>
       <body
-        className={clsx("min-h-screen bg-background font-sans antialiased")}
+        className={clsx(
+          "min-h-screen dark:bg-default-100 font-sans antialiased",
+        )}
       >
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
           <div className="relative flex h-dvh w-full">
@@ -197,6 +200,7 @@ export default function RootLayout({
 
             {/*  Settings Content */}
             <div className="flex-1 overflow-auto pr-1 min-w-16">{children}</div>
+            <Toaster closeButton richColors position="top-right" />
           </div>
         </Providers>
       </body>

@@ -25,7 +25,7 @@ interface TabStore {
 }
 
 export const useTabStore = create<TabStore>((set, get) => ({
-  tabs: [{ key: "1", title: "New Tab 1", content: "首页内容", closable: true }],
+  tabs: [{ key: "1", title: "New Tab 1", content: "", closable: true }],
   activeTabKey: "1",
   nextKey: 2,
   activeTab: () => {
@@ -40,7 +40,7 @@ export const useTabStore = create<TabStore>((set, get) => ({
       const newTab: TabItem = {
         key: `${state.nextKey}`,
         title: `New Tab ${newTabKey}`,
-        content: `New Tab ${newTabKey} 的内容`,
+        content: ``,
         closable: true,
       };
 
@@ -129,7 +129,7 @@ export const useTabStore = create<TabStore>((set, get) => ({
   closeAllTabs: () =>
     set(() => {
       const defaultTab = [
-        { key: "1", title: "New Tab 1", content: "首页内容", closable: true },
+        { key: "1", title: "New Tab 1", content: "", closable: true },
       ];
 
       return {

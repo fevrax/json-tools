@@ -1,32 +1,26 @@
-import {nextui} from '@nextui-org/theme'
+import { nextui } from "@nextui-org/theme";
 
-/** @type {import('tailwindcss').Config} */
+/** @type {import("tailwindcss").Config} */
 const config = {
   content: [
-    './components/**/*.{js,ts,jsx,tsx,mdx}',
-    './app/**/*.{js,ts,jsx,tsx,mdx}',
-    './node_modules/@nextui-org/theme/dist/**/*.{js,ts,jsx,tsx}'
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./node_modules/@nextui-org/theme/dist/**/*.{js,ts,jsx,tsx}"
   ],
   theme: {
     extend: {
       fontFamily: {
         sans: ["var(--font-sans)"],
-        mono: ["var(--font-mono)"],
+        mono: ["var(--font-mono)"]
       },
       // 自定义滚动条隐藏类
-      scrollbar: {
-        hide: {
-          '-ms-overflow-style': 'none',
-          'scrollbar-width': 'none',
-          '&::-webkit-scrollbar': {
-            display: 'none'
-          }
-        }
+      colors: {
+        "vscode-dark": "#1e1e1e",
       }
-    },
+    }
   },
   darkMode: "class",
-  plugins: [nextui()],
-}
+  plugins: [nextui()]
+};
 
-export default config
+export default config;
