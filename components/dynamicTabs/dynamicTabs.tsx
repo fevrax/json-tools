@@ -45,7 +45,7 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
   const [editingTitle, setEditingTitle] = useState<string>("");
   const [contextMenuPosition, setContextMenuPosition] = useState<number>(0);
   const [contextMenuTabKey, setContextMenuTabKey] = useState<string>("");
-  const [tabDisableKeys , setTabDisableKeys] = useState<string[]>([]);
+  const [tabDisableKeys, setTabDisableKeys] = useState<string[]>([]);
 
   const [inputPosition, setInputPosition] = useState<{
     left: number;
@@ -377,7 +377,6 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
           <Tabs
             ref={tabListRef}
             aria-label="标签页"
-            disabledKeys={tabDisableKeys}
             classNames={{
               tabList:
                 "gap-6 w-full h-9 relative rounded-none p-0 pr-4 ml-4 overflow-x-visible flex-shrink-0",
@@ -386,6 +385,7 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
               panel:
                 "flex-grow overflow-auto border-t border-divider px-0 pb-0 pt-1",
             }}
+            disabledKeys={tabDisableKeys}
             selectedKey={activeTabKey}
             variant="underlined"
             onSelectionChange={(key) => setActiveTab(key as string)}
@@ -416,13 +416,13 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
                             e.stopPropagation();
                             e.preventDefault();
                           }}
-                          onMouseEnter={() => setTabDisableKeys([tab.key])}
-                          onMouseLeave={() => setTabDisableKeys([])}
                           onKeyDown={(e) => {
                             handleKeyDown(e, () => closeTab(tab.key));
                             e.stopPropagation();
                             e.preventDefault();
                           }}
+                          onMouseEnter={() => setTabDisableKeys([tab.key])}
+                          onMouseLeave={() => setTabDisableKeys([])}
                         >
                           <IcRoundClose width={20} />
                         </div>

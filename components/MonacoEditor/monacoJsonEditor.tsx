@@ -1,15 +1,25 @@
 "use client";
-import React, { useEffect, useImperativeHandle, useRef } from "react";
+import React, { useEffect, useImperativeHandle, useMemo, useRef } from "react";
 import { loader, Monaco } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
-import { cn } from "@nextui-org/react";
+import {
+  cn,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Button,
+  useDisclosure,
+  Chip,
+} from "@nextui-org/react";
 import { editor } from "monaco-editor";
 import { toast } from "sonner";
-import { Icon } from "@iconify/react";
 
 import { sleep } from "@/utils/time";
 import { JsonErrorInfo, jsonParseError } from "@/utils/json";
-import { JsonErrorToast } from "@/utils/sonner";
+import "@/styles/monaco.css";
+
 export interface MonacoJsonEditorProps {
   tabKey: string;
   height?: number;
@@ -28,7 +38,13 @@ const MonacoJsonEditor = React.forwardRef<
 >(({ value, language, theme, height }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
-  let parseJsonError: JsonErrorInfo | undefined; // 格式化错误信息
+  const parseJsonError = useRef<JsonErrorInfo | null>(null);
+
+  const {
+    isOpen: jsonErrorDetailsModel,
+    onOpen: openJsonErrorDetailsModel,
+    onOpenChange: onOpenJsonErrorDetailsModelChange,
+  } = useDisclosure();
 
   useEffect(() => {
     if (editorRef.current) {
@@ -46,8 +62,26 @@ const MonacoJsonEditor = React.forwardRef<
     // calculateHeight();
   }, [theme]);
 
+  const contextLines = useMemo(() => {
+    if (!parseJsonError.current || !parseJsonError.current.context) return 0;
+    if (!parseJsonError.current.context) return 0;
+
+    return parseJsonError.current.context.split("\n").length;
+  }, [parseJsonError.current?.context]);
+
+  const errorStartLine = useMemo(() => {
+    if (!parseJsonError.current?.line) return 0;
+
+    return Math.max(
+      1,
+      parseJsonError.current?.line - Math.floor(contextLines / 2),
+    );
+  }, [parseJsonError.current?.line, contextLines]);
+
   // 初始化编辑器的函数
   const initializeEditor = async () => {
+    openJsonErrorDetailsModel();
+
     // 确保只初始化一次
     if (editorRef.current) return;
 
@@ -69,7 +103,8 @@ const MonacoJsonEditor = React.forwardRef<
         mouseWheelZoom: true, // 启用鼠标滚轮缩放
         formatOnPaste: true, // 粘贴时自动格式化
         formatOnType: true, // 输入时自动格式化
-        wordBasedSuggestions: "currentDocument", // 启用基于单词的建议
+        wordBasedSuggestions: "allDocuments", // 启用基于单词的建议
+        wordBasedSuggestionsOnlySameLanguage: true, // 仅在相同语言下启用基于单词的建议
         scrollBeyondLastLine: false, // 禁用滚动超出最后一行
         suggestOnTriggerCharacters: true, // 在触发字符时显示建议
         acceptSuggestionOnCommitCharacter: true, // 接受关于提交字符的建议
@@ -102,14 +137,14 @@ const MonacoJsonEditor = React.forwardRef<
     }
   };
 
-  const formatValidate = (): boolean => {
+  const formatValidate = () => {
     if (!editorRef.current) {
       return false;
     }
     const jsonErr = jsonParseError(editorRef.current?.getValue());
 
     if (jsonErr) {
-      parseJsonError = jsonErr;
+      parseJsonError.current = jsonErr;
 
       return false;
     }
@@ -118,73 +153,19 @@ const MonacoJsonEditor = React.forwardRef<
   };
 
   const showAutoFixNotify = () => {
-    toast.custom(
-      (id) => (
-        <div
-          className={`
-        w-96 
-        bg-white dark:bg-zinc-800 
-        shadow-lg 
-        rounded-lg 
-        pointer-events-auto 
-        flex 
-        ring-1 
-        ring-black/5 dark:ring-white/10 
-        p-4 
-        relative
-      `}
-        >
-          <button
-            className="absolute top-2 right-2 text-gray-400 dark:text-gray-500 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none"
-            onClick={() => toast.dismiss(id)}
-          >
-            <Icon
-              className="h-5 w-5"
-              icon="gg:close"
-            />
-          </button>
-
-          <div className="flex flex-col w-full space-y-4">
-            <div className="flex items-center space-x-4">
-              <div className="flex-shrink-0">
-                <Icon
-                  className="h-6 w-6 text-amber-600"
-                  icon="carbon:warning"
-                />
-              </div>
-
-              <div className="flex-1">
-                <p className="text-gray-900 dark:text-white text-lg">
-                  {`第 ${parseJsonError?.line} 行，第 ${parseJsonError?.column} 列，格式错误`}
-                </p>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400 text-base">
-                  {parseJsonError?.message}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex justify-end mt-1">
-              <button
-                className={cn(
-                  "px-3 py-1 bg-purple-500 text-white rounded-md text-sm hover:bg-purple-700 transition-colors",
-                )}
-                onClick={() => {
-                  // 确认逻辑
-                  toast.dismiss(id);
-                }}
-              >
-                查看详情
-              </button>
-            </div>
-          </div>
-        </div>
-      ),
+    toast.warning(
+      `第 ${parseJsonError.current?.line} 行，第 ${parseJsonError.current?.column} 列，格式错误`,
       {
-        duration: 4000, // 显示时间
-        position: "top-right", // 弹出位置
+        description: parseJsonError.current?.message,
+        action: {
+          label: "查看详情",
+          onClick: () => {
+            openJsonErrorDetailsModel();
+          },
+        },
+        position: "bottom-right",
       },
     );
-
   };
 
   const format = (): boolean => {
@@ -227,11 +208,117 @@ const MonacoJsonEditor = React.forwardRef<
   }));
 
   return (
-    <div
-      ref={containerRef}
-      className={cn("w-full flex-grow")}
-      style={{ height: height }}
-    />
+    <>
+      <div
+        ref={containerRef}
+        className={cn("w-full flex-grow")}
+        style={{ height: height }}
+      />
+      <Modal
+        backdrop="blur"
+        isOpen={jsonErrorDetailsModel}
+        motionProps={{
+          variants: {
+            enter: {
+              y: 0,
+              opacity: 1,
+              transition: {
+                duration: 0.3,
+                ease: "easeOut",
+              },
+            },
+            exit: {
+              y: -20,
+              opacity: 0,
+              transition: {
+                duration: 0.2,
+                ease: "easeIn",
+              },
+            },
+          },
+        }}
+        size="xl"
+        onOpenChange={onOpenJsonErrorDetailsModelChange}
+      >
+        <ModalContent>
+          {(onClose) => (
+            <>
+              <ModalHeader className="flex flex-col gap-1">
+                {parseJsonError.current?.message}
+              </ModalHeader>
+              <ModalBody className="text-sm">
+                <p>
+                  错误位置：第
+                  <Chip
+                    className="mx-1"
+                    classNames={{
+                      base: "border px-0.5",
+                    }}
+                    color="warning"
+                    radius="sm"
+                    size="sm"
+                    variant="bordered"
+                  >
+                    {parseJsonError.current?.line}
+                  </Chip>
+                  行， 第
+                  <Chip
+                    className="mx-1"
+                    classNames={{
+                      base: "border px-0.5",
+                    }}
+                    color="warning"
+                    radius="sm"
+                    size="sm"
+                    variant="bordered"
+                  >
+                    {parseJsonError.current?.column}
+                  </Chip>
+                  列
+                </p>
+                <p className="mt-2">
+                  异常信息：
+                  <span className={"text-red-500"}>
+                    {parseJsonError.current?.message}
+                  </span>
+                </p>
+                <div className="context-section">
+                  <div className="context-wrapper">
+                    <div className="line-numbers">
+                      {[...Array(contextLines)].map((_, i) => {
+                        return (
+                          <span
+                            key={i}
+                            className={cn({
+                              "error-line":
+                                errorStartLine + i - 1 ===
+                                parseJsonError.current?.line,
+                            })}
+                          >
+                            {errorStartLine + i - 1}
+                          </span>
+                        );
+                      })}
+                    </div>
+                    <pre className="context-content">
+                      <code>{parseJsonError.current?.context}</code>
+                    </pre>
+                  </div>
+                </div>
+              </ModalBody>
+              <ModalFooter>
+                <Button color="danger" variant="light" onPress={onClose}>
+                  Close
+                </Button>
+                <Button color="primary" onPress={onClose}>
+                  Action
+                </Button>
+              </ModalFooter>
+            </>
+          )}
+        </ModalContent>
+      </Modal>
+    </>
   );
 });
 

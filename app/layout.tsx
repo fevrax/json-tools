@@ -13,6 +13,7 @@ import {
 import { Icon } from "@iconify/react";
 import React from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { Toaster } from "sonner";
 
 import { Providers } from "./providers";
 
@@ -20,7 +21,6 @@ import SidebarDrawer from "@/components/sidebar/sidebar-drawer";
 import Sidebar from "@/components/sidebar/sidebar";
 import { items } from "@/components/sidebar/items";
 import { ThemeSwitch } from "@/components/theme-switch";
-import { Toaster } from "sonner";
 export const dynamic = "force-static";
 export default function RootLayout({
   children,

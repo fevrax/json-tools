@@ -1,9 +1,9 @@
 import { toast } from "sonner";
 import { Icon } from "@iconify/react";
 import React from "react";
+import { cn } from "@nextui-org/react";
 
 import { JsonErrorInfo } from "@/utils/json";
-import { cn } from "@nextui-org/react";
 export const JsonErrorToast = (
   parseJsonError: JsonErrorInfo | undefined,
   onClick: () => void,

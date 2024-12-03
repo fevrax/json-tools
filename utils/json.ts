@@ -27,8 +27,8 @@ export function escapeJson(input: string): string {
 
     return rxEscapable.test(jsonString)
       ? jsonString.replace(rxEscapable, (a: string) => {
-        return meta[a];
-      })
+          return meta[a];
+        })
       : jsonString;
   } catch (error) {
     console.error("Invalid JSON string:", error);
@@ -84,8 +84,9 @@ export function jsonParseError(jsonString: string): JsonErrorInfo | undefined {
         }),
       },
       {
-        // @ts-ignore
-        regex: /Unexpected token '?(.+?)'?,\s*["'](.+?)["'].*?is not valid JSON/s,
+        regex:
+          // @ts-ignore
+          /Unexpected token '?(.+?)'?,\s*["'](.+?)["'].*?is not valid JSON/s,
         handler: (match: RegExpMatchArray) => ({
           errorToken: match[1].trim(),
           errorContext: match[2].trim(),
@@ -157,7 +158,9 @@ function getErrorInfo(
   }
 
   if (result.errorContext && !line) {
-    const errorLine = lines.findIndex((l) => l.includes(result.errorContext as string));
+    const errorLine = lines.findIndex((l) =>
+      l.includes(result.errorContext as string),
+    );
 
     if (errorLine !== -1) {
       line = errorLine + 1;

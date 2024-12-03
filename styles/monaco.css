@@ -1,0 +1,39 @@
+.context-section {
+    @apply mt-6;
+
+    h3 {
+        @apply text-lg font-semibold mb-2 dark:text-gray-200;
+    }
+
+    .error-context {
+        @apply bg-gray-100 dark:bg-gray-700 p-4 rounded-md overflow-x-auto whitespace-pre-wrap;
+    }
+
+    .context-title {
+        @apply text-lg font-semibold mb-3 dark:text-gray-200;
+    }
+
+    .context-wrapper {
+        @apply relative bg-gray-50 dark:bg-neutral-800 rounded-lg overflow-hidden flex;
+
+        .line-numbers {
+            @apply py-4 text-right text-gray-400 dark:text-gray-600 select-none bg-gray-100 dark:bg-neutral-900;
+            min-width: 3em;
+
+            span {
+                @apply block text-sm font-mono px-2;
+                line-height: 1.5;
+
+                &.error-line {
+                    @apply bg-red-200 dark:bg-red-900 text-red-800 dark:text-red-200 font-bold;
+                }
+            }
+        }
+
+        .context-content {
+            @apply p-4 m-0 text-sm font-mono overflow-x-auto whitespace-pre flex-grow;
+            line-height: 1.5;
+        }
+    }
+}
+
