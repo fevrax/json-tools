@@ -22,7 +22,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
 
   useEffect(() => {
-    console.log("editorHeight", height);
     if (editorRef.current) {
       editorRef.current.layout();
     }
@@ -30,7 +29,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   }, [height]);
 
   useEffect(() => {
-    console.log("theme", theme);
     if (editorRef.current) {
       editorRef.current.updateOptions({
         theme: theme,

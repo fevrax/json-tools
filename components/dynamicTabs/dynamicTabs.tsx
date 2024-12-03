@@ -45,6 +45,7 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
   const [editingTitle, setEditingTitle] = useState<string>("");
   const [contextMenuPosition, setContextMenuPosition] = useState<number>(0);
   const [contextMenuTabKey, setContextMenuTabKey] = useState<string>("");
+  const [tabDisableKeys , setTabDisableKeys] = useState<string[]>([]);
 
   const [inputPosition, setInputPosition] = useState<{
     left: number;
@@ -344,35 +345,42 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
   };
 
   return (
-    <div className="flex flex-col overflow-hidden">
+    <div className="flex flex-col overflow-hidden bg-default-100">
       <div className="flex items-center relative">
         <Tooltip content="新建标签页" placement="bottom-start">
           <div
-            aria-label="添加新标签页"
-            className="sticky left-0 z-50 bg-background cursor-pointer p-1 m-2 my-1 flex-shrink-0 hover:bg-default-200 rounded"
-            role="button"
-            tabIndex={0}
-            onClick={(e) => {
-              addTab();
-              e.stopPropagation();
+            style={{
+              boxShadow: "4px 0 6px -1px rgba(0, 0, 0, 0.1)",
             }}
-            onKeyDown={(e) => handleKeyDown(e, addTab)}
           >
-            <Icon icon="mi:add" width={22} />
+            <div
+              aria-label="添加新标签页"
+              className="sticky left-0 z-50 cursor-pointer p-1 mx-1.5 my-1 flex-shrink-0 bg-default-100 hover:bg-default-200 rounded"
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                addTab();
+                e.stopPropagation();
+              }}
+              onKeyDown={(e) => handleKeyDown(e, addTab)}
+            >
+              <Icon icon="mi:add" width={22} />
+            </div>
           </div>
         </Tooltip>
 
         <div
           ref={tabContainerRef}
-          className="flex-grow overflow-x-auto scroll-smooth scrollbar-hide"
+          className="flex-grow h-9 overflow-x-auto scroll-smooth scrollbar-hide"
           onWheel={handleWheel}
         >
           <Tabs
             ref={tabListRef}
             aria-label="标签页"
+            disabledKeys={tabDisableKeys}
             classNames={{
               tabList:
-                "gap-6 w-full relative rounded-none p-0 pr-4 overflow-x-visible flex-shrink-0",
+                "gap-6 w-full h-9 relative rounded-none p-0 pr-4 ml-4 overflow-x-visible flex-shrink-0",
               tab: "max-w-fit px-0 h-9 flex-shrink-0",
               cursor: "w-full",
               panel:
@@ -382,7 +390,7 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
             variant="underlined"
             onSelectionChange={(key) => setActiveTab(key as string)}
           >
-            {tabs.map((tab: TabItem, index: number) => (
+            {tabs.map((tab: TabItem) => (
               <Tab
                 key={tab.key}
                 title={
@@ -396,11 +404,11 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
                     onDoubleClick={(e) => handleDoubleClick(tab, e)}
                   >
                     <>
-                      <span>{tab.title}</span>
+                      <span className="select-none">{tab.title}</span>
                       {tab.closable && (
                         <div
                           aria-label="关闭标签页"
-                          className=" rounded-full cursor-pointer flex items-center justify-center z-10 py-3 px-1 !ml-0.5"
+                          className=" rounded-full cursor-pointer flex items-center justify-center z-10 h-9 px-1 !ml-0.5 text-default-900 hover:text-default-500"
                           role="button"
                           tabIndex={0}
                           onClick={(e) => {
@@ -408,6 +416,8 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
                             e.stopPropagation();
                             e.preventDefault();
                           }}
+                          onMouseEnter={() => setTabDisableKeys([tab.key])}
+                          onMouseLeave={() => setTabDisableKeys([])}
                           onKeyDown={(e) => {
                             handleKeyDown(e, () => closeTab(tab.key));
                             e.stopPropagation();

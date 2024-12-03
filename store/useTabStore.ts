@@ -69,11 +69,19 @@ export const useTabStore = create<TabStore>((set, get) => ({
     }
 
     set((state) => {
+      const tabIndex = state.tabs.findIndex((tab) => tab.key === keyToRemove);
+
       const updatedTabs = state.tabs.filter((tab) => tab.key !== keyToRemove);
-      const newActiveTab =
-        keyToRemove === state.activeTabKey
-          ? updatedTabs[updatedTabs.length - 1]?.key || "1"
-          : state.activeTabKey;
+
+      let newActiveTab = state.activeTabKey;
+
+      if (keyToRemove === state.activeTabKey && state.tabs.length > 1) {
+        if (tabIndex - 1 < 0) {
+          newActiveTab = state.tabs[tabIndex + 1].key;
+        } else {
+          newActiveTab = state.tabs[tabIndex - 1].key;
+        }
+      }
 
       return { tabs: updatedTabs, activeTabKey: newActiveTab };
     });
