@@ -15,6 +15,7 @@ import {
 } from "@nextui-org/react";
 import { editor } from "monaco-editor";
 import { toast } from "sonner";
+import { Icon } from "@iconify/react";
 
 import { sleep } from "@/utils/time";
 import { JsonErrorInfo, jsonParseError } from "@/utils/json";
@@ -307,11 +308,29 @@ const MonacoJsonEditor = React.forwardRef<
                 </div>
               </ModalBody>
               <ModalFooter>
-                <Button color="danger" variant="light" onPress={onClose}>
-                  Close
+                <Button
+                  color="danger"
+                  size="sm"
+                  variant="bordered"
+                  onPress={onClose}
+                >
+                  取消
                 </Button>
-                <Button color="primary" onPress={onClose}>
-                  Action
+                <Button color="primary" size="sm" onPress={onClose}>
+                  <Icon
+                    className="cursor-pointer dark:text-primary-foreground/60 [&>g]:stroke-[1px]"
+                    icon="fluent:bot-sparkle-20-regular"
+                    width={20}
+                  />
+                  智能修复
+                </Button>
+                <Button color="danger" size="sm" onPress={onClose}>
+                  <Icon
+                    className="cursor-pointer dark:text-primary-foreground/60 [&>g]:stroke-[1px]"
+                    icon="ic:outline-my-location"
+                    width={20}
+                  />
+                  一键定位
                 </Button>
               </ModalFooter>
             </>
