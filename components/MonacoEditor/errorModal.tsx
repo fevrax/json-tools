@@ -140,7 +140,7 @@ const ErrorModal = React.forwardRef<ErrorModalRef, ErrorModalProps>(
             >
               取消
             </Button>
-            <Button color="primary" size="sm" onPress={onClose}>
+            <Button color="primary" size="sm" onPress={onAutoFix}>
               <Icon
                 className="cursor-pointer dark:text-primary-foreground/60 [&>g]:stroke-[1px]"
                 icon="fluent:bot-sparkle-20-regular"

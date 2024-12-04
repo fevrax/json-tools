@@ -7,7 +7,7 @@ import { editor } from "monaco-editor";
 import { toast } from "sonner";
 
 import { sleep } from "@/utils/time";
-import { JsonErrorInfo, jsonParseError } from "@/utils/json";
+import { JsonErrorInfo, jsonParseError, repairJson } from "@/utils/json";
 import ErrorModal from "@/components/MonacoEditor/errorModal";
 import "@/styles/monaco.css";
 
@@ -191,6 +191,7 @@ const MonacoJsonEditor = React.forwardRef<
     return true;
   };
 
+  // 一键定位到错误行
   const goToErrorLine = () => {
     if (!parseJsonError.current || parseJsonError.current.line <= 0) {
       toast.error("一键定位失败");
@@ -201,6 +202,49 @@ const MonacoJsonEditor = React.forwardRef<
 
     highlightErrorLine(parseJsonError.current.line);
     toast.success("一键定位成功");
+  };
+
+  const autoFix = (): boolean => {
+    try {
+      const jsonText = editorRef.current?.getValue() || "";
+
+      if (jsonText === "") {
+        toast.warning("暂无内容");
+
+        return false;
+      }
+      const repair = repairJson(jsonText);
+
+      setEditorValue(repair);
+      closeJsonErrorDetailsModel();
+      toast.success("修复成功");
+
+      return true;
+    } catch (e) {
+      console.error("repairJson", e);
+      toast.error("修复失败，可能不是有效的 Json 数据");
+
+      return false;
+    }
+  };
+
+  // 设置编辑器内容，保留历史, 支持 ctrl + z 撤销
+  const setEditorValue = (jsonText: string) => {
+    if (!editorRef.current) {
+      return;
+    }
+    const model = editorRef.current.getModel();
+
+    if (!model) {
+      return;
+    }
+    editorRef.current?.executeEdits("", [
+      {
+        range: model.getFullModelRange(),
+        text: jsonText,
+        forceMoveMarkers: true,
+      },
+    ]);
   };
 
   // 添加窗口大小变化监听器
@@ -238,6 +282,7 @@ const MonacoJsonEditor = React.forwardRef<
       <ErrorModal
         isOpen={jsonErrorDetailsModel}
         parseJsonError={parseJsonError.current}
+        onAutoFix={autoFix}
         onClose={closeJsonErrorDetailsModel}
         onGotoErrorLine={goToErrorLine}
       />
