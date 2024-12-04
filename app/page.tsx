@@ -14,6 +14,7 @@ import {
   MonacoJsonEditorRef,
   MonacoJsonEditorProps,
 } from "@/components/MonacoEditor/monacoJsonEditor";
+import MonacoOperationBar from "@/components/MonacoEditor/operationBar";
 
 const monaceJsonEditorRefs: Record<string, MonacoJsonEditorRef> = {};
 
@@ -54,7 +55,7 @@ export default function Home() {
     if (tabRef.current) {
       const windowHeight = window.innerHeight;
       const containerTop = tabRef.current.getPositionTop();
-      const newHeight = windowHeight - containerTop - 10; // 减去一些额外的边距
+      const newHeight = windowHeight - containerTop - 10 - 40; // 减去一些额外的边距
 
       setEditorHeight(Math.max(newHeight, 300)); // 设置最小高度
     }
@@ -98,6 +99,7 @@ export default function Home() {
   return (
     <div className="dark:bg-vscode-dark">
       <DynamicTabs ref={tabRef} />
+      <MonacoOperationBar />
       <AnimatePresence mode="popLayout">
         {tabs.map((tab: TabItem, index: number) => (
           <motion.div
