@@ -1,24 +1,14 @@
 "use client";
-import React, { useEffect, useImperativeHandle, useMemo, useRef } from "react";
+import React, { useEffect, useImperativeHandle, useRef } from "react";
 import { loader, Monaco } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
-import {
-  cn,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Button,
-  useDisclosure,
-  Chip,
-} from "@nextui-org/react";
+import { cn, useDisclosure } from "@nextui-org/react";
 import { editor } from "monaco-editor";
 import { toast } from "sonner";
-import { Icon } from "@iconify/react";
 
 import { sleep } from "@/utils/time";
 import { JsonErrorInfo, jsonParseError } from "@/utils/json";
+import ErrorModal from "@/components/MonacoEditor/errorModal";
 import "@/styles/monaco.css";
 
 export interface MonacoJsonEditorProps {
@@ -41,10 +31,13 @@ const MonacoJsonEditor = React.forwardRef<
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const parseJsonError = useRef<JsonErrorInfo | null>(null);
 
+  let errorDecorations: monaco.editor.IEditorDecorationsCollection | null =
+    null;
+
   const {
     isOpen: jsonErrorDetailsModel,
     onOpen: openJsonErrorDetailsModel,
-    onOpenChange: onOpenJsonErrorDetailsModelChange,
+    onClose: closeJsonErrorDetailsModel,
   } = useDisclosure();
 
   useEffect(() => {
@@ -63,26 +56,8 @@ const MonacoJsonEditor = React.forwardRef<
     // calculateHeight();
   }, [theme]);
 
-  const contextLines = useMemo(() => {
-    if (!parseJsonError.current || !parseJsonError.current.context) return 0;
-    if (!parseJsonError.current.context) return 0;
-
-    return parseJsonError.current.context.split("\n").length;
-  }, [parseJsonError.current?.context]);
-
-  const errorStartLine = useMemo(() => {
-    if (!parseJsonError.current?.line) return 0;
-
-    return Math.max(
-      1,
-      parseJsonError.current?.line - Math.floor(contextLines / 2),
-    );
-  }, [parseJsonError.current?.line, contextLines]);
-
   // 初始化编辑器的函数
   const initializeEditor = async () => {
-    openJsonErrorDetailsModel();
-
     // 确保只初始化一次
     if (editorRef.current) return;
 
@@ -183,6 +158,51 @@ const MonacoJsonEditor = React.forwardRef<
     return true;
   };
 
+  // 高亮错误行
+  const highlightErrorLine = (lineNumber: number): boolean => {
+    if (!editorRef.current) {
+      return false;
+    }
+    // 滚动到错误行
+    editorRef.current.revealLineInCenter(lineNumber);
+    // 如果存在旧的装饰，先清除
+    if (errorDecorations) {
+      errorDecorations.clear();
+    }
+
+    // 创建新的装饰集合
+    errorDecorations = editorRef.current.createDecorationsCollection([
+      {
+        range: new monaco.Range(lineNumber, 1, lineNumber, 1),
+        options: {
+          isWholeLine: true,
+          className: "errorLineHighlight",
+          glyphMarginClassName: "",
+        },
+      },
+    ]);
+    // 5秒后移除高亮
+    setTimeout(() => {
+      if (errorDecorations) {
+        errorDecorations.clear();
+      }
+    }, 5000);
+
+    return true;
+  };
+
+  const goToErrorLine = () => {
+    if (!parseJsonError.current || parseJsonError.current.line <= 0) {
+      toast.error("一键定位失败");
+
+      return;
+    }
+    closeJsonErrorDetailsModel();
+
+    highlightErrorLine(parseJsonError.current.line);
+    toast.success("一键定位成功");
+  };
+
   // 添加窗口大小变化监听器
   useEffect(() => {
     // 使用 setTimeout 确保在 React 严格模式下只执行一次
@@ -215,128 +235,12 @@ const MonacoJsonEditor = React.forwardRef<
         className={cn("w-full flex-grow")}
         style={{ height: height }}
       />
-      <Modal
-        backdrop="blur"
+      <ErrorModal
         isOpen={jsonErrorDetailsModel}
-        motionProps={{
-          variants: {
-            enter: {
-              y: 0,
-              opacity: 1,
-              transition: {
-                duration: 0.3,
-                ease: "easeOut",
-              },
-            },
-            exit: {
-              y: -20,
-              opacity: 0,
-              transition: {
-                duration: 0.2,
-                ease: "easeIn",
-              },
-            },
-          },
-        }}
-        size="xl"
-        onOpenChange={onOpenJsonErrorDetailsModelChange}
-      >
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="flex flex-col gap-1">
-                {parseJsonError.current?.message}
-              </ModalHeader>
-              <ModalBody className="text-sm">
-                <p>
-                  错误位置：第
-                  <Chip
-                    className="mx-1"
-                    classNames={{
-                      base: "border px-0.5",
-                    }}
-                    color="warning"
-                    radius="sm"
-                    size="sm"
-                    variant="bordered"
-                  >
-                    {parseJsonError.current?.line}
-                  </Chip>
-                  行， 第
-                  <Chip
-                    className="mx-1"
-                    classNames={{
-                      base: "border px-0.5",
-                    }}
-                    color="warning"
-                    radius="sm"
-                    size="sm"
-                    variant="bordered"
-                  >
-                    {parseJsonError.current?.column}
-                  </Chip>
-                  列
-                </p>
-                <p className="mt-2">
-                  异常信息：
-                  <span className={"text-red-500"}>
-                    {parseJsonError.current?.message}
-                  </span>
-                </p>
-                <div className="context-section">
-                  <div className="context-wrapper">
-                    <div className="line-numbers">
-                      {[...Array(contextLines)].map((_, i) => {
-                        return (
-                          <span
-                            key={i}
-                            className={cn({
-                              "error-line":
-                                errorStartLine + i - 1 ===
-                                parseJsonError.current?.line,
-                            })}
-                          >
-                            {errorStartLine + i - 1}
-                          </span>
-                        );
-                      })}
-                    </div>
-                    <pre className="context-content">
-                      <code>{parseJsonError.current?.context}</code>
-                    </pre>
-                  </div>
-                </div>
-              </ModalBody>
-              <ModalFooter>
-                <Button
-                  color="danger"
-                  size="sm"
-                  variant="bordered"
-                  onPress={onClose}
-                >
-                  取消
-                </Button>
-                <Button color="primary" size="sm" onPress={onClose}>
-                  <Icon
-                    className="cursor-pointer dark:text-primary-foreground/60 [&>g]:stroke-[1px]"
-                    icon="fluent:bot-sparkle-20-regular"
-                    width={20}
-                  />
-                  智能修复
-                </Button>
-                <Button color="danger" size="sm" onPress={onClose}>
-                  <Icon
-                    className="cursor-pointer dark:text-primary-foreground/60 [&>g]:stroke-[1px]"
-                    icon="ic:outline-my-location"
-                    width={20}
-                  />
-                  一键定位
-                </Button>
-              </ModalFooter>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
+        parseJsonError={parseJsonError.current}
+        onClose={closeJsonErrorDetailsModel}
+        onGotoErrorLine={goToErrorLine}
+      />
     </>
   );
 });

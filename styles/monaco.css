@@ -1,6 +1,14 @@
-.context-section {
-    @apply mt-6;
 
+
+.errorLineHighlight {
+    @apply bg-red-200 dark:bg-red-700;
+    width: 100%;
+}
+.errorGlyphMargin {
+    background-color: #ff0000;
+}
+/* Error modal styles */
+.context-section {
     h3 {
         @apply text-lg font-semibold mb-2 dark:text-gray-200;
     }
