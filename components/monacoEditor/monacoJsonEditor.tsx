@@ -8,9 +8,8 @@ import { toast } from "sonner";
 
 import { sleep } from "@/utils/time";
 import { JsonErrorInfo, jsonParseError, repairJson } from "@/utils/json";
-import ErrorModal from "@/components/MonacoEditor/errorModal";
+import ErrorModal from "@/components/monacoEditor/errorModal";
 import "@/styles/monaco.css";
-import OperationBar from "@/components/MonacoEditor/operationBar";
 
 export interface MonacoJsonEditorProps {
   tabKey: string;

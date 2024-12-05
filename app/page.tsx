@@ -13,8 +13,8 @@ import DynamicTabs, {
 import {
   MonacoJsonEditorRef,
   MonacoJsonEditorProps,
-} from "@/components/MonacoEditor/monacoJsonEditor";
-import MonacoOperationBar from "@/components/MonacoEditor/operationBar";
+} from "@/components/monacoEditor/monacoJsonEditor";
+import MonacoOperationBar from "@/components/monacoEditor/operationBar";
 
 const monaceJsonEditorRefs: Record<string, MonacoJsonEditorRef> = {};
 
@@ -22,7 +22,7 @@ const monaceJsonEditorRefs: Record<string, MonacoJsonEditorRef> = {};
 const MonacoJsonEditorWithDynamic = dynamic(
   async () => {
     const { default: Editor } = await import(
-      "../components/MonacoEditor/monacoJsonEditor"
+      "@/components/monacoEditor/monacoJsonEditor"
     );
     const monacoJsonEditor = forwardRef<
       MonacoJsonEditorRef,
@@ -55,7 +55,7 @@ export default function Home() {
     if (tabRef.current) {
       const windowHeight = window.innerHeight;
       const containerTop = tabRef.current.getPositionTop();
-      const newHeight = windowHeight - containerTop - 10 - 40; // 减去一些额外的边距
+      const newHeight = windowHeight - containerTop - 10 - 35; // 减去一些额外的边距
 
       setEditorHeight(Math.max(newHeight, 300)); // 设置最小高度
     }

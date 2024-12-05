@@ -345,33 +345,31 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
   };
 
   return (
-    <div className="flex flex-col overflow-hidden bg-default-100">
+    <div className="flex flex-col overflow-hidden bg-default-100 border-b border-default-200 pb-0.5">
       <div className="flex items-center relative">
-        <Tooltip content="新建标签页" placement="bottom-start">
+        <div
+          style={{
+            // boxShadow: "4px 0 6px -1px rgba(0, 0, 0, 0.1)",
+          }}
+        >
           <div
-            style={{
-              boxShadow: "4px 0 6px -1px rgba(0, 0, 0, 0.1)",
+            aria-label="添加新标签页"
+            className="sticky left-0 z-50 cursor-pointer p-0.5 ml-2 flex-shrink-0 bg-default-100 hover:bg-default-200 rounded text-default-600"
+            role="button"
+            tabIndex={0}
+            onClick={(e) => {
+              addTab();
+              e.stopPropagation();
             }}
+            onKeyDown={(e) => handleKeyDown(e, addTab)}
           >
-            <div
-              aria-label="添加新标签页"
-              className="sticky left-0 z-50 cursor-pointer p-1 mx-1.5 my-1 flex-shrink-0 bg-default-100 hover:bg-default-200 rounded"
-              role="button"
-              tabIndex={0}
-              onClick={(e) => {
-                addTab();
-                e.stopPropagation();
-              }}
-              onKeyDown={(e) => handleKeyDown(e, addTab)}
-            >
-              <Icon icon="mi:add" width={22} />
-            </div>
+            <Icon icon="mi:add" width={22} />
           </div>
-        </Tooltip>
+        </div>
 
         <div
           ref={tabContainerRef}
-          className="flex-grow h-9 overflow-x-auto scroll-smooth scrollbar-hide"
+          className="flex-grow h-8 overflow-x-auto scroll-smooth scrollbar-hide"
           onWheel={handleWheel}
         >
           <Tabs
@@ -379,8 +377,8 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
             aria-label="标签页"
             classNames={{
               tabList:
-                "gap-6 w-full h-9 relative rounded-none p-0 pr-4 ml-4 overflow-x-visible flex-shrink-0",
-              tab: "max-w-fit px-0 h-9 flex-shrink-0",
+                "gap-6 w-full h-8 relative rounded-none p-0 pr-4 ml-4 overflow-x-visible flex-shrink-0",
+              tab: "max-w-fit px-0 h-8 flex-shrink-0 text-xs",
               cursor: "w-full",
               panel:
                 "flex-grow overflow-auto border-t border-divider px-0 pb-0 pt-1",
@@ -408,7 +406,7 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
                       {tab.closable && (
                         <div
                           aria-label="关闭标签页"
-                          className=" rounded-full cursor-pointer flex items-center justify-center z-10 h-9 px-1 !ml-0.5 text-default-900 hover:text-default-500"
+                          className=" rounded-full cursor-pointer flex items-center justify-center z-10 h-8 px-1 !ml-0.5 text-default-500"
                           role="button"
                           tabIndex={0}
                           onClick={(e) => {
@@ -424,7 +422,7 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
                           onMouseEnter={() => setTabDisableKeys([tab.key])}
                           onMouseLeave={() => setTabDisableKeys([])}
                         >
-                          <IcRoundClose width={20} />
+                          <IcRoundClose width={18} />
                         </div>
                       )}
                     </>

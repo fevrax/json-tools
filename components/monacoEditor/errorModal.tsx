@@ -27,7 +27,17 @@ export interface ErrorModalProps {
 export interface ErrorModalRef {}
 
 const ErrorModal = React.forwardRef<ErrorModalRef, ErrorModalProps>(
-  ({ parseJsonError, isOpen, onOpenChange, onClose, onGotoErrorLine, onAutoFix }, ref) => {
+  (
+    {
+      parseJsonError,
+      isOpen,
+      onOpenChange,
+      onClose,
+      onGotoErrorLine,
+      onAutoFix,
+    },
+    ref,
+  ) => {
     const contextLines = useMemo(() => {
       if (!parseJsonError || !parseJsonError.context) return 0;
       if (!parseJsonError.context) return 0;

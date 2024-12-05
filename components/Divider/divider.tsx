@@ -37,7 +37,10 @@ const Divider: React.FC<DividerProps> = ({
 
       {title && (
         <div
-          className={cn(`px-4 text-base font-bold text-default-700`, titleClass)}
+          className={cn(
+            `px-4 text-base font-bold text-default-700`,
+            titleClass,
+          )}
         >
           {title}
         </div>
