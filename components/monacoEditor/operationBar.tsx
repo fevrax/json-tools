@@ -257,7 +257,7 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
           <DropdownItem key="unescape" textValue="去除转移">
             <div className="flex items-center space-x-2 text-xs">
               <Icon icon="iconoir:remove-link" width={16} />
-              <span>去除转移</span>
+              <span>去除转义</span>
             </div>
           </DropdownItem>
           <DropdownItem key="del_comment" textValue="移除注释">

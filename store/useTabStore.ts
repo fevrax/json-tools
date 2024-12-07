@@ -1,5 +1,6 @@
 // useTabStore.ts
 import { create } from "zustand";
+import { devtools } from "zustand/middleware";
 
 export interface TabItem {
   key: string;
@@ -16,6 +17,7 @@ interface TabStore {
   getTabByKey: (key: string) => TabItem | undefined;
   addTab: () => void;
   addTabSimple: () => void;
+  setTabContent: (key: string, content: string) => void;
   closeTab: (keyToRemove: string) => void;
   setActiveTab: (key: string) => void;
   renameTab: (key: string, newTitle: string) => void;
@@ -25,39 +27,53 @@ interface TabStore {
   closeAllTabs: () => void;
 }
 
-export const useTabStore = create<TabStore>((set, get) => ({
-  tabs: [{ key: "1", title: "New Tab 1", content: "", closable: true }],
-  activeTabKey: "1",
-  nextKey: 2,
-  activeTab: () => {
-    const activeTab = get().tabs.find((tab) => tab.key === get().activeTabKey);
+export const useTabStore = create<TabStore>()(
+  devtools(
+    (set, get) => ({
+      tabs: [
+        { key: "1", title: "New Tab 1", content: "New Tab 1", closable: true },
+        {
+          key: "2",
+          title: "New Tab 2",
+          content: "New Tab 2",
+          closable: true,
+        },
+        { key: "3", title: "New Tab 3", content: "New Tab 1", closable: true },
+      ],
+      activeTabKey: "2",
+      // nextKey: 2,
+      nextKey: 4,
+      activeTab: () => {
+        const activeTab = get().tabs.find(
+          (tab) => tab.key === get().activeTabKey,
+        );
 
-    return activeTab || get().tabs[0];
-  },
-  getTabByKey: (key: string) => get().tabs.find((tab) => tab.key === key),
-  addTab: () =>
-    set((state) => {
-      const newTabKey = `${state.nextKey}`;
-      const newTab: TabItem = {
-        key: `${state.nextKey}`,
-        title: `New Tab ${newTabKey}`,
-        content: ``,
-        closable: true,
-      };
+        return activeTab || get().tabs[0];
+      },
+      getTabByKey: (key: string) => get().tabs.find((tab) => tab.key === key),
+      addTab: () =>
+        set((state) => {
+          const newTabKey = `${state.nextKey}`;
+          const newTab: TabItem = {
+            key: `${state.nextKey}`,
+            title: `New Tab ${newTabKey}`,
+            content: ``,
+            closable: true,
+          };
 
-      return {
-        tabs: [...state.tabs, newTab],
-        activeTabKey: newTabKey,
-        nextKey: state.nextKey + 1,
-      };
-    }),
-  addTabSimple: () =>
-    set((state) => {
-      const newTabKey = `${state.nextKey}`;
-      const newTab: TabItem = {
-        key: `${state.nextKey}`,
-        title: `Simple Tab ${newTabKey}`,
-        content: `{
+          return {
+            tabs: [...state.tabs, newTab],
+            activeTabKey: newTabKey,
+            nextKey: state.nextKey + 1,
+          };
+        }),
+      addTabSimple: () =>
+        set((state) => {
+          const newTabKey = `${state.nextKey}`;
+          const newTab: TabItem = {
+            key: `${state.nextKey}`,
+            title: `Simple Tab ${newTabKey}`,
+            content: `{
     "data": {
         "name": "Simple Tab ${newTabKey}"
     },
@@ -78,101 +94,116 @@ export const useTabStore = create<TabStore>((set, get) => ({
         }
     ]
 }`,
-        closable: true,
-      };
+            closable: true,
+          };
 
-      return {
-        tabs: [...state.tabs, newTab],
-        activeTabKey: newTabKey,
-        nextKey: state.nextKey + 1,
-      };
-    }),
-  renameTab: (key: string, newTitle: string) =>
-    set((state) => {
-      // 不允许重命名为空
-      if (!newTitle.trim()) return state;
+          return {
+            tabs: [...state.tabs, newTab],
+            activeTabKey: newTabKey,
+            nextKey: state.nextKey + 1,
+          };
+        }),
+      setTabContent: (key, content) =>
+        set((state) => {
+          const updatedTabs = state.tabs.map((tab) =>
+            tab.key === key ? { ...tab, content } : tab,
+          );
 
-      const updatedTabs = state.tabs.map((tab) =>
-        tab.key === key ? { ...tab, title: newTitle.trim() } : tab,
-      );
+          return { tabs: updatedTabs };
+        }),
+      renameTab: (key: string, newTitle: string) =>
+        set((state) => {
+          // 不允许重命名为空
+          if (!newTitle.trim()) return state;
 
-      return { tabs: updatedTabs };
-    }),
-  closeTab: (keyToRemove) => {
-    if (get().tabs.length === 1) {
-      get().closeAllTabs();
+          const updatedTabs = state.tabs.map((tab) =>
+            tab.key === key ? { ...tab, title: newTitle.trim() } : tab,
+          );
 
-      return;
-    }
+          return { tabs: updatedTabs };
+        }),
+      closeTab: (keyToRemove) => {
+        if (get().tabs.length === 1) {
+          get().closeAllTabs();
 
-    set((state) => {
-      const tabIndex = state.tabs.findIndex((tab) => tab.key === keyToRemove);
-
-      const updatedTabs = state.tabs.filter((tab) => tab.key !== keyToRemove);
-
-      let newActiveTab = state.activeTabKey;
-
-      if (keyToRemove === state.activeTabKey && state.tabs.length > 1) {
-        if (tabIndex - 1 < 0) {
-          newActiveTab = state.tabs[tabIndex + 1].key;
-        } else {
-          newActiveTab = state.tabs[tabIndex - 1].key;
+          return;
         }
-      }
 
-      return { tabs: updatedTabs, activeTabKey: newActiveTab };
-    });
-  },
-  setActiveTab: (key) => set({ activeTabKey: key }),
-  // 关闭其他标签页
-  closeOtherTabs: (currentKey) =>
-    set((state) => {
-      const currentTab = state.tabs.find((tab) => tab.key === currentKey);
+        set((state) => {
+          const tabIndex = state.tabs.findIndex(
+            (tab) => tab.key === keyToRemove,
+          );
 
-      return {
-        tabs: currentTab ? [currentTab] : [],
-        activeTabKey: currentKey,
-      };
+          const updatedTabs = state.tabs.filter(
+            (tab) => tab.key !== keyToRemove,
+          );
+
+          let newActiveTab = state.activeTabKey;
+
+          if (keyToRemove === state.activeTabKey && state.tabs.length > 1) {
+            if (tabIndex - 1 < 0) {
+              newActiveTab = state.tabs[tabIndex + 1].key;
+            } else {
+              newActiveTab = state.tabs[tabIndex - 1].key;
+            }
+          }
+
+          return { tabs: updatedTabs, activeTabKey: newActiveTab };
+        });
+      },
+      setActiveTab: (key) => set({ activeTabKey: key }),
+      // 关闭其他标签页
+      closeOtherTabs: (currentKey) =>
+        set((state) => {
+          const currentTab = state.tabs.find((tab) => tab.key === currentKey);
+
+          return {
+            tabs: currentTab ? [currentTab] : [],
+            activeTabKey: currentKey,
+          };
+        }),
+
+      // 关闭左侧标签页
+      closeLeftTabs: (currentKey) =>
+        set((state) => {
+          const currentIndex = state.tabs.findIndex(
+            (tab) => tab.key === currentKey,
+          );
+          const updatedTabs = state.tabs.slice(currentIndex);
+
+          return {
+            tabs: updatedTabs,
+            activeTabKey: currentKey,
+          };
+        }),
+
+      // 关闭右侧标签页
+      closeRightTabs: (currentKey) =>
+        set((state) => {
+          const currentIndex = state.tabs.findIndex(
+            (tab) => tab.key === currentKey,
+          );
+          const updatedTabs = state.tabs.slice(0, currentIndex + 1);
+
+          return {
+            tabs: updatedTabs,
+            activeTabKey: currentKey,
+          };
+        }),
+      // 关闭所有标签页，默认保留第一个标签页
+      closeAllTabs: () =>
+        set(() => {
+          const defaultTab = [
+            { key: "1", title: "New Tab 1", content: "", closable: true },
+          ];
+
+          return {
+            tabs: defaultTab,
+            activeTabKey: "1",
+            nextKey: 2,
+          };
+        }),
     }),
-
-  // 关闭左侧标签页
-  closeLeftTabs: (currentKey) =>
-    set((state) => {
-      const currentIndex = state.tabs.findIndex(
-        (tab) => tab.key === currentKey,
-      );
-      const updatedTabs = state.tabs.slice(currentIndex);
-
-      return {
-        tabs: updatedTabs,
-        activeTabKey: currentKey,
-      };
-    }),
-
-  // 关闭右侧标签页
-  closeRightTabs: (currentKey) =>
-    set((state) => {
-      const currentIndex = state.tabs.findIndex(
-        (tab) => tab.key === currentKey,
-      );
-      const updatedTabs = state.tabs.slice(0, currentIndex + 1);
-
-      return {
-        tabs: updatedTabs,
-        activeTabKey: currentKey,
-      };
-    }),
-  // 关闭所有标签页，默认保留第一个标签页
-  closeAllTabs: () =>
-    set(() => {
-      const defaultTab = [
-        { key: "1", title: "New Tab 1", content: "", closable: true },
-      ];
-
-      return {
-        tabs: defaultTab,
-        activeTabKey: "1",
-        nextKey: 2,
-      };
-    }),
-}));
+    { name: "tabStore", enabled: true },
+  ),
+);

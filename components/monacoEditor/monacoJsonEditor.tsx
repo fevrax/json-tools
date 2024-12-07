@@ -25,10 +25,12 @@ export interface MonacoJsonEditorProps {
   value?: string;
   language?: string;
   theme?: string;
+  onUpdateValue: (value: string) => void;
 }
 
 export interface MonacoJsonEditorRef {
   focus: () => void;
+  layout: () => void;
   copy: (type?: "default" | "compress" | "escape") => boolean;
   format: () => boolean;
   clear: () => boolean;
@@ -39,7 +41,7 @@ export interface MonacoJsonEditorRef {
 const MonacoJsonEditor = React.forwardRef<
   MonacoJsonEditorRef,
   MonacoJsonEditorProps
->(({ value, language, theme, height }, ref) => {
+>(({ value, language, theme, height, onUpdateValue }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const parseJsonError = useRef<JsonErrorInfo | null>(null);
@@ -68,6 +70,26 @@ const MonacoJsonEditor = React.forwardRef<
     }
     // calculateHeight();
   }, [theme]);
+
+  const frist = useRef(true);
+  // 添加窗口大小变化监听器
+  useEffect(() => {
+    // 使用 setTimeout 确保在 React 严格模式下只执行一次
+    const timeoutId = setTimeout(() => {
+      if (frist.current) {
+        initializeEditor();
+      }
+      frist.current = false;
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+      // 如果编辑器已经创建，则销毁
+      if (editorRef.current) {
+        // editorRef.current?.dispose();
+      }
+    };
+  }, []); // 空依赖数组确保只在挂载时执行
 
   // 初始化编辑器的函数
   const initializeEditor = async () => {
@@ -109,6 +131,11 @@ const MonacoJsonEditor = React.forwardRef<
       });
 
       editor.focus();
+
+      // 监听内容变化
+      editor.onDidChangeModelContent(async () => {
+        onUpdateValue(editor.getValue());
+      })
 
       // 添加粘贴事件监听
       editor.onDidPaste(async (e) => {
@@ -199,7 +226,7 @@ const MonacoJsonEditor = React.forwardRef<
       return false;
     }
     if (editorRef.current.getValue() === "") {
-      toast.success("暂无内容!");
+      toast.error("暂无内容!");
 
       return false;
     }
@@ -297,21 +324,6 @@ const MonacoJsonEditor = React.forwardRef<
     ]);
   };
 
-  // 添加窗口大小变化监听器
-  useEffect(() => {
-    // 使用 setTimeout 确保在 React 严格模式下只执行一次
-    const timeoutId = setTimeout(() => {
-      initializeEditor();
-    }, 0);
-
-    return () => {
-      clearTimeout(timeoutId);
-      // 如果编辑器已经创建，则销毁
-      if (editorRef.current) {
-        editorRef.current.dispose();
-      }
-    };
-  }, []); // 空依赖数组确保只在挂载时执行
   // 复制到剪贴板
   const copyText = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -355,16 +367,23 @@ const MonacoJsonEditor = React.forwardRef<
         editorRef.current.focus();
       }
     },
+    layout: () => {
+      if (editorRef.current) {
+        editorRef.current.layout();
+      }
+    },
     copy: (type) => {
       if (!editorRef.current) {
         return false;
       }
-      const isValid = editorValueValidate();
 
-      if (!isValid) {
-        return false;
-      }
       const val = editorRef.current.getValue();
+
+      if (!type || type === "default") {
+        copyText(val);
+
+        return true;
+      }
 
       if (val.trim() === "") {
         toast.warning("暂无内容");
@@ -372,10 +391,12 @@ const MonacoJsonEditor = React.forwardRef<
         return false;
       }
 
+      const isValid = editorValueValidate();
+
+      if (!isValid) {
+        return false;
+      }
       switch (type) {
-        case "default":
-          copyText(val);
-          break;
         case "compress":
           const compressed = JSON.stringify(JSON.parse(val));
 
@@ -433,7 +454,10 @@ const MonacoJsonEditor = React.forwardRef<
 
       switch (key) {
         case "unescape":
-          setEditorValue(formatModelByUnEscapeJson(val));
+          const errorMsg = formatModelByUnEscapeJson(val);
+          if (errorMsg) {
+            toast.error(errorMsg);
+          }
           break;
         case "del_comment":
           setEditorValue(removeJsonComments(val));

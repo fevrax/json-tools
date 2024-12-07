@@ -22,6 +22,7 @@ import Sidebar from "@/components/sidebar/sidebar";
 import { items } from "@/components/sidebar/items";
 import { ThemeSwitch } from "@/components/theme-switch";
 import "react-toastify/dist/ReactToastify.css";
+import { useSidebarStore } from "@/store/useSidebarStore";
 
 // export const dynamic = "force-static";
 export default function RootLayout({
@@ -31,6 +32,8 @@ export default function RootLayout({
 }) {
   const router = useRouter();
 
+  const sidebarStore = useSidebarStore();
+
   const { isOpen, onOpenChange } = useDisclosure();
   const [isCollapsed, setIsCollapsed] = React.useState(true);
   const [toastTheme, setToastTheme] = React.useState("dark");
@@ -38,12 +41,13 @@ export default function RootLayout({
   const pathname = usePathname();
 
   // 菜单项点击事件
-  const handleSelect = (
+  const handleSidebarSelect = (
     key: string | React.SyntheticEvent<HTMLUListElement>,
   ) => {
     if (pathname !== "/") {
       router.push("/");
     }
+    sidebarStore.updateActiveKey(key as string);
     // 其他逻辑...
   };
 
@@ -120,7 +124,7 @@ export default function RootLayout({
 
                 {/* 菜单项*/}
                 <Sidebar
-                  defaultSelectedKey="textView"
+                  currentKey={useSidebarStore().activeKey}
                   iconClassName="group-data-[selected=true]:text-default-50"
                   isCompact={isCollapsed}
                   itemClasses={{
@@ -128,7 +132,7 @@ export default function RootLayout({
                     title: "group-data-[selected=true]:text-default-50",
                   }}
                   items={items}
-                  onSelect={handleSelect}
+                  onSelect={handleSidebarSelect}
                 />
 
                 <Spacer y={8} />
