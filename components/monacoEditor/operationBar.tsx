@@ -13,30 +13,63 @@ import { Icon } from "@iconify/react";
 import StatusButton, { IconStatus } from "@/components/button/statusButton";
 
 interface OperationBarProps {
-  onCopy: (type?: "default" | "compress" | "escape") => void;
-  onFormat: () => void;
-  onClear: () => void;
-  content?: string;
+  onCopy: (type?: "default" | "compress" | "escape") => boolean;
+  onFormat: () => boolean;
+  onClear: () => boolean;
+  onFieldSort: (type: "asc" | "desc") => boolean;
+  onMore: (key: "unescape" | "del_comment") => boolean;
 }
 
 const MonacoOperationBar: React.FC<OperationBarProps> = ({
   onCopy,
   onFormat,
   onClear,
+  onFieldSort,
+  onMore,
+
 }) => {
-  const [isCopyDropdownOpen, setisCopyDropdownOpen] = useState(false);
+  const [isCopyDropdownOpen, setIsCopyDropdownOpen] = useState(false);
   const [isSortDropdownOpen, setSortDropdownOpen] = useState(false);
+  const [isMoreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState<IconStatus>(IconStatus.Default);
-  const [formatStatus, setformatStatus] = useState<IconStatus>(
+  const [formatStatus, setFormatStatus] = useState<IconStatus>(
     IconStatus.Default,
   );
   const [clearStatus, setClearStatus] = useState<IconStatus>(
     IconStatus.Default,
   );
 
+  // 防止下拉菜单打开时，鼠标移开后立即关闭
+  const sortDropdownOpenTimeoutRef = React.useRef<NodeJS.Timeout>();
+  const moreDropdownOpenTimeoutRef = React.useRef<NodeJS.Timeout>();
+
   const handleCopy = (type?: "compress" | "escape") => {
     onCopy(type);
-    setisCopyDropdownOpen(false);
+    setIsCopyDropdownOpen(false);
+  };
+
+  // 字段排序下拉菜单
+  const showSortDropdown = () => {
+    clearTimeout(sortDropdownOpenTimeoutRef.current);
+    setSortDropdownOpen(true);
+  };
+  const unShowSortDropdown = () => {
+    clearTimeout(sortDropdownOpenTimeoutRef.current);
+    sortDropdownOpenTimeoutRef.current = setTimeout(() => {
+      setSortDropdownOpen(false);
+    }, 500);
+  };
+
+  // 更多下拉菜单
+  const showMoreDropdown = () => {
+    clearTimeout(moreDropdownOpenTimeoutRef.current);
+    setMoreDropdownOpen(true);
+  };
+  const unShowMoreDropdown = () => {
+    clearTimeout(moreDropdownOpenTimeoutRef.current);
+    moreDropdownOpenTimeoutRef.current = setTimeout(() => {
+      setMoreDropdownOpen(false);
+    }, 500);
   };
 
   return (
@@ -45,8 +78,14 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
         <StatusButton
           icon="si:copy-line"
           status={copyStatus}
+          successText="已复制"
           text="复制"
-          onClick={() => onCopy("default")}
+          onClick={() => {
+            setTimeout(() => {
+              setCopyStatus(IconStatus.Default);
+            }, 1000);
+            setCopyStatus(onCopy() ? IconStatus.Success : IconStatus.Error);
+          }}
         />
 
         <Dropdown
@@ -56,7 +95,7 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
           }}
           isOpen={isCopyDropdownOpen}
           radius="sm"
-          onOpenChange={setisCopyDropdownOpen}
+          onOpenChange={setIsCopyDropdownOpen}
         >
           <DropdownTrigger>
             <Button
@@ -98,9 +137,15 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
         icon="ph:magic-wand-light"
         status={formatStatus}
         text="格式化"
-        onClick={onFormat}
+        onClick={() => {
+          setTimeout(() => {
+            setFormatStatus(IconStatus.Default);
+          }, 2000);
+          setFormatStatus(onFormat() ? IconStatus.Success : IconStatus.Error);
+        }}
       />
 
+      {/* 字段排序下拉菜单 */}
       <Dropdown
         classNames={{
           base: "before:bg-default-200", // change arrow background
@@ -110,7 +155,10 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
         radius="sm"
         onOpenChange={setSortDropdownOpen}
       >
-        <DropdownTrigger>
+        <DropdownTrigger
+          onMouseEnter={showSortDropdown}
+          onMouseLeave={unShowSortDropdown}
+        >
           <Button
             className={cn("px-0.5  h-7 gap-1 text-default-600")}
             size="sm"
@@ -118,8 +166,6 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
               <Icon icon="fluent:arrow-sort-24-regular" width={18} />
             }
             variant="light"
-            onClick={() => setSortDropdownOpen(true)}
-            onMouseEnter={() => setSortDropdownOpen(true)}
           >
             字段排序
           </Button>
@@ -128,14 +174,16 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
           aria-label="Sort options"
           onAction={(key) => {
             switch (key) {
-              case "compress":
-                handleCopy("compress");
+              case "asc":
+                onFieldSort("asc");
                 break;
-              case "escape":
-                handleCopy("escape");
+              case "desc":
+                onFieldSort("desc");
                 break;
             }
           }}
+          onMouseEnter={showSortDropdown}
+          onMouseLeave={unShowSortDropdown}
         >
           <DropdownItem key="asc" textValue="字段升序">
             <div className="flex items-center space-x-2 text-xs">
@@ -152,12 +200,74 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
         </DropdownMenu>
       </Dropdown>
 
+      {/* 清空按钮 */}
       <StatusButton
         icon="mynaui:trash"
         status={clearStatus}
+        successText="已清空"
         text="清空"
-        onClick={onClear}
+        onClick={() => {
+          setTimeout(() => {
+            setClearStatus(IconStatus.Default);
+          }, 1000);
+          setClearStatus(onClear() ? IconStatus.Success : IconStatus.Error);
+        }}
       />
+
+      {/* 更多按钮 */}
+      <Dropdown
+        classNames={{
+          base: "before:bg-default-200", // change arrow background
+          content: "min-w-[140px]",
+        }}
+        isOpen={isMoreDropdownOpen}
+        radius="sm"
+        onOpenChange={setMoreDropdownOpen}
+      >
+        <DropdownTrigger
+          onMouseEnter={showMoreDropdown}
+          onMouseLeave={unShowMoreDropdown}
+        >
+          <Button
+            className={cn("pl-0.5 pr-1 h-7 gap-1 text-default-600 !min-w-12")}
+            size="sm"
+            startContent={
+              <Icon icon="mingcute:more-2-fill" width={18} />
+            }
+            variant="light"
+          >
+            更多
+          </Button>
+        </DropdownTrigger>
+        <DropdownMenu
+          aria-label="more options"
+          onAction={(key) => {
+            switch (key) {
+              case "unescape":
+                onMore("unescape");
+                break;
+              case "del_comment":
+                onMore("del_comment");
+                break;
+            }
+          }}
+          onMouseEnter={showMoreDropdown}
+          onMouseLeave={unShowMoreDropdown}
+        >
+          <DropdownItem key="unescape" textValue="去除转移">
+            <div className="flex items-center space-x-2 text-xs">
+              <Icon icon="iconoir:remove-link" width={16} />
+              <span>去除转移</span>
+            </div>
+          </DropdownItem>
+          <DropdownItem key="del_comment" textValue="移除注释">
+            <div className="flex items-center space-x-2 text-xs">
+              <Icon icon="tabler:notes-off" width={16} />
+              <span>移除注释</span>
+            </div>
+          </DropdownItem>
+        </DropdownMenu>
+      </Dropdown>
     </div>
   );
 };

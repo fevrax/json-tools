@@ -46,7 +46,7 @@ const MonacoJsonEditorWithDynamic = dynamic(
 );
 
 export default function Home() {
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
   const { tabs, activeTabKey } = useTabStore();
   const tabRef = useRef<DynamicTabsRef>(null);
   const [editorHeight, setEditorHeight] = useState<number>(300);
@@ -99,7 +99,23 @@ export default function Home() {
   return (
     <div className="dark:bg-vscode-dark">
       <DynamicTabs ref={tabRef} />
-      <MonacoOperationBar />
+      <MonacoOperationBar
+        onClear={() => {
+          return monaceJsonEditorRefs[activeTabKey].clear();
+        }}
+        onCopy={(type) => {
+          return monaceJsonEditorRefs[activeTabKey].copy(type);
+        }}
+        onFieldSort={(type) => {
+          return monaceJsonEditorRefs[activeTabKey].fieldSort(type);
+        }}
+        onFormat={() => {
+          return monaceJsonEditorRefs[activeTabKey].format();
+        }}
+        onMore={(key) => {
+          return monaceJsonEditorRefs[activeTabKey].moreAction(key);
+        }}
+      />
       <AnimatePresence mode="popLayout">
         {tabs.map((tab: TabItem, index: number) => (
           <motion.div

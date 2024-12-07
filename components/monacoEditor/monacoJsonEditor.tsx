@@ -2,12 +2,20 @@
 import React, { useEffect, useImperativeHandle, useRef } from "react";
 import { loader, Monaco } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
-import { cn, useDisclosure } from "@nextui-org/react";
+import { Button, cn, useDisclosure } from "@nextui-org/react";
 import { editor } from "monaco-editor";
-import { toast } from "sonner";
+import { toast } from "react-toastify";
+import { Icon } from "@iconify/react";
 
 import { sleep } from "@/utils/time";
-import { JsonErrorInfo, jsonParseError, repairJson } from "@/utils/json";
+import {
+  escapeJson,
+  isArrayOrObject,
+  JsonErrorInfo,
+  jsonParseError, removeJsonComments,
+  repairJson,
+  sortJson
+} from "@/utils/json";
 import ErrorModal from "@/components/monacoEditor/errorModal";
 import "@/styles/monaco.css";
 
@@ -21,6 +29,11 @@ export interface MonacoJsonEditorProps {
 
 export interface MonacoJsonEditorRef {
   focus: () => void;
+  copy: (type?: "default" | "compress" | "escape") => boolean;
+  format: () => boolean;
+  clear: () => boolean;
+  fieldSort: (type: "asc" | "desc") => boolean;
+  moreAction: (key: "unescape" | "del_comment") => boolean;
 }
 
 const MonacoJsonEditor = React.forwardRef<
@@ -101,11 +114,7 @@ const MonacoJsonEditor = React.forwardRef<
       editor.onDidPaste(async (e) => {
         if (editor.getValue() && e.range.startLineNumber < 2) {
           await sleep(150);
-          const ok = formatValidate();
-
-          if (!ok) {
-            showAutoFixNotify();
-          }
+          formatValidate();
         }
       });
 
@@ -113,43 +122,84 @@ const MonacoJsonEditor = React.forwardRef<
     }
   };
 
-  const formatValidate = () => {
+  // 验证编辑器内容
+  const editorValueValidate = (): boolean => {
     if (!editorRef.current) {
+      toast.error("未初始化编辑器!");
+
       return false;
     }
-    const jsonErr = jsonParseError(editorRef.current?.getValue());
+
+    const val = editorRef.current.getValue();
+
+    if (val.trim() === "") {
+      toast.warning("暂无内容!");
+
+      return false;
+    }
+
+    const jsonErr = jsonParseError(val);
 
     if (jsonErr) {
       parseJsonError.current = jsonErr;
+      showAutoFixNotify();
 
       return false;
     }
 
-    return format();
+    return true;
+  };
+
+  // 验证格式并格式化
+  const formatValidate = (): boolean => {
+    const isValid = editorValueValidate();
+
+    if (!isValid) {
+      return false;
+    }
+
+    return editorFormat();
   };
 
   const showAutoFixNotify = () => {
     toast.warning(
-      `第 ${parseJsonError.current?.line} 行，第 ${parseJsonError.current?.column} 列，格式错误`,
+      <>
+        <div>
+          <h2 className="font-bold mb-2">
+            第 {parseJsonError.current?.line} 行，第
+            {parseJsonError.current?.column} 列，格式错误
+          </h2>
+        </div>
+        <div>{parseJsonError.current?.message}</div>
+        <div className="flex justify-end mt-3">
+          <Button
+            className="h-6"
+            color="primary"
+            size="sm"
+            onPress={() => {
+              openJsonErrorDetailsModel();
+              toast.dismiss();
+            }}
+          >
+            查看详情
+          </Button>
+        </div>
+        <div className={"absolute top-0.5 right-0 m-2"}>
+          <Icon icon="gg:close" width={16} />
+        </div>
+      </>,
       {
-        description: parseJsonError.current?.message,
-        action: {
-          label: "查看详情",
-          onClick: () => {
-            openJsonErrorDetailsModel();
-          },
-        },
-        position: "bottom-right",
+        closeButton: false,
       },
     );
   };
 
-  const format = (): boolean => {
+  const editorFormat = (): boolean => {
     if (!editorRef.current) {
       return false;
     }
     if (editorRef.current.getValue() === "") {
-      toast("暂无内容");
+      toast.success("暂无内容!");
 
       return false;
     }
@@ -262,6 +312,41 @@ const MonacoJsonEditor = React.forwardRef<
       }
     };
   }, []); // 空依赖数组确保只在挂载时执行
+  // 复制到剪贴板
+  const copyText = (text: string) => {
+    navigator.clipboard.writeText(text);
+  };
+
+  // 解码 JSON 处理转义
+  // return '' 为正常
+  const formatModelByUnEscapeJson = (jsonText: string): string => {
+    if (jsonText === "") {
+      return "暂无数据";
+    }
+    const jsonStr = `"${jsonText}"`;
+
+    try {
+      // 第一次将解析结果为去除转移后字符串
+      const unescapedJson = JSON.parse(jsonStr);
+      // 去除转义后的字符串解析为对象
+      const unescapedJsonObject = JSON.parse(unescapedJson);
+
+      // 判断是否为对象或数组
+      if (!isArrayOrObject(unescapedJsonObject)) {
+        return "不是有效的 Json 数据，无法进行解码操作";
+      }
+      setEditorValue(JSON.stringify(unescapedJsonObject, null, 4));
+    } catch (error) {
+      if (error instanceof SyntaxError) {
+        return "不是有效的 Json 数据，无法进行解码操作";
+      }
+      console.error("formatModelByUnEscapeJson", error);
+
+      return `尝试去除转义失败，${error}`;
+    }
+
+    return "";
+  };
 
   // 暴露给父组件的方法
   useImperativeHandle(ref, () => ({
@@ -269,6 +354,95 @@ const MonacoJsonEditor = React.forwardRef<
       if (editorRef.current) {
         editorRef.current.focus();
       }
+    },
+    copy: (type) => {
+      if (!editorRef.current) {
+        return false;
+      }
+      const isValid = editorValueValidate();
+
+      if (!isValid) {
+        return false;
+      }
+      const val = editorRef.current.getValue();
+
+      if (val.trim() === "") {
+        toast.warning("暂无内容");
+
+        return false;
+      }
+
+      switch (type) {
+        case "default":
+          copyText(val);
+          break;
+        case "compress":
+          const compressed = JSON.stringify(JSON.parse(val));
+
+          copyText(compressed);
+          setEditorValue(compressed);
+          break;
+        case "escape":
+          copyText(escapeJson(val));
+          break;
+        default:
+          copyText(val);
+          break;
+      }
+
+      return true;
+    },
+    format: () => {
+      return formatValidate();
+    },
+    clear: () => {
+      if (editorRef.current) {
+        setEditorValue("");
+
+        return true;
+      }
+
+      return false;
+    },
+    fieldSort: (type: "asc" | "desc"): boolean => {
+      if (!editorRef.current) {
+        return false;
+      }
+      const val = editorRef.current.getValue();
+      const isValid = editorValueValidate();
+
+      if (!isValid) {
+        return false;
+      }
+      const jsonObj = JSON.parse(val);
+
+      if (type === "asc") {
+        setEditorValue(sortJson(jsonObj, "asc"));
+      } else if (type === "desc") {
+        setEditorValue(sortJson(jsonObj, "desc"));
+      }
+
+      return true;
+    },
+    // 处理更多操作
+    moreAction: (key: "unescape" | "del_comment"): boolean => {
+      if (!editorRef.current) {
+        return false;
+      }
+      const val = editorRef.current.getValue();
+
+      switch (key) {
+        case "unescape":
+          setEditorValue(formatModelByUnEscapeJson(val));
+          break;
+        case "del_comment":
+          setEditorValue(removeJsonComments(val));
+          break;
+        default:
+          break;
+      }
+
+      return true;
     },
   }));
 

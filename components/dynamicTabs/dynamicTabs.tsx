@@ -29,6 +29,7 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
     tabs,
     activeTabKey,
     addTab,
+    addTabSimple,
     closeTab,
     setActiveTab,
     renameTab,
@@ -348,9 +349,11 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
     <div className="flex flex-col overflow-hidden bg-default-100 border-b border-default-200 pb-0.5">
       <div className="flex items-center relative">
         <div
-          style={{
-            // boxShadow: "4px 0 6px -1px rgba(0, 0, 0, 0.1)",
-          }}
+          style={
+            {
+              // boxShadow: "4px 0 6px -1px rgba(0, 0, 0, 0.1)",
+            }
+          }
         >
           <div
             aria-label="添加新标签页"
@@ -360,6 +363,10 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
             onClick={(e) => {
               addTab();
               e.stopPropagation();
+            }}
+            onContextMenu={(e) => {
+              addTabSimple();
+              e.preventDefault();
             }}
             onKeyDown={(e) => handleKeyDown(e, addTab)}
           >

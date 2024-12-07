@@ -12,6 +12,7 @@ export enum IconStatus {
 export interface StatusButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   text: string;
+  successText?: string;
   status: IconStatus;
   icon: string;
   iconSize?: number;
@@ -21,7 +22,7 @@ export interface StatusButtonProps
 }
 
 const StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>(
-  ({ text, status, icon, iconSize = 18, size = "xs", onClick, endContent }, ref) => {
+  ({ text, successText, status, icon, iconSize = 18, size = "xs", onClick, endContent }, ref) => {
     const renderIcon = () => {
       switch (status) {
         case IconStatus.Success:
@@ -46,7 +47,7 @@ const StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>(
         variant="light"
         onClick={onClick}
       >
-        {text}
+        {status === IconStatus.Success && successText ? successText : text}
       </Button>
     );
   },

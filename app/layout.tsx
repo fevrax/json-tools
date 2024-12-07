@@ -11,9 +11,9 @@ import {
   useDisclosure,
 } from "@nextui-org/react";
 import { Icon } from "@iconify/react";
-import React from "react";
+import React, { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Toaster } from "sonner";
+import { ToastContainer, Slide } from "react-toastify";
 
 import { Providers } from "./providers";
 
@@ -21,7 +21,9 @@ import SidebarDrawer from "@/components/sidebar/sidebar-drawer";
 import Sidebar from "@/components/sidebar/sidebar";
 import { items } from "@/components/sidebar/items";
 import { ThemeSwitch } from "@/components/theme-switch";
-export const dynamic = "force-static";
+import "react-toastify/dist/ReactToastify.css";
+
+// export const dynamic = "force-static";
 export default function RootLayout({
   children,
 }: {
@@ -31,6 +33,7 @@ export default function RootLayout({
 
   const { isOpen, onOpenChange } = useDisclosure();
   const [isCollapsed, setIsCollapsed] = React.useState(true);
+  const [toastTheme, setToastTheme] = React.useState("dark");
 
   const pathname = usePathname();
 
@@ -46,6 +49,12 @@ export default function RootLayout({
 
   const onToggle = React.useCallback(() => {
     setIsCollapsed((prev) => !prev);
+  }, []);
+
+  useEffect(() => {
+    const theme = localStorage.getItem("theme");
+
+    setToastTheme(theme || "dark");
   }, []);
 
   return (
@@ -115,7 +124,7 @@ export default function RootLayout({
                   iconClassName="group-data-[selected=true]:text-default-50"
                   isCompact={isCollapsed}
                   itemClasses={{
-                    base: "px-3 rounded-large data-[selected=true]:!bg-foreground",
+                    base: "px-3 rounded-large data-[selected=true]:!bg-default-700",
                     title: "group-data-[selected=true]:text-default-50",
                   }}
                   items={items}
@@ -154,7 +163,10 @@ export default function RootLayout({
                   )}
 
                   {/* 主题切换 */}
-                  <ThemeSwitch isCollapsed={isCollapsed} />
+                  <ThemeSwitch
+                    isCollapsed={isCollapsed}
+                    onToggle={setToastTheme}
+                  />
                   <Tooltip
                     content="更多设置"
                     isDisabled={!isCollapsed}
@@ -200,7 +212,22 @@ export default function RootLayout({
 
             {/*  Settings Content */}
             <div className="flex-1 overflow-auto pr-1 min-w-16">{children}</div>
-            <Toaster closeButton richColors position="top-right" />
+            <ToastContainer
+              closeOnClick
+              draggable
+              hideProgressBar
+              pauseOnHover
+              stacked
+              autoClose={3500}
+              className={"!text-xs"}
+              newestOnTop={false}
+              pauseOnFocusLoss={false}
+              position="top-right"
+              rtl={false}
+              theme={toastTheme}
+              toastClassName={"!min-h-[10px]"}
+              transition={Slide}
+            />
           </div>
         </Providers>
       </body>

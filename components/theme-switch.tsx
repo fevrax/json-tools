@@ -12,13 +12,14 @@ export interface ThemeSwitchProps {
   className?: string;
   classNames?: SwitchProps["classNames"];
   isCollapsed?: boolean;
-  switchTheme?: () => void;
+  onToggle?: (theme: string) => void;
 }
 
 export const ThemeSwitch: FC<ThemeSwitchProps> = ({
   className,
   classNames,
   isCollapsed,
+  onToggle,
 }) => {
   const { theme, setTheme } = useTheme();
   const isSSR = useIsSSR();
@@ -27,6 +28,7 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
     const newTheme = theme === "light" ? "dark" : "light";
 
     setTheme(newTheme);
+    onToggle && onToggle(newTheme);
   };
 
   const { Component, isSelected, getBaseProps, getInputProps } = useSwitch({

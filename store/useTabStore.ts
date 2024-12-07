@@ -15,6 +15,7 @@ interface TabStore {
   activeTab: () => TabItem;
   getTabByKey: (key: string) => TabItem | undefined;
   addTab: () => void;
+  addTabSimple: () => void;
   closeTab: (keyToRemove: string) => void;
   setActiveTab: (key: string) => void;
   renameTab: (key: string, newTitle: string) => void;
@@ -41,6 +42,42 @@ export const useTabStore = create<TabStore>((set, get) => ({
         key: `${state.nextKey}`,
         title: `New Tab ${newTabKey}`,
         content: ``,
+        closable: true,
+      };
+
+      return {
+        tabs: [...state.tabs, newTab],
+        activeTabKey: newTabKey,
+        nextKey: state.nextKey + 1,
+      };
+    }),
+  addTabSimple: () =>
+    set((state) => {
+      const newTabKey = `${state.nextKey}`;
+      const newTab: TabItem = {
+        key: `${state.nextKey}`,
+        title: `Simple Tab ${newTabKey}`,
+        content: `{
+    "data": {
+        "name": "Simple Tab ${newTabKey}"
+    },
+    "list": [
+        {
+            "id": "1212092628029698048",
+            "possibly_sensitive": false,
+            "author_id": "2244994945",
+            "lang": "en",
+            "created_at": "2019-12-31T19:26:16.000Z",
+            "source": "Twitter Web App",
+            "in_reply_to_user_id": "2244994945",
+            "attachments": {
+                "media_keys": [
+                    "16_1211797899316740096"
+                ]
+            }
+        }
+    ]
+}`,
         closable: true,
       };
 
