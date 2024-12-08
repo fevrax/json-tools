@@ -26,6 +26,7 @@ export interface MonacoJsonEditorProps {
   language?: string;
   theme?: string;
   onUpdateValue: (value: string) => void;
+  ref?: React.Ref<MonacoJsonEditorRef>;
 }
 
 export interface MonacoJsonEditorRef {
@@ -38,10 +39,7 @@ export interface MonacoJsonEditorRef {
   moreAction: (key: "unescape" | "del_comment") => boolean;
 }
 
-const MonacoJsonEditor = React.forwardRef<
-  MonacoJsonEditorRef,
-  MonacoJsonEditorProps
->(({ value, language, theme, height, onUpdateValue }, ref) => {
+const MonacoJsonEditor : React.FC<MonacoJsonEditorProps> = ({ value, language, theme, height, onUpdateValue,ref }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const parseJsonError = useRef<JsonErrorInfo | null>(null);
@@ -486,7 +484,7 @@ const MonacoJsonEditor = React.forwardRef<
       />
     </>
   );
-});
+};
 
 MonacoJsonEditor.displayName = "MonacoJsonEditor";
 

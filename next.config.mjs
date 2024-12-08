@@ -11,6 +11,9 @@ const nextConfig = {
     unoptimized: true, // 对于静态导出，需要禁用图片优化
   },
   reactStrictMode: true,
+  experimental: {
+    reactCompiler: true, // or React Compiler options
+  },
   webpack: (config, options) => {
     if (!options.isServer) {
       config.plugins.push(
@@ -22,7 +25,6 @@ const nextConfig = {
         }),
       );
     }
-
     return config;
   },
 };

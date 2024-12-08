@@ -3,16 +3,15 @@
 import React, { useRef, useState, useEffect, forwardRef } from "react";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
-import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@nextui-org/react";
 
 import { useTabStore } from "@/store/useTabStore";
 import DynamicTabs, {
-  DynamicTabsRef,
+  DynamicTabsRef
 } from "@/components/dynamicTabs/dynamicTabs";
 import {
   MonacoJsonEditorRef,
-  MonacoJsonEditorProps,
+  MonacoJsonEditorProps
 } from "@/components/monacoEditor/monacoJsonEditor";
 import MonacoOperationBar from "@/components/monacoEditor/operationBar";
 import { SidebarKeys, useSidebarStore } from "@/store/useSidebarStore";
@@ -24,11 +23,9 @@ const MonacoJsonEditorWithDynamic = dynamic(
   async () => {
     const { default: Editor } = await import(
       "@/components/monacoEditor/monacoJsonEditor"
-    );
-    const monacoJsonEditor = forwardRef<
-      MonacoJsonEditorRef,
-      MonacoJsonEditorProps
-    >((props, ref) => (
+      );
+
+    const monacoJsonEditor: React.FC<MonacoJsonEditorProps> = (props, ref) => (
       <Editor
         ref={(ref) => {
           if (ref) {
@@ -37,10 +34,9 @@ const MonacoJsonEditorWithDynamic = dynamic(
         }}
         {...props}
       />
-    ));
+    );
 
     monacoJsonEditor.displayName = "MonacoJsonEditorWithDynamic";
-
     return monacoJsonEditor;
   },
   {
@@ -49,8 +45,8 @@ const MonacoJsonEditorWithDynamic = dynamic(
       <div className="w-full h-full flex items-center justify-center">
         Loading editor...
       </div>
-    ),
-  },
+    )
+  }
 );
 
 export default function Home() {
@@ -75,36 +71,13 @@ export default function Home() {
     }
   };
 
-  // 淡入淡出动画配置
-  const fadeVariants = {
-    hidden: {
-      opacity: 0,
-      // scale: 0.95, // 轻微缩放效果
-      transition: {
-        duration: 0.2,
-        ease: "easeInOut",
-      },
-    },
-    visible: {
-      opacity: 1,
-      scale: 1,
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut",
-      },
-    },
-  };
 
   // 渲染当前激活的 MonacoJsonEditor
   const renderActiveKeyMonacoJson = (key: string) => {
     return (
-      <motion.div
+      <div
         key={key}
-        animate="visible"
         className={cn("w-full h-full")}
-        exit="hidden"
-        initial="hidden"
-        variants={fadeVariants}
       >
         <MonacoJsonEditorWithDynamic
           key={key}
@@ -116,7 +89,7 @@ export default function Home() {
             setTabContent(key, value);
           }}
         />
-      </motion.div>
+      </div>
     );
   };
 
@@ -141,13 +114,25 @@ export default function Home() {
             return monacoJsonEditorRefs[activeTabKey].moreAction(key);
           }}
         />
-        <AnimatePresence mode="popLayout">
-          {Object.entries(editorElements).map(([key, element]) => (
-            <div key={key} className={cn({ hidden: key !== activeTabKey })}>
-              {element}
+        {tabs.map((tab) => {
+          return (
+            <div
+              key={tab.key}
+              className={cn("w-full h-full", { hidden: tab.key !== activeTabKey })}
+            >
+              <MonacoJsonEditorWithDynamic
+                key={tab.key}
+                height={editorHeight}
+                tabKey={tab.key}
+                theme={theme == "dark" ? "vs-dark" : "vs-light"}
+                value={getTabByKey(tab.key)?.content}
+                onUpdateValue={(value) => {
+                  setTabContent(tab.key, value);
+                }}
+              />
             </div>
-          ))}
-        </AnimatePresence>
+          );
+        })}
       </>
     );
   };
@@ -176,13 +161,6 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // 懒加载 MonacoJsonEditor
-    if (!editorElements[activeTabKey]) {
-      setEditorElements((prev) => ({
-        ...prev,
-        [activeTabKey]: renderActiveKeyMonacoJson(activeTabKey),
-      }));
-    }
     if (activeTabKey && monacoJsonEditorRefs[activeTabKey]) {
       monacoJsonEditorRefs[activeTabKey].layout();
       monacoJsonEditorRefs[activeTabKey].focus();

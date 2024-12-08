@@ -24,7 +24,12 @@ export interface DynamicTabsRef {
   getPositionTop: () => number;
   // 其他可能需要暴露的方法
 }
-const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
+
+export interface DynamicTabsProps {
+  ref?: React.Ref<DynamicTabsRef>;
+}
+
+const DynamicTabs : React.FC<DynamicTabsProps> =({ref}) => {
   const {
     tabs,
     activeTabKey,
@@ -445,7 +450,6 @@ const DynamicTabs = forwardRef<DynamicTabsRef>((props, ref) => {
       {renderTabContextMenu()}
     </div>
   );
-});
+};
 
-DynamicTabs.displayName = "DynamicTabs";
 export default DynamicTabs;
