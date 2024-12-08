@@ -48,6 +48,7 @@ export default function RootLayout({
       router.push("/");
     }
     sidebarStore.updateActiveKey(key as string);
+    sidebarStore.updateClickSwitchKey(key as string);
     // 其他逻辑...
   };
 

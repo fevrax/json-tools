@@ -1,20 +1,23 @@
 "use client"; // 必须添加
 
-import React, { useRef, useState, useEffect, forwardRef } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import { cn } from "@nextui-org/react";
 
 import { useTabStore } from "@/store/useTabStore";
 import DynamicTabs, {
-  DynamicTabsRef
+  DynamicTabsRef,
 } from "@/components/dynamicTabs/dynamicTabs";
 import {
   MonacoJsonEditorRef,
-  MonacoJsonEditorProps
+  MonacoJsonEditorProps,
 } from "@/components/monacoEditor/monacoJsonEditor";
 import MonacoOperationBar from "@/components/monacoEditor/operationBar";
 import { SidebarKeys, useSidebarStore } from "@/store/useSidebarStore";
+import VanillaJsonEditor from "@/components/vanillaJsonEditor/vanillaJsonEditor";
+
+import "vanilla-jsoneditor-cn/themes/jse-theme-dark.css";
 
 const monacoJsonEditorRefs: Record<string, MonacoJsonEditorRef> = {};
 
@@ -23,9 +26,9 @@ const MonacoJsonEditorWithDynamic = dynamic(
   async () => {
     const { default: Editor } = await import(
       "@/components/monacoEditor/monacoJsonEditor"
-      );
+    );
 
-    const monacoJsonEditor: React.FC<MonacoJsonEditorProps> = (props, ref) => (
+    const monacoJsonEditor: React.FC<MonacoJsonEditorProps> = (props) => (
       <Editor
         ref={(ref) => {
           if (ref) {
@@ -37,6 +40,7 @@ const MonacoJsonEditorWithDynamic = dynamic(
     );
 
     monacoJsonEditor.displayName = "MonacoJsonEditorWithDynamic";
+
     return monacoJsonEditor;
   },
   {
@@ -45,20 +49,17 @@ const MonacoJsonEditorWithDynamic = dynamic(
       <div className="w-full h-full flex items-center justify-center">
         Loading editor...
       </div>
-    )
-  }
+    ),
+  },
 );
 
 export default function Home() {
   const { theme } = useTheme();
-  const { tabs, activeTabKey, activeTab, getTabByKey, setTabContent } = useTabStore();
+  const { tabs, activeTabKey, activeTab, getTabByKey, setTabContent,setTabVanillaContent,setTabVanillaMode,vanilla2JsonContent, jsonContent2VanillaContent } =
+    useTabStore();
   const sidebarStore = useSidebarStore();
   const tabRef = useRef<DynamicTabsRef>(null);
   const [editorHeight, setEditorHeight] = useState<number>(300);
-
-  const [editorElements, setEditorElements] = useState<
-    Record<string, React.ReactNode>
-  >({});
 
   // 计算高度的函数
   const calculateHeight = () => {
@@ -69,28 +70,6 @@ export default function Home() {
 
       setEditorHeight(Math.max(newHeight, 300)); // 设置最小高度
     }
-  };
-
-
-  // 渲染当前激活的 MonacoJsonEditor
-  const renderActiveKeyMonacoJson = (key: string) => {
-    return (
-      <div
-        key={key}
-        className={cn("w-full h-full")}
-      >
-        <MonacoJsonEditorWithDynamic
-          key={key}
-          height={editorHeight}
-          tabKey={key}
-          theme={theme == "dark" ? "vs-dark" : "vs-light"}
-          value={getTabByKey(key)?.content}
-          onUpdateValue={(value) => {
-            setTabContent(key, value);
-          }}
-        />
-      </div>
-    );
   };
 
   // 渲染 MonacoJsonEditor
@@ -118,16 +97,53 @@ export default function Home() {
           return (
             <div
               key={tab.key}
-              className={cn("w-full h-full", { hidden: tab.key !== activeTabKey })}
+              className={cn("w-full h-full", {
+                hidden: tab.key !== activeTabKey,
+              })}
             >
               <MonacoJsonEditorWithDynamic
                 key={tab.key}
                 height={editorHeight}
                 tabKey={tab.key}
                 theme={theme == "dark" ? "vs-dark" : "vs-light"}
-                value={getTabByKey(tab.key)?.content}
+                value={tab.content}
                 onUpdateValue={(value) => {
                   setTabContent(tab.key, value);
+                }}
+              />
+            </div>
+          );
+        })}
+      </>
+    );
+  };
+  // 渲染 MonacoJsonEditor
+  const renderVanillaJsonEditor = () => {
+    return (
+      <>
+        {tabs.map((tab) => {
+          return (
+            <div
+              key={"vanilla-" + tab.key}
+              className={cn("w-full h-full", {
+                hidden: tab.key !== activeTabKey,
+                // localStorage.getItem("theme") == "dark" 解决首屏频闪导致的主题切换闪烁问题
+                "jse-theme-dark":
+                  theme == "dark" || localStorage.getItem("theme") == "dark",
+              })}
+            >
+              <VanillaJsonEditor
+                key={tab.key}
+                content={tab.vanilla}
+                height={editorHeight}
+                mode={tab.vanillaMode}
+                tabKey={tab.key}
+                onChangeMode={(mode) => {
+                  console.log("change mode", mode);
+                  setTabVanillaMode(tab.key, mode);
+                }}
+                onUpdateValue={(content) => {
+                  setTabVanillaContent(tab.key, content);
                 }}
               />
             </div>
@@ -143,7 +159,7 @@ export default function Home() {
       case SidebarKeys.textView:
         return renderMonacoJsonEditor();
       case SidebarKeys.treeView:
-        return <div>treeView</div>;
+        return renderVanillaJsonEditor();
       case SidebarKeys.diffView:
         return <div>diffView</div>;
       default:
@@ -166,6 +182,19 @@ export default function Home() {
       monacoJsonEditorRefs[activeTabKey].focus();
     }
   }, [activeTabKey]);
+
+  useEffect(() => {
+    console.log("clickSwitchKey", sidebarStore.clickSwitchKey);
+    switch (sidebarStore.activeKey) {
+      case SidebarKeys.textView:
+        vanilla2JsonContent();
+        break;
+      case SidebarKeys.treeView:
+        jsonContent2VanillaContent();
+        // TODO 切换后需要更新编辑器中的内容
+        break;
+    }
+  },[sidebarStore.clickSwitchKey])
 
   return (
     <div className="dark:bg-vscode-dark">

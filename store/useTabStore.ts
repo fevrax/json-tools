@@ -1,11 +1,14 @@
 // useTabStore.ts
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import { Content, JSONContent, Mode, TextContent } from "vanilla-jsoneditor-cn";
 
 export interface TabItem {
   key: string;
   title: string;
   content: string;
+  vanilla?: Content;
+  vanillaMode: Mode;
   closable?: boolean;
 }
 
@@ -18,12 +21,16 @@ interface TabStore {
   addTab: () => void;
   addTabSimple: () => void;
   setTabContent: (key: string, content: string) => void;
+  setTabVanillaContent: (key: string, content: Content) => void;
+  setTabVanillaMode: (key: string, mode: Mode) => void;
   closeTab: (keyToRemove: string) => void;
   setActiveTab: (key: string) => void;
   renameTab: (key: string, newTitle: string) => void;
   closeOtherTabs: (currentKey: string) => void;
   closeLeftTabs: (currentKey: string) => void;
   closeRightTabs: (currentKey: string) => void;
+  vanilla2JsonContent: () => void;
+  jsonContent2VanillaContent: () => void;
   closeAllTabs: () => void;
 }
 
@@ -31,14 +38,12 @@ export const useTabStore = create<TabStore>()(
   devtools(
     (set, get) => ({
       tabs: [
-        { key: "1", title: "New Tab 1", content: "New Tab 1", closable: true },
         {
-          key: "2",
-          title: "New Tab 2",
-          content: "New Tab 2",
+          key: "1",
+          title: "New Tab 1",
+          content: `{"name": "Tab 1"}`,
           closable: true,
         },
-        { key: "3", title: "New Tab 3", content: "New Tab 1", closable: true },
       ],
       activeTabKey: "2",
       // nextKey: 2,
@@ -58,6 +63,7 @@ export const useTabStore = create<TabStore>()(
             key: `${state.nextKey}`,
             title: `New Tab ${newTabKey}`,
             content: ``,
+            vanillaMode: Mode.tree,
             closable: true,
           };
 
@@ -94,6 +100,7 @@ export const useTabStore = create<TabStore>()(
         }
     ]
 }`,
+            vanillaMode: Mode.tree,
             closable: true,
           };
 
@@ -107,6 +114,22 @@ export const useTabStore = create<TabStore>()(
         set((state) => {
           const updatedTabs = state.tabs.map((tab) =>
             tab.key === key ? { ...tab, content } : tab,
+          );
+
+          return { tabs: updatedTabs };
+        }),
+      setTabVanillaContent: (key: string, content: Content) =>
+        set((state) => {
+          const updatedTabs = state.tabs.map((tab) =>
+            tab.key === key ? { ...tab, vanilla: content } : tab,
+          );
+
+          return { tabs: updatedTabs };
+        }),
+      setTabVanillaMode: (key: string, mode: Mode) =>
+        set((state) => {
+          const updatedTabs = state.tabs.map((tab) =>
+            tab.key === key ? { ...tab, vanillaMode: mode } : tab,
           );
 
           return { tabs: updatedTabs };
@@ -194,7 +217,13 @@ export const useTabStore = create<TabStore>()(
       closeAllTabs: () =>
         set(() => {
           const defaultTab = [
-            { key: "1", title: "New Tab 1", content: "", closable: true },
+            {
+              key: "1",
+              title: "New Tab 1",
+              content: "",
+              vanillaMode: Mode.tree,
+              closable: true,
+            },
           ];
 
           return {
@@ -202,6 +231,91 @@ export const useTabStore = create<TabStore>()(
             activeTabKey: "1",
             nextKey: 2,
           };
+        }),
+      vanilla2JsonContent: () =>
+        set((state) => {
+          const activeTab = get().activeTab();
+
+          // 处理空值情况
+          if (!activeTab.vanilla) {
+            return state;
+          }
+
+          const vanilla = activeTab.vanilla;
+
+          // 类型守卫
+          const isJSONContent = (content: any): content is JSONContent => {
+            return "json" in content;
+          };
+
+          const isTextContent = (content: any): content is TextContent => {
+            return "text" in content;
+          };
+
+          try {
+            if (isJSONContent(vanilla)) {
+              // 处理JSON内容
+              return {
+                ...state,
+                content: JSON.stringify(vanilla.json, null, 4),
+              };
+            } else if (isTextContent(vanilla)) {
+              // 处理文本内容
+              return {
+                ...state,
+                content: vanilla.text || "",
+              };
+            }
+
+            // 处理未知类型
+            console.error("Unknown content type:", vanilla);
+
+            return { ...state, content: "" };
+          } catch (error) {
+            // 错误处理
+            console.error("Error converting content:", error);
+
+            return { ...state, content: "" };
+          }
+        }),
+      jsonContent2VanillaContent: () =>
+        set((state) => {
+          const activeTab = get().activeTab();
+
+          // 处理空内容情况
+          if (!activeTab.content) {
+            return state;
+          }
+
+          try {
+            // 尝试解析 JSON
+            const parsedJson = JSON.parse(activeTab.content);
+
+            activeTab.vanilla = { json: parsedJson };
+            console.log("jsonContent2VanillaContent 解析成功", activeTab.vanilla);
+            activeTab.vanillaMode = Mode.tree;
+
+            return {
+              ...state,
+              tabs: state.tabs.map((tab) =>
+                tab.key === activeTab.key ? activeTab : tab,
+              ),
+            };
+          } catch (error) {
+            // 解析失败的错误处理
+            console.error("jsonContent2VanillaContent 解析失败", error);
+
+            // 可以根据需要返回原状态或者特定的错误状态
+            activeTab.vanilla = { json: "" };
+            activeTab.vanillaMode = Mode.tree;
+
+            return {
+              ...state,
+              tabs: state.tabs.map((tab) =>
+                tab.key === activeTab.key ? activeTab : tab,
+              ),
+            };
+          }
         }),
     }),
     { name: "tabStore", enabled: true },
