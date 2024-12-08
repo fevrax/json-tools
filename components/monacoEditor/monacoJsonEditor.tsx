@@ -188,7 +188,7 @@ const MonacoJsonEditor : React.FC<MonacoJsonEditorProps> = ({ value, language, t
 
   const showAutoFixNotify = () => {
     toast.warning(
-      <>
+      <div key={1}>
         <div>
           <h2 className="font-bold mb-2">
             第 {parseJsonError.current?.line} 行，第
@@ -212,7 +212,7 @@ const MonacoJsonEditor : React.FC<MonacoJsonEditorProps> = ({ value, language, t
         <div className={"absolute top-0.5 right-0 m-2"}>
           <Icon icon="gg:close" width={16} />
         </div>
-      </>,
+      </div>,
       {
         closeButton: false,
       },
