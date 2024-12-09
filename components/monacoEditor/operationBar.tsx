@@ -18,7 +18,10 @@ interface OperationBarProps {
   onClear: () => boolean;
   onFieldSort: (type: "asc" | "desc") => boolean;
   onMore: (key: "unescape" | "del_comment") => boolean;
+  ref?: React.RefObject<MonacoOperationBarRef>;
 }
+
+export interface MonacoOperationBarRef {}
 
 const MonacoOperationBar: React.FC<OperationBarProps> = ({
   onCopy,
@@ -26,7 +29,6 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
   onClear,
   onFieldSort,
   onMore,
-
 }) => {
   const [isCopyDropdownOpen, setIsCopyDropdownOpen] = useState(false);
   const [isSortDropdownOpen, setSortDropdownOpen] = useState(false);

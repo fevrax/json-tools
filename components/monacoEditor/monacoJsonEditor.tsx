@@ -12,9 +12,10 @@ import {
   escapeJson,
   isArrayOrObject,
   JsonErrorInfo,
-  jsonParseError, removeJsonComments,
+  jsonParseError,
+  removeJsonComments,
   repairJson,
-  sortJson
+  sortJson,
 } from "@/utils/json";
 import ErrorModal from "@/components/monacoEditor/errorModal";
 import "@/styles/monaco.css";
@@ -37,15 +38,22 @@ export interface MonacoJsonEditorRef {
   clear: () => boolean;
   fieldSort: (type: "asc" | "desc") => boolean;
   moreAction: (key: "unescape" | "del_comment") => boolean;
+  updateValue: (value: string) => void;
 }
 
-const MonacoJsonEditor : React.FC<MonacoJsonEditorProps> = ({ value, language, theme, height, onUpdateValue,ref }) => {
+const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
+  value,
+  language,
+  theme,
+  height,
+  onUpdateValue,
+  ref,
+}) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const parseJsonError = useRef<JsonErrorInfo | null>(null);
-
-  let errorDecorations: monaco.editor.IEditorDecorationsCollection | null =
-    null;
+  const errorDecorationsRef =
+    useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
 
   const {
     isOpen: jsonErrorDetailsModel,
@@ -70,6 +78,7 @@ const MonacoJsonEditor : React.FC<MonacoJsonEditorProps> = ({ value, language, t
   }, [theme]);
 
   const frist = useRef(true);
+
   // 添加窗口大小变化监听器
   useEffect(() => {
     // 使用 setTimeout 确保在 React 严格模式下只执行一次
@@ -133,7 +142,7 @@ const MonacoJsonEditor : React.FC<MonacoJsonEditorProps> = ({ value, language, t
       // 监听内容变化
       editor.onDidChangeModelContent(async () => {
         onUpdateValue(editor.getValue());
-      })
+      });
 
       // 添加粘贴事件监听
       editor.onDidPaste(async (e) => {
@@ -241,25 +250,27 @@ const MonacoJsonEditor : React.FC<MonacoJsonEditorProps> = ({ value, language, t
     // 滚动到错误行
     editorRef.current.revealLineInCenter(lineNumber);
     // 如果存在旧的装饰，先清除
-    if (errorDecorations) {
-      errorDecorations.clear();
+    if (errorDecorationsRef.current) {
+      errorDecorationsRef.current.clear();
     }
 
     // 创建新的装饰集合
-    errorDecorations = editorRef.current.createDecorationsCollection([
-      {
-        range: new monaco.Range(lineNumber, 1, lineNumber, 1),
-        options: {
-          isWholeLine: true,
-          className: "errorLineHighlight",
-          glyphMarginClassName: "",
+    errorDecorationsRef.current = editorRef.current.createDecorationsCollection(
+      [
+        {
+          range: new monaco.Range(lineNumber, 1, lineNumber, 1),
+          options: {
+            isWholeLine: true,
+            className: "errorLineHighlight",
+            glyphMarginClassName: "",
+          },
         },
-      },
-    ]);
+      ],
+    );
     // 5秒后移除高亮
     setTimeout(() => {
-      if (errorDecorations) {
-        errorDecorations.clear();
+      if (errorDecorationsRef.current) {
+        errorDecorationsRef.current.clear();
       }
     }, 5000);
 
@@ -360,6 +371,9 @@ const MonacoJsonEditor : React.FC<MonacoJsonEditorProps> = ({ value, language, t
 
   // 暴露给父组件的方法
   useImperativeHandle(ref, () => ({
+    updateValue: (value: string) => {
+      setEditorValue(value);
+    },
     focus: () => {
       if (editorRef.current) {
         editorRef.current.focus();
@@ -453,6 +467,7 @@ const MonacoJsonEditor : React.FC<MonacoJsonEditorProps> = ({ value, language, t
       switch (key) {
         case "unescape":
           const errorMsg = formatModelByUnEscapeJson(val);
+
           if (errorMsg) {
             toast.error(errorMsg);
           }
@@ -477,7 +492,7 @@ const MonacoJsonEditor : React.FC<MonacoJsonEditorProps> = ({ value, language, t
       />
       <ErrorModal
         isOpen={jsonErrorDetailsModel}
-        parseJsonError={parseJsonError.current}
+        parseJsonError={parseJsonError}
         onAutoFix={autoFix}
         onClose={closeJsonErrorDetailsModel}
         onGotoErrorLine={goToErrorLine}

@@ -29,18 +29,22 @@ export const items: SidebarItem[] = [
 ];
 
 interface SidebarStore {
-  activeKey: string;
-  clickSwitchKey: string; // 点击切换的key
+  activeKey: string; // 当前激活的key
+  clickSwitchKey: string; // 点击切换的key 需要执行switchActiveKey切换操作
   updateActiveKey: (key: string) => void;
   updateClickSwitchKey: (key: string) => void;
+  switchActiveKey: () => void;
 }
 
 export const useSidebarStore = create<SidebarStore>()(
   devtools(
     (set) => ({
       activeKey: SidebarKeys.textView,
+      clickSwitchKey: SidebarKeys.textView,
       updateActiveKey: (key) => set({ activeKey: key }),
       updateClickSwitchKey: (key) => set({ clickSwitchKey: key }),
+      switchActiveKey: () =>
+        set((state) => ({ activeKey: state.clickSwitchKey })),
     }),
     {
       name: "SidebarStore", // 可选：为devtools指定一个名称

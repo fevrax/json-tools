@@ -1,4 +1,4 @@
-import React, { useImperativeHandle, useMemo } from "react";
+import React, { useMemo } from "react";
 import {
   cn,
   Modal,
@@ -7,7 +7,7 @@ import {
   ModalBody,
   ModalFooter,
   Button,
-  Chip
+  Chip,
 } from "@nextui-org/react";
 import { Icon } from "@iconify/react";
 
@@ -16,7 +16,7 @@ import "@/styles/monaco.css";
 import Divider from "@/components/Divider/divider";
 
 export interface ErrorModalProps {
-  parseJsonError: JsonErrorInfo | null;
+  parseJsonError: React.MutableRefObject<JsonErrorInfo | null>;
   isOpen: boolean;
   onOpenChange?: () => void;
   onClose?: () => void;
@@ -25,30 +25,29 @@ export interface ErrorModalProps {
   ref?: React.Ref<ErrorModalRef>;
 }
 
-export interface ErrorModalRef {
-}
+export interface ErrorModalRef {}
 
 const ErrorModal: React.FC<ErrorModalProps> = ({
-                                                 parseJsonError,
-                                                 isOpen,
-                                                 onOpenChange,
-                                                 onClose,
-                                                 onGotoErrorLine,
-                                                 onAutoFix,
-                                                 ref
-                                               }) => {
+  parseJsonError,
+  isOpen,
+  onOpenChange,
+  onClose,
+  onGotoErrorLine,
+  onAutoFix,
+  ref,
+}) => {
   const contextLines = useMemo(() => {
-    if (!parseJsonError || !parseJsonError.context) return 0;
-    if (!parseJsonError.context) return 0;
+    if (!parseJsonError.current || !parseJsonError.current?.context) return 0;
+    if (!parseJsonError.current.context) return 0;
 
-    return parseJsonError.context.split("\n").length;
-  }, [parseJsonError?.context]);
+    return parseJsonError.current.context.split("\n").length;
+  }, [parseJsonError.current?.context]);
 
   const errorStartLine = useMemo(() => {
-    if (!parseJsonError?.line) return 0;
+    if (!parseJsonError.current?.line) return 0;
 
-    return Math.max(1, parseJsonError?.line - Math.floor(contextLines / 2));
-  }, [parseJsonError?.line, contextLines]);
+    return Math.max(1, parseJsonError.current?.line - Math.floor(contextLines / 2));
+  }, [parseJsonError.current?.line, contextLines]);
 
   return (
     <Modal
@@ -61,18 +60,18 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
             opacity: 1,
             transition: {
               duration: 0.3,
-              ease: "easeOut"
-            }
+              ease: "easeOut",
+            },
           },
           exit: {
             y: -20,
             opacity: 0,
             transition: {
               duration: 0.2,
-              ease: "easeIn"
-            }
-          }
-        }
+              ease: "easeIn",
+            },
+          },
+        },
       }}
       size="xl"
       onClose={onClose}
@@ -80,7 +79,7 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
     >
       <ModalContent>
         <ModalHeader className="flex flex-col gap-1">
-          {parseJsonError?.message}
+          {parseJsonError.current?.message}
         </ModalHeader>
         <ModalBody className="text-sm">
           <div>
@@ -88,33 +87,33 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
             <Chip
               className="mx-1"
               classNames={{
-                base: "border px-0.5"
+                base: "border px-0.5",
               }}
               color="warning"
               radius="sm"
               size="sm"
               variant="bordered"
             >
-              {parseJsonError?.line}
+              {parseJsonError.current?.line}
             </Chip>
             行， 第
             <Chip
               className="mx-1"
               classNames={{
-                base: "border px-0.5"
+                base: "border px-0.5",
               }}
               color="warning"
               radius="sm"
               size="sm"
               variant="bordered"
             >
-              {parseJsonError?.column}
+              {parseJsonError.current?.column}
             </Chip>
             列
           </div>
           <p className="mt-2">
             异常信息：
-            <span className={"text-red-500"}>{parseJsonError?.message}</span>
+            <span className={"text-red-500"}>{parseJsonError.current?.message}</span>
           </p>
           <Divider thickness={1} title="错误的上下文" />
           <div className="context-section">
@@ -126,27 +125,22 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
                       key={i}
                       className={cn({
                         "error-line":
-                          errorStartLine + i === parseJsonError?.line
+                          errorStartLine + i === parseJsonError.current?.line,
                       })}
                     >
-                        {errorStartLine + i}
-                      </span>
+                      {errorStartLine + i}
+                    </span>
                   );
                 })}
               </div>
               <pre className="context-content">
-                  <code>{parseJsonError?.context}</code>
-                </pre>
+                <code>{parseJsonError.current?.context}</code>
+              </pre>
             </div>
           </div>
         </ModalBody>
         <ModalFooter>
-          <Button
-            color="danger"
-            size="sm"
-            variant="bordered"
-            onPress={onClose}
-          >
+          <Button color="danger" size="sm" variant="bordered" onPress={onClose}>
             取消
           </Button>
           <Button color="primary" size="sm" onPress={onAutoFix}>

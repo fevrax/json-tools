@@ -254,16 +254,25 @@ export const useTabStore = create<TabStore>()(
 
           try {
             if (isJSONContent(vanilla)) {
+              activeTab.content = JSON.stringify(vanilla.json, null, 2);
+              console.log("vanilla2JsonContent 转换成功1", activeTab.content);
               // 处理JSON内容
               return {
                 ...state,
-                content: JSON.stringify(vanilla.json, null, 4),
+                tabs: state.tabs.map((tab) =>
+                  tab.key === activeTab.key ? activeTab : tab,
+                ),
               };
             } else if (isTextContent(vanilla)) {
+              activeTab.content = vanilla.text;
+              console.log("vanilla2JsonContent 转换成功2", activeTab.content);
+
               // 处理文本内容
               return {
                 ...state,
-                content: vanilla.text || "",
+                tabs: state.tabs.map((tab) =>
+                  tab.key === activeTab.key ? activeTab : tab,
+                ),
               };
             }
 
@@ -275,7 +284,7 @@ export const useTabStore = create<TabStore>()(
             // 错误处理
             console.error("Error converting content:", error);
 
-            return { ...state, content: "" };
+            return state;
           }
         }),
       jsonContent2VanillaContent: () =>
@@ -292,8 +301,6 @@ export const useTabStore = create<TabStore>()(
             const parsedJson = JSON.parse(activeTab.content);
 
             activeTab.vanilla = { json: parsedJson };
-            console.log("jsonContent2VanillaContent 解析成功", activeTab.vanilla);
-            activeTab.vanillaMode = Mode.tree;
 
             return {
               ...state,

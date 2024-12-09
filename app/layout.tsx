@@ -47,7 +47,6 @@ export default function RootLayout({
     if (pathname !== "/") {
       router.push("/");
     }
-    sidebarStore.updateActiveKey(key as string);
     sidebarStore.updateClickSwitchKey(key as string);
     // 其他逻辑...
   };

@@ -13,9 +13,13 @@ import {
   MonacoJsonEditorRef,
   MonacoJsonEditorProps,
 } from "@/components/monacoEditor/monacoJsonEditor";
-import MonacoOperationBar from "@/components/monacoEditor/operationBar";
+import MonacoOperationBar, {
+  MonacoOperationBarRef,
+} from "@/components/monacoEditor/operationBar";
 import { SidebarKeys, useSidebarStore } from "@/store/useSidebarStore";
-import VanillaJsonEditor from "@/components/vanillaJsonEditor/vanillaJsonEditor";
+import VanillaJsonEditor, {
+  VanillaJsonEditorRef,
+} from "@/components/vanillaJsonEditor/vanillaJsonEditor";
 
 import "vanilla-jsoneditor-cn/themes/jse-theme-dark.css";
 
@@ -55,20 +59,40 @@ const MonacoJsonEditorWithDynamic = dynamic(
 
 export default function Home() {
   const { theme } = useTheme();
-  const { tabs, activeTabKey, activeTab, getTabByKey, setTabContent,setTabVanillaContent,setTabVanillaMode,vanilla2JsonContent, jsonContent2VanillaContent } =
-    useTabStore();
+  const {
+    tabs,
+    activeTabKey,
+    activeTab,
+    getTabByKey,
+    setTabContent,
+    setTabVanillaContent,
+    setTabVanillaMode,
+    vanilla2JsonContent,
+    jsonContent2VanillaContent,
+  } = useTabStore();
   const sidebarStore = useSidebarStore();
   const tabRef = useRef<DynamicTabsRef>(null);
+  const monacoOperationBarRef = useRef<MonacoOperationBarRef>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
   const [editorHeight, setEditorHeight] = useState<number>(300);
+  const vanillaJsonEditorRefs = useRef<Record<string, VanillaJsonEditorRef>>(
+    {},
+  );
 
   // 计算高度的函数
   const calculateHeight = () => {
     if (tabRef.current) {
       const windowHeight = window.innerHeight;
-      const containerTop = tabRef.current.getPositionTop();
-      const newHeight = windowHeight - containerTop - 10 - 35; // 减去一些额外的边距
+      const editorContainerTop = editorContainerRef.current?.offsetTop;
 
-      setEditorHeight(Math.max(newHeight, 300)); // 设置最小高度
+      console.log("editorContainerTop", editorContainerTop);
+      let newHeight = 300;
+
+      if (editorContainerTop !== undefined) {
+        newHeight = windowHeight - editorContainerTop - 2; // 减去一些额外的边距
+      }
+      console.log("newHeight", newHeight);
+      setEditorHeight(newHeight); // 设置最小高度
     }
   };
 
@@ -77,6 +101,7 @@ export default function Home() {
     return (
       <>
         <MonacoOperationBar
+          ref={monacoOperationBarRef}
           onClear={() => {
             return monacoJsonEditorRefs[activeTabKey].clear();
           }}
@@ -103,7 +128,7 @@ export default function Home() {
             >
               <MonacoJsonEditorWithDynamic
                 key={tab.key}
-                height={editorHeight}
+                height={editorHeight - 40}
                 tabKey={tab.key}
                 theme={theme == "dark" ? "vs-dark" : "vs-light"}
                 value={tab.content}
@@ -117,7 +142,7 @@ export default function Home() {
       </>
     );
   };
-  // 渲染 MonacoJsonEditor
+  // 渲染 renderVanillaJsonEditor
   const renderVanillaJsonEditor = () => {
     return (
       <>
@@ -134,12 +159,16 @@ export default function Home() {
             >
               <VanillaJsonEditor
                 key={tab.key}
+                ref={(ref) => {
+                  if (ref) {
+                    vanillaJsonEditorRefs.current[tab.key] = ref;
+                  }
+                }}
                 content={tab.vanilla}
                 height={editorHeight}
                 mode={tab.vanillaMode}
                 tabKey={tab.key}
                 onChangeMode={(mode) => {
-                  console.log("change mode", mode);
                   setTabVanillaMode(tab.key, mode);
                 }}
                 onUpdateValue={(content) => {
@@ -184,22 +213,23 @@ export default function Home() {
   }, [activeTabKey]);
 
   useEffect(() => {
-    console.log("clickSwitchKey", sidebarStore.clickSwitchKey);
-    switch (sidebarStore.activeKey) {
+    const tab = activeTab();
+
+    switch (sidebarStore.clickSwitchKey) {
       case SidebarKeys.textView:
         vanilla2JsonContent();
         break;
       case SidebarKeys.treeView:
         jsonContent2VanillaContent();
-        // TODO 切换后需要更新编辑器中的内容
         break;
     }
-  },[sidebarStore.clickSwitchKey])
+    sidebarStore.switchActiveKey();
+  }, [sidebarStore.clickSwitchKey]);
 
   return (
-    <div className="dark:bg-vscode-dark">
+    <div className="dark:bg-vscode-dark h-full">
       <DynamicTabs ref={tabRef} />
-      {renderEditor()}
+      <div ref={editorContainerRef}>{renderEditor()}</div>
     </div>
   );
 }

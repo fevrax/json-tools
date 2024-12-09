@@ -47,7 +47,6 @@ const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
     {
       items,
       isCompact,
-      defaultSelectedKey,
       currentKey,
       onSelect,
       hideEndContent,
