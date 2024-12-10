@@ -1,0 +1,24 @@
+
+.vanilla-json-editor {
+    /* define a custom theme color */
+    /*--jse-theme-color: #9a38fc;*/
+    /*--jse-theme-color-highlight: #b160fb;*/
+    --jse-theme-color: #383e42;
+    --jse-theme-color-highlight: #687177;
+
+    /*.jse-menu {*/
+    /*    @apply bg-default-200 text-default-600 !important;*/
+    /*}*/
+
+    /*.jse-button {*/
+    /*    @apply text-default-600 !important;*/
+    /*}*/
+    /*.jse-group-button:hover {*/
+    /*    @apply bg-default-200 !important;*/
+    /*}*/
+    /*.jse-selected {*/
+    /*    @apply bg-default-100 !important;*/
+    /*    color: var(--jse-theme-color) !important;*/
+    /*}*/
+}
+
