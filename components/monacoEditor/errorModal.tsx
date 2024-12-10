@@ -46,7 +46,10 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
   const errorStartLine = useMemo(() => {
     if (!parseJsonError.current?.line) return 0;
 
-    return Math.max(1, parseJsonError.current?.line - Math.floor(contextLines / 2));
+    return Math.max(
+      1,
+      parseJsonError.current?.line - Math.floor(contextLines / 2),
+    );
   }, [parseJsonError.current?.line, contextLines]);
 
   return (
@@ -113,7 +116,9 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
           </div>
           <p className="mt-2">
             异常信息：
-            <span className={"text-red-500"}>{parseJsonError.current?.message}</span>
+            <span className={"text-red-500"}>
+              {parseJsonError.current?.message}
+            </span>
           </p>
           <Divider thickness={1} title="错误的上下文" />
           <div className="context-section">

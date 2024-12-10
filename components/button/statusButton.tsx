@@ -16,13 +16,16 @@ export interface StatusButtonProps
   status: IconStatus;
   icon: string;
   iconSize?: number;
-  size?: "xs" | "sm" | "md" | "lg";
+  className?: string;
   onClick: () => void;
   endContent?: React.ReactNode;
 }
 
 const StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>(
-  ({ text, successText, status, icon, iconSize = 18, size = "xs", onClick, endContent }, ref) => {
+  (
+    { text, successText, status, icon, iconSize = 20, onClick, endContent, className },
+    ref,
+  ) => {
     const renderIcon = () => {
       switch (status) {
         case IconStatus.Success:
@@ -36,13 +39,11 @@ const StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>(
 
     return (
       <Button
-        className={cn("px-0.5 gap-1 text-default-600", {
+        className={cn("px-1 gap-2 text-default-600 h-8", {
           "text-green-500": status === IconStatus.Success,
           "text-red-500": status === IconStatus.Error,
-          "h-7": size === "xs",
-        })}
+        }, className)}
         endContent={endContent}
-        size={size === "xs" ? "sm" : size}
         startContent={renderIcon()}
         variant="light"
         onClick={onClick}

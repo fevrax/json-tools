@@ -112,7 +112,7 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
     updateEditorContentAndMode: (mode: Mode, content: Content) => {
       updateEditorContentAndMode(mode, content);
     },
-  }))
+  }));
 
   useEffect(() => {
     if (!editorRef.current) {

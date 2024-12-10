@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useRef,
-  useEffect,
-  useState,
-  forwardRef,
-  useImperativeHandle,
-} from "react";
+import React, { useRef, useEffect, useState, useImperativeHandle } from "react";
 import { Tabs, Tab, Tooltip, Input, cn } from "@nextui-org/react";
 import { Icon } from "@iconify/react";
 import {
@@ -29,7 +23,7 @@ export interface DynamicTabsProps {
   ref?: React.Ref<DynamicTabsRef>;
 }
 
-const DynamicTabs : React.FC<DynamicTabsProps> =({ref}) => {
+const DynamicTabs: React.FC<DynamicTabsProps> = ({ ref }) => {
   const {
     tabs,
     activeTabKey,
@@ -250,7 +244,7 @@ const DynamicTabs : React.FC<DynamicTabsProps> =({ref}) => {
           zIndex: 1000,
         }}
       >
-        <div className="flex items-center space-x-2 text-xs">
+        <div className="flex items-center space-x-2">
           <Input
             ref={tabRenameInputRef}
             classNames={{
@@ -381,7 +375,7 @@ const DynamicTabs : React.FC<DynamicTabsProps> =({ref}) => {
 
         <div
           ref={tabContainerRef}
-          className="flex-grow h-8 overflow-x-auto scroll-smooth scrollbar-hide"
+          className="flex-grow h-10 overflow-x-auto scroll-smooth scrollbar-hide"
           onWheel={handleWheel}
         >
           <Tabs
@@ -389,8 +383,8 @@ const DynamicTabs : React.FC<DynamicTabsProps> =({ref}) => {
             aria-label="标签页"
             classNames={{
               tabList:
-                "gap-6 w-full h-8 relative rounded-none p-0 pr-4 ml-4 overflow-x-visible flex-shrink-0",
-              tab: "max-w-fit px-0 h-8 flex-shrink-0 text-xs",
+                "gap-6 w-full h-10 relative rounded-none p-0 pr-4 ml-4 overflow-x-visible flex-shrink-0",
+              tab: "max-w-fit px-0 h-10 flex-shrink-0",
               cursor: "w-full",
               panel:
                 "flex-grow overflow-auto border-t border-divider px-0 pb-0 pt-1",
@@ -418,7 +412,7 @@ const DynamicTabs : React.FC<DynamicTabsProps> =({ref}) => {
                       {tab.closable && (
                         <div
                           aria-label="关闭标签页"
-                          className=" rounded-full cursor-pointer flex items-center justify-center z-10 h-8 px-1 !ml-0.5 text-default-500"
+                          className=" rounded-full cursor-pointer flex items-center justify-center z-10 h-10 px-1 !ml-0.5 text-default-500"
                           role="button"
                           tabIndex={0}
                           onClick={(e) => {

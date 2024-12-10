@@ -77,16 +77,16 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     // calculateHeight();
   }, [theme]);
 
-  const frist = useRef(true);
+  const first = useRef(true);
 
   // 添加窗口大小变化监听器
   useEffect(() => {
     // 使用 setTimeout 确保在 React 严格模式下只执行一次
     const timeoutId = setTimeout(() => {
-      if (frist.current) {
+      if (first.current) {
         initializeEditor();
       }
-      frist.current = false;
+      first.current = false;
     }, 0);
 
     return () => {
@@ -207,7 +207,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         <div>{parseJsonError.current?.message}</div>
         <div className="flex justify-end mt-3">
           <Button
-            className="h-6"
+            className="h-7"
             color="primary"
             size="sm"
             onPress={() => {

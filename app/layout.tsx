@@ -215,7 +215,7 @@ export default function RootLayout({
             </SidebarDrawer>
 
             {/*  Settings Content */}
-            <div className="flex-1 overflow-auto pr-1 min-w-16">{children}</div>
+            <div className="flex-1 text- overflow-auto pr-1 min-w-16">{children}</div>
             <ToastContainer
               closeOnClick
               draggable
@@ -223,7 +223,7 @@ export default function RootLayout({
               pauseOnHover
               stacked
               autoClose={3500}
-              className={"!text-xs"}
+              className={"!text-normal"}
               newestOnTop={false}
               pauseOnFocusLoss={false}
               position="top-right"

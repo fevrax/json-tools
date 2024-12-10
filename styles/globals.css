@@ -3,11 +3,11 @@
 @tailwind utilities;
 
 .Toastify__toast-container {
-    width: 250px !important;
+    width: 300px !important;
 }
 
 .Toastify__toast-icon {
-    width: 18px !important;
+    width: 22px !important;
 }
 
  /*关闭按钮居中*/
@@ -16,7 +16,7 @@
 }
 
 .Toastify__toast {
-    padding: 4px 8px !important;
+    /*padding: 4px 8px !important;*/
 }
 
 .Toastify__toast-body {
