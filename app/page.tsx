@@ -1,4 +1,4 @@
-"use client"; // 必须添加
+"use client";
 
 import React, { useRef, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
@@ -154,7 +154,7 @@ export default function Home() {
                 hidden: tab.key !== activeTabKey,
                 // localStorage.getItem("theme") == "dark" 解决首屏频闪导致的主题切换闪烁问题
                 "jse-theme-dark":
-                  theme == "dark" || localStorage.getItem("theme") == "dark",
+                  theme == "dark" || window.localStorage.getItem("theme") == "dark",
               })}
             >
               <VanillaJsonEditor

@@ -11,6 +11,8 @@ import {
   Mode,
 } from "vanilla-jsoneditor-cn";
 
+import "@/styles/vanilla.css";
+
 export interface VanillaJsonEditorProps {
   ref?: React.Ref<VanillaJsonEditorRef>;
   tabKey: string;
@@ -125,7 +127,7 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
   return (
     <div
       ref={containerRef}
-      className={cn("w-full flex-grow", {
+      className={cn("w-full flex-grow vanilla-json-editor", {
         // "jse-theme-dark": theme == "dark",
       })}
       style={{ height: height }}
