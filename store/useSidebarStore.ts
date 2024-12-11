@@ -29,10 +29,10 @@ export const items: SidebarItem[] = [
 ];
 
 interface SidebarStore {
-  activeKey: string; // 当前激活的key
-  clickSwitchKey: string; // 点击切换的key 需要执行switchActiveKey切换操作
-  updateActiveKey: (key: string) => void;
-  updateClickSwitchKey: (key: string) => void;
+  activeKey: SidebarKeys; // 当前激活的key
+  clickSwitchKey: SidebarKeys; // 点击切换的key 需要执行switchActiveKey切换操作
+  updateActiveKey: (key: SidebarKeys) => void;
+  updateClickSwitchKey: (key: SidebarKeys) => void;
   switchActiveKey: () => void;
 }
 

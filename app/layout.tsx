@@ -215,7 +215,9 @@ export default function RootLayout({
             </SidebarDrawer>
 
             {/*  Settings Content */}
-            <div className="flex-1 text- overflow-auto pr-1 min-w-16">{children}</div>
+            <div className="flex-1 text- overflow-auto pr-1 min-w-16">
+              {children}
+            </div>
             <ToastContainer
               closeOnClick
               draggable

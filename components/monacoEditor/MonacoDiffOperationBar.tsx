@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import {
   Button,
@@ -9,8 +10,7 @@ import {
 } from "@nextui-org/react";
 import { Icon } from "@iconify/react";
 
-import { IconStatus } from "@/components/button/statusButton";
-import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoDiffEditor";
+import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEntity";
 
 interface MonacoDiffOperationBarProps {
   onCopy: (type: MonacoDiffEditorEditorType) => boolean;
@@ -107,8 +107,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           onMouseLeave={unShowCopyDropdown}
         >
           <Button
-            className={cn("px-0.5 h-7 gap-1 text-default-600")}
-            size="sm"
+            className={cn("pl-1 pr-1 h-8 gap-1 text-default-600 !ml-2")}
             startContent={<Icon icon="si:copy-line" width={18} />}
             variant="light"
           >
@@ -128,7 +127,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
             key={MonacoDiffEditorEditorType.left}
             textValue="复制左边"
           >
-            <div className="flex items-center space-x-2 text-xs">
+            <div className="flex items-center space-x-2">
               <Icon icon="mdi-light:arrow-left" width={18} />
               <span>复制左边</span>
             </div>
@@ -137,7 +136,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
             key={MonacoDiffEditorEditorType.right}
             textValue="复制左边"
           >
-            <div className="flex items-center space-x-2 text-xs">
+            <div className="flex items-center space-x-2">
               <Icon icon="mdi-light:arrow-right" width={18} />
               <span>复制右边</span>
             </div>
@@ -159,8 +158,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           onMouseLeave={unShowFormatDropdown}
         >
           <Button
-            className={cn("pl-0.5 pr-1 h-7 gap-1 text-default-600 !min-w-12")}
-            size="sm"
+            className={cn("pl-0.5 pr-1 h-8 gap-1 text-default-600 !min-w-12")}
             startContent={<Icon icon="ph:magic-wand-light" width={18} />}
             variant="light"
           >
@@ -186,7 +184,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
             key={MonacoDiffEditorEditorType.all}
             textValue="格式化全部"
           >
-            <div className="flex items-center space-x-2 text-xs">
+            <div className="flex items-center space-x-2">
               <Icon icon="ph:magic-wand-light" width={18} />
               <span>格式化全部</span>
             </div>
@@ -195,7 +193,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
             key={MonacoDiffEditorEditorType.left}
             textValue="格式化左边"
           >
-            <div className="flex items-center space-x-2 text-xs">
+            <div className="flex items-center space-x-2">
               <Icon icon="mdi-light:arrow-left" width={18} />
               <span>格式化左边</span>
             </div>
@@ -204,7 +202,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
             key={MonacoDiffEditorEditorType.right}
             textValue="格式化右边"
           >
-            <div className="flex items-center space-x-2 text-xs">
+            <div className="flex items-center space-x-2">
               <Icon icon="mdi-light:arrow-right" width={18} />
               <span>格式化右边</span>
             </div>
@@ -226,8 +224,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           onMouseLeave={unShowSortDropdown}
         >
           <Button
-            className={cn("px-0.5  h-7 gap-1 text-default-600")}
-            size="sm"
+            className={cn("px-0.5  h-8 gap-1 text-default-600")}
             startContent={
               <Icon icon="fluent:arrow-sort-24-regular" width={18} />
             }
@@ -258,25 +255,25 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           onMouseLeave={unShowSortDropdown}
         >
           <DropdownItem key="left-asc" textValue="左边字段升序">
-            <div className="flex items-center space-x-2 text-xs">
+            <div className="flex items-center space-x-2">
               <Icon icon="mdi-light:arrow-left" width={18} />
               <span>左边字段升序</span>
             </div>
           </DropdownItem>
           <DropdownItem key="left-desc" textValue="左边字段降序">
-            <div className="flex items-center space-x-2 text-xs">
+            <div className="flex items-center space-x-2">
               <Icon icon="mdi-light:arrow-left" width={18} />
               <span>左边字段降序</span>
             </div>
           </DropdownItem>
           <DropdownItem key="right-asc" textValue="右边字段升序">
-            <div className="flex items-center space-x-2 text-xs">
+            <div className="flex items-center space-x-2">
               <Icon icon="mdi-light:arrow-right" width={18} />
               <span>右边字段升序</span>
             </div>
           </DropdownItem>
           <DropdownItem key="right-desc" textValue="右边字段降序">
-            <div className="flex items-center space-x-2 text-xs">
+            <div className="flex items-center space-x-2">
               <Icon icon="mdi-light:arrow-right" width={18} />
               <span>右边字段降序</span>
             </div>
@@ -298,8 +295,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           onMouseLeave={unShowClearDropdown}
         >
           <Button
-            className={cn("px-0.5 h-7 gap-1 text-default-600")}
-            size="sm"
+            className={cn("pl-1 pr-1 h-8 gap-1 text-default-600")}
             startContent={<Icon icon="mynaui:trash" width={18} />}
             variant="light"
           >
@@ -325,7 +321,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
             key={MonacoDiffEditorEditorType.all}
             textValue="清空全部"
           >
-            <div className="flex items-center space-x-2 text-xs">
+            <div className="flex items-center space-x-2">
               <Icon icon="mynaui:trash" width={18} />
               <span>清空全部</span>
             </div>
@@ -334,7 +330,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
             key={MonacoDiffEditorEditorType.left}
             textValue="清空左边"
           >
-            <div className="flex items-center space-x-2 text-xs">
+            <div className="flex items-center space-x-2">
               <Icon icon="mdi-light:arrow-left" width={18} />
               <span>清空左边</span>
             </div>
@@ -343,7 +339,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
             key={MonacoDiffEditorEditorType.right}
             textValue="清空左边"
           >
-            <div className="flex items-center space-x-2 text-xs">
+            <div className="flex items-center space-x-2">
               <Icon icon="mdi-light:arrow-right" width={18} />
               <span>清空右边</span>
             </div>

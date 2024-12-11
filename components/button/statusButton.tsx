@@ -23,7 +23,16 @@ export interface StatusButtonProps
 
 const StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>(
   (
-    { text, successText, status, icon, iconSize = 20, onClick, endContent, className },
+    {
+      text,
+      successText,
+      status,
+      icon,
+      iconSize = 20,
+      onClick,
+      endContent,
+      className,
+    },
     ref,
   ) => {
     const renderIcon = () => {
@@ -39,10 +48,14 @@ const StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>(
 
     return (
       <Button
-        className={cn("px-1 gap-2 text-default-600 h-8", {
-          "text-green-500": status === IconStatus.Success,
-          "text-red-500": status === IconStatus.Error,
-        }, className)}
+        className={cn(
+          "px-1 gap-2 text-default-600 h-8",
+          {
+            "text-green-500": status === IconStatus.Success,
+            "text-red-500": status === IconStatus.Error,
+          },
+          className,
+        )}
         endContent={endContent}
         startContent={renderIcon()}
         variant="light"

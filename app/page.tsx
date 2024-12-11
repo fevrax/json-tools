@@ -26,7 +26,9 @@ import {
 import MonacoDiffOperationBar, {
   MonacoDiffOperationBarRef,
 } from "@/components/monacoEditor/MonacoDiffOperationBar";
-import MonacoOperationBar, { MonacoOperationBarRef } from "@/components/monacoEditor/monacoOperationBar";
+import MonacoOperationBar, {
+  MonacoOperationBarRef,
+} from "@/components/monacoEditor/monacoOperationBar";
 
 const monacoJsonEditorRefs: Record<string, MonacoJsonEditorRef> = {};
 const monacoDiffEditorRefs: Record<string, MonacoDiffEditorRef> = {};
@@ -299,9 +301,17 @@ export default function Home() {
 
     switch (sidebarStore.clickSwitchKey) {
       case SidebarKeys.textView:
+        // 如果切换之前是 diff 视图着不需要处理
+        if (sidebarStore.activeKey == SidebarKeys.diffView) {
+          break;
+        }
         vanilla2JsonContent();
         break;
       case SidebarKeys.diffView:
+        // 如果切换之前是 text 视图着不需要处理
+        if (sidebarStore.activeKey == SidebarKeys.textView) {
+          break;
+        }
         vanilla2JsonContent();
         break;
       case SidebarKeys.treeView:

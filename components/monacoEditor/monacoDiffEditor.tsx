@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 
 import { sortJson } from "@/utils/json";
 import "@/styles/monaco.css";
+import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEntity";
 
 export interface MonacoDiffEditorProps {
   tabKey: string;
@@ -19,12 +20,6 @@ export interface MonacoDiffEditorProps {
   onUpdateOriginalValue: (value: string) => void;
   onUpdateModifiedValue?: (value: string) => void;
   ref?: React.Ref<MonacoDiffEditorRef>;
-}
-
-export enum MonacoDiffEditorEditorType {
-  left,
-  right,
-  all,
 }
 
 export interface MonacoDiffEditorRef {
@@ -191,6 +186,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
         break;
       default:
         console.log("unknown type", type);
+
         return false;
     }
 
@@ -282,15 +278,19 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
 
       copyText(val);
       toast.success("复制成功");
+
       return true;
     },
     format: (type) => {
       const ok = editorFormat(type);
+
       if (!ok) {
         toast.error("格式化失败，请检查JSON格式是否正确");
+
         return false;
       }
       toast.success("格式化成功");
+
       return ok;
     },
     clear: (type) => {
@@ -312,6 +312,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
           return false;
       }
       toast.success("清空成功");
+
       return true;
     },
     fieldSort: (type, sort): boolean => {
@@ -342,6 +343,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       }
 
       toast.success("排序成功");
+
       return true;
     },
   }));
