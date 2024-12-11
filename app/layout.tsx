@@ -22,7 +22,7 @@ import Sidebar from "@/components/sidebar/sidebar";
 import { items } from "@/components/sidebar/items";
 import { ThemeSwitch } from "@/components/theme-switch";
 import "react-toastify/dist/ReactToastify.css";
-import { useSidebarStore } from "@/store/useSidebarStore";
+import { SidebarKeys, useSidebarStore } from "@/store/useSidebarStore";
 
 // export const dynamic = "force-static";
 export default function RootLayout({
@@ -47,7 +47,7 @@ export default function RootLayout({
     if (pathname !== "/") {
       router.push("/");
     }
-    sidebarStore.updateClickSwitchKey(key as string);
+    sidebarStore.updateClickSwitchKey(key as SidebarKeys);
     // 其他逻辑...
   };
 

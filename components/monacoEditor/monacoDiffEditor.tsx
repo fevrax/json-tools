@@ -19,6 +19,7 @@ export interface MonacoDiffEditorProps {
   theme?: string;
   onUpdateOriginalValue: (value: string) => void;
   onUpdateModifiedValue?: (value: string) => void;
+  onLoaded?: (loaded: boolean) => void;
   ref?: React.Ref<MonacoDiffEditorRef>;
 }
 
@@ -43,6 +44,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   height,
   onUpdateOriginalValue,
   onUpdateModifiedValue,
+                                                             onLoaded,
   ref,
 }) => {
   const editorContainerRef = useRef<HTMLDivElement>(null);
@@ -75,10 +77,10 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     const timeoutId = setTimeout(() => {
       if (frist.current) {
         createDiffEditor();
+        frist.current = false;
+        onLoaded && onLoaded(true);
       }
-      frist.current = false;
     }, 0);
-
     return () => {
       clearTimeout(timeoutId);
       // 如果编辑器已经创建，则销毁

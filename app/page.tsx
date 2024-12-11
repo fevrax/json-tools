@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
-import { cn } from "@nextui-org/react";
+import { cn, Skeleton } from "@nextui-org/react";
 
 import { useTabStore } from "@/store/useTabStore";
 import DynamicTabs, {
@@ -72,28 +72,36 @@ const MonacoDiffEditorWithDynamic = dynamic(
       "@/components/monacoEditor/monacoDiffEditor"
     );
 
-    const monacoJsonEditor: React.FC<MonacoDiffEditorProps> = (props) => (
-      <Editor
-        ref={(ref) => {
-          if (ref) {
-            monacoDiffEditorRefs[props.tabKey] = ref;
-          }
-        }}
-        {...props}
-      />
-    );
+    const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = (props) => {
+      useEffect(() => {
+        console.log("monacoDiffEditor loaded");
+      }, []);
 
-    monacoJsonEditor.displayName = "MonacoDiffEditorWithDynamic";
+      return (
+        <Editor
+          ref={(ref) => {
+            if (ref) {
+              monacoDiffEditorRefs[props.tabKey] = ref;
+            }
+          }}
+          {...props}
+        />
+      );
+    };
 
-    return monacoJsonEditor;
+    MonacoDiffEditor.displayName = "MonacoDiffEditorWithDynamic";
+
+    return MonacoDiffEditor;
   },
   {
     ssr: false,
-    loading: () => (
-      <div className="w-full h-full flex items-center justify-center">
-        Loading editor...
-      </div>
-    ),
+    loading: (loadingProps) => {
+      return (
+        <div className="w-full h-full flex items-center justify-center">
+          Loading diff editor...
+        </div>
+      );
+    },
   },
 );
 
@@ -114,10 +122,12 @@ export default function Home() {
   const monacoOperationBarRef = useRef<MonacoOperationBarRef>(null);
   const monacoDiffOperationBarRef = useRef<MonacoDiffOperationBarRef>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
-  const [editorHeight, setEditorHeight] = useState<number>(300);
+  const [editorHeight, setEditorHeight] = useState<number>(0);
   const vanillaJsonEditorRefs = useRef<Record<string, VanillaJsonEditorRef>>(
     {},
   );
+
+  const [monacoDiffEditorLoaded, setMonacoDiffEditorLoaded] = useState(false);
 
   // 计算高度的函数
   const calculateHeight = () => {
@@ -125,7 +135,7 @@ export default function Home() {
       const windowHeight = window.innerHeight;
       const editorContainerTop = editorContainerRef.current?.offsetTop;
 
-      let newHeight = 300;
+      let newHeight = 0;
 
       if (editorContainerTop !== undefined) {
         newHeight = windowHeight - editorContainerTop - 2; // 减去一些额外的边距
@@ -184,7 +194,7 @@ export default function Home() {
   // 渲染 MonacoDiffEditor
   const renderMonacoDiffEditor = () => {
     return (
-      <>
+      <div className="w-full">
         <MonacoDiffOperationBar
           ref={monacoDiffOperationBarRef}
           onClear={(type) => {
@@ -200,29 +210,32 @@ export default function Home() {
             return monacoDiffEditorRefs[activeTabKey].format(type);
           }}
         />
-        {tabs.map((tab) => {
-          return (
-            <div
-              key={tab.key}
-              className={cn("w-full h-full", {
-                hidden: tab.key !== activeTabKey,
-              })}
-            >
-              <MonacoDiffEditorWithDynamic
+        <Skeleton style={{ height: "calc(100vh - 90px)" }}>
+          {tabs.map((tab) => {
+            return (
+              <div
                 key={tab.key}
-                height={editorHeight - 45}
-                modifiedValue=""
-                originalValue={tab.content}
-                tabKey={tab.key}
-                theme={theme == "dark" ? "vs-dark" : "vs-light"}
-                onUpdateOriginalValue={(value) => {
-                  setTabContent(tab.key, value);
-                }}
-              />
-            </div>
-          );
-        })}
-      </>
+                className={cn("w-full h-full", {
+                  hidden: tab.key !== activeTabKey,
+                })}
+              >
+                <MonacoDiffEditorWithDynamic
+                  key={tab.key}
+                  height={editorHeight - 45}
+                  modifiedValue=""
+                  originalValue={tab.content}
+                  tabKey={tab.key}
+                  theme={theme == "dark" ? "vs-dark" : "vs-light"}
+                  onLoaded={(loaded) => setMonacoDiffEditorLoaded(loaded)}
+                  onUpdateOriginalValue={(value) => {
+                    setTabContent(tab.key, value);
+                  }}
+                />
+              </div>
+            );
+          })}
+        </Skeleton>
+      </div>
     );
   };
   // 渲染 renderVanillaJsonEditor
