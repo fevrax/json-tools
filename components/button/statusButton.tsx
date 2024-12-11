@@ -46,7 +46,7 @@ const StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>(
         endContent={endContent}
         startContent={renderIcon()}
         variant="light"
-        onClick={onClick}
+        onPress={onClick}
       >
         {status === IconStatus.Success && successText ? successText : text}
       </Button>

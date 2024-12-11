@@ -195,7 +195,7 @@ export default function RootLayout({
                         )
                       }
                       variant="light"
-                      onClick={() => {
+                      onPress={() => {
                         router.push("/settings");
                       }}
                     >

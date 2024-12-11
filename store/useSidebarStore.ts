@@ -39,8 +39,8 @@ interface SidebarStore {
 export const useSidebarStore = create<SidebarStore>()(
   devtools(
     (set) => ({
-      activeKey: SidebarKeys.textView,
-      clickSwitchKey: SidebarKeys.textView,
+      activeKey: SidebarKeys.diffView,
+      clickSwitchKey: SidebarKeys.diffView,
       updateActiveKey: (key) => set({ activeKey: key }),
       updateClickSwitchKey: (key) => set({ clickSwitchKey: key }),
       switchActiveKey: () =>

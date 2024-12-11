@@ -9,10 +9,11 @@ import {
   DropdownTrigger,
 } from "@nextui-org/react";
 import { Icon } from "@iconify/react";
+import { toast } from "react-toastify";
 
 import StatusButton, { IconStatus } from "@/components/button/statusButton";
 
-interface OperationBarProps {
+interface MonacoOperationBarProps {
   onCopy: (type?: "default" | "compress" | "escape") => boolean;
   onFormat: () => boolean;
   onClear: () => boolean;
@@ -23,7 +24,7 @@ interface OperationBarProps {
 
 export interface MonacoOperationBarRef {}
 
-const MonacoOperationBar: React.FC<OperationBarProps> = ({
+const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
   onCopy,
   onFormat,
   onClear,
@@ -103,7 +104,7 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
             <Button
               isIconOnly
               className="p-0 m-0 min-w-[0px] w-auto"
-              startContent={<Icon icon="formkit:down" width={20} />}
+              startContent={<Icon icon="formkit:down" width={18} />}
             />
           </DropdownTrigger>
           <DropdownMenu
@@ -120,13 +121,13 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
             }}
           >
             <DropdownItem key="compress" textValue="压缩后复制">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 text-xs">
                 <Icon icon="f7:rectangle-compress-vertical" width={16} />
                 <span>压缩后复制</span>
               </div>
             </DropdownItem>
             <DropdownItem key="escape" textValue="转义后复制">
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2 text-xs">
                 <Icon icon="si:swap-horiz-line" width={16} />
                 <span>转义后复制</span>
               </div>
@@ -136,7 +137,6 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
       </ButtonGroup>
 
       <StatusButton
-        className="!mr-1"
         icon="ph:magic-wand-light"
         status={formatStatus}
         text="格式化"
@@ -156,16 +156,16 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
         }}
         isOpen={isSortDropdownOpen}
         radius="sm"
-        onOpenChange={setSortDropdownOpen}
       >
         <DropdownTrigger
           onMouseEnter={showSortDropdown}
           onMouseLeave={unShowSortDropdown}
         >
           <Button
-            className={cn("px-1 h-8 gap-1 text-default-600")}
+            className={cn("px-0.5  h-7 gap-1 text-default-600")}
+            size="sm"
             startContent={
-              <Icon icon="fluent:arrow-sort-24-regular" width={20} />
+              <Icon icon="fluent:arrow-sort-24-regular" width={18} />
             }
             variant="light"
           >
@@ -183,18 +183,20 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
                 onFieldSort("desc");
                 break;
             }
+            toast.success("字段排序成功");
+            setSortDropdownOpen(false);
           }}
           onMouseEnter={showSortDropdown}
           onMouseLeave={unShowSortDropdown}
         >
           <DropdownItem key="asc" textValue="字段升序">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 text-xs">
               <Icon icon="f7:rectangle-compress-vertical" width={16} />
               <span>字段升序</span>
             </div>
           </DropdownItem>
           <DropdownItem key="desc" textValue="字段降序">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 text-xs">
               <Icon icon="si:swap-horiz-line" width={16} />
               <span>字段降序</span>
             </div>
@@ -224,7 +226,7 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
         }}
         isOpen={isMoreDropdownOpen}
         radius="sm"
-        onOpenChange={setMoreDropdownOpen}
+        // onOpenChange={setMoreDropdownOpen}
       >
         <DropdownTrigger
           onMouseEnter={showMoreDropdown}
@@ -243,24 +245,31 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
           onAction={(key) => {
             switch (key) {
               case "unescape":
-                onMore("unescape");
+                if (onMore("unescape")) {
+                  toast.success("去除转义成功");
+                }
                 break;
               case "del_comment":
-                onMore("del_comment");
+                if (onMore("del_comment")) {
+                  toast.success("移除注释成功");
+                } else {
+                  toast.error("移除注释失败");
+                }
                 break;
             }
+            setMoreDropdownOpen(false);
           }}
           onMouseEnter={showMoreDropdown}
           onMouseLeave={unShowMoreDropdown}
         >
           <DropdownItem key="unescape" textValue="去除转移">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 text-xs">
               <Icon icon="iconoir:remove-link" width={16} />
               <span>去除转义</span>
             </div>
           </DropdownItem>
           <DropdownItem key="del_comment" textValue="移除注释">
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 text-xs">
               <Icon icon="tabler:notes-off" width={16} />
               <span>移除注释</span>
             </div>
