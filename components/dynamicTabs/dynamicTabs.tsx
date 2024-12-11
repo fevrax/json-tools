@@ -1,12 +1,6 @@
 "use client";
 
-import React, {
-  useRef,
-  useEffect,
-  useState,
-  forwardRef,
-  useImperativeHandle,
-} from "react";
+import React, { useRef, useEffect, useState, useImperativeHandle } from "react";
 import { Tabs, Tab, Tooltip, Input, cn } from "@nextui-org/react";
 import { Icon } from "@iconify/react";
 import {
@@ -29,7 +23,7 @@ export interface DynamicTabsProps {
   ref?: React.Ref<DynamicTabsRef>;
 }
 
-const DynamicTabs : React.FC<DynamicTabsProps> =({ref}) => {
+const DynamicTabs: React.FC<DynamicTabsProps> = ({ ref }) => {
   const {
     tabs,
     activeTabKey,

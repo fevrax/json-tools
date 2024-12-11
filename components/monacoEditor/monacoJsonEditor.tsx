@@ -354,14 +354,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
       // 判断是否为对象或数组
       if (!isArrayOrObject(unescapedJsonObject)) {
-        return "不是有效的 Json 数据，无法进行解码操作";
+        return "不是有效的 JSON 数据，无法进行解码操作";
       }
       setEditorValue(JSON.stringify(unescapedJsonObject, null, 4));
     } catch (error) {
-      if (error instanceof SyntaxError) {
-        return "不是有效的 Json 数据，无法进行解码操作";
-      }
       console.error("formatModelByUnEscapeJson", error);
+      if (error instanceof SyntaxError) {
+        return "不是有效的转义 JSON 字符串，无法进行解码操作";
+      }
 
       return `尝试去除转义失败，${error}`;
     }
@@ -470,10 +470,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
           if (errorMsg) {
             toast.error(errorMsg);
+
+            return false;
           }
           break;
         case "del_comment":
           setEditorValue(removeJsonComments(val));
+
+          return true;
           break;
         default:
           break;

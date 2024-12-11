@@ -13,17 +13,23 @@ import {
   MonacoJsonEditorRef,
   MonacoJsonEditorProps,
 } from "@/components/monacoEditor/monacoJsonEditor";
-import MonacoOperationBar, {
-  MonacoOperationBarRef,
-} from "@/components/monacoEditor/operationBar";
 import { SidebarKeys, useSidebarStore } from "@/store/useSidebarStore";
 import VanillaJsonEditor, {
   VanillaJsonEditorRef,
 } from "@/components/vanillaJsonEditor/vanillaJsonEditor";
 
 import "vanilla-jsoneditor-cn/themes/jse-theme-dark.css";
+import {
+  MonacoDiffEditorProps,
+  MonacoDiffEditorRef,
+} from "@/components/monacoEditor/monacoDiffEditor";
+import MonacoDiffOperationBar, {
+  MonacoDiffOperationBarRef,
+} from "@/components/monacoEditor/MonacoDiffOperationBar";
+import MonacoOperationBar, { MonacoOperationBarRef } from "@/components/monacoEditor/monacoOperationBar";
 
 const monacoJsonEditorRefs: Record<string, MonacoJsonEditorRef> = {};
+const monacoDiffEditorRefs: Record<string, MonacoDiffEditorRef> = {};
 
 // 函数式导入，并且注入 MonacoJsonEditorRef 类型
 const MonacoJsonEditorWithDynamic = dynamic(
@@ -57,13 +63,44 @@ const MonacoJsonEditorWithDynamic = dynamic(
   },
 );
 
+// 函数式导入，并且注入 MonacoDiffEditorRef 类型
+const MonacoDiffEditorWithDynamic = dynamic(
+  async () => {
+    const { default: Editor } = await import(
+      "@/components/monacoEditor/monacoDiffEditor"
+    );
+
+    const monacoJsonEditor: React.FC<MonacoDiffEditorProps> = (props) => (
+      <Editor
+        ref={(ref) => {
+          if (ref) {
+            monacoDiffEditorRefs[props.tabKey] = ref;
+          }
+        }}
+        {...props}
+      />
+    );
+
+    monacoJsonEditor.displayName = "MonacoDiffEditorWithDynamic";
+
+    return monacoJsonEditor;
+  },
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-full flex items-center justify-center">
+        Loading editor...
+      </div>
+    ),
+  },
+);
+
 export default function Home() {
   const { theme } = useTheme();
   const {
     tabs,
     activeTabKey,
     activeTab,
-    getTabByKey,
     setTabContent,
     setTabVanillaContent,
     setTabVanillaMode,
@@ -73,6 +110,7 @@ export default function Home() {
   const sidebarStore = useSidebarStore();
   const tabRef = useRef<DynamicTabsRef>(null);
   const monacoOperationBarRef = useRef<MonacoOperationBarRef>(null);
+  const monacoDiffOperationBarRef = useRef<MonacoDiffOperationBarRef>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const [editorHeight, setEditorHeight] = useState<number>(300);
   const vanillaJsonEditorRefs = useRef<Record<string, VanillaJsonEditorRef>>(
@@ -85,13 +123,11 @@ export default function Home() {
       const windowHeight = window.innerHeight;
       const editorContainerTop = editorContainerRef.current?.offsetTop;
 
-      console.log("editorContainerTop", editorContainerTop);
       let newHeight = 300;
 
       if (editorContainerTop !== undefined) {
         newHeight = windowHeight - editorContainerTop - 2; // 减去一些额外的边距
       }
-      console.log("newHeight", newHeight);
       setEditorHeight(newHeight); // 设置最小高度
     }
   };
@@ -142,6 +178,51 @@ export default function Home() {
       </>
     );
   };
+
+  // 渲染 MonacoDiffEditor
+  const renderMonacoDiffEditor = () => {
+    return (
+      <>
+        <MonacoDiffOperationBar
+          ref={monacoDiffOperationBarRef}
+          onClear={(type) => {
+            return monacoDiffEditorRefs[activeTabKey].clear(type);
+          }}
+          onCopy={(type) => {
+            return monacoDiffEditorRefs[activeTabKey].copy(type);
+          }}
+          onFieldSort={(type, sort: "asc" | "desc") => {
+            return monacoDiffEditorRefs[activeTabKey].fieldSort(type, sort);
+          }}
+          onFormat={(type) => {
+            return monacoDiffEditorRefs[activeTabKey].format(type);
+          }}
+        />
+        {tabs.map((tab) => {
+          return (
+            <div
+              key={tab.key}
+              className={cn("w-full h-full", {
+                hidden: tab.key !== activeTabKey,
+              })}
+            >
+              <MonacoDiffEditorWithDynamic
+                key={tab.key}
+                height={editorHeight - 45}
+                modifiedValue=""
+                originalValue={tab.content}
+                tabKey={tab.key}
+                theme={theme == "dark" ? "vs-dark" : "vs-light"}
+                onUpdateOriginalValue={(value) => {
+                  setTabContent(tab.key, value);
+                }}
+              />
+            </div>
+          );
+        })}
+      </>
+    );
+  };
   // 渲染 renderVanillaJsonEditor
   const renderVanillaJsonEditor = () => {
     return (
@@ -154,7 +235,8 @@ export default function Home() {
                 hidden: tab.key !== activeTabKey,
                 // localStorage.getItem("theme") == "dark" 解决首屏频闪导致的主题切换闪烁问题
                 "jse-theme-dark":
-                  theme == "dark" || window.localStorage.getItem("theme") == "dark",
+                  theme == "dark" ||
+                  window.localStorage.getItem("theme") == "dark",
               })}
             >
               <VanillaJsonEditor
@@ -190,7 +272,7 @@ export default function Home() {
       case SidebarKeys.treeView:
         return renderVanillaJsonEditor();
       case SidebarKeys.diffView:
-        return <div>diffView</div>;
+        return renderMonacoDiffEditor();
       default:
         return <div>404</div>;
     }
@@ -217,6 +299,9 @@ export default function Home() {
 
     switch (sidebarStore.clickSwitchKey) {
       case SidebarKeys.textView:
+        vanilla2JsonContent();
+        break;
+      case SidebarKeys.diffView:
         vanilla2JsonContent();
         break;
       case SidebarKeys.treeView:

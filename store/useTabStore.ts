@@ -256,6 +256,7 @@ export const useTabStore = create<TabStore>()(
             if (isJSONContent(vanilla)) {
               activeTab.content = JSON.stringify(vanilla.json, null, 2);
               console.log("vanilla2JsonContent 转换成功1", activeTab.content);
+
               // 处理JSON内容
               return {
                 ...state,

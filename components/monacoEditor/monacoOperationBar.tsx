@@ -9,10 +9,11 @@ import {
   DropdownTrigger,
 } from "@nextui-org/react";
 import { Icon } from "@iconify/react";
+import { toast } from "react-toastify";
 
 import StatusButton, { IconStatus } from "@/components/button/statusButton";
 
-interface OperationBarProps {
+interface MonacoOperationBarProps {
   onCopy: (type?: "default" | "compress" | "escape") => boolean;
   onFormat: () => boolean;
   onClear: () => boolean;
@@ -23,7 +24,7 @@ interface OperationBarProps {
 
 export interface MonacoOperationBarRef {}
 
-const MonacoOperationBar: React.FC<OperationBarProps> = ({
+const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
   onCopy,
   onFormat,
   onClear,
@@ -75,7 +76,7 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
   };
 
   return (
-    <div className="h-8 flex items-center space-x-2 p-1 bg-default-100 mb-1">
+    <div className="h-10 flex items-center space-x-2 p-1 bg-default-100 mb-1">
       <ButtonGroup className="ml-3" size="sm" variant="light">
         <StatusButton
           icon="si:copy-line"
@@ -155,7 +156,6 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
         }}
         isOpen={isSortDropdownOpen}
         radius="sm"
-        onOpenChange={setSortDropdownOpen}
       >
         <DropdownTrigger
           onMouseEnter={showSortDropdown}
@@ -183,6 +183,8 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
                 onFieldSort("desc");
                 break;
             }
+            toast.success("字段排序成功");
+            setSortDropdownOpen(false);
           }}
           onMouseEnter={showSortDropdown}
           onMouseLeave={unShowSortDropdown}
@@ -224,7 +226,7 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
         }}
         isOpen={isMoreDropdownOpen}
         radius="sm"
-        onOpenChange={setMoreDropdownOpen}
+        // onOpenChange={setMoreDropdownOpen}
       >
         <DropdownTrigger
           onMouseEnter={showMoreDropdown}
@@ -233,9 +235,7 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
           <Button
             className={cn("pl-0.5 pr-1 h-7 gap-1 text-default-600 !min-w-12")}
             size="sm"
-            startContent={
-              <Icon icon="mingcute:more-2-fill" width={18} />
-            }
+            startContent={<Icon icon="mingcute:more-2-fill" width={18} />}
             variant="light"
           >
             更多
@@ -246,12 +246,19 @@ const MonacoOperationBar: React.FC<OperationBarProps> = ({
           onAction={(key) => {
             switch (key) {
               case "unescape":
-                onMore("unescape");
+                if (onMore("unescape")) {
+                  toast.success("去除转义成功");
+                }
                 break;
               case "del_comment":
-                onMore("del_comment");
+                if (onMore("del_comment")) {
+                  toast.success("移除注释成功");
+                } else {
+                  toast.error("移除注释失败");
+                }
                 break;
             }
+            setMoreDropdownOpen(false);
           }}
           onMouseEnter={showMoreDropdown}
           onMouseLeave={unShowMoreDropdown}

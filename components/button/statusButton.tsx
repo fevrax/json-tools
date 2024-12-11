@@ -22,7 +22,19 @@ export interface StatusButtonProps
 }
 
 const StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>(
-  ({ text, successText, status, icon, iconSize = 18, size = "xs", onClick, endContent }, ref) => {
+  (
+    {
+      text,
+      successText,
+      status,
+      icon,
+      iconSize = 18,
+      size = "xs",
+      onClick,
+      endContent,
+    },
+    ref,
+  ) => {
     const renderIcon = () => {
       switch (status) {
         case IconStatus.Success:
@@ -45,7 +57,7 @@ const StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>(
         size={size === "xs" ? "sm" : size}
         startContent={renderIcon()}
         variant="light"
-        onClick={onClick}
+        onPress={onClick}
       >
         {status === IconStatus.Success && successText ? successText : text}
       </Button>
