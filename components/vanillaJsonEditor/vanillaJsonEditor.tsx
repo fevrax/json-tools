@@ -11,7 +11,7 @@ import {
   Mode,
 } from "vanilla-jsoneditor-cn";
 
-import "@/styles/vanilla.css";
+import "@/styles/vanilla.scss";
 
 export interface VanillaJsonEditorProps {
   ref?: React.Ref<VanillaJsonEditorRef>;

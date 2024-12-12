@@ -45,7 +45,7 @@ export default function RootLayout({
     key: string | React.SyntheticEvent<HTMLUListElement>,
   ) => {
     if (pathname !== "/") {
-      router.push("/");
+      router.push("./");
     }
     sidebarStore.updateClickSwitchKey(key as SidebarKeys);
     // 其他逻辑...
@@ -196,7 +196,7 @@ export default function RootLayout({
                       }
                       variant="light"
                       onPress={() => {
-                        router.push("/settings");
+                        router.push("./settings");
                       }}
                     >
                       {isCollapsed ? (

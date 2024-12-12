@@ -19,7 +19,7 @@ export interface MonacoDiffEditorProps {
   theme?: string;
   onUpdateOriginalValue: (value: string) => void;
   onUpdateModifiedValue?: (value: string) => void;
-  onLoaded?: (loaded: boolean) => void;
+  onLoaded?: () => void;
   ref?: React.Ref<MonacoDiffEditorRef>;
 }
 
@@ -44,7 +44,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   height,
   onUpdateOriginalValue,
   onUpdateModifiedValue,
-                                                             onLoaded,
+  onLoaded,
   ref,
 }) => {
   const editorContainerRef = useRef<HTMLDivElement>(null);
@@ -69,18 +69,16 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     }
   }, [theme]);
 
-  const frist = useRef(true);
 
   // 添加窗口大小变化监听器
   useEffect(() => {
     // 使用 setTimeout 确保在 React 严格模式下只执行一次
     const timeoutId = setTimeout(() => {
-      if (frist.current) {
-        createDiffEditor();
-        frist.current = false;
-        onLoaded && onLoaded(true);
-      }
+      createDiffEditor();
     }, 0);
+
+    onLoaded && onLoaded();
+
     return () => {
       clearTimeout(timeoutId);
       // 如果编辑器已经创建，则销毁
@@ -131,6 +129,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
             links: true, // 是否点击链接
           },
         );
+        onLoaded && onLoaded();
 
         // 设置模型
         const originalModel = monacoInstance.editor.createModel(
@@ -354,7 +353,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     <>
       <div
         ref={editorContainerRef}
-        className={cn("w-full flex-grow")}
+        className={cn("w-full flex-grow pt-0.5")}
         style={{ height: height }}
       />
     </>

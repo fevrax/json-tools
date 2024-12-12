@@ -255,7 +255,6 @@ export const useTabStore = create<TabStore>()(
           try {
             if (isJSONContent(vanilla)) {
               activeTab.content = JSON.stringify(vanilla.json, null, 2);
-              console.log("vanilla2JsonContent 转换成功1", activeTab.content);
 
               // 处理JSON内容
               return {
@@ -266,7 +265,6 @@ export const useTabStore = create<TabStore>()(
               };
             } else if (isTextContent(vanilla)) {
               activeTab.content = vanilla.text;
-              console.log("vanilla2JsonContent 转换成功2", activeTab.content);
 
               // 处理文本内容
               return {
@@ -311,11 +309,11 @@ export const useTabStore = create<TabStore>()(
             };
           } catch (error) {
             // 解析失败的错误处理
-            console.error("jsonContent2VanillaContent 解析失败", error);
+            console.log("jsonContent2VanillaContent 解析失败", error);
 
             // 可以根据需要返回原状态或者特定的错误状态
-            activeTab.vanilla = { json: "" };
-            activeTab.vanillaMode = Mode.tree;
+            activeTab.vanilla = { text: activeTab.content };
+            activeTab.vanillaMode = Mode.text;
 
             return {
               ...state,

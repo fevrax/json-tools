@@ -27,6 +27,7 @@ export interface MonacoJsonEditorProps {
   language?: string;
   theme?: string;
   onUpdateValue: (value: string) => void;
+  onLoaded?: () => void;
   ref?: React.Ref<MonacoJsonEditorRef>;
 }
 
@@ -47,6 +48,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   theme,
   height,
   onUpdateValue,
+  onLoaded,
   ref,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -77,17 +79,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     // calculateHeight();
   }, [theme]);
 
-  const first = useRef(true);
-
   // 添加窗口大小变化监听器
   useEffect(() => {
     // 使用 setTimeout 确保在 React 严格模式下只执行一次
     const timeoutId = setTimeout(() => {
-      if (first.current) {
-        initializeEditor();
-      }
-      first.current = false;
+      initializeEditor();
     }, 0);
+
+    onLoaded && onLoaded();
 
     return () => {
       clearTimeout(timeoutId);
@@ -136,6 +135,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         cursorSurroundingLinesStyle: "all", // "default" | "all" 光标环绕样式
         links: true, // 是否点击链接
       });
+
+      onLoaded && onLoaded();
 
       editor.focus();
 
@@ -491,7 +492,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     <>
       <div
         ref={containerRef}
-        className={cn("w-full flex-grow")}
+        className={cn("w-full flex-grow pt-0.5")}
         style={{ height: height }}
       />
       <ErrorModal

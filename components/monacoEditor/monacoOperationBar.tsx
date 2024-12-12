@@ -46,6 +46,8 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
   const sortDropdownOpenTimeoutRef = React.useRef<NodeJS.Timeout>();
   const moreDropdownOpenTimeoutRef = React.useRef<NodeJS.Timeout>();
 
+  const dropdownTimeout = 300;
+
   const handleCopy = (type?: "compress" | "escape") => {
     onCopy(type);
     setIsCopyDropdownOpen(false);
@@ -60,7 +62,7 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
     clearTimeout(sortDropdownOpenTimeoutRef.current);
     sortDropdownOpenTimeoutRef.current = setTimeout(() => {
       setSortDropdownOpen(false);
-    }, 500);
+    }, dropdownTimeout);
   };
 
   // 更多下拉菜单
@@ -72,11 +74,11 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
     clearTimeout(moreDropdownOpenTimeoutRef.current);
     moreDropdownOpenTimeoutRef.current = setTimeout(() => {
       setMoreDropdownOpen(false);
-    }, 500);
+    }, dropdownTimeout);
   };
 
   return (
-    <div className="h-10 flex items-center space-x-2 p-1 bg-default-100 mb-1">
+    <div className="h-10 flex items-center space-x-2 p-1 bg-default-100">
       <ButtonGroup className="ml-2" variant="light">
         <StatusButton
           icon="si:copy-line"
