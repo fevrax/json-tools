@@ -388,5 +388,5 @@ useTabStore.subscribe(
       storage.setItem(DB_TAB_ACTIVE_KEY, arr[0]);
       storage.setItem(DB_TAB_NEXT_KEY, arr[1]);
     }, timeout);
-  }
+  },
 );

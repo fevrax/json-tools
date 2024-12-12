@@ -1,4 +1,5 @@
 import { create } from "zustand";
+
 import { storage } from "@/lib/indexedDBStore";
 
 interface DataState {
@@ -18,10 +19,11 @@ export const useDBStore = create<DataState>((set) => ({
   },
   loadData: async () => {
     const loadedData = await storage.getItem(STORAGE_KEY);
+
     set({ data: loadedData });
   },
   clearData: async () => {
     await storage.removeItem(STORAGE_KEY);
     set({ data: null });
-  }
+  },
 }));

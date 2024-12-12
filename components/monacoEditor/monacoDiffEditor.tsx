@@ -69,7 +69,6 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     }
   }, [theme]);
 
-
   // 添加窗口大小变化监听器
   useEffect(() => {
     // 使用 setTimeout 确保在 React 严格模式下只执行一次
@@ -353,8 +352,8 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     <>
       <div
         ref={editorContainerRef}
-        className={cn("w-full flex-grow pt-0.5")}
-        style={{ height: height }}
+        className={cn("w-full flex-grow")}
+        style={{ height: height, paddingTop: 1 }}
       />
     </>
   );

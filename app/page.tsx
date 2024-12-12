@@ -291,6 +291,7 @@ export default function Home() {
     calculateHeight();
     window.addEventListener("resize", calculateHeight);
     syncStore();
+
     return () => {
       window.removeEventListener("resize", calculateHeight);
     };
@@ -328,8 +329,8 @@ export default function Home() {
 
   return (
     <div className="dark:bg-vscode-dark h-full">
-      <DynamicTabs ref={tabRef} />
-      <div ref={editorContainerRef}>{renderEditor()}</div>
+      {/*<DynamicTabs ref={tabRef} />*/}
+      {/*<div ref={editorContainerRef}>{renderEditor()}</div>*/}
     </div>
   );
 }

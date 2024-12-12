@@ -324,7 +324,7 @@ export function repairJson(input: string): string {
       const obj = JSON.parse(result);
 
       return JSON.stringify(obj, null, 4);
-    } catch (e) {
+    } catch {
       // console.error('修复后文本解析失败', e.message)
     }
   }

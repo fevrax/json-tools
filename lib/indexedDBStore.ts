@@ -22,6 +22,7 @@ export const storage = {
   getItem: async <T>(key: string): Promise<T | null> => {
     try {
       const value = await localforage.getItem<T>(key);
+
       return value;
     } catch (error) {
       console.error("Error getting item:", error);
