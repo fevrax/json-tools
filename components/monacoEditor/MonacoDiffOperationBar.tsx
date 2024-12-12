@@ -43,7 +43,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
   const clearDropdownOpenTimeoutRef = React.useRef<NodeJS.Timeout>();
 
   const dropdownTimeout = 300;
-
+  
   // 字段排序下拉菜单
   const showCopyDropdown = () => {
     clearTimeout(copyDropdownOpenTimeoutRef.current);

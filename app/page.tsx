@@ -92,7 +92,7 @@ export default function Home() {
   const {
     tabs,
     activeTabKey,
-    activeTab,
+    syncStore,
     setTabContent,
     setTabVanillaContent,
     setTabVanillaMode,
@@ -290,7 +290,7 @@ export default function Home() {
   useEffect(() => {
     calculateHeight();
     window.addEventListener("resize", calculateHeight);
-
+    syncStore();
     return () => {
       window.removeEventListener("resize", calculateHeight);
     };

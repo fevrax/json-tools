@@ -18,6 +18,7 @@
 		"clsx": "2.1.1",
 		"framer-motion": "^11.13.1",
 		"intl-messageformat": "^10.7.8",
+		"localforage": "^1.10.0",
 		"lodash": "^4.17.21",
 		"monaco-editor": "^0.52.0",
 		"monaco-editor-webpack-plugin": "^7.1.0",

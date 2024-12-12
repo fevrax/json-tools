@@ -2,7 +2,9 @@
 import type { SidebarItem } from "@/components/sidebar/sidebar";
 
 import { create } from "zustand";
-import { devtools } from "zustand/middleware";
+import { devtools, subscribeWithSelector } from "zustand/middleware";
+
+import { storage } from "@/lib/indexedDBStore";
 
 export enum SidebarKeys {
   textView = "textView",
@@ -29,26 +31,38 @@ export const items: SidebarItem[] = [
 ];
 
 interface SidebarStore {
-  activeKey: SidebarKeys; // 当前激活的key
-  clickSwitchKey: SidebarKeys; // 点击切换的key 需要执行switchActiveKey切换操作
+  activeKey: SidebarKeys;
+  clickSwitchKey: SidebarKeys;
   updateActiveKey: (key: SidebarKeys) => void;
   updateClickSwitchKey: (key: SidebarKeys) => void;
   switchActiveKey: () => void;
 }
 
+const BD_SIDEBAR_ACTIVE_KEY = "sidebar";
+
 export const useSidebarStore = create<SidebarStore>()(
-  devtools(
-    (set) => ({
-      activeKey: SidebarKeys.diffView,
-      clickSwitchKey: SidebarKeys.diffView,
-      updateActiveKey: (key) => set({ activeKey: key }),
-      updateClickSwitchKey: (key) => set({ clickSwitchKey: key }),
-      switchActiveKey: () =>
-        set((state) => ({ activeKey: state.clickSwitchKey })),
-    }),
-    {
-      name: "SidebarStore", // 可选：为devtools指定一个名称
-      enabled: true,
-    },
+  subscribeWithSelector(
+    devtools(
+      (set) => ({
+        activeKey: SidebarKeys.diffView,
+        clickSwitchKey: SidebarKeys.diffView,
+        updateActiveKey: (key) => set({ activeKey: key }),
+        updateClickSwitchKey: (key) => set({ clickSwitchKey: key }),
+        switchActiveKey: () =>
+          set((state) => ({ activeKey: state.clickSwitchKey })),
+      }),
+      {
+        name: "SidebarStore",
+        enabled: true,
+      },
+    ),
   ),
+);
+
+// 只监听 activeKey 的变化
+useSidebarStore.subscribe(
+  (state) => state.activeKey,
+  (activeKey) => {
+    storage.setItem(BD_SIDEBAR_ACTIVE_KEY, activeKey);
+  },
 );
