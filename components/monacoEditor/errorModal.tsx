@@ -34,7 +34,6 @@ const ErrorModal: React.FC<ErrorModalProps> = ({
   onClose,
   onGotoErrorLine,
   onAutoFix,
-  ref,
 }) => {
   const contextLines = useMemo(() => {
     if (!parseJsonError.current || !parseJsonError.current?.context) return 0;

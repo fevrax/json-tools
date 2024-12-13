@@ -5,6 +5,7 @@ import { create } from "zustand";
 import { devtools, subscribeWithSelector } from "zustand/middleware";
 
 import { storage } from "@/lib/indexedDBStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 export enum SidebarKeys {
   textView = "textView",
@@ -35,6 +36,7 @@ interface SidebarStore {
   clickSwitchKey: SidebarKeys;
   updateActiveKey: (key: SidebarKeys) => void;
   updateClickSwitchKey: (key: SidebarKeys) => void;
+  syncSidebarStore: () => Promise<void>;
   switchActiveKey: () => void;
 }
 
@@ -44,12 +46,22 @@ export const useSidebarStore = create<SidebarStore>()(
   subscribeWithSelector(
     devtools(
       (set) => ({
-        activeKey: SidebarKeys.diffView,
-        clickSwitchKey: SidebarKeys.diffView,
+        activeKey: SidebarKeys.textView,
+        clickSwitchKey: SidebarKeys.textView,
         updateActiveKey: (key) => set({ activeKey: key }),
         updateClickSwitchKey: (key) => set({ clickSwitchKey: key }),
         switchActiveKey: () =>
           set((state) => ({ activeKey: state.clickSwitchKey })),
+        syncSidebarStore: async () => {
+          const activeKey = await storage.getItem(BD_SIDEBAR_ACTIVE_KEY);
+          const data: Record<string, any> = {};
+
+          if (activeKey) {
+            data.activeKey = activeKey;
+            data.clickSwitchKey = activeKey;
+          }
+          set(data);
+        },
       }),
       {
         name: "SidebarStore",
@@ -63,6 +75,8 @@ export const useSidebarStore = create<SidebarStore>()(
 useSidebarStore.subscribe(
   (state) => state.activeKey,
   (activeKey) => {
-    storage.setItem(BD_SIDEBAR_ACTIVE_KEY, activeKey);
+    if (useSettingsStore.getState().editDataSaveLocal) {
+      storage.setItem(BD_SIDEBAR_ACTIVE_KEY, activeKey);
+    }
   },
 );

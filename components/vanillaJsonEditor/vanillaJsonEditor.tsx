@@ -75,7 +75,6 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
       // }
       // emit('update:modelValue', jsonText)
       // sidebarStore.activeTab.vanilla = content
-      console.log("update:modelValue", content);
       onUpdateValue && onUpdateValue(content);
     },
     onChangeMode: (mode: Mode) => {
@@ -99,7 +98,6 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
   };
 
   const initEditor = () => {
-    console.log("init VanillaEditor", content);
     if (containerRef.current) {
       editorRef.current = createJSONEditor({
         target: containerRef.current,
@@ -119,10 +117,6 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
       initEditor();
     }
   }, []);
-
-  // useEffect(() => {
-  //   console.log("66666666 update content", content);
-  // }, [content]);
 
   return (
     <div

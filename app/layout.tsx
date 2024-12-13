@@ -23,6 +23,9 @@ import { items } from "@/components/sidebar/items";
 import { ThemeSwitch } from "@/components/theme-switch";
 import "react-toastify/dist/ReactToastify.css";
 import { SidebarKeys, useSidebarStore } from "@/store/useSidebarStore";
+import { SettingsState, useSettingsStore } from "@/store/useSettingsStore";
+import { storage } from "@/lib/indexedDBStore";
+import { useTabStore } from "@/store/useTabStore";
 
 // export const dynamic = "force-static";
 export default function RootLayout({
@@ -33,6 +36,8 @@ export default function RootLayout({
   const router = useRouter();
 
   const sidebarStore = useSidebarStore();
+  const { setSettings } = useSettingsStore();
+  const { addTab } = useTabStore();
 
   const { isOpen, onOpenChange } = useDisclosure();
   const [isCollapsed, setIsCollapsed] = React.useState(true);
@@ -59,6 +64,21 @@ export default function RootLayout({
     const theme = localStorage.getItem("theme");
 
     setToastTheme(theme || "dark");
+
+    const init = async () => {
+      const settings = await storage.getItem<SettingsState>("settings");
+
+      if (!settings) {
+        return;
+      }
+      setSettings(settings);
+      if (settings.editDataSaveLocal) {
+        setIsCollapsed(!settings.expandSidebar);
+        await sidebarStore.syncSidebarStore();
+      }
+    };
+
+    init();
   }, []);
 
   return (

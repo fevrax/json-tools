@@ -1,48 +1,60 @@
 "use client";
 "use client";
 
-import { Card, CardBody, Select, SelectItem, Switch } from "@nextui-org/react";
+import { Button, Card, CardBody, Select, SelectItem, Switch } from "@nextui-org/react";
 import { Icon } from "@iconify/react";
+import { useTheme } from "next-themes";
+import { toast } from "react-toastify";
+
 import { useSettingsStore } from "@/store/useSettingsStore";
+import { storage } from "@/lib/indexedDBStore";
 
 export default function SettingsPage() {
+  const { theme, setTheme } = useTheme();
   const {
-    darkMode,
     editDataSaveLocal,
-    expandTabs,
-    editorCDN,
-    setDarkMode,
+    expandSidebar,
+    monacoEditorCDN,
     setEditDataSaveLocal,
-    setExpandTabs,
-    setEditorCDN,
+    setExpandSidebar,
+    setMonacoEditorCDN,
   } = useSettingsStore();
 
   const editorLoadOptions = [
-    { label: "本地嵌入", value: "false" },
-    { label: "远程CDN", value: "true" },
+    { label: "本地嵌入", value: "local" },
+    { label: "远程CDN", value: "cdn" },
   ];
 
   const handleSettingChange = (key: string, value: any) => {
     switch (key) {
-      case "darkMode":
-        setDarkMode(value);
-        break;
       case "editDataSaveLocal":
         setEditDataSaveLocal(value);
+        if (!value) {
+          removeStore();
+        }
         break;
-      case "expandTabs":
-        setExpandTabs(value);
+      case "expandSidebar":
+        setExpandSidebar(value);
         break;
-      case "editorCDN":
-        setEditorCDN(value);
+      case "monacoEditorCDN":
+        setMonacoEditorCDN(value);
+        toast.success("编辑器加载方式已更改，请重新加载或刷新后生效");
         reloadApp();
         break;
     }
   };
 
+  const removeStore = () => {
+    storage.removeItem("sidebar");
+    storage.removeItem("tabs");
+    storage.removeItem("tabs_active_key");
+    storage.removeItem("tabs_next_key");
+    toast.success("本地存储已清除");
+  };
+
   const reloadApp = () => {
     // 重载应用的逻辑
-    console.log("App需要重新加载");
+    location.reload();
   };
 
   return (
@@ -64,7 +76,7 @@ export default function SettingsPage() {
         </h2>
       </div>
 
-      <Card fullWidth className="mt-6 py-3 px-2" radius="sm">
+      <Card fullWidth className="mt-6 py-3 px-2" radius="sm" shadow="sm">
         <CardBody>
           <h2 className="text-lg font-medium text-default-900 mb-4">
             常规设置
@@ -74,13 +86,11 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between py-3 border-b dark:border-default-200">
             <div>
               <p className="text-default-900">深色模式</p>
-              <p className="text-sm text-default-500">
-                切换深色主题以保护眼睛
-              </p>
+              <p className="text-sm text-default-500">切换深色主题以保护眼睛</p>
             </div>
             <Switch
-              isSelected={darkMode}
-              onValueChange={(value) => handleSettingChange("darkMode", value)}
+              isSelected={theme === "dark"}
+              onValueChange={(value) => setTheme(value ? "dark" : "light")}
             />
           </div>
 
@@ -104,18 +114,18 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between py-3 border-b dark:border-default-200">
             <div>
               <p className="text-default-900">展开Tab栏</p>
-              <p className="text-sm text-default-500">
-                设置Tab栏是否默认展开
-              </p>
+              <p className="text-sm text-default-500">设置Tab栏是否默认展开</p>
             </div>
             <Switch
-              isSelected={expandTabs}
-              onValueChange={(value) => handleSettingChange("expandTabs", value)}
+              isSelected={expandSidebar}
+              onValueChange={(value) =>
+                handleSettingChange("expandSidebar", value)
+              }
             />
           </div>
 
           {/* 编辑器加载方式 */}
-          <div className="flex items-center justify-between py-3">
+          <div className="flex items-center justify-between py-3 border-b dark:border-default-200">
             <div>
               <p className="text-default-900">编辑器加载方式</p>
               <p className="text-sm text-default-500">
@@ -127,8 +137,10 @@ export default function SettingsPage() {
             <Select
               className="w-[220px]"
               label="加载方式"
-              selectedKeys={[editorCDN]}
-              onChange={(e) => handleSettingChange("editorCDN", e.target.value)}
+              selectedKeys={[monacoEditorCDN]}
+              onChange={(e) =>
+                handleSettingChange("monacoEditorCDN", e.target.value)
+              }
             >
               {editorLoadOptions.map((option) => (
                 <SelectItem key={option.value} value={option.value}>
@@ -136,6 +148,19 @@ export default function SettingsPage() {
                 </SelectItem>
               ))}
             </Select>
+          </div>
+
+          {/* 编辑器加载方式 */}
+          <div className="flex items-center justify-between py-3">
+            <div>
+              <p className="text-default-900">重置应用</p>
+              <p className="text-sm text-default-500">
+                重置应用，清除本地存储，刷新页面后将重新加载应用。
+              </p>
+            </div>
+            <Button color="danger" onPress={() => {
+              removeStore();
+            }}>重置应用</Button>
           </div>
         </CardBody>
       </Card>

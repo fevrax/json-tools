@@ -19,6 +19,8 @@ import {
 } from "@/utils/json";
 import ErrorModal from "@/components/monacoEditor/errorModal";
 import "@/styles/monaco.css";
+import { SettingsState } from "@/store/useSettingsStore";
+import { storage } from "@/lib/indexedDBStore";
 
 export interface MonacoJsonEditorProps {
   tabKey: string;
@@ -101,13 +103,22 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const initializeEditor = async () => {
     // 确保只初始化一次
     if (editorRef.current) return;
+    const settings = await storage.getItem<SettingsState>("settings");
 
-    loader.config({ monaco });
+    if (settings?.monacoEditorCDN == "cdn") {
+      loader.config({
+        paths: {
+          vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs",
+        },
+      });
+      loader.config({ "vs/nls": { availableLanguages: { "*": "zh-cn" } } });
+    } else {
+      loader.config({ monaco });
+    }
 
     const monacoInstance: Monaco = await loader.init();
 
     if (containerRef.current) {
-      console.log("Initializing Monaco editor");
       const editor = monacoInstance.editor.create(containerRef.current, {
         value: value || "",
         language: language || "json",

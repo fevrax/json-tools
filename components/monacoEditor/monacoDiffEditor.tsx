@@ -9,6 +9,8 @@ import { toast } from "react-toastify";
 import { sortJson } from "@/utils/json";
 import "@/styles/monaco.css";
 import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEntity";
+import { storage } from "@/lib/indexedDBStore";
+import { SettingsState } from "@/store/useSettingsStore";
 
 export interface MonacoDiffEditorProps {
   tabKey: string;
@@ -88,13 +90,19 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   }, []); // 空依赖数组确保只在挂载时执行
 
   // 创建差异编辑器实例
-  function createDiffEditor() {
-    // if (settingsStore.settings.editorCDN === 'true') {
-    //   loader.config({ paths: { vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs' } })
-    //   loader.config({ 'vs/nls': { availableLanguages: { '*': 'zh-cn' } } })
-    // } else {
-    // }
-    loader.config({ monaco });
+  async function createDiffEditor() {
+    const settings = await storage.getItem<SettingsState>("settings");
+
+    if (settings?.monacoEditorCDN == "cdn") {
+      loader.config({
+        paths: {
+          vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs",
+        },
+      });
+      loader.config({ "vs/nls": { availableLanguages: { "*": "zh-cn" } } });
+    } else {
+      loader.config({ monaco });
+    }
     loader.init().then((monacoInstance) => {
       if (editorContainerRef.current) {
         // 创建差异编辑器
@@ -151,7 +159,6 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
 
         // 监听原始编辑器内容变化
         originalEditorRef.current.onDidChangeModelContent(() => {
-          console.log("onDidChangeModelContent" + originalValue);
           onUpdateOriginalValue(originalEditorRef.current!.getValue());
         });
 
@@ -167,14 +174,12 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   const formatEditorAction = (
     editorRef: React.MutableRefObject<editor.IStandaloneCodeEditor | null>,
   ) => {
-    console.log("formatEditorAction", editorRef.current);
     editorRef.current?.getAction("editor.action.formatDocument")?.run();
   };
 
   const editorFormat = (type: MonacoDiffEditorEditorType): boolean => {
     switch (type) {
       case MonacoDiffEditorEditorType.left:
-        console.log("format left");
         formatEditorAction(originalEditorRef);
         break;
       case MonacoDiffEditorEditorType.right:
@@ -198,7 +203,6 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     editor: editor.IStandaloneCodeEditor | null,
     jsonText: string,
   ) => {
-    console.log("setEditorValue", editor);
     if (!editor) {
       return;
     }
@@ -207,7 +211,6 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     if (!model) {
       return;
     }
-    console.log("setEditorValue", jsonText);
     editor.executeEdits("", [
       {
         range: model.getFullModelRange(),

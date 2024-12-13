@@ -4,6 +4,7 @@ import { devtools, subscribeWithSelector } from "zustand/middleware";
 import { Content, JSONContent, Mode, TextContent } from "vanilla-jsoneditor-cn";
 
 import { storage } from "@/lib/indexedDBStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 export interface TabItem {
   key: string;
@@ -20,12 +21,12 @@ interface TabStore {
   nextKey: number;
   activeTab: () => TabItem;
   getTabByKey: (key: string) => TabItem | undefined;
-  addTab: () => void;
+  addTab: (title: string | undefined, content: string | undefined) => void;
   addTabSimple: () => void;
   setTabContent: (key: string, content: string) => void;
   setTabVanillaContent: (key: string, content: Content) => void;
   setTabVanillaMode: (key: string, mode: Mode) => void;
-  syncStore: () => Promise<void>;
+  syncTabStore: () => Promise<void>;
   closeTab: (keyToRemove: string) => void;
   setActiveTab: (key: string) => void;
   renameTab: (key: string, newTitle: string) => void;
@@ -59,13 +60,13 @@ export const useTabStore = create<TabStore>()(
           return activeTab || get().tabs[0];
         },
         getTabByKey: (key: string) => get().tabs.find((tab) => tab.key === key),
-        addTab: () =>
+        addTab: (title: string | undefined, content: string | undefined) =>
           set((state) => {
             const newTabKey = `${state.nextKey}`;
             const newTab: TabItem = {
               key: `${state.nextKey}`,
-              title: `New Tab ${newTabKey}`,
-              content: ``,
+              title: `New Tab ${title ? title : newTabKey}`,
+              content: content ? content : ``,
               vanillaMode: Mode.tree,
               closable: true,
             };
@@ -138,7 +139,7 @@ export const useTabStore = create<TabStore>()(
             return { tabs: updatedTabs };
           }),
         // 从 IndexedDB 同步数据
-        syncStore: async () => {
+        syncTabStore: async () => {
           const tabs = await storage.getItem<TabItem[]>(DB_TABS);
           const activeTabKey = await storage.getItem<string>(DB_TAB_ACTIVE_KEY);
           const nextKey = await storage.getItem<number>(DB_TAB_NEXT_KEY);
@@ -153,7 +154,6 @@ export const useTabStore = create<TabStore>()(
           if (nextKey) {
             data.nextKey = nextKey;
           }
-          console.log("syncStore", tabs, activeTabKey, nextKey);
           set({
             ...data,
           });
@@ -365,28 +365,31 @@ const DB_TAB_NEXT_KEY = "tabs_next_key";
 
 let tabsSaveTimeout: NodeJS.Timeout;
 let tabActiveSaveTimeout: NodeJS.Timeout;
-const timeout = 4000;
+const timeout = 3000;
 
 useTabStore.subscribe(
   (state) => state.tabs,
   (tabs) => {
-    clearTimeout(tabsSaveTimeout);
-    // 5 秒后保存
-    tabsSaveTimeout = setTimeout(() => {
-      storage.setItem(DB_TABS, tabs);
-    }, 4000);
+    if (useSettingsStore.getState().editDataSaveLocal) {
+      clearTimeout(tabsSaveTimeout);
+      // 5 秒后保存
+      tabsSaveTimeout = setTimeout(() => {
+        storage.setItem(DB_TABS, tabs);
+      }, 4000);
+    }
   },
 );
 
 useTabStore.subscribe(
   (state) => [state.activeTabKey, state.nextKey],
   (arr) => {
-    clearTimeout(tabActiveSaveTimeout);
-    console.log("useTabStore.subscribe", arr);
-    // 5 秒后保存
-    tabActiveSaveTimeout = setTimeout(() => {
-      storage.setItem(DB_TAB_ACTIVE_KEY, arr[0]);
-      storage.setItem(DB_TAB_NEXT_KEY, arr[1]);
-    }, timeout);
+    if (useSettingsStore.getState().editDataSaveLocal) {
+      clearTimeout(tabActiveSaveTimeout);
+      // 5 秒后保存
+      tabActiveSaveTimeout = setTimeout(() => {
+        storage.setItem(DB_TAB_ACTIVE_KEY, arr[0]);
+        storage.setItem(DB_TAB_NEXT_KEY, arr[1]);
+      }, timeout);
+    }
   },
 );

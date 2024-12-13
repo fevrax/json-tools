@@ -61,7 +61,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({ ref }) => {
       ) as HTMLElement;
 
       if (activeTabKey === "add") {
-        addTab();
+        addTab(undefined, undefined);
 
         return;
       }
@@ -360,14 +360,14 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({ ref }) => {
             role="button"
             tabIndex={0}
             onClick={(e) => {
-              addTab();
+              addTab(undefined, undefined);
               e.stopPropagation();
             }}
             onContextMenu={(e) => {
               addTabSimple();
               e.preventDefault();
             }}
-            onKeyDown={(e) => handleKeyDown(e, addTab)}
+            onKeyDown={(e) => handleKeyDown(e, () => {addTab(undefined, undefined)})}
           >
             <Icon icon="mi:add" width={22} />
           </div>

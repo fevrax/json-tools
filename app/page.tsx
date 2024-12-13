@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useRef, useState, useEffect, useLayoutEffect } from "react";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import { cn, Skeleton } from "@nextui-org/react";
@@ -29,6 +29,8 @@ import MonacoDiffOperationBar, {
 import MonacoOperationBar, {
   MonacoOperationBarRef,
 } from "@/components/monacoEditor/monacoOperationBar";
+import { SettingsState } from "@/store/useSettingsStore";
+import { storage } from "@/lib/indexedDBStore";
 
 const monacoJsonEditorRefs: Record<string, MonacoJsonEditorRef> = {};
 const monacoDiffEditorRefs: Record<string, MonacoDiffEditorRef> = {};
@@ -92,7 +94,8 @@ export default function Home() {
   const {
     tabs,
     activeTabKey,
-    syncStore,
+    addTab,
+    syncTabStore,
     setTabContent,
     setTabVanillaContent,
     setTabVanillaMode,
@@ -287,10 +290,28 @@ export default function Home() {
     }
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     calculateHeight();
+
     window.addEventListener("resize", calculateHeight);
-    syncStore();
+
+    const init = async () => {
+      const settings = await storage.getItem<SettingsState>("settings");
+
+      if (settings?.editDataSaveLocal) {
+        await syncTabStore();
+      }
+
+      if ((window as any).utools) {
+        (window as any).utools.onPluginEnter((data: any) => {
+          if (data.type === "regex") {
+            addTab(undefined, data.payload);
+          }
+        });
+      }
+    };
+
+    init();
 
     return () => {
       window.removeEventListener("resize", calculateHeight);
@@ -329,8 +350,8 @@ export default function Home() {
 
   return (
     <div className="dark:bg-vscode-dark h-full">
-      {/*<DynamicTabs ref={tabRef} />*/}
-      {/*<div ref={editorContainerRef}>{renderEditor()}</div>*/}
+      <DynamicTabs ref={tabRef} />
+      <div ref={editorContainerRef}>{renderEditor()}</div>
     </div>
   );
 }
