@@ -46,7 +46,7 @@ export const useTabStore = create<TabStore>()(
           {
             key: "1",
             title: "New Tab 1",
-            content: `{"name": "Tab 1"}`,
+            content: ``,
             closable: true,
           },
         ],
