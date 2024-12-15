@@ -87,13 +87,9 @@ export default function RootLayout({
         <title>JSON Tools - 多功能JSON处理助手</title>
         <meta content="JSON Tools - 多功能JSON处理助手" name="description" />
         <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-        <link href="/favicon.png" rel="icon" />
+        <link href="./favicon.png" rel="icon" />
       </head>
-      <body
-        className={clsx(
-          "min-h-screen dark:bg-default-100 font-sans antialiased",
-        )}
-      >
+      <body className={clsx("min-h-screen dark:bg-default-100  font-mono antialiased")}>
         <Providers themeProps={{ attribute: "class", defaultTheme: "dark" }}>
           <div className="relative flex h-dvh w-full">
             {/* Sidebar */}

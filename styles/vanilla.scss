@@ -3,6 +3,10 @@
     /* define a custom theme color */
     --jse-theme-color: #9a38fc;
     --jse-theme-color-highlight: #b160fb;
+
+    //  var(--jse-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif)
+    --jse-font-family: "JetBrains Mono", zhuziAwan, sans-serif ;
+    --jse-font-family-mono: "JetBrains Mono", zhuziAwan, sans-serif ;
     //--jse-theme-color: #383e42;
     //--jse-theme-color-highlight: #687177;
 

@@ -40,7 +40,8 @@ useSettingsStore.subscribe((state) => {
   const data = {
     editDataSaveLocal: state.editDataSaveLocal,
     expandSidebar: state.expandSidebar,
-    monacoEditorCDN: state.monacoEditorCDN
+    monacoEditorCDN: state.monacoEditorCDN,
   };
+
   storage.setItem("settings", data);
 });

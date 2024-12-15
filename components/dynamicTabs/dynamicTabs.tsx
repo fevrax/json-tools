@@ -367,7 +367,11 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({ ref }) => {
               addTabSimple();
               e.preventDefault();
             }}
-            onKeyDown={(e) => handleKeyDown(e, () => {addTab(undefined, undefined)})}
+            onKeyDown={(e) =>
+              handleKeyDown(e, () => {
+                addTab(undefined, undefined);
+              })
+            }
           >
             <Icon icon="mi:add" width={22} />
           </div>

@@ -10,8 +10,7 @@ const config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-sans)"],
-        mono: ["var(--font-mono)"]
+        mono: ["JetBrains Mono", "zhuziAwan", "sans-serif"],
       },
       // 自定义滚动条隐藏类
       colors: {

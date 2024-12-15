@@ -126,6 +126,7 @@ export default function Home() {
       if (editorContainerTop !== undefined) {
         newHeight = windowHeight - editorContainerTop - 2; // 减去一些额外的边距
       }
+      console.log("newHeight", newHeight);
       setEditorHeight(newHeight); // 设置最小高度
     }
   };
@@ -218,7 +219,7 @@ export default function Home() {
               >
                 <MonacoDiffEditorWithDynamic
                   key={tab.key}
-                  height={editorHeight - 45}
+                  height={editorHeight - 42}
                   modifiedValue=""
                   originalValue={tab.content}
                   tabKey={tab.key}

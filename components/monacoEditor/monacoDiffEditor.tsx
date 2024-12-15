@@ -11,6 +11,7 @@ import "@/styles/monaco.css";
 import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEntity";
 import { storage } from "@/lib/indexedDBStore";
 import { SettingsState } from "@/store/useSettingsStore";
+import { jetbrainsMono, zhuziAwan } from "@/config/fonts";
 
 export interface MonacoDiffEditorProps {
   tabKey: string;
@@ -115,6 +116,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
             minimap: {
               enabled: true, // 启用缩略图
             },
+            fontFamily: `${jetbrainsMono.style.fontFamily}, ${zhuziAwan.style.fontFamily}, sans-serif`, // 字体
             colorDecorators: true, // 颜色装饰器
             readOnly: false, // 是否开启已读功能
             theme: theme || "vs-light", // 主题

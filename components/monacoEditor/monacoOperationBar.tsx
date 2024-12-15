@@ -105,8 +105,8 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
           <DropdownTrigger>
             <Button
               isIconOnly
-              className="p-0 m-0 min-w-[0px] w-auto"
-              startContent={<Icon icon="formkit:down" width={18} />}
+              className="p-0 m-0 min-w-[22px] w-auto"
+              startContent={<Icon icon="formkit:down" width={16} />}
             />
           </DropdownTrigger>
           <DropdownMenu
@@ -123,7 +123,7 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
             }}
           >
             <DropdownItem key="compress" textValue="压缩后复制">
-              <div className="flex items-center space-x-2 text-xs">
+              <div className="flex items-center space-x-2">
                 <Icon icon="f7:rectangle-compress-vertical" width={16} />
                 <span>压缩后复制</span>
               </div>
@@ -164,10 +164,9 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
           onMouseLeave={unShowSortDropdown}
         >
           <Button
-            className={cn("pl-1 pr-1 h-8 gap-1 text-default-600")}
-            size="sm"
+            className={cn("pl-2 pr-1 h-8 gap-1 text-default-600")}
             startContent={
-              <Icon icon="fluent:arrow-sort-24-regular" width={18} />
+              <Icon icon="fluent:arrow-sort-24-regular" width={16} />
             }
             variant="light"
           >

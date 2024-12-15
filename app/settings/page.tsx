@@ -1,7 +1,14 @@
 "use client";
 "use client";
 
-import { Button, Card, CardBody, Select, SelectItem, Switch } from "@nextui-org/react";
+import {
+  Button,
+  Card,
+  CardBody,
+  Select,
+  SelectItem,
+  Switch,
+} from "@nextui-org/react";
 import { Icon } from "@iconify/react";
 import { useTheme } from "next-themes";
 import { toast } from "react-toastify";
@@ -158,9 +165,14 @@ export default function SettingsPage() {
                 重置应用，清除本地存储，刷新页面后将重新加载应用。
               </p>
             </div>
-            <Button color="danger" onPress={() => {
-              removeStore();
-            }}>重置应用</Button>
+            <Button
+              color="danger"
+              onPress={() => {
+                removeStore();
+              }}
+            >
+              重置应用
+            </Button>
           </div>
         </CardBody>
       </Card>
