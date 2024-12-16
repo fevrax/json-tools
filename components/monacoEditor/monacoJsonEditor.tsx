@@ -21,7 +21,7 @@ import ErrorModal from "@/components/monacoEditor/errorModal";
 import "@/styles/monaco.css";
 import { SettingsState } from "@/store/useSettingsStore";
 import { storage } from "@/lib/indexedDBStore";
-import { jetbrainsMono, zhuziAwan } from "@/config/fonts";
+import { jetbrainsMono } from "@/config/fonts";
 
 export interface MonacoJsonEditorProps {
   tabKey: string;
@@ -126,7 +126,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         minimap: {
           enabled: true, // 启用缩略图
         },
-        fontFamily: `${jetbrainsMono.style.fontFamily}, ${zhuziAwan.style.fontFamily}, sans-serif`, // 字体
+        fontFamily: `${jetbrainsMono.style.fontFamily}, "Arial","Microsoft YaHei","黑体","宋体", sans-serif`, // 字体
         colorDecorators: true, // 颜色装饰器
         readOnly: false, // 是否开启已读功能
         theme: theme || "vs-light", // 主题

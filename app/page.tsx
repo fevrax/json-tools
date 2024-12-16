@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect, useLayoutEffect } from "react";
 import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
-import { cn, Skeleton } from "@nextui-org/react";
+import { cn } from "@nextui-org/react";
 
 import { useTabStore } from "@/store/useTabStore";
 import DynamicTabs, {
@@ -126,7 +126,6 @@ export default function Home() {
       if (editorContainerTop !== undefined) {
         newHeight = windowHeight - editorContainerTop - 2; // 减去一些额外的边距
       }
-      console.log("newHeight", newHeight);
       setEditorHeight(newHeight); // 设置最小高度
     }
   };
@@ -153,34 +152,28 @@ export default function Home() {
             return monacoJsonEditorRefs[activeTabKey].moreAction(key);
           }}
         />
-        <Skeleton
-          className="rounded-md"
-          isLoaded={monacoEditorLoaded}
-          style={{ height: "calc(100vh - 84px)" }}
-        >
-          {tabs.map((tab) => {
-            return (
-              <div
+        {tabs.map((tab) => {
+          return (
+            <div
+              key={tab.key}
+              className={cn("w-full h-full", {
+                hidden: tab.key !== activeTabKey,
+              })}
+            >
+              <MonacoJsonEditorWithDynamic
                 key={tab.key}
-                className={cn("w-full h-full", {
-                  hidden: tab.key !== activeTabKey,
-                })}
-              >
-                <MonacoJsonEditorWithDynamic
-                  key={tab.key}
-                  height={editorHeight - 40}
-                  tabKey={tab.key}
-                  theme={theme == "dark" ? "vs-dark" : "vs-light"}
-                  value={tab.content}
-                  onLoaded={() => setMonacoEditorLoaded(true)}
-                  onUpdateValue={(value) => {
-                    setTabContent(tab.key, value);
-                  }}
-                />
-              </div>
-            );
-          })}
-        </Skeleton>
+                height={editorHeight - 40}
+                tabKey={tab.key}
+                theme={theme == "dark" ? "vs-dark" : "vs-light"}
+                value={tab.content}
+                onLoaded={() => setMonacoEditorLoaded(true)}
+                onUpdateValue={(value) => {
+                  setTabContent(tab.key, value);
+                }}
+              />
+            </div>
+          );
+        })}
       </>
     );
   };
@@ -204,35 +197,29 @@ export default function Home() {
             return monacoDiffEditorRefs[activeTabKey].format(type);
           }}
         />
-        <Skeleton
-          className="rounded-md"
-          isLoaded={monacoDiffEditorLoaded}
-          style={{ height: "calc(100vh - 84px)" }}
-        >
-          {tabs.map((tab) => {
-            return (
-              <div
+        {tabs.map((tab) => {
+          return (
+            <div
+              key={tab.key}
+              className={cn("w-full h-full", {
+                hidden: tab.key !== activeTabKey,
+              })}
+            >
+              <MonacoDiffEditorWithDynamic
                 key={tab.key}
-                className={cn("w-full h-full", {
-                  hidden: tab.key !== activeTabKey,
-                })}
-              >
-                <MonacoDiffEditorWithDynamic
-                  key={tab.key}
-                  height={editorHeight - 42}
-                  modifiedValue=""
-                  originalValue={tab.content}
-                  tabKey={tab.key}
-                  theme={theme == "dark" ? "vs-dark" : "vs-light"}
-                  onLoaded={() => setMonacoDiffEditorLoaded(true)}
-                  onUpdateOriginalValue={(value) => {
-                    setTabContent(tab.key, value);
-                  }}
-                />
-              </div>
-            );
-          })}
-        </Skeleton>
+                height={editorHeight - 42}
+                modifiedValue=""
+                originalValue={tab.content}
+                tabKey={tab.key}
+                theme={theme == "dark" ? "vs-dark" : "vs-light"}
+                onLoaded={() => setMonacoDiffEditorLoaded(true)}
+                onUpdateOriginalValue={(value) => {
+                  setTabContent(tab.key, value);
+                }}
+              />
+            </div>
+          );
+        })}
       </div>
     );
   };
