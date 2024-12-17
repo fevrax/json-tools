@@ -92,18 +92,20 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
 
   // 创建差异编辑器实例
   async function createDiffEditor() {
-    const settings = await storage.getItem<SettingsState>("settings");
+    // const settings = await storage.getItem<SettingsState>("settings");
 
-    if (settings?.monacoEditorCDN == "cdn") {
-      loader.config({
-        paths: {
-          vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs",
-        },
-      });
-      loader.config({ "vs/nls": { availableLanguages: { "*": "zh-cn" } } });
-    } else {
-      loader.config({ monaco });
-    }
+    // if (settings?.monacoEditorCDN == "cdn") {
+    //   loader.config({
+    //     paths: {
+    //       vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs",
+    //     },
+    //   });
+    //   loader.config({ "vs/nls": { availableLanguages: { "*": "zh-cn" } } });
+    // } else {
+    //   loader.config({ monaco });
+    // }
+    loader.config({ monaco });
+
     loader.init().then((monacoInstance) => {
       if (editorContainerRef.current) {
         // 创建差异编辑器

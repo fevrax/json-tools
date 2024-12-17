@@ -56,7 +56,7 @@ export default function SettingsPage() {
     storage.removeItem("tabs");
     storage.removeItem("tabs_active_key");
     storage.removeItem("tabs_next_key");
-    toast.success("本地存储已清除");
+    toast.success("本地存储已清除, 请重新加载或刷新页面");
   };
 
   const reloadApp = () => {
@@ -131,31 +131,31 @@ export default function SettingsPage() {
             />
           </div>
 
-          {/* 编辑器加载方式 */}
-          <div className="flex items-center justify-between py-3 border-b dark:border-default-200">
-            <div>
-              <p className="text-default-900">编辑器加载方式</p>
-              <p className="text-sm text-default-500">
-                1. 本地加载，首屏加载速度快，暂不支持中文。
-                <br />
-                2. CDN(需联网)，首屏加载速度稍慢，支持中文。
-              </p>
-            </div>
-            <Select
-              className="w-[220px]"
-              label="加载方式"
-              selectedKeys={[monacoEditorCDN]}
-              onChange={(e) =>
-                handleSettingChange("monacoEditorCDN", e.target.value)
-              }
-            >
-              {editorLoadOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </Select>
-          </div>
+          {/*/!* 编辑器加载方式 *!/*/}
+          {/*<div className="flex items-center justify-between py-3 border-b dark:border-default-200">*/}
+          {/*  <div>*/}
+          {/*    <p className="text-default-900">编辑器加载方式</p>*/}
+          {/*    <p className="text-sm text-default-500">*/}
+          {/*      1. 本地加载，首屏加载速度快，暂不支持中文。*/}
+          {/*      <br />*/}
+          {/*      2. CDN(需联网)，首屏加载速度稍慢，支持中文。*/}
+          {/*    </p>*/}
+          {/*  </div>*/}
+          {/*  <Select*/}
+          {/*    className="w-[220px]"*/}
+          {/*    label="加载方式"*/}
+          {/*    selectedKeys={[monacoEditorCDN]}*/}
+          {/*    onChange={(e) =>*/}
+          {/*      handleSettingChange("monacoEditorCDN", e.target.value)*/}
+          {/*    }*/}
+          {/*  >*/}
+          {/*    {editorLoadOptions.map((option) => (*/}
+          {/*      <SelectItem key={option.value} value={option.value}>*/}
+          {/*        {option.label}*/}
+          {/*      </SelectItem>*/}
+          {/*    ))}*/}
+          {/*  </Select>*/}
+          {/*</div>*/}
 
           {/* 编辑器加载方式 */}
           <div className="flex items-center justify-between py-3">
