@@ -26,6 +26,7 @@ import MonacoOperationBar, {
 } from "@/components/monacoEditor/monacoOperationBar";
 import { SettingsState } from "@/store/useSettingsStore";
 import { storage } from "@/lib/indexedDBStore";
+import { Content } from "vanilla-jsoneditor-cn";
 
 export default function IndexPage() {
   const { theme } = useTheme();
@@ -35,12 +36,15 @@ export default function IndexPage() {
   const {
     tabs,
     activeTabKey,
+    activeTab,
     addTab,
     setTabContent,
     syncTabStore,
     setTabVanillaContent,
     setTabVanillaMode,
     vanilla2JsonContent,
+    setMonacoVersion,
+    setVanillaVersion,
     jsonContent2VanillaContent,
   } = useTabStore();
   const sidebarStore = useSidebarStore();
@@ -50,6 +54,12 @@ export default function IndexPage() {
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const [editorHeight, setEditorHeight] = useState<number>(0);
   const vanillaJsonEditorRefs = useRef<Record<string, VanillaJsonEditorRef>>(
+    {},
+  );
+  const monacoUpdateContentTimeoutId = useRef<Record<string, NodeJS.Timeout>>(
+    {},
+  );
+  const vanillaUpdateContentTimeoutId = useRef<Record<string, NodeJS.Timeout>>(
     {},
   );
 
@@ -66,6 +76,22 @@ export default function IndexPage() {
       }
       setEditorHeight(newHeight); // 设置最小高度
     }
+  };
+
+  // MonacoJsonEditor 更新内容后同步
+  const monacoEditorUpdateContent = (key: string, content: string) => {
+    clearTimeout(monacoUpdateContentTimeoutId.current[key]);
+    monacoUpdateContentTimeoutId.current[key] = setTimeout(() => {
+      setTabContent(key, content);
+    }, 800);
+  };
+
+  // VanillaJsonEditor 更新内容后同步
+  const vanillaEditorUpdateContent = (key: string, content: Content) => {
+    clearTimeout(vanillaUpdateContentTimeoutId.current[key]);
+    vanillaUpdateContentTimeoutId.current[key] = setTimeout(() => {
+      setTabVanillaContent(key, content);
+    }, 1500);
   };
 
   // 渲染 MonacoJsonEditor
@@ -110,7 +136,7 @@ export default function IndexPage() {
                 theme={theme === "dark" ? "vs-dark" : "vs-light"}
                 value={tab.content}
                 onUpdateValue={(value) => {
-                  setTabContent(tab.key, value);
+                  monacoEditorUpdateContent(tab.key, value);
                 }}
               />
             </div>
@@ -163,7 +189,7 @@ export default function IndexPage() {
                 tabKey={tab.key}
                 theme={theme === "dark" ? "vs-dark" : "vs-light"}
                 onUpdateOriginalValue={(value) => {
-                  setTabContent(tab.key, value);
+                  monacoEditorUpdateContent(tab.key, value);
                 }}
               />
             </div>
@@ -201,7 +227,7 @@ export default function IndexPage() {
                   setTabVanillaMode(tab.key, mode);
                 }}
                 onUpdateValue={(content) => {
-                  setTabVanillaContent(tab.key, content);
+                  vanillaEditorUpdateContent(tab.key, content);
                 }}
               />
             </div>
@@ -222,6 +248,50 @@ export default function IndexPage() {
         return renderMonacoDiffEditor();
       default:
         return <div>404</div>;
+    }
+  };
+
+  const tabSwitchHandle = () => {
+    const currentTab = activeTab();
+
+    // 如果当前 tab 存在 monaco 版本和 vanilla 版本不一致, 则需要同步数据
+    if (currentTab && currentTab.monacoVersion != currentTab.vanillaVersion) {
+      switch (sidebarStore.clickSwitchKey) {
+        case SidebarKeys.textView:
+          // 如果切换之前是 diff 视图着不需要处理
+          if (sidebarStore.activeKey == SidebarKeys.diffView) {
+            break;
+          }
+          vanilla2JsonContent(activeTabKey);
+          setMonacoVersion(activeTabKey, currentTab.vanillaVersion);
+          // 强制更新 monaco 编辑器内容
+          monacoJsonEditorRefs.current[currentTab.key].updateValue(
+            activeTab().content,
+          );
+          break;
+        case SidebarKeys.diffView:
+          // 如果切换之前是 text 视图着不需要处理
+          if (sidebarStore.activeKey == SidebarKeys.textView) {
+            break;
+          }
+          vanilla2JsonContent(activeTabKey);
+          setMonacoVersion(activeTabKey, currentTab.vanillaVersion);
+          monacoDiffEditorRefs.current[currentTab.key]?.updateOriginalValue(
+            activeTab().content,
+          );
+          break;
+        case SidebarKeys.treeView:
+          jsonContent2VanillaContent(activeTabKey);
+          setVanillaVersion(activeTabKey, currentTab.monacoVersion);
+          const tempTab = activeTab();
+
+          if (tempTab && tempTab.vanilla) {
+            vanillaJsonEditorRefs.current[
+              tempTab.key
+            ]?.updateEditorContentAndMode(tempTab.vanillaMode, tempTab.vanilla);
+          }
+          break;
+      }
     }
   };
 
@@ -260,32 +330,15 @@ export default function IndexPage() {
     }
   }, [activeTabKey]);
 
+  // 切换视图时同步数据
   useEffect(() => {
-    switch (sidebarStore.clickSwitchKey) {
-      case SidebarKeys.textView:
-        // 如果切换之前是 diff 视图着不需要处理
-        if (sidebarStore.activeKey == SidebarKeys.diffView) {
-          break;
-        }
-        vanilla2JsonContent();
-        break;
-      case SidebarKeys.diffView:
-        // 如果切换之前是 text 视图着不需要处理
-        if (sidebarStore.activeKey == SidebarKeys.textView) {
-          break;
-        }
-        vanilla2JsonContent();
-        break;
-      case SidebarKeys.treeView:
-        jsonContent2VanillaContent();
-        break;
-    }
+    tabSwitchHandle();
     sidebarStore.switchActiveKey();
   }, [sidebarStore.clickSwitchKey]);
 
   return (
     <div className="dark:bg-vscode-dark h-full">
-      <DynamicTabs ref={tabRef} />
+      <DynamicTabs ref={tabRef} onSwitch={tabSwitchHandle} />
       <div ref={editorContainerRef}>{renderEditor()}</div>
     </div>
   );

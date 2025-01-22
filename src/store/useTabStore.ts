@@ -11,7 +11,9 @@ export interface TabItem {
   key: string;
   title: string;
   content: string;
+  monacoVersion: number; // 乐观锁
   vanilla?: Content;
+  vanillaVersion: number;
   vanillaMode: Mode;
   closable?: boolean;
 }
@@ -28,6 +30,8 @@ interface TabStore {
   setTabContent: (key: string, content: string) => void;
   setTabVanillaContent: (key: string, content: Content) => void;
   setTabVanillaMode: (key: string, mode: Mode) => void;
+  setMonacoVersion: (key: string, version: number) => void;
+  setVanillaVersion: (key: string, version: number) => void;
   syncTabStore: () => Promise<void>;
   closeTab: (keyToRemove: string) => void;
   setActiveTab: (key: string) => void;
@@ -35,8 +39,8 @@ interface TabStore {
   closeOtherTabs: (currentKey: string) => void;
   closeLeftTabs: (currentKey: string) => void;
   closeRightTabs: (currentKey: string) => void;
-  vanilla2JsonContent: () => void;
-  jsonContent2VanillaContent: () => void;
+  vanilla2JsonContent: (key: string) => void;
+  jsonContent2VanillaContent: (key: string) => void;
   closeAllTabs: () => void;
 }
 
@@ -64,6 +68,8 @@ export const useTabStore = create<TabStore>()(
               content: content ? content : ``,
               vanillaMode: Mode.tree,
               closable: true,
+              vanillaVersion: 0,
+              monacoVersion: 0,
             };
 
             return {
@@ -81,6 +87,8 @@ export const useTabStore = create<TabStore>()(
                 content: ``,
                 closable: true,
                 vanillaMode: Mode.text,
+                vanillaVersion: 0,
+                monacoVersion: 0,
               },
             ];
 
@@ -119,6 +127,8 @@ export const useTabStore = create<TabStore>()(
 }`,
               vanillaMode: Mode.tree,
               closable: true,
+              monacoVersion: 1,
+              vanillaVersion: 0,
             };
 
             return {
@@ -127,10 +137,38 @@ export const useTabStore = create<TabStore>()(
               nextKey: state.nextKey + 1,
             };
           }),
+        setMonacoVersion: (key: string, version: number) =>
+          set((state) => {
+            const updatedTabs = state.tabs.map((tab) =>
+              tab.key === key
+                ? {
+                    ...tab,
+                    monacoVersion: version,
+                  }
+                : tab,
+            );
+
+            return { tabs: updatedTabs };
+          }),
+        setVanillaVersion: (key: string, version: number) =>
+          set((state) => {
+            const updatedTabs = state.tabs.map((tab) =>
+              tab.key === key
+                ? {
+                    ...tab,
+                    vanillaVersion: version,
+                  }
+                : tab,
+            );
+
+            return { tabs: updatedTabs };
+          }),
         setTabContent: (key, content) =>
           set((state) => {
             const updatedTabs = state.tabs.map((tab) =>
-              tab.key === key ? { ...tab, content } : tab,
+              tab.key === key
+                ? { ...tab, content, monacoVersion: ++tab.monacoVersion }
+                : tab,
             );
 
             return { tabs: updatedTabs };
@@ -138,7 +176,13 @@ export const useTabStore = create<TabStore>()(
         setTabVanillaContent: (key: string, content: Content) =>
           set((state) => {
             const updatedTabs = state.tabs.map((tab) =>
-              tab.key === key ? { ...tab, vanilla: content } : tab,
+              tab.key === key
+                ? {
+                    ...tab,
+                    vanilla: content,
+                    vanillaVersion: ++tab.vanillaVersion,
+                  }
+                : tab,
             );
 
             return { tabs: updatedTabs };
@@ -262,6 +306,8 @@ export const useTabStore = create<TabStore>()(
                 content: "",
                 vanillaMode: Mode.tree,
                 closable: true,
+                monacoVersion: 0,
+                vanillaVersion: 0,
               },
             ];
 
@@ -271,9 +317,9 @@ export const useTabStore = create<TabStore>()(
               nextKey: 2,
             };
           }),
-        vanilla2JsonContent: () =>
+        vanilla2JsonContent: (key: string) =>
           set((state) => {
-            const activeTab = get().activeTab();
+            const activeTab = get().getTabByKey(key);
 
             // 处理空值情况
             if (!activeTab || !activeTab.vanilla) {
@@ -325,12 +371,12 @@ export const useTabStore = create<TabStore>()(
               return state;
             }
           }),
-        jsonContent2VanillaContent: () =>
+        jsonContent2VanillaContent: (key: string) =>
           set((state) => {
-            const activeTab = get().activeTab();
+            const activeTab = get().getTabByKey(key);
 
             // 处理空内容情况
-            if (!activeTab || !activeTab.content) {
+            if (!activeTab) {
               return state;
             }
 
@@ -339,6 +385,7 @@ export const useTabStore = create<TabStore>()(
               const parsedJson = JSON.parse(activeTab.content);
 
               activeTab.vanilla = { json: parsedJson };
+              activeTab.vanillaMode = Mode.tree;
 
               return {
                 ...state,
@@ -380,17 +427,16 @@ const DB_TAB_NEXT_KEY = "tabs_next_key";
 
 let tabsSaveTimeout: NodeJS.Timeout;
 let tabActiveSaveTimeout: NodeJS.Timeout;
-const timeout = 3000;
+const timeout = 2000;
 
 useTabStore.subscribe(
   (state) => state.tabs,
   (tabs) => {
     if (useSettingsStore.getState().editDataSaveLocal) {
       clearTimeout(tabsSaveTimeout);
-      // 5 秒后保存
       tabsSaveTimeout = setTimeout(() => {
         storage.setItem(DB_TABS, tabs);
-      }, 4000);
+      }, timeout);
     }
   },
 );
@@ -400,7 +446,6 @@ useTabStore.subscribe(
   (arr) => {
     if (useSettingsStore.getState().editDataSaveLocal) {
       clearTimeout(tabActiveSaveTimeout);
-      // 5 秒后保存
       tabActiveSaveTimeout = setTimeout(() => {
         storage.setItem(DB_TAB_ACTIVE_KEY, arr[0]);
         storage.setItem(DB_TAB_NEXT_KEY, arr[1]);

@@ -10,20 +10,19 @@ import {
   DropdownItem,
 } from "@heroui/react";
 
-import { useTabStore, TabItem } from "../../store/useTabStore";
-import { IcRoundClose } from "../icons";
+import { useTabStore, TabItem } from "@/store/useTabStore";
+import { IcRoundClose } from "@/components/icons";
 
 export interface DynamicTabsRef {
-  // 可以根据需要添加方法
   getPositionTop: () => number;
-  // 其他可能需要暴露的方法
 }
 
 export interface DynamicTabsProps {
   ref?: React.Ref<DynamicTabsRef>;
+  onSwitch: (key: string) => void;
 }
 
-const DynamicTabs: React.FC<DynamicTabsProps> = ({ ref }) => {
+const DynamicTabs: React.FC<DynamicTabsProps> = ({ onSwitch, ref }) => {
   const {
     tabs,
     activeTabKey,
@@ -107,6 +106,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({ ref }) => {
 
   useEffect(() => {
     scrollToActiveTab();
+    onSwitch(activeTabKey);
   }, [activeTabKey]);
 
   useEffect(() => {

@@ -359,7 +359,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       <div
         ref={editorContainerRef}
         className={cn("w-full flex-grow")}
-        style={{ height: height, paddingTop: 1 }}
+        style={{ height: height }}
       />
     </>
   );

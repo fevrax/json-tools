@@ -502,7 +502,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       <div
         ref={containerRef}
         className={cn("w-full flex-grow")}
-        style={{ height: height, paddingTop: 1 }}
+        style={{ height: height}}
       />
       <ErrorModal
         isOpen={jsonErrorDetailsModel}

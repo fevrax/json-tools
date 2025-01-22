@@ -20,10 +20,8 @@ import "react-toastify/dist/ReactToastify.css";
 import { SidebarKeys, useSidebarStore } from "@/store/useSidebarStore";
 import { SettingsState, useSettingsStore } from "@/store/useSettingsStore";
 import { storage } from "@/lib/indexedDBStore";
-import { useTabStore } from "@/store/useTabStore.ts";
-// import { useTabStore } from "@/store/useTabStore";
+import { useTabStore } from "@/store/useTabStore";
 
-// export const dynamic = "force-static";
 export default function RootLayout({
   children,
 }: {
@@ -226,7 +224,7 @@ export default function RootLayout({
         className={"!text-normal"}
         newestOnTop={false}
         pauseOnFocusLoss={false}
-        position="top-right"
+        position="bottom-right"
         rtl={false}
         theme={toastTheme}
         toastClassName={"!min-h-[10px]"}
