@@ -6,7 +6,7 @@ import {
   Spacer,
   Tooltip,
   useDisclosure,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { Icon } from "@iconify/react";
 import React, { useEffect } from "react";
 import { ToastContainer, Slide } from "react-toastify";

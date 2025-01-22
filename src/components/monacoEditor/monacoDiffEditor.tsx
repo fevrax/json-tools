@@ -1,7 +1,7 @@
 import React, { useEffect, useImperativeHandle, useRef } from "react";
 import { loader } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
-import { cn } from "@nextui-org/react";
+import { cn } from "@heroui/react";
 import { editor } from "monaco-editor";
 import { toast } from "react-toastify";
 

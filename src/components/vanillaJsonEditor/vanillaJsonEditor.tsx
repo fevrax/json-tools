@@ -1,5 +1,5 @@
 import React, { useEffect, useImperativeHandle, useRef } from "react";
-import { cn } from "@nextui-org/react";
+import { cn } from "@heroui/react";
 import {
   Content,
   createJSONEditor,

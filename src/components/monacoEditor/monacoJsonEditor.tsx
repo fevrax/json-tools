@@ -1,7 +1,7 @@
 import React, { useEffect, useImperativeHandle, useRef } from "react";
 import { loader, Monaco } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
-import { Button, cn, useDisclosure } from "@nextui-org/react";
+import { Button, cn, useDisclosure } from "@heroui/react";
 import { editor } from "monaco-editor";
 import { toast } from "react-toastify";
 import { Icon } from "@iconify/react";

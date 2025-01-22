@@ -1,7 +1,7 @@
 "use client";
 "use client";
 
-import { Button, Card, CardBody, Switch } from "@nextui-org/react";
+import { Button, Card, CardBody, Switch } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { toast } from "react-toastify";
 import { useTheme } from "next-themes";

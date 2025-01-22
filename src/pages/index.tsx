@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect, useLayoutEffect } from "react";
-import { cn } from "@nextui-org/react";
+import { cn } from "@heroui/react";
 import { useTheme } from "next-themes";
 
 import { useTabStore } from "@/store/useTabStore";

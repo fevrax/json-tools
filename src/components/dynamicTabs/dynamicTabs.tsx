@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useRef, useEffect, useState, useImperativeHandle } from "react";
-import { Tabs, Tab, Tooltip, Input, cn } from "@nextui-org/react";
+import { Tabs, Tab, Tooltip, Input, cn } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import {
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
-} from "@nextui-org/react";
+} from "@heroui/react";
 
 import { useTabStore, TabItem } from "../../store/useTabStore";
 import { IcRoundClose } from "../icons";

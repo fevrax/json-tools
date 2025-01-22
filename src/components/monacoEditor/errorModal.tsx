@@ -8,7 +8,7 @@ import {
   ModalFooter,
   Button,
   Chip,
-} from "@nextui-org/react";
+} from "@heroui/react";
 import { Icon } from "@iconify/react";
 
 import { JsonErrorInfo } from "@/utils/json";

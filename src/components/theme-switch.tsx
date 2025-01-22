@@ -1,8 +1,8 @@
 import { FC } from "react";
 import { VisuallyHidden } from "@react-aria/visually-hidden";
-import { SwitchProps, useSwitch } from "@nextui-org/switch";
+import { SwitchProps, useSwitch } from "@heroui/switch";
 import clsx from "clsx";
-import { Button, cn } from "@nextui-org/react";
+import { Button, cn } from "@heroui/react";
 import { useTheme } from "next-themes";
 
 import { SunFilledIcon, MoonFilledIcon } from "./icons";
