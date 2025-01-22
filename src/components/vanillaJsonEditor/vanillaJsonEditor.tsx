@@ -18,6 +18,7 @@ export interface VanillaJsonEditorProps {
   mode?: Mode;
   onUpdateValue?: (value: Content) => void;
   onChangeMode?: (mode: Mode) => void;
+  onMount?: () => void;
 }
 
 export interface VanillaJsonEditorRef {
@@ -31,6 +32,7 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
   content,
   onUpdateValue,
   onChangeMode,
+  onMount,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<JsonEditor>();
@@ -87,12 +89,14 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
   };
 
   const initEditor = () => {
+    console.log("initVanillaEditor");
     if (containerRef.current) {
       editorRef.current = createJSONEditor({
         target: containerRef.current,
         props: options,
       });
     }
+    onMount && onMount();
   };
 
   useImperativeHandle(ref, () => ({

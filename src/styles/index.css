@@ -1,0 +1,30 @@
+.editor-transition {
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.editor-transition.loaded {
+    opacity: 1;
+}
+
+.editor-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.editor-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+}
+
+.editor-wrapper.visible {
+    visibility: visible;
+    opacity: 1;
+}

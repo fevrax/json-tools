@@ -27,7 +27,7 @@ export interface MonacoJsonEditorProps {
   language?: string;
   theme?: string;
   onUpdateValue: (value: string) => void;
-  onLoaded?: () => void;
+  onMount?: () => void;
   ref?: React.Ref<MonacoJsonEditorRef>;
 }
 
@@ -49,7 +49,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   theme,
   height,
   onUpdateValue,
-  onLoaded,
+  onMount,
   ref,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -84,8 +84,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     const timeoutId = setTimeout(() => {
       initializeEditor();
     }, 0);
-
-    onLoaded && onLoaded();
 
     return () => {
       clearTimeout(timeoutId);
@@ -146,7 +144,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         links: true, // 是否点击链接
       });
 
-      onLoaded && onLoaded();
+      onMount && onMount();
 
       editor.focus();
 
@@ -154,6 +152,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       editor.onDidChangeModelContent(async () => {
         onUpdateValue(editor.getValue());
       });
+
 
       // 添加粘贴事件监听
       editor.onDidPaste(async (e) => {
