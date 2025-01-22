@@ -5,6 +5,13 @@ import monacoEditorPlugin from "vite-plugin-monaco-editor-esm";
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern-compiler', // or 'modern'
+      },
+    },
+  },
   plugins: [
     react(),
     tsconfigPaths(),
@@ -14,5 +21,5 @@ export default defineConfig({
   ],
   optimizeDeps: {
     include: ["vanilla-jsoneditor-cn"],
-  },
+  }
 });

@@ -4,8 +4,9 @@ import type { SidebarItem } from "@/components/sidebar/sidebar";
 import { create } from "zustand";
 import { devtools, subscribeWithSelector } from "zustand/middleware";
 
-import { storage } from "@/lib/indexedDBStore";
 import { useSettingsStore } from "./useSettingsStore";
+
+import { storage } from "@/lib/indexedDBStore";
 
 export enum SidebarKeys {
   textView = "textView",

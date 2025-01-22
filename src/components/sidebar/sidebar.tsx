@@ -6,12 +6,7 @@ import {
   type Selection,
 } from "@heroui/react";
 import React from "react";
-import {
-  Listbox,
-  Tooltip,
-  ListboxItem,
-  ListboxSection,
-} from "@heroui/react";
+import { Listbox, Tooltip, ListboxItem, ListboxSection } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { cn } from "@heroui/react";
 
@@ -212,7 +207,7 @@ const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
         }
 
         return (
-          (<ListboxItem
+          <ListboxItem
             {...item}
             key={item.key}
             endContent={
@@ -238,7 +233,7 @@ const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
           >
             {isCompact ? (
               /* 紧凑模式下，只显示图标 */
-              (<Tooltip content={item.title} placement="right">
+              <Tooltip content={item.title} placement="right">
                 <div className="flex w-full items-center justify-center">
                   {item.icon ? (
                     <Icon
@@ -253,9 +248,9 @@ const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
                     (item.startContent ?? null)
                   )}
                 </div>
-              </Tooltip>)
+              </Tooltip>
             ) : null}
-          </ListboxItem>)
+          </ListboxItem>
         );
       },
       [isCompact, hideEndContent, iconClassName, itemClasses?.base],
