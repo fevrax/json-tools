@@ -272,7 +272,7 @@ export function removeJsonComments(jsonText: string): string {
   // 移除单行注释（考虑到可能在引号内的情况）
   const regex = /("(?:\\.|[^"\\])*")|\/\/.*$/gm;
 
-  jsonText = jsonText.replace(regex, (match, group) => {
+  jsonText = jsonText.replace(regex, (_match, group) => {
     if (group) {
       // 如果匹配到的是引号内的内容，保留它
       return group;
@@ -351,6 +351,8 @@ function unEscapeJson(jsonText: string): string {
 
     return JSON.stringify(unescapedJsonObject, null, 4);
   } catch (error) {
+    console.error("解码 JSON 处理转义失败", error);
+
     return jsonText;
   }
 }

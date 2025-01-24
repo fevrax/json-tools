@@ -5,12 +5,10 @@ import { cn } from "@heroui/react";
 import { editor } from "monaco-editor";
 import { toast } from "react-toastify";
 
+import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEntity";
 import { sortJson } from "@/utils/json";
 
 import "@/styles/monaco.css";
-import { MonacoDiffEditorEditorType } from "./monacoEntity";
-// import { storage } from "@/lib/indexedDBStore";
-// import { SettingsState } from "@/store/useSettingsStore";
 
 export interface MonacoDiffEditorProps {
   tabKey: string;

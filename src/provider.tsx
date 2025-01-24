@@ -14,6 +14,8 @@ export function Provider({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
 
   return (
+    // TODO 等待 HeroUIProvider 补丁发布
+    // eslint-disable-next-line react-compiler/react-compiler
     <HeroUIProvider navigate={navigate} useHref={useHref}>
       <NextThemesProvider attribute="class" defaultTheme="light">
         {children}

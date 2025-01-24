@@ -52,7 +52,10 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
     mode: mode,
     // parser
     content: content,
+
+    // react-compiler error
     // @ts-ignore
+    // eslint-disable-next-line react-compiler/react-compiler
     target: containerRef.current,
     onChange: (content: Content) => {
       // console.log('onChange', 'content', content, 'previousContent', previousContent, 'changeStatus', changeStatus)
@@ -89,7 +92,6 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
   };
 
   const initEditor = () => {
-    console.log("initVanillaEditor");
     if (containerRef.current) {
       editorRef.current = createJSONEditor({
         target: containerRef.current,

@@ -11,6 +11,7 @@ import MonacoJsonEditor, {
   MonacoJsonEditorRef,
 } from "@/components/monacoEditor/monacoJsonEditor";
 import { SidebarKeys, useSidebarStore } from "@/store/useSidebarStore";
+// eslint-disable-next-line import/order
 import VanillaJsonEditor, {
   VanillaJsonEditorRef,
 } from "@/components/vanillaJsonEditor/vanillaJsonEditor";
@@ -77,7 +78,6 @@ export default function IndexPage() {
     diff: new Set(),
     vanilla: new Set(),
   });
-
 
   // 计算高度的函数
   const calculateHeight = () => {

@@ -11,10 +11,10 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
+import Divider from "@/components/Divider/divider";
 import { JsonErrorInfo } from "@/utils/json";
 
-import "../../styles/monaco.css";
-import Divider from "../Divider/divider";
+import "@/styles/monaco.css";
 
 export interface ErrorModalProps {
   parseJsonError: React.MutableRefObject<JsonErrorInfo | null>;

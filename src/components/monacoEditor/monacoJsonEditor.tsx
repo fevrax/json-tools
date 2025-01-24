@@ -153,7 +153,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         onUpdateValue(editor.getValue());
       });
 
-
       // 添加粘贴事件监听
       editor.onDidPaste(async (e) => {
         if (editor.getValue() && e.range.startLineNumber < 2) {
@@ -501,7 +500,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       <div
         ref={containerRef}
         className={cn("w-full flex-grow")}
-        style={{ height: height}}
+        style={{ height: height }}
       />
       <ErrorModal
         isOpen={jsonErrorDetailsModel}

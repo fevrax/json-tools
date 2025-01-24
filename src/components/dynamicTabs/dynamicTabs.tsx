@@ -408,6 +408,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({ onSwitch, ref }) => {
                     })}
                     data-key={tab.key}
                     role="button"
+                    tabIndex={0}
                     onContextMenu={(e) => handleContextMenu(tab, e)}
                     onDoubleClick={(e) => handleDoubleClick(tab, e)}
                   >
