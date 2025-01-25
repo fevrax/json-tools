@@ -194,7 +194,8 @@ export default function RootLayout({
                 }
                 variant="light"
                 onPress={() => {
-                  navigate("/settings");
+                  console.log("settings clicked", window.location.href);
+                  navigate("./settings");
                 }}
               >
                 {isCollapsed ? (

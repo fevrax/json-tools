@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { Key, useState } from "react";
 import {
   Button,
   ButtonGroup,
@@ -19,6 +19,7 @@ interface MonacoOperationBarProps {
   onClear: () => boolean;
   onFieldSort: (type: "asc" | "desc") => boolean;
   onMore: (key: "unescape" | "del_comment") => boolean;
+  onSaveFile: () => boolean;
   ref?: React.RefObject<MonacoOperationBarRef>;
 }
 
@@ -29,6 +30,7 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
   onFormat,
   onClear,
   onFieldSort,
+  onSaveFile,
   onMore,
 }) => {
   const [isCopyDropdownOpen, setIsCopyDropdownOpen] = useState(false);
@@ -75,6 +77,29 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
     moreDropdownOpenTimeoutRef.current = setTimeout(() => {
       setMoreDropdownOpen(false);
     }, dropdownTimeout);
+  };
+
+  const moreOptionAction = (key: Key) => {
+    switch (key) {
+      case "unescape":
+        if (onMore("unescape")) {
+          toast.success("去除转义成功");
+        }
+        break;
+      case "del_comment":
+        if (onMore("del_comment")) {
+          toast.success("移除注释成功");
+        } else {
+          toast.error("移除注释失败");
+        }
+        break;
+      case "save_file":
+        if (!onSaveFile()) {
+          toast.error("下载文件到本地失败");
+        }
+        break;
+    }
+    setMoreDropdownOpen(false);
   };
 
   return (
@@ -243,23 +268,7 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
         </DropdownTrigger>
         <DropdownMenu
           aria-label="more options"
-          onAction={(key) => {
-            switch (key) {
-              case "unescape":
-                if (onMore("unescape")) {
-                  toast.success("去除转义成功");
-                }
-                break;
-              case "del_comment":
-                if (onMore("del_comment")) {
-                  toast.success("移除注释成功");
-                } else {
-                  toast.error("移除注释失败");
-                }
-                break;
-            }
-            setMoreDropdownOpen(false);
-          }}
+          onAction={moreOptionAction}
           onMouseEnter={showMoreDropdown}
           onMouseLeave={unShowMoreDropdown}
         >
@@ -273,6 +282,12 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
             <div className="flex items-center space-x-2">
               <Icon icon="tabler:notes-off" width={16} />
               <span>移除注释</span>
+            </div>
+          </DropdownItem>
+          <DropdownItem key="save_file" textValue="下载文件">
+            <div className="flex items-center space-x-2">
+              <Icon icon="ic:round-save-alt" width={16} />
+              <span>下载文件</span>
             </div>
           </DropdownItem>
         </DropdownMenu>

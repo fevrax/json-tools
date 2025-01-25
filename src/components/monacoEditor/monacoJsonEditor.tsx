@@ -21,6 +21,7 @@ import {
 import "@/styles/monaco.css";
 
 export interface MonacoJsonEditorProps {
+  tabTitle?: string;
   tabKey: string;
   height?: number;
   value?: string;
@@ -39,12 +40,14 @@ export interface MonacoJsonEditorRef {
   clear: () => boolean;
   fieldSort: (type: "asc" | "desc") => boolean;
   moreAction: (key: "unescape" | "del_comment") => boolean;
+  saveFile: () => boolean;
   updateValue: (value: string) => void;
 }
 
 const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   value,
   tabKey,
+  tabTitle,
   language,
   theme,
   height,
@@ -490,6 +493,27 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         default:
           break;
       }
+
+      return true;
+    },
+    saveFile: () => {
+      // 将 json 内容保存到 tabName.json 文件
+      const val = editorRef.current?.getValue() || "";
+
+      if (val.trim() === "") {
+        toast.warning("暂无内容");
+
+        return false;
+      }
+      const fileName = `${tabTitle}.json`;
+      const blob = new Blob([val], { type: "text/plain;charset=utf-8" });
+      const downloadUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = downloadUrl;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(downloadUrl);
 
       return true;
     },

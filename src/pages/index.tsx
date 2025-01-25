@@ -155,6 +155,9 @@ export default function IndexPage() {
           onMore={(key) => {
             return monacoJsonEditorRefs.current[activeTabKey].moreAction(key);
           }}
+          onSaveFile={() => {
+            return monacoJsonEditorRefs.current[activeTabKey].saveFile();
+          }}
         />
         <div className="editor-container">
           {tabs.map((tab) => {
@@ -192,6 +195,7 @@ export default function IndexPage() {
                     }}
                     height={editorHeight - 40}
                     tabKey={tab.key}
+                    tabTitle={tab.title}
                     theme={theme === "dark" ? "vs-dark" : "vs-light"}
                     value={tab.content}
                     onMount={() => {
