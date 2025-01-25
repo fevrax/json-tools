@@ -22,16 +22,21 @@ export interface StatusButtonProps
 }
 
 const StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>(
-  ({
-    text,
-    successText,
-    status,
-    icon,
-    iconSize = 20,
-    onClick,
-    endContent,
-    className,
-  }) => {
+  (
+    {
+      text,
+      successText,
+      status,
+      icon,
+      iconSize = 20,
+      onClick,
+      endContent,
+      className,
+    },
+    // @ts-ignore
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    ref,
+  ) => {
     const renderIcon = () => {
       switch (status) {
         case IconStatus.Success:

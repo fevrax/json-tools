@@ -11,6 +11,7 @@ export interface TabItem {
   key: string;
   title: string;
   content: string;
+  diffModifiedValue?: string; // diff 右边比较值
   monacoVersion: number; // 乐观锁
   vanilla?: Content;
   vanillaVersion: number;
@@ -28,6 +29,7 @@ interface TabStore {
   addTab: (title: string | undefined, content: string | undefined) => void;
   addTabSimple: () => void;
   setTabContent: (key: string, content: string) => void;
+  setTabModifiedValue: (key: string, content: string) => void;
   setTabVanillaContent: (key: string, content: Content) => void;
   setTabVanillaMode: (key: string, mode: Mode) => void;
   setMonacoVersion: (key: string, version: number) => void;
@@ -36,12 +38,12 @@ interface TabStore {
   closeTab: (keyToRemove: string) => void;
   setActiveTab: (key: string) => void;
   renameTab: (key: string, newTitle: string) => void;
-  closeOtherTabs: (currentKey: string) => void;
-  closeLeftTabs: (currentKey: string) => void;
-  closeRightTabs: (currentKey: string) => void;
+  closeOtherTabs: (currentKey: string) => Array<string>;
+  closeLeftTabs: (currentKey: string) => Array<string>;
+  closeRightTabs: (currentKey: string) => Array<string>;
+  closeAllTabs: () => Array<string>;
   vanilla2JsonContent: (key: string) => void;
   jsonContent2VanillaContent: (key: string) => void;
-  closeAllTabs: () => void;
 }
 
 export const useTabStore = create<TabStore>()(
@@ -173,6 +175,20 @@ export const useTabStore = create<TabStore>()(
 
             return { tabs: updatedTabs };
           }),
+        setTabModifiedValue: (key, content) =>
+          set((state) => {
+            const updatedTabs = state.tabs.map((tab) =>
+              tab.key === key
+                ? {
+                    ...tab,
+                    diffModifiedValue: content,
+                    monacoVersion: ++tab.monacoVersion,
+                  }
+                : tab,
+            );
+
+            return { tabs: updatedTabs };
+          }),
         setTabVanillaContent: (key: string, content: Content) =>
           set((state) => {
             const updatedTabs = state.tabs.map((tab) =>
@@ -259,45 +275,68 @@ export const useTabStore = create<TabStore>()(
         },
         setActiveTab: (key) => set({ activeTabKey: key }),
         // 关闭其他标签页
-        closeOtherTabs: (currentKey) =>
-          set((state) => {
-            const currentTab = state.tabs.find((tab) => tab.key === currentKey);
+        closeOtherTabs: (currentKey): Array<string> => {
+          const currentTab = get().tabs.find((tab) => tab.key === currentKey);
+          // 将被关闭的key 保存
+          const closedKeys = get()
+            .tabs.filter((tab) => tab.key !== currentKey)
+            .map((tab) => tab.key);
 
+          console.log("closedKeys", closedKeys);
+
+          set(() => {
             return {
               tabs: currentTab ? [currentTab] : [],
               activeTabKey: currentKey,
             };
-          }),
+          });
+
+          return closedKeys;
+        },
 
         // 关闭左侧标签页
-        closeLeftTabs: (currentKey) =>
-          set((state) => {
-            const currentIndex = state.tabs.findIndex(
-              (tab) => tab.key === currentKey,
-            );
-            const updatedTabs = state.tabs.slice(currentIndex);
+        closeLeftTabs: (currentKey): Array<string> => {
+          const tabs = get().tabs;
+          const currentIndex = tabs.findIndex((tab) => tab.key === currentKey);
+          // 将被关闭的key 保存
+          const closedKeys = tabs.slice(0, currentIndex).map((tab) => tab.key);
+          const updatedTabs = tabs.slice(currentIndex);
 
+          set(() => {
             return {
               tabs: updatedTabs,
               activeTabKey: currentKey,
             };
-          }),
+          });
+
+          return closedKeys;
+        },
 
         // 关闭右侧标签页
-        closeRightTabs: (currentKey) =>
-          set((state) => {
-            const currentIndex = state.tabs.findIndex(
-              (tab) => tab.key === currentKey,
-            );
-            const updatedTabs = state.tabs.slice(0, currentIndex + 1);
+        closeRightTabs: (currentKey): Array<string> => {
+          const tabs = get().tabs;
+          const currentIndex = tabs.findIndex((tab) => tab.key === currentKey);
+          // 将被关闭的key 保存
+          const closedKeys = tabs.slice(currentIndex + 1).map((tab) => tab.key);
 
+          const updatedTabs = tabs.slice(0, currentIndex + 1);
+
+          set(() => {
             return {
               tabs: updatedTabs,
               activeTabKey: currentKey,
             };
-          }),
+          });
+
+          return closedKeys;
+        },
         // 关闭所有标签页，默认保留第一个标签页
-        closeAllTabs: () =>
+        closeAllTabs: (): Array<string> => {
+          // 将被关闭的key 保存, 保留key = 1 的标签页
+          const closedKeys = get()
+            .tabs.filter((tab) => tab.key !== "1")
+            .map((tab) => tab.key);
+
           set(() => {
             const defaultTab = [
               {
@@ -316,7 +355,10 @@ export const useTabStore = create<TabStore>()(
               activeTabKey: "1",
               nextKey: 2,
             };
-          }),
+          });
+
+          return closedKeys;
+        },
         vanilla2JsonContent: (key: string) =>
           set((state) => {
             const activeTab = get().getTabByKey(key);

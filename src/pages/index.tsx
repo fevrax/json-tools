@@ -45,6 +45,7 @@ export default function IndexPage() {
     activeTab,
     addTab,
     setTabContent,
+    setTabModifiedValue,
     syncTabStore,
     setTabVanillaContent,
     setTabVanillaMode,
@@ -92,6 +93,26 @@ export default function IndexPage() {
       }
       setEditorHeight(newHeight); // 设置最小高度
     }
+  };
+
+  const closeTabHandle = (keys: string[]) => {
+    if (keys.length === 0) {
+      return;
+    }
+    // 删除 monacoJsonEditorRefs 中对象
+    keys.forEach((key) => {
+      delete monacoJsonEditorRefs.current[key];
+      delete monacoDiffEditorRefs.current[key];
+      delete vanillaJsonEditorRefs.current[key];
+    });
+
+    // 删除 loadedEditors 中对象
+    setLoadedEditors((prev) => ({
+      ...prev,
+      monaco: new Set([...prev.monaco].filter((key) => !keys.includes(key))),
+      diff: new Set([...prev.diff].filter((key) => !keys.includes(key))),
+      vanilla: new Set([...prev.vanilla].filter((key) => !keys.includes(key))),
+    }));
   };
 
   // MonacoJsonEditor 更新内容后同步
@@ -228,7 +249,7 @@ export default function IndexPage() {
 
             return (
               <div
-                key={tab.key}
+                key={"diff" + tab.key}
                 className={cn(
                   "editor-wrapper",
                   "editor-transition",
@@ -238,14 +259,16 @@ export default function IndexPage() {
               >
                 {shouldRender && (
                   <MonacoDiffEditor
-                    key={tab.key}
+                    key={"diff" + tab.key}
                     ref={(ref) => {
                       if (ref) {
                         monacoDiffEditorRefs.current[tab.key] = ref;
                       }
                     }}
                     height={editorHeight - 42}
-                    modifiedValue=""
+                    modifiedValue={
+                      tab.diffModifiedValue ? tab.diffModifiedValue : ""
+                    }
                     originalValue={tab.content}
                     tabKey={tab.key}
                     theme={theme === "dark" ? "vs-dark" : "vs-light"}
@@ -254,6 +277,9 @@ export default function IndexPage() {
                         ...prev,
                         [tab.key]: false,
                       }));
+                    }}
+                    onUpdateModifiedValue={(value) => {
+                      setTabModifiedValue(tab.key, value);
                     }}
                     onUpdateOriginalValue={(value) => {
                       monacoEditorUpdateContent(tab.key, value);
@@ -343,6 +369,7 @@ export default function IndexPage() {
     }
   };
 
+  // tab 切换时同步数据
   const tabSwitchHandle = () => {
     const currentTab = activeTab();
 
@@ -455,6 +482,11 @@ export default function IndexPage() {
               ...prev,
               monaco: new Set([...prev.monaco, tab.key]),
             }));
+            // 焦点切换到当前激活的 tab
+            if (monacoJsonEditorRefs.current[activeTabKey]) {
+              monacoJsonEditorRefs.current[activeTabKey].layout();
+              monacoJsonEditorRefs.current[activeTabKey].focus();
+            }
             break;
           case SidebarKeys.treeView:
             setLoadedEditors((prev) => ({
@@ -467,15 +499,14 @@ export default function IndexPage() {
               ...prev,
               diff: new Set([...prev.diff, tab.key]),
             }));
+            // 焦点切换到当前激活的 tab
+            if (monacoDiffEditorRefs.current[activeTabKey]) {
+              monacoDiffEditorRefs.current[activeTabKey].layout();
+              monacoDiffEditorRefs.current[activeTabKey].focus();
+            }
             break;
         }
       });
-    }
-
-    // 焦点切换到当前激活的 tab
-    if (activeTabKey && monacoJsonEditorRefs.current[activeTabKey]) {
-      monacoJsonEditorRefs.current[activeTabKey].layout();
-      monacoJsonEditorRefs.current[activeTabKey].focus();
     }
   }, [activeTabKey]);
 
@@ -487,7 +518,11 @@ export default function IndexPage() {
 
   return (
     <div className="dark:bg-vscode-dark h-full">
-      <DynamicTabs ref={tabRef} onSwitch={tabSwitchHandle} />
+      <DynamicTabs
+        ref={tabRef}
+        onClose={closeTabHandle}
+        onSwitch={tabSwitchHandle}
+      />
       <div ref={editorContainerRef}>{renderEditor()}</div>
     </div>
   );

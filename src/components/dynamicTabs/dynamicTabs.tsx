@@ -20,9 +20,14 @@ export interface DynamicTabsRef {
 export interface DynamicTabsProps {
   ref?: React.Ref<DynamicTabsRef>;
   onSwitch: (key: string) => void;
+  onClose?: (keys: Array<string>) => void;
 }
 
-const DynamicTabs: React.FC<DynamicTabsProps> = ({ onSwitch, ref }) => {
+const DynamicTabs: React.FC<DynamicTabsProps> = ({
+  onSwitch,
+  onClose,
+  ref,
+}) => {
   const {
     tabs,
     activeTabKey,
@@ -203,18 +208,27 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({ onSwitch, ref }) => {
         break;
       case "close":
         closeTab(contextMenuTabKey);
+        onClose?.([contextMenuTabKey]);
         break;
       case "close-left":
-        closeLeftTabs(contextMenuTabKey);
+        const closeLeftKeys = closeLeftTabs(contextMenuTabKey);
+
+        onClose?.(closeLeftKeys);
         break;
       case "close-right":
-        closeRightTabs(contextMenuTabKey);
+        const closeRightKeys = closeRightTabs(contextMenuTabKey);
+
+        onClose?.(closeRightKeys);
         break;
       case "close-others":
-        closeOtherTabs(contextMenuTabKey);
+        const closeOtherKeys = closeOtherTabs(contextMenuTabKey);
+
+        onClose?.(closeOtherKeys);
         break;
       case "close-all":
-        closeAllTabs();
+        const closeAllKeys = closeAllTabs();
+
+        onClose?.(closeAllKeys);
         break;
     }
   };
@@ -422,11 +436,15 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({ onSwitch, ref }) => {
                           tabIndex={0}
                           onClick={(e) => {
                             closeTab(tab.key);
+                            onClose?.([tab.key]);
                             e.stopPropagation();
                             e.preventDefault();
                           }}
                           onKeyDown={(e) => {
-                            handleKeyDown(e, () => closeTab(tab.key));
+                            handleKeyDown(e, () => {
+                              closeTab(tab.key);
+                              onClose?.([tab.key]);
+                            });
                             e.stopPropagation();
                             e.preventDefault();
                           }}
