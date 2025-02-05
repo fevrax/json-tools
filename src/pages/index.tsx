@@ -89,7 +89,7 @@ export default function IndexPage() {
       let newHeight = 0;
 
       if (editorContainerTop !== undefined) {
-        newHeight = windowHeight - editorContainerTop - 2; // 可根据需要微调
+        newHeight = windowHeight - editorContainerTop - 2;
       }
       setEditorHeight(newHeight); // 设置最小高度
     }
@@ -193,7 +193,7 @@ export default function IndexPage() {
                         monacoJsonEditorRefs.current[tab.key] = ref;
                       }
                     }}
-                    height={editorHeight - 40}
+                    height={editorHeight - 38}
                     tabKey={tab.key}
                     tabTitle={tab.title}
                     theme={theme === "dark" ? "vs-dark" : "vs-light"}
@@ -269,7 +269,7 @@ export default function IndexPage() {
                         monacoDiffEditorRefs.current[tab.key] = ref;
                       }
                     }}
-                    height={editorHeight - 42}
+                    height={editorHeight - 39}
                     modifiedValue={
                       tab.diffModifiedValue ? tab.diffModifiedValue : ""
                     }
