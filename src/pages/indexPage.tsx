@@ -10,7 +10,7 @@ import DynamicTabs, {
 import MonacoJsonEditor, {
   MonacoJsonEditorRef,
 } from "@/components/monacoEditor/monacoJsonEditor";
-import { SidebarKeys, useSidebarStore } from "@/store/useSidebarStore";
+import { useSidebarStore } from "@/store/useSidebarStore";
 // eslint-disable-next-line import/order
 import VanillaJsonEditor, {
   VanillaJsonEditorRef,
@@ -30,6 +30,7 @@ import { SettingsState } from "@/store/useSettingsStore";
 import { storage } from "@/lib/indexedDBStore";
 
 import "@/styles/index.css";
+import { SidebarKeys } from "@/components/sidebar/items.tsx";
 
 export default function IndexPage() {
   const { theme } = useTheme();

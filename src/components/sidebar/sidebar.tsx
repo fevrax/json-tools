@@ -286,7 +286,6 @@ const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
         variant="flat"
         onSelectionChange={(keys) => {
           const keyArr = Array.from(keys);
-
           if (keyArr.length === 0) {
             onSelect?.(currentKey);
 

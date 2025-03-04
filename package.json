@@ -10,7 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@heroui/react": "2.6.14",
+    "@heroui/react": "2.7.4",
     "@monaco-editor/react": "4.7.0-rc.0",
     "@react-aria/visually-hidden": "3.8.19",
     "@react-types/shared": "3.26.0",
@@ -24,7 +24,7 @@
     "react-dom": "19.0.0",
     "react-router-dom": "6.23.0",
     "react-toastify": "^10.0.6",
-    "sass": "^1.83.4",
+    "sass": "^1.85.1",
     "tailwind-merge": "^2.6.0",
     "tailwind-variants": "0.1.20",
     "tailwindcss": "3.4.16",

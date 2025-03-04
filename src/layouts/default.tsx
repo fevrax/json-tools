@@ -1,23 +1,16 @@
 import "@/styles/globals.css";
-import {
-  Image,
-  Button,
-  cn,
-  Spacer,
-  Tooltip,
-  useDisclosure,
-} from "@heroui/react";
+import { Button, cn, Image, Spacer, Tooltip, useDisclosure } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import React, { useEffect } from "react";
-import { ToastContainer, Slide } from "react-toastify";
+import { Slide, ToastContainer } from "react-toastify";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import SidebarDrawer from "@/components/sidebar/sidebar-drawer";
 import Sidebar from "@/components/sidebar/sidebar";
-import { items } from "@/components/sidebar/items";
+import { items, SidebarKeys } from "@/components/sidebar/items";
 import { ThemeSwitch } from "@/components/theme-switch";
 import "react-toastify/dist/ReactToastify.css";
-import { SidebarKeys, useSidebarStore } from "@/store/useSidebarStore";
+import { useSidebarStore } from "@/store/useSidebarStore";
 import { SettingsState, useSettingsStore } from "@/store/useSettingsStore";
 import { storage } from "@/lib/indexedDBStore";
 import { useTabStore } from "@/store/useTabStore";
@@ -45,12 +38,23 @@ export default function RootLayout({
       navigate("/");
     }
     sidebarStore.updateClickSwitchKey(key as SidebarKeys);
-    // 其他逻辑...
   };
 
   const onToggle = React.useCallback(() => {
     setIsCollapsed((prev) => !prev);
   }, []);
+
+  // 同步菜单状态
+  useEffect(() => {
+    if (location.pathname === "/toolbox") {
+      sidebarStore.updateClickSwitchKey(SidebarKeys.toolbox);
+      sidebarStore.updateActiveKey(SidebarKeys.toolbox);
+    } else {
+      if (sidebarStore.clickSwitchKey === SidebarKeys.toolbox) {
+        navigate("./toolbox");
+      }
+    }
+  }, [location.pathname, sidebarStore.clickSwitchKey]);
 
   useEffect(() => {
     const theme = localStorage.getItem("theme");
@@ -194,7 +198,6 @@ export default function RootLayout({
                 }
                 variant="light"
                 onPress={() => {
-                  console.log("settings clicked", window.location.href);
                   navigate("./settings");
                 }}
               >

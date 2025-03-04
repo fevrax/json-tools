@@ -1,5 +1,4 @@
 // useSidebarStore.ts
-import type { SidebarItem } from "@/components/sidebar/sidebar";
 
 import { create } from "zustand";
 import { devtools, subscribeWithSelector } from "zustand/middleware";
@@ -7,30 +6,7 @@ import { devtools, subscribeWithSelector } from "zustand/middleware";
 import { useSettingsStore } from "./useSettingsStore";
 
 import { storage } from "@/lib/indexedDBStore";
-
-export enum SidebarKeys {
-  textView = "textView",
-  treeView = "treeView",
-  diffView = "diffView",
-}
-
-export const items: SidebarItem[] = [
-  {
-    key: SidebarKeys.textView,
-    icon: "solar:home-2-linear",
-    title: "文本视图",
-  },
-  {
-    key: SidebarKeys.treeView,
-    icon: "solar:widget-2-outline",
-    title: "树形视图",
-  },
-  {
-    key: SidebarKeys.diffView,
-    icon: "solar:checklist-minimalistic-outline",
-    title: "DIFF视图",
-  },
-];
+import { SidebarKeys } from "@/components/sidebar/items.tsx";
 
 interface SidebarStore {
   activeKey: SidebarKeys;
