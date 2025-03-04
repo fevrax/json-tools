@@ -3,19 +3,18 @@ import { loader, Monaco } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
 import { Button, cn, useDisclosure } from "@heroui/react";
 import { editor } from "monaco-editor";
-import { toast } from "react-toastify";
-import { Icon } from "@iconify/react";
+import { jsonrepair } from "jsonrepair";
 
 import ErrorModal from "./errorModal";
 
 import { sleep } from "@/utils/time";
+import toast from "@/utils/toast";
 import {
   escapeJson,
   isArrayOrObject,
   JsonErrorInfo,
   jsonParseError,
   removeJsonComments,
-  repairJson,
   sortJson,
 } from "@/utils/json";
 import "@/styles/monaco.css";
@@ -63,7 +62,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
   const {
     isOpen: jsonErrorDetailsModel,
-    onOpen: openJsonErrorDetailsModel,
+    // onOpen: openJsonErrorDetailsModel,
     onClose: closeJsonErrorDetailsModel,
   } = useDisclosure();
 
@@ -208,36 +207,36 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   };
 
   const showAutoFixNotify = () => {
-    toast.warning(
-      <div key={1}>
-        <div>
-          <h2 className="font-bold mb-2">
-            第 {parseJsonError.current?.line} 行，第
-            {parseJsonError.current?.column} 列，格式错误
-          </h2>
-        </div>
-        <div>{parseJsonError.current?.message}</div>
-        <div className="flex justify-end mt-3">
-          <Button
-            className="h-7"
-            color="primary"
-            size="sm"
-            onPress={() => {
-              openJsonErrorDetailsModel();
-              toast.dismiss();
-            }}
-          >
-            查看详情
-          </Button>
-        </div>
-        <div className={"absolute top-0.5 right-0 m-2"}>
-          <Icon icon="gg:close" width={16} />
-        </div>
-      </div>,
-      {
-        closeButton: false,
-      },
-    );
+    // toast.warning(
+    //   <div key={1}>
+    //     <div>
+    //       <h2 className="font-bold mb-2">
+    //         第 {parseJsonError.current?.line} 行，第
+    //         {parseJsonError.current?.column} 列，格式错误
+    //       </h2>
+    //     </div>
+    //     <div>{parseJsonError.current?.message}</div>
+    //     <div className="flex justify-end mt-3">
+    //       <Button
+    //         className="h-7"
+    //         color="primary"
+    //         size="sm"
+    //         onPress={() => {
+    //           openJsonErrorDetailsModel();
+    //           toast.dismiss();
+    //         }}
+    //       >
+    //         查看详情
+    //       </Button>
+    //     </div>
+    //     <div className={"absolute top-0.5 right-0 m-2"}>
+    //       <Icon icon="gg:close" width={16} />
+    //     </div>
+    //   </div>,
+    //   {
+    //     closeButton: false,
+    //   },
+    // );
   };
 
   const editorFormat = (): boolean => {
@@ -311,9 +310,10 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
         return false;
       }
-      const repair = repairJson(jsonText);
+      const repaired = jsonrepair(jsonText);
 
-      setEditorValue(repair);
+      setEditorValue(repaired);
+
       closeJsonErrorDetailsModel();
       toast.success("修复成功");
 
@@ -520,12 +520,31 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   }));
 
   return (
-    <>
+    <div>
       <div
         ref={containerRef}
         className={cn("w-full flex-grow")}
-        style={{ height: height }}
+        style={{ height: height ? height - 50 : "100%" }}
       />
+      <div
+        className={
+          "flex justify-between items-center px-3 bg-red-500/90 rounded-t-md text-white"
+        }
+        style={{ height: 50 }}
+      >
+        <h2 className="font-bold ">第 行，第 列，格式错误</h2>
+        <div className={"flex items-center space-x-2"}>
+          <Button color="primary" size="sm" onPress={() => {}}>
+            查看详情
+          </Button>
+          <Button color="primary" size="sm" onPress={() => {}}>
+            自动修复
+          </Button>
+          <Button color="primary" size="sm" onPress={() => {}}>
+            一键定位
+          </Button>
+        </div>
+      </div>
       <ErrorModal
         isOpen={jsonErrorDetailsModel}
         parseJsonError={parseJsonError}
@@ -533,7 +552,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         onClose={closeJsonErrorDetailsModel}
         onGotoErrorLine={goToErrorLine}
       />
-    </>
+    </div>
   );
 };
 

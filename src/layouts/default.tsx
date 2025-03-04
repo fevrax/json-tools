@@ -2,7 +2,6 @@ import "@/styles/globals.css";
 import { Button, cn, Image, Spacer, Tooltip, useDisclosure } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import React, { useEffect } from "react";
-import { Slide, ToastContainer } from "react-toastify";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import SidebarDrawer from "@/components/sidebar/sidebar-drawer";
@@ -28,7 +27,6 @@ export default function RootLayout({
 
   const { isOpen, onOpenChange } = useDisclosure();
   const [isCollapsed, setIsCollapsed] = React.useState(true);
-  const [toastTheme, setToastTheme] = React.useState("dark");
 
   // 菜单项点击事件
   const handleSidebarSelect = (
@@ -57,9 +55,6 @@ export default function RootLayout({
   }, [location.pathname, sidebarStore.clickSwitchKey]);
 
   useEffect(() => {
-    const theme = localStorage.getItem("theme");
-
-    setToastTheme(theme || "dark");
 
     const init = async () => {
       const settings = await storage.getItem<SettingsState>("settings");
@@ -172,7 +167,7 @@ export default function RootLayout({
             )}
 
             {/* 主题切换 */}
-            <ThemeSwitch isCollapsed={isCollapsed} onToggle={setToastTheme} />
+            <ThemeSwitch isCollapsed={isCollapsed}/>
             <Tooltip
               content="更多设置"
               isDisabled={!isCollapsed}
@@ -218,22 +213,6 @@ export default function RootLayout({
 
       {/*  Settings Content */}
       <div className="flex-1 text- overflow-auto min-w-16">{children}</div>
-      <ToastContainer
-        closeOnClick
-        draggable
-        hideProgressBar
-        pauseOnHover
-        stacked
-        autoClose={3500}
-        className={"!text-normal"}
-        newestOnTop={false}
-        pauseOnFocusLoss={false}
-        position="bottom-right"
-        rtl={false}
-        theme={toastTheme}
-        toastClassName={"!min-h-[10px]"}
-        transition={Slide}
-      />
     </div>
   );
 }

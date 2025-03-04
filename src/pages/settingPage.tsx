@@ -1,15 +1,9 @@
-import {
-  Button,
-  Card,
-  CardBody,
-  Switch,
-  Tooltip,
-} from "@heroui/react";
+import { Button, Card, CardBody, Switch, Tooltip } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { toast } from "react-toastify";
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
 
+import toast from "@/utils/toast";
 import { useSettingsStore } from "@/store/useSettingsStore.ts";
 import { storage } from "@/lib/indexedDBStore.ts";
 
@@ -94,25 +88,25 @@ export default function SettingsPage() {
   return (
     <div className="w-full h-full flex-1 p-6 bg-default-50">
       <motion.div
+        animate={{ opacity: 1, y: 0 }}
         className="max-w-4xl mx-auto"
         initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
         {/* 页面标题 */}
         <div className="mb-8">
           <div className="flex items-center gap-x-3 mb-2">
             <motion.h1
+              animate={{ opacity: 1 }}
               className="text-3xl font-bold text-default-foreground"
               initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
               transition={{ delay: 0.1 }}
             >
               设置
             </motion.h1>
             <motion.div
-              initial={{ rotate: 0 }}
               animate={{ rotate: 360 }}
+              initial={{ rotate: 0 }}
               transition={{ duration: 0.8, ease: "easeInOut" }}
             >
               <Icon
@@ -163,11 +157,11 @@ export default function SettingsPage() {
                     </div>
                   </div>
                   <Switch
-                    size="lg"
+                    className="ml-4"
                     color="primary"
                     isSelected={item.isSelected}
+                    size="lg"
                     onValueChange={item.onChange}
-                    className="ml-4"
                   />
                 </div>
               ))}
@@ -189,9 +183,9 @@ export default function SettingsPage() {
                   <Tooltip content="此操作将清除所有本地数据">
                     <Button
                       color="danger"
-                      variant="flat"
                       radius="full"
                       startContent={<Icon icon="solar:refresh-bold" />}
+                      variant="flat"
                       onPress={() => {
                         removeStore();
                       }}

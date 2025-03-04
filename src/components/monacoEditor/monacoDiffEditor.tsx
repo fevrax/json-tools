@@ -3,7 +3,8 @@ import { loader } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
 import { cn } from "@heroui/react";
 import { editor } from "monaco-editor";
-import { toast } from "react-toastify";
+
+import toast from "@/utils/toast";
 
 import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEntity";
 import { sortJson } from "@/utils/json";
