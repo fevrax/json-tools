@@ -1,11 +1,10 @@
-import React, { useEffect, useImperativeHandle, useRef } from "react";
+import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { loader, Monaco } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
 import { Button, cn, useDisclosure } from "@heroui/react";
 import { editor } from "monaco-editor";
 import { jsonrepair } from "jsonrepair";
-
-import ErrorModal from "./errorModal";
+import { Icon } from "@iconify/react";
 
 import { sleep } from "@/utils/time";
 import toast from "@/utils/toast";
@@ -17,6 +16,7 @@ import {
   removeJsonComments,
   sortJson,
 } from "@/utils/json";
+
 import "@/styles/monaco.css";
 
 export interface MonacoJsonEditorProps {
@@ -54,9 +54,12 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   onMount,
   ref,
 }) => {
+  const errorBottomHeight = 45; // 底部错误详情弹窗的高度
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
-  const parseJsonError = useRef<JsonErrorInfo | null>(null);
+  const [parseJsonError, setParseJsonError] = useState<JsonErrorInfo | null>(
+    null,
+  );
   const errorDecorationsRef =
     useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
 
@@ -186,8 +189,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     const jsonErr = jsonParseError(val);
 
     if (jsonErr) {
-      parseJsonError.current = jsonErr;
-      showAutoFixNotify();
+      setParseJsonError(jsonErr);
 
       return false;
     }
@@ -204,39 +206,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
 
     return editorFormat();
-  };
-
-  const showAutoFixNotify = () => {
-    // toast.warning(
-    //   <div key={1}>
-    //     <div>
-    //       <h2 className="font-bold mb-2">
-    //         第 {parseJsonError.current?.line} 行，第
-    //         {parseJsonError.current?.column} 列，格式错误
-    //       </h2>
-    //     </div>
-    //     <div>{parseJsonError.current?.message}</div>
-    //     <div className="flex justify-end mt-3">
-    //       <Button
-    //         className="h-7"
-    //         color="primary"
-    //         size="sm"
-    //         onPress={() => {
-    //           openJsonErrorDetailsModel();
-    //           toast.dismiss();
-    //         }}
-    //       >
-    //         查看详情
-    //       </Button>
-    //     </div>
-    //     <div className={"absolute top-0.5 right-0 m-2"}>
-    //       <Icon icon="gg:close" width={16} />
-    //     </div>
-    //   </div>,
-    //   {
-    //     closeButton: false,
-    //   },
-    // );
   };
 
   const editorFormat = (): boolean => {
@@ -290,14 +259,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
   // 一键定位到错误行
   const goToErrorLine = () => {
-    if (!parseJsonError.current || parseJsonError.current.line <= 0) {
+    if (!parseJsonError || parseJsonError.line <= 0) {
       toast.error("一键定位失败");
 
       return;
     }
     closeJsonErrorDetailsModel();
 
-    highlightErrorLine(parseJsonError.current.line);
+    highlightErrorLine(parseJsonError.line);
     toast.success("一键定位成功");
   };
 
@@ -315,6 +284,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       setEditorValue(repaired);
 
       closeJsonErrorDetailsModel();
+      setParseJsonError(null);
       toast.success("修复成功");
 
       return true;
@@ -380,6 +350,10 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
     return "";
   };
+
+  useEffect(() => {
+    editorRef.current?.layout();
+  }, [parseJsonError]);
 
   // 暴露给父组件的方法
   useImperativeHandle(ref, () => ({
@@ -524,34 +498,64 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       <div
         ref={containerRef}
         className={cn("w-full flex-grow")}
-        style={{ height: height ? height - 50 : "100%" }}
+        style={{
+          height: height
+            ? parseJsonError
+              ? height - errorBottomHeight
+              : height
+            : 300,
+        }}
       />
       <div
-        className={
-          "flex justify-between items-center px-3 bg-red-500/90 rounded-t-md text-white"
-        }
-        style={{ height: 50 }}
+        className={cn(
+          "flex justify-between items-center px-3 text-white text-base",
+          {
+            hidden: !parseJsonError,
+          },
+        )}
+        style={{ height: errorBottomHeight, backgroundColor: "#ED5241" }}
       >
-        <h2 className="font-bold ">第 行，第 列，格式错误</h2>
+        <p className="">
+          第 {parseJsonError?.line || 0} 行，第 {parseJsonError?.column || 0}{" "}
+          列错误， {parseJsonError?.message}{" "}
+        </p>
         <div className={"flex items-center space-x-2"}>
-          <Button color="primary" size="sm" onPress={() => {}}>
+          <Button
+            className="bg-white/20"
+            color="primary"
+            size="sm"
+            startContent={<Icon icon="hugeicons:view" width={16} />}
+            onPress={() => {}}
+          >
             查看详情
           </Button>
-          <Button color="primary" size="sm" onPress={() => {}}>
+          <Button
+            className="bg-white/20"
+            color="primary"
+            size="sm"
+            startContent={<Icon icon="mynaui:tool" width={16} />}
+            onPress={autoFix}
+          >
             自动修复
           </Button>
-          <Button color="primary" size="sm" onPress={() => {}}>
+          <Button
+            className="bg-white/20"
+            color="primary"
+            size="sm"
+            startContent={<Icon icon="mingcute:location-line" width={16} />}
+            onPress={goToErrorLine}
+          >
             一键定位
           </Button>
         </div>
       </div>
-      <ErrorModal
-        isOpen={jsonErrorDetailsModel}
-        parseJsonError={parseJsonError}
-        onAutoFix={autoFix}
-        onClose={closeJsonErrorDetailsModel}
-        onGotoErrorLine={goToErrorLine}
-      />
+      {/*<ErrorModal*/}
+      {/*  isOpen={jsonErrorDetailsModel}*/}
+      {/*  parseJsonError={parseJsonError}*/}
+      {/*  onAutoFix={autoFix}*/}
+      {/*  onClose={closeJsonErrorDetailsModel}*/}
+      {/*  onGotoErrorLine={goToErrorLine}*/}
+      {/*/>*/}
     </div>
   );
 };
