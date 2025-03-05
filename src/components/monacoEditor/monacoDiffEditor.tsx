@@ -5,7 +5,6 @@ import { cn } from "@heroui/react";
 import { editor } from "monaco-editor";
 
 import toast from "@/utils/toast";
-
 import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEntity";
 import { sortJson } from "@/utils/json";
 
@@ -120,8 +119,8 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
             readOnly: false, // 是否开启已读功能
             theme: theme || "vs-light", // 主题
             mouseWheelZoom: true, // 启用鼠标滚轮缩放
-            formatOnPaste: true, // 粘贴时自动格式化
-            formatOnType: true, // 输入时自动格式化
+            formatOnPaste: false, // 粘贴时自动格式化
+            formatOnType: false, // 输入时自动格式化
             automaticLayout: true, // 自动布局
             scrollBeyondLastLine: false, // 禁用滚动超出最后一行
             suggestOnTriggerCharacters: true, // 在触发字符时显示建议

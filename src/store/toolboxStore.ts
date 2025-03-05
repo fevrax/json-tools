@@ -33,7 +33,7 @@ const demoTools: Tool[] = [
     description: "将JSON数据快速转换为TypeScript或JavaScript对象",
     path: "/tools/json-to-object",
     category: ["数据处理"],
-  }
+  },
 ];
 
 export const useToolboxStore = create<ToolboxState>((set, get) => ({
@@ -52,7 +52,7 @@ export const useToolboxStore = create<ToolboxState>((set, get) => ({
         tool.name.toLowerCase().includes(query) ||
         tool.description.toLowerCase().includes(query) ||
         (tool.category &&
-          tool.category.some(cat => cat.toLowerCase().includes(query)))
+          tool.category.some((cat) => cat.toLowerCase().includes(query))),
     );
   },
 }));

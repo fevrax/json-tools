@@ -9,9 +9,10 @@ import {
   DropdownTrigger,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import toast from "@/utils/toast";
 
 import StatusButton, { IconStatus } from "../button/statusButton";
+
+import toast from "@/utils/toast";
 
 interface MonacoOperationBarProps {
   onCopy: (type?: "default" | "compress" | "escape") => boolean;

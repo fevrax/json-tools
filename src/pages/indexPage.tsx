@@ -378,6 +378,10 @@ export default function IndexPage() {
   const tabSwitchHandle = () => {
     const currentTab = activeTab();
 
+    if (!currentTab) {
+      return;
+    }
+
     // 如果当前 tab 存在 monaco 版本和 vanilla 版本不一致, 则需要同步数据
     if (currentTab && currentTab.monacoVersion != currentTab.vanillaVersion) {
       switch (sidebarStore.clickSwitchKey) {
@@ -428,6 +432,13 @@ export default function IndexPage() {
           }
           break;
       }
+    }
+
+    // tab 切换时触发校验
+    if (sidebarStore.clickSwitchKey == SidebarKeys.textView) {
+      setTimeout(() => {
+        monacoJsonEditorRefs.current[currentTab.key]?.validate();
+      }, 500);
     }
   };
 

@@ -18,6 +18,7 @@ import {
 } from "@/utils/json";
 
 import "@/styles/monaco.css";
+import ErrorModal from "@/components/monacoEditor/errorModal.tsx";
 
 export interface MonacoJsonEditorProps {
   tabTitle?: string;
@@ -36,6 +37,7 @@ export interface MonacoJsonEditorRef {
   layout: () => void;
   copy: (type?: "default" | "compress" | "escape") => boolean;
   format: () => boolean;
+  validate: () => boolean;
   clear: () => boolean;
   fieldSort: (type: "asc" | "desc") => boolean;
   moreAction: (key: "unescape" | "del_comment") => boolean;
@@ -60,12 +62,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const [parseJsonError, setParseJsonError] = useState<JsonErrorInfo | null>(
     null,
   );
+  const parseJsonErrorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const errorDecorationsRef =
     useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
 
   const {
     isOpen: jsonErrorDetailsModel,
-    // onOpen: openJsonErrorDetailsModel,
+    onOpen: openJsonErrorDetailsModel,
     onClose: closeJsonErrorDetailsModel,
   } = useDisclosure();
 
@@ -131,8 +134,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         readOnly: false, // 是否开启已读功能
         theme: theme || "vs-light", // 主题
         mouseWheelZoom: true, // 启用鼠标滚轮缩放
-        formatOnPaste: true, // 粘贴时自动格式化
-        formatOnType: true, // 输入时自动格式化
+        formatOnPaste: false, // 粘贴时自动格式化
+        formatOnType: false, // 输入时自动格式化
         wordBasedSuggestions: "allDocuments", // 启用基于单词的建议
         wordBasedSuggestionsOnlySameLanguage: true, // 仅在相同语言下启用基于单词的建议
         scrollBeyondLastLine: false, // 禁用滚动超出最后一行
@@ -155,7 +158,17 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
       // 监听内容变化
       editor.onDidChangeModelContent(async () => {
-        onUpdateValue(editor.getValue());
+        let val = editor.getValue();
+
+        // 自动验证 JSON 内容
+        if (parseJsonErrorTimeoutRef.current) {
+          clearTimeout(parseJsonErrorTimeoutRef.current);
+        }
+        parseJsonErrorTimeoutRef.current = setTimeout(() => {
+          editorValueValidate(val);
+        }, 1000);
+
+        onUpdateValue(val);
       });
 
       // 添加粘贴事件监听
@@ -171,18 +184,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   };
 
   // 验证编辑器内容
-  const editorValueValidate = (): boolean => {
-    if (!editorRef.current) {
-      toast.error("未初始化编辑器!");
-
-      return false;
-    }
-
-    const val = editorRef.current.getValue();
-
+  const editorValueValidate = (val: string): boolean => {
     if (val.trim() === "") {
-      toast.warning("暂无内容!");
-
       return false;
     }
 
@@ -192,6 +195,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       setParseJsonError(jsonErr);
 
       return false;
+    } else {
+      setParseJsonError(null);
     }
 
     return true;
@@ -199,7 +204,11 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
   // 验证格式并格式化
   const formatValidate = (): boolean => {
-    const isValid = editorValueValidate();
+    if (!editorRef.current) {
+      return false;
+    }
+    const val = editorRef.current.getValue();
+    const isValid = editorValueValidate(val);
 
     if (!isValid) {
       return false;
@@ -389,7 +398,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         return false;
       }
 
-      const isValid = editorValueValidate();
+      const isValid = editorValueValidate(val);
 
       if (!isValid) {
         return false;
@@ -414,6 +423,19 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     format: () => {
       return formatValidate();
     },
+    validate: () => {
+      if (!editorRef.current) {
+        return false;
+      }
+
+      const val = editorRef.current.getValue();
+
+      if (val.trim() === "") {
+        return true;
+      }
+
+      return editorValueValidate(val);
+    },
     clear: () => {
       if (editorRef.current) {
         setEditorValue("");
@@ -428,7 +450,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         return false;
       }
       const val = editorRef.current.getValue();
-      const isValid = editorValueValidate();
+      const isValid = editorValueValidate(val);
 
       if (!isValid) {
         return false;
@@ -517,7 +539,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       >
         <p className="">
           第 {parseJsonError?.line || 0} 行，第 {parseJsonError?.column || 0}{" "}
-          列错误， {parseJsonError?.message}{" "}
+          列错误， {parseJsonError?.message}
         </p>
         <div className={"flex items-center space-x-2"}>
           <Button
@@ -525,7 +547,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
             color="primary"
             size="sm"
             startContent={<Icon icon="hugeicons:view" width={16} />}
-            onPress={() => {}}
+            onPress={openJsonErrorDetailsModel}
           >
             查看详情
           </Button>
@@ -549,13 +571,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           </Button>
         </div>
       </div>
-      {/*<ErrorModal*/}
-      {/*  isOpen={jsonErrorDetailsModel}*/}
-      {/*  parseJsonError={parseJsonError}*/}
-      {/*  onAutoFix={autoFix}*/}
-      {/*  onClose={closeJsonErrorDetailsModel}*/}
-      {/*  onGotoErrorLine={goToErrorLine}*/}
-      {/*/>*/}
+      <ErrorModal
+        isOpen={jsonErrorDetailsModel}
+        parseJsonError={parseJsonError}
+        onAutoFix={autoFix}
+        onClose={closeJsonErrorDetailsModel}
+        onGotoErrorLine={goToErrorLine}
+      />
     </div>
   );
 };

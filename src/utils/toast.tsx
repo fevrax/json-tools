@@ -8,21 +8,19 @@ export type ToastType =
   | "warning"
   | "danger";
 
-// 定义 Toast 配置接口
 export interface ToastOptions extends Omit<ToastProps, "color"> {
   duration?: number;
 }
 
 // Toast 工具类
 class ToastUtil {
-  // 基础 toast 方法
+
   private show(
     type: ToastType,
     title: string,
     description?: string,
     options?: ToastOptions,
   ) {
-
     return addToast({
       title,
       description,
@@ -63,7 +61,6 @@ class ToastUtil {
   }
 }
 
-// 导出单例实例
 const toast = new ToastUtil();
 
 export default toast;

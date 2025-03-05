@@ -220,7 +220,6 @@ export function sortJson(data: any, order: "asc" | "desc" = "asc"): string {
   return JSON.stringify(sortedResult, null, 4);
 }
 
-
 /**
  * 删除 JSON 文本中的注释
  * @param jsonText 包含注释的 JSON 文本

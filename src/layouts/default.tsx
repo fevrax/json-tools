@@ -1,5 +1,12 @@
 import "@/styles/globals.css";
-import { Button, cn, Image, Spacer, Tooltip, useDisclosure } from "@heroui/react";
+import {
+  Button,
+  cn,
+  Image,
+  Spacer,
+  Tooltip,
+  useDisclosure,
+} from "@heroui/react";
 import { Icon } from "@iconify/react";
 import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -54,7 +61,6 @@ export default function RootLayout({
   }, [location.pathname, sidebarStore.clickSwitchKey]);
 
   useEffect(() => {
-
     const init = async () => {
       const settings = await storage.getItem<SettingsState>("settings");
 
@@ -166,7 +172,7 @@ export default function RootLayout({
             )}
 
             {/* 主题切换 */}
-            <ThemeSwitch isCollapsed={isCollapsed}/>
+            <ThemeSwitch isCollapsed={isCollapsed} />
             <Tooltip
               content="更多设置"
               isDisabled={!isCollapsed}
