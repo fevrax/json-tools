@@ -1,4 +1,4 @@
-import type { Tool } from "@/store/toolboxStore.ts";
+import type { Tool } from "@/store/useToolboxStore.ts";
 
 import React from "react";
 import { Card, CardBody, CardFooter } from "@heroui/card";
@@ -37,7 +37,7 @@ export const ToolCard: React.FC<ToolCardProps> = ({ tool }) => {
             <h3 className="text-lg font-semibold truncate">{tool.name}</h3>
             <div className="flex flex-wrap gap-1 mt-1">
               {tool.category.length > 0 &&
-                tool.category.map((category) => (
+                tool.category.map((category: string) => (
                   <Chip
                     key={category}
                     className="max-w-[120px]"

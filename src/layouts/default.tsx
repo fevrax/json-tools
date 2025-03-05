@@ -54,7 +54,10 @@ export default function RootLayout({
       sidebarStore.updateClickSwitchKey(SidebarKeys.toolbox);
       sidebarStore.updateActiveKey(SidebarKeys.toolbox);
     } else {
-      if (sidebarStore.clickSwitchKey === SidebarKeys.toolbox) {
+      if (
+        sidebarStore.clickSwitchKey === SidebarKeys.toolbox &&
+        location.pathname === "/"
+      ) {
         navigate("./toolbox");
       }
     }

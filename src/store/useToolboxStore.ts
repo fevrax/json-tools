@@ -19,19 +19,19 @@ interface ToolboxState {
 
 const demoTools: Tool[] = [
   {
-    id: "json-ai-fix",
-    name: "JSON AI修复",
-    icon: "solar:code-bold",
-    description: "智能识别并修复JSON格式错误，让您的JSON数据恢复正常",
-    path: "/tools/json-ai-fix",
-    category: ["数据处理"],
+    id: "jsonAIRepair",
+    name: "JSON AI 修复工具",
+    icon: "solar:magic-stick-bold",
+    description: "AI 智能识别并修复JSON格式错误，让您的JSON数据恢复正常",
+    path: "/toolbox/jsonAIRepair",
+    category: ["AI", "数据处理"],
   },
   {
-    id: "json-to-object",
+    id: "jsonToObject",
     name: "JSON转换对象",
     icon: "solar:code-square-bold",
     description: "将JSON数据快速转换为TypeScript或JavaScript对象",
-    path: "/tools/json-to-object",
+    path: "/toolbox/jsonToObject",
     category: ["数据处理"],
   },
 ];

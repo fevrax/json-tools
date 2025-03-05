@@ -3,7 +3,7 @@ import React from "react";
 import { Input } from "@heroui/input";
 import { Icon } from "@iconify/react";
 
-import { useToolboxStore } from "@/store/toolboxStore.ts";
+import { useToolboxStore } from "@/store/useToolboxStore";
 
 export const SearchBox: React.FC = () => {
   const { searchQuery, setSearchQuery } = useToolboxStore();

@@ -7,7 +7,7 @@ import { Button } from "@heroui/button";
 
 import { SearchBox } from "@/components/toolbox/searchBox.tsx";
 import { ToolCard } from "@/components/toolbox/toolCard.tsx";
-import { useToolboxStore } from "@/store/toolboxStore";
+import { useToolboxStore } from "@/store/useToolboxStore";
 
 const ToolboxPage: React.FC = () => {
   const { filteredTools } = useToolboxStore();

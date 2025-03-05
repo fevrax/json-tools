@@ -12,7 +12,7 @@ import "@/styles/monaco.css";
 
 export interface MonacoDiffEditorProps {
   tabKey: string;
-  height?: number;
+  height?: number | string;
   originalValue: string;
   modifiedValue: string;
   language?: string;
@@ -35,6 +35,7 @@ export interface MonacoDiffEditorRef {
     sort: "asc" | "desc",
   ) => boolean;
   updateOriginalValue: (value: string) => void;
+  updateModifiedValue: (value: string) => void;
 }
 
 const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
@@ -256,6 +257,9 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     updateOriginalValue: (value: string) => {
       setEditorValue(originalEditorRef.current, value);
     },
+    updateModifiedValue: (value: string) => {
+      setEditorValue(modifiedEditorRef.current, value);
+    },
     focus: () => {
       if (editorRef.current) {
         editorRef.current.focus();
@@ -264,6 +268,8 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     layout: () => {
       if (editorRef.current) {
         editorRef.current.layout();
+        originalEditorRef.current?.layout();
+        modifiedEditorRef.current?.layout();
       }
     },
     copy: (type) => {

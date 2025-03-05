@@ -18,7 +18,7 @@ export function Provider({ children }: { children: React.ReactNode }) {
     // TODO 等待 HeroUIProvider 补丁发布
     // eslint-disable-next-line react-compiler/react-compiler
     <HeroUIProvider navigate={navigate} useHref={useHref}>
-      <ToastProvider aria-hidden="true" placement="top-right" />
+      <ToastProvider aria-hidden="true"/>
       <NextThemesProvider attribute="class" defaultTheme="light">
         {children}
       </NextThemesProvider>
