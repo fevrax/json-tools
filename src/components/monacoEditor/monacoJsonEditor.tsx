@@ -23,7 +23,7 @@ import ErrorModal from "@/components/monacoEditor/errorModal.tsx";
 export interface MonacoJsonEditorProps {
   tabTitle?: string;
   tabKey: string;
-  height?: number;
+  height?: number | string;
   value?: string;
   language?: string;
   theme?: string;
@@ -46,16 +46,16 @@ export interface MonacoJsonEditorRef {
 }
 
 const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
-  value,
-  tabKey,
-  tabTitle,
-  language,
-  theme,
-  height,
-  onUpdateValue,
-  onMount,
-  ref,
-}) => {
+                                                             value,
+                                                             tabKey,
+                                                             tabTitle,
+                                                             language,
+                                                             theme,
+                                                             height,
+                                                             onUpdateValue,
+                                                             onMount,
+                                                             ref,
+                                                           }) => {
   const errorBottomHeight = 45; // 底部错误详情弹窗的高度
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
@@ -72,11 +72,20 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     onClose: closeJsonErrorDetailsModel,
   } = useDisclosure();
 
+  // 计算编辑器实际高度，当有错误时减去错误信息栏的高度
+  const getEditorHeight = () => {
+    if (typeof height === 'number') {
+      return parseJsonError ? height - errorBottomHeight : height;
+    }
+    // 如果height是字符串（例如'100%'），需要保持容器高度为传入值，并在内部进行调整
+    return parseJsonError ? `calc(${height} - ${errorBottomHeight}px)` : height;
+  };
+
   useEffect(() => {
     if (editorRef.current) {
       editorRef.current.layout();
     }
-  }, [height]);
+  }, [height, parseJsonError]);
 
   useEffect(() => {
     if (editorRef.current) {
@@ -360,6 +369,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     return "";
   };
 
+  // 当错误状态变化时，重新布局编辑器
   useEffect(() => {
     editorRef.current?.layout();
   }, [parseJsonError]);
@@ -516,26 +526,27 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   }));
 
   return (
-    <div>
+    <div style={{ height: height }} className="flex flex-col">
       <div
         ref={containerRef}
-        className={cn("w-full flex-grow")}
-        style={{
-          height: height
-            ? parseJsonError
-              ? height - errorBottomHeight
-              : height
-            : 300,
-        }}
+        className={cn("w-full flex-grow flex-1")}
+        style={{ height: getEditorHeight(), transition: "height 0.3s ease" }}
       />
       <div
         className={cn(
-          "flex justify-between items-center px-3 text-white text-base",
+          "flex justify-between items-center px-3 text-white text-base transition-all duration-300 z-50",
           {
-            hidden: !parseJsonError,
+            "h-0 opacity-0 invisible": !parseJsonError,
+            [`h-[${errorBottomHeight}px] opacity-100 visible`]: parseJsonError,
           },
         )}
-        style={{ height: errorBottomHeight, backgroundColor: "#ED5241" }}
+        style={{
+          height: parseJsonError ? errorBottomHeight : 0,
+          backgroundColor: "#ED5241",
+          overflow: "hidden",
+          position: "sticky",
+          bottom: 0
+        }}
       >
         <p className="">
           第 {parseJsonError?.line || 0} 行，第 {parseJsonError?.column || 0}{" "}

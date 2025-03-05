@@ -60,8 +60,6 @@ export default function IndexPage() {
   const tabRef = useRef<DynamicTabsRef>(null);
   const monacoOperationBarRef = useRef<MonacoOperationBarRef>(null);
   const monacoDiffOperationBarRef = useRef<MonacoDiffOperationBarRef>(null);
-  const editorContainerRef = useRef<HTMLDivElement>(null);
-  const [editorHeight, setEditorHeight] = useState<number>(0);
 
   const monacoUpdateContentTimeoutId = useRef<Record<string, NodeJS.Timeout>>(
     {},
@@ -80,21 +78,6 @@ export default function IndexPage() {
     diff: new Set(),
     vanilla: new Set(),
   });
-
-  // 计算高度的函数
-  const calculateHeight = () => {
-    if (tabRef.current) {
-      const windowHeight = window.innerHeight;
-      const editorContainerTop = editorContainerRef.current?.offsetTop;
-
-      let newHeight = 0;
-
-      if (editorContainerTop !== undefined) {
-        newHeight = windowHeight - editorContainerTop - 2;
-      }
-      setEditorHeight(newHeight); // 设置最小高度
-    }
-  };
 
   const closeTabHandle = (keys: string[]) => {
     if (keys.length === 0) {
@@ -160,7 +143,7 @@ export default function IndexPage() {
             return monacoJsonEditorRefs.current[activeTabKey].saveFile();
           }}
         />
-        <div className="editor-container">
+        <div className="editor-container flex-grow overflow-hidden">
           {tabs.map((tab) => {
             // 如果已加载过该 tab，或者该 tab 恰好为当前激活 tab，则渲染
             const shouldRender = loadedEditors.monaco.has(tab.key);
@@ -180,7 +163,7 @@ export default function IndexPage() {
               <div
                 key={tab.key}
                 className={cn(
-                  "editor-wrapper",
+                  "editor-wrapper w-full h-full",
                   "editor-transition",
                   isVisible && "visible",
                   !editorLoading[tab.key] && "loaded",
@@ -194,7 +177,7 @@ export default function IndexPage() {
                         monacoJsonEditorRefs.current[tab.key] = ref;
                       }
                     }}
-                    height={editorHeight - 38}
+                    height="100%"
                     tabKey={tab.key}
                     tabTitle={tab.title}
                     theme={theme === "dark" ? "vs-dark" : "vs-light"}
@@ -221,7 +204,7 @@ export default function IndexPage() {
   // MonacoDiffEditor 渲染函数
   const renderMonacoDiffEditor = () => {
     return (
-      <div className="w-full">
+      <div className="w-full h-full flex flex-col">
         <MonacoDiffOperationBar
           ref={monacoDiffOperationBarRef}
           onClear={(type) => {
@@ -240,7 +223,7 @@ export default function IndexPage() {
             return monacoDiffEditorRefs.current[activeTabKey].format(type);
           }}
         />
-        <div className="editor-container">
+        <div className="editor-container flex-grow overflow-hidden">
           {tabs.map((tab) => {
             const shouldRender = loadedEditors.diff.has(tab.key);
             const isVisible = tab.key === activeTabKey;
@@ -256,7 +239,7 @@ export default function IndexPage() {
               <div
                 key={"diff" + tab.key}
                 className={cn(
-                  "editor-wrapper",
+                  "editor-wrapper w-full h-full",
                   "editor-transition",
                   isVisible && "visible",
                   !editorLoading[tab.key] && "loaded",
@@ -270,7 +253,7 @@ export default function IndexPage() {
                         monacoDiffEditorRefs.current[tab.key] = ref;
                       }
                     }}
-                    height={editorHeight - 39}
+                    height="100%"
                     modifiedValue={
                       tab.diffModifiedValue ? tab.diffModifiedValue : ""
                     }
@@ -302,7 +285,7 @@ export default function IndexPage() {
   // vanillaJsonEditor 渲染函数
   const renderVanillaJsonEditor = () => {
     return (
-      <div className="editor-container">
+      <div className="editor-container h-full">
         {tabs.map((tab) => {
           const shouldRender = loadedEditors.vanilla.has(tab.key);
           const isVisible = tab.key === activeTabKey;
@@ -336,7 +319,7 @@ export default function IndexPage() {
                     }
                   }}
                   content={tab.vanilla}
-                  height={editorHeight}
+                  height="100%"
                   mode={tab.vanillaMode}
                   tabKey={tab.key}
                   onChangeMode={(mode) => {
@@ -443,10 +426,6 @@ export default function IndexPage() {
   };
 
   useLayoutEffect(() => {
-    calculateHeight();
-
-    window.addEventListener("resize", calculateHeight);
-
     const init = async () => {
       const settings = await storage.getItem<SettingsState>("settings");
 
@@ -464,10 +443,6 @@ export default function IndexPage() {
     };
 
     init();
-
-    return () => {
-      window.removeEventListener("resize", calculateHeight);
-    };
   }, []);
 
   useEffect(() => {
@@ -533,13 +508,15 @@ export default function IndexPage() {
   }, [sidebarStore.clickSwitchKey]);
 
   return (
-    <div className="dark:bg-vscode-dark h-full">
+    <div className="flex flex-col h-full dark:bg-vscode-dark">
       <DynamicTabs
         ref={tabRef}
         onClose={closeTabHandle}
         onSwitch={tabSwitchHandle}
       />
-      <div ref={editorContainerRef}>{renderEditor()}</div>
+      <div className="flex-grow h-0 overflow-hidden flex flex-col">
+        {renderEditor()}
+      </div>
     </div>
   );
 }

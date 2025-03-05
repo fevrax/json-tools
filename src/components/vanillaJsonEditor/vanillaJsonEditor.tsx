@@ -13,7 +13,7 @@ import "@/styles/vanilla.scss";
 export interface VanillaJsonEditorProps {
   ref?: React.Ref<VanillaJsonEditorRef>;
   tabKey: string;
-  height?: number;
+  height?: number | string;
   content?: Content;
   mode?: Mode;
   onUpdateValue?: (value: Content) => void;
