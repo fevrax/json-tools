@@ -46,16 +46,16 @@ export interface MonacoJsonEditorRef {
 }
 
 const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
-                                                             value,
-                                                             tabKey,
-                                                             tabTitle,
-                                                             language,
-                                                             theme,
-                                                             height,
-                                                             onUpdateValue,
-                                                             onMount,
-                                                             ref,
-                                                           }) => {
+  value,
+  tabKey,
+  tabTitle,
+  language,
+  theme,
+  height,
+  onUpdateValue,
+  onMount,
+  ref,
+}) => {
   const errorBottomHeight = 45; // 底部错误详情弹窗的高度
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
@@ -74,18 +74,20 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
   // 计算编辑器实际高度，当有错误时减去错误信息栏的高度
   const getEditorHeight = () => {
-    if (typeof height === 'number') {
+    if (typeof height === "number") {
       return parseJsonError ? height - errorBottomHeight : height;
     }
+
     // 如果height是字符串（例如'100%'），需要保持容器高度为传入值，并在内部进行调整
     return parseJsonError ? `calc(${height} - ${errorBottomHeight}px)` : height;
   };
 
+  // 错误信息内容监听
   useEffect(() => {
     if (editorRef.current) {
       editorRef.current.layout();
     }
-  }, [height, parseJsonError]);
+  }, [parseJsonError]);
 
   useEffect(() => {
     if (editorRef.current) {
@@ -95,7 +97,16 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
   }, [theme]);
 
-  // 添加窗口大小变化监听器
+  // 语言切换时重新设置编辑器
+  useEffect(() => {
+    const model = monaco.editor.createModel(
+      value as string,
+      language || "json",
+    );
+
+    editorRef.current?.setModel(model);
+  }, [language]);
+
   useEffect(() => {
     // 使用 setTimeout 确保在 React 严格模式下只执行一次
     const timeoutId = setTimeout(() => {
@@ -169,14 +180,15 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       editor.onDidChangeModelContent(async () => {
         let val = editor.getValue();
 
-        // 自动验证 JSON 内容
-        if (parseJsonErrorTimeoutRef.current) {
-          clearTimeout(parseJsonErrorTimeoutRef.current);
+        if (language === "json") {
+          // 自动验证 JSON 内容
+          if (parseJsonErrorTimeoutRef.current) {
+            clearTimeout(parseJsonErrorTimeoutRef.current);
+          }
+          parseJsonErrorTimeoutRef.current = setTimeout(() => {
+            editorValueValidate(val);
+          }, 1000);
         }
-        parseJsonErrorTimeoutRef.current = setTimeout(() => {
-          editorValueValidate(val);
-        }, 1000);
-
         onUpdateValue(val);
       });
 
@@ -526,7 +538,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   }));
 
   return (
-    <div style={{ height: height }} className="flex flex-col">
+    <div className="flex flex-col" style={{ height: height }}>
       <div
         ref={containerRef}
         className={cn("w-full flex-grow flex-1")}
@@ -545,7 +557,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           backgroundColor: "#ED5241",
           overflow: "hidden",
           position: "sticky",
-          bottom: 0
+          bottom: 0,
         }}
       >
         <p className="">

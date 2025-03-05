@@ -135,6 +135,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
             cursorSurroundingLines: 0, // 光标环绕行数 当文字输入超过屏幕时 可以看见右侧滚动条中光标所处位置是在滚动条中间还是顶部还是底部 即光标环绕行数 环绕行数越大 光标在滚动条中位置越居中
             cursorSurroundingLinesStyle: "all", // "default" | "all" 光标环绕样式
             links: true, // 是否点击链接
+            diffAlgorithm: "advanced",
           },
         );
         onMount && onMount();

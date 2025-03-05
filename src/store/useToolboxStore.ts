@@ -27,11 +27,11 @@ const demoTools: Tool[] = [
     category: ["AI", "数据处理"],
   },
   {
-    id: "jsonToObject",
+    id: "jsonTypeConverter",
     name: "JSON转换对象",
     icon: "solar:code-square-bold",
     description: "将JSON数据快速转换为TypeScript或JavaScript对象",
-    path: "/toolbox/jsonToObject",
+    path: "/toolbox/jsonTypeConverter",
     category: ["数据处理"],
   },
 ];

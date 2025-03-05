@@ -200,7 +200,7 @@ ${originalValue}
         size="sm"
         startContent={
           isAiProcessing ? (
-            <Spinner color="white" size="sm" />
+            <Spinner color="secondary" size="sm" />
           ) : (
             <Icon icon="solar:magic-stick-linear" width={18} />
           )
@@ -216,7 +216,7 @@ ${originalValue}
         size="sm"
         startContent={
           isBasicProcessing ? (
-            <Spinner color="white" size="sm" />
+            <Spinner color="primary" size="sm" />
           ) : (
             <Icon icon="mynaui:tool" width={18} />
           )

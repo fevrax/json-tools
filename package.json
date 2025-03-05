@@ -22,6 +22,7 @@
     "monaco-editor-webpack-plugin": "^7.1.0",
     "next-themes": "^0.4.4",
     "openai": "^4.86.1",
+    "quicktype-core": "^23.0.171",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-router-dom": "6.23.0",
@@ -57,6 +58,7 @@
     "typescript": "5.6.3",
     "vite": "^5.4.14",
     "vite-plugin-monaco-editor-esm": "^2.0.2",
+    "vite-plugin-node-polyfills": "^0.23.0",
     "vite-tsconfig-paths": "^4.3.2"
   },
   "packageManager": "pnpm@9.12.2+sha512.22721b3a11f81661ae1ec68ce1a7b879425a1ca5b991c975b074ac220b187ce56c708fe5db69f4c962c989452eee76c82877f4ee80f474cebd61ee13461b6228"
