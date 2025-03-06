@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState } from "react";
 import {
   Button,
   Card,
@@ -42,7 +42,6 @@ export default function JsonTypeConverterPage() {
   const inputEditorRef = useRef<MonacoJsonEditorRef>(null);
   const outputEditorRef = useRef<MonacoJsonEditorRef>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
-  const [editorHeight, setEditorHeight] = useState<number>(500);
 
   // 状态管理
   const [inputValue, setInputValue] = useState<string>("");
@@ -52,27 +51,6 @@ export default function JsonTypeConverterPage() {
 
   // 选择的目标语言
   const [targetLanguage, setTargetLanguage] = useState<string>("typescript");
-
-  // 计算编辑器高度
-  useEffect(() => {
-    const updateEditorHeight = () => {
-      if (editorContainerRef.current) {
-        const availableHeight =
-          window.innerHeight -
-          editorContainerRef.current.getBoundingClientRect().top -
-          40; // 40px 底部边距
-
-        setEditorHeight(Math.max(400, availableHeight));
-      }
-    };
-
-    updateEditorHeight();
-    window.addEventListener("resize", updateEditorHeight);
-
-    return () => {
-      window.removeEventListener("resize", updateEditorHeight);
-    };
-  }, []);
 
   // 重置函数
   const handleReset = () => {
@@ -291,100 +269,95 @@ export default function JsonTypeConverterPage() {
       toolIconColor="text-primary"
       toolName="JSON 类型转换工具"
     >
-      <div
-        ref={editorContainerRef}
-        className="grid grid-cols-1 md:grid-cols-2 gap-4 h-full"
-        style={{ minHeight: `${editorHeight}px` }}
-      >
-        <Card className="flex-1 overflow-hidden shadow-md border border-default-200 transition-shadow hover:shadow-lg">
-          <CardBody className="p-0 h-full flex flex-col">
-            <div className="p-2.5 bg-default-50 border-b border-default-200 flex justify-between items-center">
-              <span className="text-sm font-medium flex items-center gap-2">
-                <Icon
-                  className="text-default-600"
-                  icon="solar:document-text-outline"
-                  width={16}
+      <div className="flex flex-col h-full">
+        <div
+          ref={editorContainerRef}
+          className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow h-0 overflow-hidden"
+        >
+          <Card className="flex-1 overflow-hidden shadow-md border border-default-200 transition-shadow hover:shadow-lg">
+            <CardBody className="p-0 h-full flex flex-col">
+              <div className="p-2.5 bg-default-50 border-b border-default-200 flex justify-between items-center">
+                <span className="text-sm font-medium flex items-center gap-2">
+                  <Icon
+                    className="text-default-600"
+                    icon="solar:document-text-outline"
+                    width={16}
+                  />
+                  输入 JSON
+                </span>
+                <Tooltip content="格式化" placement="top">
+                  <Button
+                    isIconOnly
+                    aria-label="格式化"
+                    className="bg-default-100/50 hover:bg-default-200/60"
+                    size="sm"
+                    variant="light"
+                    onPress={() => {
+                      inputEditorRef.current?.format();
+                    }}
+                  >
+                    <Icon
+                      className="text-default-600"
+                      icon="solar:magic-stick-linear"
+                      width={18}
+                    />
+                  </Button>
+                </Tooltip>
+              </div>
+              <div className="flex-1 w-full h-full flex-grow overflow-hidden">
+                <MonacoEditor
+                  ref={inputEditorRef}
+                  height="100%"
+                  language="json"
+                  tabKey="input"
+                  theme={theme === "dark" ? "vs-dark" : "vs-light"}
+                  value={inputValue}
+                  onUpdateValue={(value) => setInputValue(value || "")}
                 />
-                输入 JSON
-              </span>
-              <Tooltip content="格式化" placement="top">
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card className="flex-1 overflow-hidden shadow-md border border-default-200 transition-shadow hover:shadow-lg">
+            <CardBody className="p-0 h-full flex flex-col">
+              <div className="p-2.5 bg-default-50 border-b border-default-200 flex justify-between items-center">
+                <span className="text-sm font-medium flex items-center gap-2">
+                  <Icon
+                    className="text-default-600"
+                    icon="solar:code-square-linear"
+                    width={16}
+                  />
+                  输出类型定义
+                </span>
                 <Button
                   isIconOnly
-                  aria-label="格式化"
+                  aria-label="复制"
                   className="bg-default-100/50 hover:bg-default-200/60"
                   size="sm"
                   variant="light"
-                  onPress={() => {
-                    inputEditorRef.current?.format();
-                  }}
+                  onPress={copyOutput}
                 >
                   <Icon
                     className="text-default-600"
-                    icon="solar:magic-stick-linear"
+                    icon="solar:copy-outline"
                     width={18}
                   />
                 </Button>
-              </Tooltip>
-            </div>
-            <div
-              className="flex-1"
-              style={{ height: `${editorHeight - 50}px` }}
-            >
-              <MonacoEditor
-                ref={inputEditorRef}
-                height="100%"
-                language="json"
-                tabKey="input"
-                theme={theme === "dark" ? "vs-dark" : "vs-light"}
-                value={inputValue}
-                onUpdateValue={(value) => setInputValue(value || "")}
-              />
-            </div>
-          </CardBody>
-        </Card>
-
-        <Card className="flex-1 overflow-hidden shadow-md border border-default-200 transition-shadow hover:shadow-lg">
-          <CardBody className="p-0 h-full flex flex-col">
-            <div className="p-2.5 bg-default-50 border-b border-default-200 flex justify-between items-center">
-              <span className="text-sm font-medium flex items-center gap-2">
-                <Icon
-                  className="text-default-600"
-                  icon="solar:code-square-linear"
-                  width={16}
+              </div>
+              <div className="flex-1 h-full flex-grow overflow-hidden">
+                <MonacoEditor
+                  ref={outputEditorRef}
+                  height="100%"
+                  language={targetLanguage}
+                  tabKey="out"
+                  theme={theme === "dark" ? "vs-dark" : "vs-light"}
+                  value={outputValue}
+                  onUpdateValue={() => {}}
                 />
-                输出类型定义
-              </span>
-              <Button
-                isIconOnly
-                aria-label="复制"
-                className="bg-default-100/50 hover:bg-default-200/60"
-                size="sm"
-                variant="light"
-                onPress={copyOutput}
-              >
-                <Icon
-                  className="text-default-600"
-                  icon="solar:copy-outline"
-                  width={18}
-                />
-              </Button>
-            </div>
-            <div
-              className="flex-1"
-              style={{ height: `${editorHeight - 50}px` }}
-            >
-              <MonacoEditor
-                ref={outputEditorRef}
-                height="100%"
-                language={targetLanguage}
-                tabKey="out"
-                theme={theme === "dark" ? "vs-dark" : "vs-light"}
-                value={outputValue}
-                onUpdateValue={() => {}}
-              />
-            </div>
-          </CardBody>
-        </Card>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
       </div>
     </ToolboxPageTemplate>
   );

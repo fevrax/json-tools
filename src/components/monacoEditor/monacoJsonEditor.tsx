@@ -63,6 +63,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     null,
   );
   const parseJsonErrorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const editorLayoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const errorDecorationsRef =
     useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
 
@@ -85,7 +86,9 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   // 错误信息内容监听
   useEffect(() => {
     if (editorRef.current) {
-      editorRef.current.layout();
+      setTimeout(() => {
+        editorRef.current?.layout();
+      }, 500)
     }
   }, [parseJsonError]);
 
@@ -96,6 +99,26 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       });
     }
   }, [theme]);
+
+  // 延迟更新编辑器布局
+  const editorDelayLayout = () => {
+    if (editorLayoutTimeoutRef.current) {
+      clearTimeout(editorLayoutTimeoutRef.current);
+    }
+    editorLayoutTimeoutRef.current = setTimeout(() => {
+      editorRef.current?.layout();
+    }, 50);
+  };
+
+  useEffect(() => {
+    // 添加事件监听器
+    window.addEventListener("resize", editorDelayLayout);
+
+    // 清理函数 - 组件卸载时移除事件监听器
+    return () => {
+      window.removeEventListener("resize", editorDelayLayout);
+    };
+  }, []); // 空依赖数组表示这个效果只在组件挂载和卸载时运行
 
   // 语言切换时重新设置编辑器
   useEffect(() => {
@@ -115,10 +138,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
     return () => {
       clearTimeout(timeoutId);
-      // 如果编辑器已经创建，则销毁
-      if (editorRef.current) {
-        // editorRef.current?.dispose();
-      }
     };
   }, []); // 空依赖数组确保只在挂载时执行
 
