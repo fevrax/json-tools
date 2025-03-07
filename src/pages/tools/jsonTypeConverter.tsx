@@ -41,7 +41,6 @@ export default function JsonTypeConverterPage() {
   // 编辑器引用
   const inputEditorRef = useRef<MonacoJsonEditorRef>(null);
   const outputEditorRef = useRef<MonacoJsonEditorRef>(null);
-  const editorContainerRef = useRef<HTMLDivElement>(null);
 
   // 状态管理
   const [inputValue, setInputValue] = useState<string>("");
@@ -271,7 +270,6 @@ export default function JsonTypeConverterPage() {
     >
       <div className="flex flex-col h-full">
         <div
-          ref={editorContainerRef}
           className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow h-0 overflow-hidden"
         >
           <Card className="flex-1 overflow-hidden shadow-md border border-default-200 transition-shadow hover:shadow-lg">

@@ -14,7 +14,6 @@ export interface ToastOptions extends Omit<ToastProps, "color"> {
 
 // Toast 工具类
 class ToastUtil {
-
   private show(
     type: ToastType,
     title: string,

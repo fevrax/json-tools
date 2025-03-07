@@ -178,6 +178,7 @@ export default function IndexPage() {
                       }
                     }}
                     height="100%"
+                    language="json"
                     tabKey={tab.key}
                     tabTitle={tab.title}
                     theme={theme === "dark" ? "vs-dark" : "vs-light"}

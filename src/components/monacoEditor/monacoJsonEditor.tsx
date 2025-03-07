@@ -62,6 +62,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const [parseJsonError, setParseJsonError] = useState<JsonErrorInfo | null>(
     null,
   );
+  const parseJsonErrorShow = useRef<boolean>(false);
   const parseJsonErrorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const editorLayoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const errorDecorationsRef =
@@ -85,10 +86,18 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
   // 错误信息内容监听
   useEffect(() => {
-    if (editorRef.current) {
+    // 需要显示错误信息时
+    if (parseJsonError && !parseJsonErrorShow.current) {
       setTimeout(() => {
         editorRef.current?.layout();
-      }, 500)
+      }, 500);
+      parseJsonErrorShow.current = true;
+    } else if (parseJsonError == null && parseJsonErrorShow.current) {
+      // 需要隐藏错误信息时
+      setTimeout(() => {
+        editorRef.current?.layout();
+      }, 500);
+      parseJsonErrorShow.current = false;
     }
   }, [parseJsonError]);
 
@@ -226,7 +235,9 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   // 验证编辑器内容
   const editorValueValidate = (val: string): boolean => {
     if (val.trim() === "") {
-      return false;
+      setParseJsonError(null);
+
+      return true;
     }
 
     const jsonErr = jsonParseError(val);
@@ -561,7 +572,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       <div
         ref={containerRef}
         className={cn("w-full flex-grow flex-1")}
-        style={{ height: getEditorHeight(), transition: "height 0.3s ease" }}
+        style={{ height: getEditorHeight(), transition: "height 0.1s ease" }}
       />
       <div
         className={cn(
@@ -579,10 +590,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           bottom: 0,
         }}
       >
-        <p className="">
-          第 {parseJsonError?.line || 0} 行，第 {parseJsonError?.column || 0}{" "}
-          列错误， {parseJsonError?.message}
-        </p>
+        <div className="flex items-center space-x-3">
+          <Icon icon="fluent:warning-28-filled" width={24} />
+          <p className="">
+            第 {parseJsonError?.line || 0} 行，第 {parseJsonError?.column || 0}{" "}
+            列错误， {parseJsonError?.message}
+          </p>
+        </div>
         <div className={"flex items-center space-x-2"}>
           <Button
             className="bg-white/20"

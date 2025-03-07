@@ -13,7 +13,10 @@ function App() {
       <Route element={<SettingsPage />} path="/settings" />
       <Route element={<ToolboxPage />} path="/toolbox" />
       <Route element={<JsonAIRepairPage />} path="/toolbox/jsonAIRepair" />
-      <Route element={<JsonTypeConverter />} path="/toolbox/jsonTypeConverter" />
+      <Route
+        element={<JsonTypeConverter />}
+        path="/toolbox/jsonTypeConverter"
+      />
     </Routes>
   );
 }
