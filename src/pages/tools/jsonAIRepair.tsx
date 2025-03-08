@@ -98,6 +98,14 @@ export default function JsonAIRepairPage() {
 ${originalValue}
 \`\`\``;
 
+    if (promptText.length > 2000) {
+      toast.error("内容超出限制，请缩短内容或使用其他方式描述需求。");
+      setProcessingStep("");
+      setIsAiProcessing(false);
+
+      return;
+    }
+
     // 使用封装的OpenAI服务发送请求
     await openAIService.createChatCompletion(
       [{ role: "user", content: promptText }],
