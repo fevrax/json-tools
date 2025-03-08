@@ -250,7 +250,7 @@ ${originalValue}
     <ToolboxPageTemplate
       actions={actionButtons}
       statusIndicator={statusIndicator}
-      toolIcon="solar:magic-stick-bold"
+      toolIcon="fluent-emoji-flat:magic-wand"
       toolIconColor="text-primary"
       toolName="JSON AI 修复工具"
     >

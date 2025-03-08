@@ -5,6 +5,8 @@ import SettingsPage from "@/pages/settingPage";
 import ToolboxPage from "@/pages/toolboxPage";
 import JsonAIRepairPage from "@/pages/tools/jsonAIRepair.tsx";
 import JsonTypeConverter from "@/pages/tools/jsonTypeConverter";
+import DataFormatConverter from "@/pages/tools/dataFormatConverter";
+
 
 function App() {
   return (
@@ -16,6 +18,10 @@ function App() {
       <Route
         element={<JsonTypeConverter />}
         path="/toolbox/jsonTypeConverter"
+      />
+      <Route
+        element={<DataFormatConverter />}
+        path="/toolbox/dataFormatConverter"
       />
     </Routes>
   );

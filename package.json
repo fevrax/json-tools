@@ -11,11 +11,13 @@
   },
   "dependencies": {
     "@heroui/react": "2.7.4",
+    "@iarna/toml": "^2.2.5",
     "@monaco-editor/react": "4.7.0-rc.0",
     "@react-aria/visually-hidden": "3.8.19",
     "@react-types/shared": "3.26.0",
     "clsx": "2.1.1",
     "framer-motion": "11.15.0",
+    "js-yaml": "^4.1.0",
     "jsonrepair": "^3.12.0",
     "localforage": "^1.10.0",
     "monaco-editor": "^0.52.2",
@@ -30,11 +32,14 @@
     "tailwind-merge": "^2.6.0",
     "tailwind-variants": "0.1.20",
     "tailwindcss": "3.4.16",
+    "toml": "^3.0.0",
     "vanilla-jsoneditor-cn": "^2.2.3",
+    "xml-js": "^1.6.11",
     "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@iconify/react": "^5.2.0",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "20.5.7",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",

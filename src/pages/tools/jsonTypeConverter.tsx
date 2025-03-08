@@ -381,9 +381,9 @@ export default function JsonTypeConverterPage() {
     <ToolboxPageTemplate
       actions={actionButtons}
       statusIndicator={statusIndicator}
-      toolIcon="solar:code-square-bold"
+      toolIcon="fluent-color:code-block-24"
       toolIconColor="text-primary"
-      toolName="JSON 类型转换工具"
+      toolName="JSON 对象类型转换器"
     >
       <div className="flex flex-col h-full">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow h-0 overflow-hidden">

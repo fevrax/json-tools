@@ -6,7 +6,6 @@ import { editor } from "monaco-editor";
 import { jsonrepair } from "jsonrepair";
 import { Icon } from "@iconify/react";
 
-import { sleep } from "@/utils/time";
 import toast from "@/utils/toast";
 import {
   escapeJson,
@@ -137,8 +136,17 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       language || "json",
     );
 
+    if (language !== "json") {
+      setParseJsonError(null);
+    }
+
     editorRef.current?.setModel(model);
   }, [language]);
+
+  // 当错误状态变化时，重新布局编辑器
+  useEffect(() => {
+    editorRef.current?.layout();
+  }, [parseJsonError]);
 
   useEffect(() => {
     // 使用 setTimeout 确保在 React 严格模式下只执行一次
@@ -208,12 +216,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       // 监听内容变化
       editor.onDidChangeModelContent(async () => {
         let val = editor.getValue();
-
+        
+        console.log('tabKey', tabKey, 'language', language);
         if (language === "json") {
-          // 自动验证 JSON 内容
           if (parseJsonErrorTimeoutRef.current) {
             clearTimeout(parseJsonErrorTimeoutRef.current);
           }
+          // 自动验证 JSON 内容
           parseJsonErrorTimeoutRef.current = setTimeout(() => {
             editorValueValidate(val);
           }, 1000);
@@ -222,12 +231,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       });
 
       // 添加粘贴事件监听
-      editor.onDidPaste(async (e) => {
-        if (editor.getValue() && e.range.startLineNumber < 2) {
-          await sleep(150);
-          formatValidate();
-        }
-      });
+      editor.onDidPaste(async () => {});
 
       editorRef.current = editor;
     }
@@ -363,6 +367,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       return;
     }
     const model = editorRef.current.getModel();
+    console.log('tabKey',tabKey,'model', model?.getLanguageId());
 
     if (!model) {
       return;
@@ -411,11 +416,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
     return "";
   };
-
-  // 当错误状态变化时，重新布局编辑器
-  useEffect(() => {
-    editorRef.current?.layout();
-  }, [parseJsonError]);
 
   // 暴露给父组件的方法
   useImperativeHandle(ref, () => ({
@@ -568,6 +568,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     },
     setLanguage: (newLanguage: string) => {
       const model = editorRef.current?.getModel();
+
       if (model) {
         monaco.editor.setModelLanguage(model, newLanguage);
       }
@@ -590,7 +591,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           },
         )}
         style={{
-          height: parseJsonError ? errorBottomHeight : 0,
+          height: parseJsonError && parseJsonError.line > 0 ? errorBottomHeight : 0,
           backgroundColor: "#ED5241",
           overflow: "hidden",
           position: "sticky",
