@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import {
   Button,
   Card,
@@ -19,6 +19,9 @@ import MonacoEditor, {
   MonacoJsonEditorRef,
 } from "@/components/monacoEditor/monacoJsonEditor";
 import ToolboxPageTemplate from "@/layouts/toolboxPageTemplate";
+import AIPromptModal from "@/components/ai/AIPromptModal.tsx";
+import { useOpenAIConfigStore } from "@/store/useOpenAIConfigStore";
+import { openAIService } from "@/services/openAIService";
 
 // 支持的目标语言列表
 const TARGET_LANGUAGES = [
@@ -33,6 +36,7 @@ const TARGET_LANGUAGES = [
   { value: "ruby", label: "Ruby", icon: "devicon:ruby" },
   { value: "rust", label: "Rust", icon: "devicon:rust" },
   { value: "php", label: "PHP", icon: "devicon:php" },
+  { value: "plaintext", label: "plainText", icon: "weui:text-filled" },
 ];
 
 export default function JsonTypeConverterPage() {
@@ -46,10 +50,22 @@ export default function JsonTypeConverterPage() {
   const [inputValue, setInputValue] = useState<string>("");
   const [outputValue, setOutputValue] = useState<string>("");
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [isAiProcessing, setIsAiProcessing] = useState<boolean>(false);
   const [processingStep, setProcessingStep] = useState<string>("");
+  const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
 
   // 选择的目标语言
   const [targetLanguage, setTargetLanguage] = useState<string>("typescript");
+
+  // 使用 OpenAI 配置 store
+  const { syncConfig } = useOpenAIConfigStore();
+
+  // 初始化时同步配置
+  useEffect(() => {
+    syncConfig();
+    // 同时也同步OpenAI服务的配置
+    openAIService.syncConfig();
+  }, [syncConfig]);
 
   // 重置函数
   const handleReset = () => {
@@ -164,6 +180,79 @@ export default function JsonTypeConverterPage() {
       .catch(() => toast.error("复制失败"));
   };
 
+  // AI 转换处理函数
+  const handleAiConvert = async (prompt: string) => {
+    if (!inputValue) {
+      toast.warning("请先输入 JSON 内容");
+
+      return;
+    }
+
+    setIsAiProcessing(true);
+    setProcessingStep("正在处理转换...");
+
+    try {
+      // 构建提示词
+      const promptText = `${prompt}\n以下是 JSON 内容：\n\`\`\`json\n${inputValue}\n\`\`\`\n请仅返回转换后的代码并使用\`\`\`语言标记\`\`\`包裹，不要包含任何解释或其他内容。`;
+
+      // 使用 OpenAI 服务
+      await openAIService.createChatCompletion(
+        [{ role: "user", content: promptText }],
+        {
+          onStart: () => {
+            setProcessingStep("正在生成...");
+          },
+          onProcessing: (step) => {
+            setProcessingStep(step);
+          },
+          onChunk: (_, accumulated) => {
+            // // 清理结果，移除 markdown 格式标记
+            // const cleanedResult = accumulated
+            //   .replace(/^```[a-z]*\s*/i, "")
+            //   .replace(/```\s*$/i, "")
+            //   .trim();
+
+            outputEditorRef.current?.updateValue(accumulated);
+          },
+          onComplete: (final) => {
+            // 提取语言标记
+            const langMatch = final.match(/^```([a-z]+)\s/i);
+            let detectedLang = langMatch
+              ? langMatch[1].toLowerCase()
+              : targetLanguage;
+
+            if (!detectedLang) {
+              detectedLang = "plaintext";
+            }
+            console.log("Detected language:", detectedLang);
+            // 清理结果，移除 markdown 格式标记
+            const cleanedResult = final
+              .replace(/^```[a-z]*\s*/i, "")
+              .replace(/```\s*$/i, "")
+              .trim();
+
+            // 更新编辑器语言和内容
+            outputEditorRef.current?.setLanguage(detectedLang);
+            outputEditorRef.current?.updateValue(cleanedResult);
+            setTargetLanguage(detectedLang);
+            setOutputValue(cleanedResult);
+            toast.success("转换成功");
+            setProcessingStep("转换完成");
+          },
+          onError: () => {
+            setProcessingStep("");
+          },
+        },
+      );
+    } catch (error) {
+      console.error("AI转换错误:", error);
+      toast.error(`转换失败: ${(error as Error).message}`);
+    } finally {
+      setIsAiProcessing(false);
+      setIsAiModalOpen(false);
+    }
+  };
+
   // 工具特定的操作按钮
   const actionButtons = (
     <div className="flex items-center gap-2 flex-wrap">
@@ -200,8 +289,26 @@ export default function JsonTypeConverterPage() {
 
       <Button
         className="font-medium"
+        color="secondary"
+        isDisabled={isProcessing || isAiProcessing}
+        size="sm"
+        startContent={
+          isAiProcessing ? (
+            <Spinner color="current" size="sm" />
+          ) : (
+            <Icon icon="solar:magic-stick-linear" width={18} />
+          )
+        }
+        variant="flat"
+        onPress={() => setIsAiModalOpen(true)}
+      >
+        AI 转换
+      </Button>
+
+      <Button
+        className="font-medium"
         color="primary"
-        isDisabled={isProcessing || !inputValue}
+        isDisabled={isProcessing || isAiProcessing || !inputValue}
         size="sm"
         startContent={
           isProcessing ? (
@@ -231,7 +338,7 @@ export default function JsonTypeConverterPage() {
       <Button
         className="font-medium"
         color="danger"
-        isDisabled={isProcessing}
+        isDisabled={isProcessing || isAiProcessing}
         size="sm"
         startContent={<Icon icon="solar:restart-outline" width={18} />}
         variant="flat"
@@ -239,6 +346,16 @@ export default function JsonTypeConverterPage() {
       >
         重置
       </Button>
+
+      <AIPromptModal
+        isOpen={isAiModalOpen}
+        isProcessing={isAiProcessing}
+        placeholder="请输入您的需求，例如：'将这个 JSON 转换为 Go 结构体并添加 grom 字段定义，并添加中文注释'"
+        submitButtonText="开始转换"
+        title="AI 智能转换"
+        onClose={() => setIsAiModalOpen(false)}
+        onSubmit={handleAiConvert}
+      />
     </div>
   );
 
@@ -269,9 +386,7 @@ export default function JsonTypeConverterPage() {
       toolName="JSON 类型转换工具"
     >
       <div className="flex flex-col h-full">
-        <div
-          className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow h-0 overflow-hidden"
-        >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow h-0 overflow-hidden">
           <Card className="flex-1 overflow-hidden shadow-md border border-default-200 transition-shadow hover:shadow-lg">
             <CardBody className="p-0 h-full flex flex-col">
               <div className="p-2.5 bg-default-50 border-b border-default-200 flex justify-between items-center">

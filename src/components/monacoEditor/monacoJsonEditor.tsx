@@ -43,6 +43,7 @@ export interface MonacoJsonEditorRef {
   moreAction: (key: "unescape" | "del_comment") => boolean;
   saveFile: () => boolean;
   updateValue: (value: string) => void;
+  setLanguage: (language: string) => void;
 }
 
 const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
@@ -564,6 +565,12 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       URL.revokeObjectURL(downloadUrl);
 
       return true;
+    },
+    setLanguage: (newLanguage: string) => {
+      const model = editorRef.current?.getModel();
+      if (model) {
+        monaco.editor.setModelLanguage(model, newLanguage);
+      }
     },
   }));
 
