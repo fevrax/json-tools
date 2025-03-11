@@ -1,6 +1,8 @@
 // 用于匹配需要转义的字符的正则表达式
 
 // eslint-disable-next-line no-control-regex,no-misleading-character-class
+import JSON5 from "json5";
+
 const rxEscapable =
   /[\\"\u0000-\u001F\u007F-\u009F\u00AD\u0600-\u0604\u070F\u17B4\u17B5\u200C-\u200F\u2028-\u202F\u2060-\u206F\uFEFF\uFFF0-\uFFFF]/g;
 
@@ -120,6 +122,51 @@ export function jsonParseError(jsonString: string): JsonErrorInfo | undefined {
       line: 0,
       column: 0,
       context: "",
+    };
+  }
+}
+
+// 解析JSON5字符串并返回错误信息
+export function json5ParseError(jsonString: string): JsonErrorInfo | undefined {
+  try {
+    JSON5.parse(jsonString);
+    return undefined;
+  } catch (error: unknown) {
+    if (!(error instanceof Error)) {
+      return {
+        message: `未知错误类型: ${error}`,
+        line: 0,
+        column: 0,
+        context: "",
+      };
+    }
+
+    // 尝试提取 JSON5 错误信息
+    const errorMessage = error.message;
+    const lineMatch = errorMessage.match(/at line (\d+)/i);
+    const columnMatch = errorMessage.match(/at column (\d+)/i);
+
+    if (lineMatch && columnMatch) {
+      const line = parseInt(lineMatch[1], 10);
+      const column = parseInt(columnMatch[1], 10);
+      const context = jsonString.split("\n")[line - 1] || "";
+
+      return {
+        error,
+        line,
+        column,
+        message: errorMessage,
+        context,
+      };
+    }
+
+    // 如果无法提取行列信息，返回默认错误
+    return {
+      error,
+      line: 1,
+      column: 1,
+      message: errorMessage,
+      context: jsonString.split("\n")[0] || "",
     };
   }
 }

@@ -16,6 +16,7 @@ import YAML from "js-yaml";
 import { xml2js, js2xml } from "xml-js";
 // @ts-ignore
 import TOML from "@iarna/toml";
+import JSON5 from "json5";
 
 import toast from "@/utils/toast";
 import MonacoEditor, {
@@ -29,6 +30,7 @@ import { openAIService } from "@/services/openAIService";
 // 支持的数据格式
 const DATA_FORMATS = [
   { value: "json", label: "JSON", icon: "vscode-icons:file-type-json" },
+  { value: "json5", label: "JSON5", icon: "vscode-icons:file-type-json" },
   { value: "yaml", label: "YAML", icon: "vscode-icons:file-type-yaml" },
   { value: "xml", label: "XML", icon: "vscode-icons:file-type-xml" },
   { value: "toml", label: "TOML", icon: "vscode-icons:file-type-toml" },
@@ -102,6 +104,9 @@ export default function DataFormatConverterPage() {
           case "json":
             jsonData = JSON.parse(inputValue);
             break;
+          case "json5":
+            jsonData = JSON5.parse(inputValue);
+            break;
           case "yaml":
             jsonData = YAML.load(inputValue);
             break;
@@ -131,6 +136,9 @@ export default function DataFormatConverterPage() {
         switch (outputFormat) {
           case "json":
             result = JSON.stringify(jsonData, null, 2);
+            break;
+          case "json5":
+            result = JSON5.stringify(jsonData, { space: 2 });
             break;
           case "yaml":
             result = YAML.dump(jsonData);
@@ -225,6 +233,11 @@ export default function DataFormatConverterPage() {
           const jsonObj = JSON.parse(outputValue);
 
           formattedOutput = JSON.stringify(jsonObj, null, 2);
+          break;
+        case "json5":
+          const json5Obj = JSON5.parse(outputValue);
+
+          formattedOutput = JSON5.stringify(json5Obj, { space: 2 });
           break;
         case "yaml":
           // YAML已经是格式化的，但可以重新解析确保格式一致
@@ -330,7 +343,7 @@ export default function DataFormatConverterPage() {
     <div className="flex items-center gap-2 flex-wrap">
       <Select
         aria-label="输入格式"
-        className="w-32 min-w-[120px]"
+        className="w-32 min-w-[140px]"
         color="primary"
         selectedKeys={[inputFormat]}
         size="sm"
@@ -376,7 +389,7 @@ export default function DataFormatConverterPage() {
 
       <Select
         aria-label="输出格式"
-        className="w-32 min-w-[120px]"
+        className="w-32 min-w-[140px]"
         color="secondary"
         selectedKeys={[outputFormat]}
         size="sm"

@@ -38,7 +38,7 @@ const demoTools: Tool[] = [
     id: "dataFormatConverter",
     name: "数据格式转换",
     icon: "token-branded:swap",
-    description: "支持JSON、YAML、XML、TOML等格式互相转换，支持AI转换",
+    description: "支持JSON5、YAML、XML、TOML等格式互相转换，支持AI转换",
     path: "/toolbox/dataFormatConverter",
     category: ["数据处理", "AI"],
   },

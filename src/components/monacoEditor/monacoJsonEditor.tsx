@@ -5,13 +5,16 @@ import { Button, cn, useDisclosure } from "@heroui/react";
 import { editor } from "monaco-editor";
 import { jsonrepair } from "jsonrepair";
 import { Icon } from "@iconify/react";
+import JSON5 from "json5";
 
 import toast from "@/utils/toast";
+// eslint-disable-next-line import/order
 import {
   escapeJson,
   isArrayOrObject,
   JsonErrorInfo,
   jsonParseError,
+  json5ParseError,
   removeJsonComments,
   sortJson,
 } from "@/utils/json";
@@ -26,6 +29,7 @@ export interface MonacoJsonEditorProps {
   value?: string;
   language?: string;
   theme?: string;
+  isSetting?: boolean; // 是否显示设置按钮
   onUpdateValue: (value: string) => void;
   onMount?: () => void;
   ref?: React.Ref<MonacoJsonEditorRef>;
@@ -136,7 +140,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       language || "json",
     );
 
-    if (language !== "json") {
+    if (language !== "json" && language !== "json5") {
       setParseJsonError(null);
     }
 
@@ -179,6 +183,75 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
     const monacoInstance: Monaco = await loader.init();
 
+    // 注册 JSON5 语言支持
+    if (
+      !monacoInstance.languages
+        .getLanguages()
+        .some((lang) => lang.id === "json5")
+    ) {
+      monacoInstance.languages.register({ id: "json5" });
+
+      // 设置 JSON5 语法高亮规则，基于 JSON 规则但添加了 JSON5 特性支持
+      monacoInstance.languages.setMonarchTokensProvider("json5", {
+        defaultToken: "invalid",
+        tokenPostfix: ".json5",
+
+        // 转义字符
+        escapes: /\\(?:[bfnrtv\\"\/]|u[0-9A-Fa-f]{4})/,
+
+        // JSON5 支持的标记符号
+        tokenizer: {
+          root: [
+            // 支持单行注释
+            [/\/\/.*$/, "comment"],
+            // 支持多行注释
+            [/\/\*/, "comment", "@comment"],
+            // 字符串
+            [/"([^"\\]|\\.)*$/, "string.invalid"],
+            [/'([^'\\]|\\.)*$/, "string.invalid"], // JSON5 支持单引号
+            [/"/, "string", "@string_double"],
+            [/'/, "string", "@string_single"], // JSON5 支持单引号
+            // 数字
+            [/[+-]?\d+\.\d+([eE][+-]?\d+)?/, "number.float"],
+            [/[+-]?\d+[eE][+-]?\d+/, "number.float"],
+            [/[+-]?\d+/, "number"],
+            [/[+-]?Infinity/, "number"], // JSON5 支持 Infinity
+            [/NaN/, "number"], // JSON5 支持 NaN
+            // 布尔值
+            [/true|false/, "keyword"],
+            [/null/, "keyword"],
+            [/undefined/, "keyword"], // JSON5 支持 undefined
+            // 对象
+            [/[{}]/, "delimiter.bracket"],
+            [/[[\]]/, "delimiter.square"],
+            [/,/, "delimiter.comma"],
+            [/:/, "delimiter.colon"],
+            // JSON5 支持标识符作为键名
+            [/[a-zA-Z_$][\w$]*/, "identifier"],
+            // 空白
+            [/\s+/, "white"],
+          ],
+          string_double: [
+            [/[^\\"]+/, "string"],
+            [/@escapes/, "string.escape"],
+            [/\\./, "string.escape.invalid"],
+            [/"/, "string", "@pop"],
+          ],
+          string_single: [
+            [/[^\\']+/, "string"],
+            [/@escapes/, "string.escape"],
+            [/\\./, "string.escape.invalid"],
+            [/'/, "string", "@pop"],
+          ],
+          comment: [
+            [/[^/*]+/, "comment"],
+            [/\*\//, "comment", "@pop"],
+            [/[/*]/, "comment"],
+          ],
+        },
+      });
+    }
+
     if (containerRef.current) {
       const editor = monacoInstance.editor.create(containerRef.current, {
         value: value || "",
@@ -215,10 +288,11 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
       // 监听内容变化
       editor.onDidChangeModelContent(async () => {
-        let val = editor.getValue();
-        
-        console.log('tabKey', tabKey, 'language', language);
-        if (language === "json") {
+        const val = editor.getValue();
+
+        const languageId = editorRef.current?.getModel()?.getLanguageId();
+
+        if (languageId === "json" || languageId === "json5") {
           if (parseJsonErrorTimeoutRef.current) {
             clearTimeout(parseJsonErrorTimeoutRef.current);
           }
@@ -245,7 +319,16 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       return true;
     }
 
-    const jsonErr = jsonParseError(val);
+    let jsonErr: JsonErrorInfo | undefined;
+
+    const languageId = editorRef.current?.getModel()?.getLanguageId();
+
+    // 根据语言类型选择不同的解析器
+    if (languageId === "json5") {
+      jsonErr = json5ParseError(val);
+    } else {
+      jsonErr = jsonParseError(val);
+    }
 
     if (jsonErr) {
       setParseJsonError(jsonErr);
@@ -282,7 +365,26 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
       return false;
     }
-    editorRef.current.getAction("editor.action.formatDocument")?.run();
+
+    // 如果是 JSON5 格式，使用 JSON5 格式化
+    if (language === "json5") {
+      try {
+        const val = editorRef.current.getValue();
+        const json5Obj = JSON5.parse(val);
+        const formatted = JSON5.stringify(json5Obj, { space: 2 });
+
+        setEditorValue(formatted);
+
+        return true;
+      } catch (error) {
+        toast.error(`格式化失败: ${(error as Error).message}`);
+
+        return false;
+      }
+    } else {
+      // 对于其他格式，使用 Monaco 内置的格式化功能
+      editorRef.current.getAction("editor.action.formatDocument")?.run();
+    }
 
     return true;
   };
@@ -367,7 +469,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       return;
     }
     const model = editorRef.current.getModel();
-    console.log('tabKey',tabKey,'model', model?.getLanguageId());
 
     if (!model) {
       return;
