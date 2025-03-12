@@ -98,17 +98,28 @@ const DraggableMenu: React.FC<{
   currentLanguage,
   currentFontSize,
 }) => {
-  const [menuPosition, setMenuPosition] = useState<MenuPosition>(() => {
-    // 从localStorage中获取保存的位置，如果没有则使用默认位置
-    const savedPosition = localStorage.getItem("monacoEditorMenuPosition");
-
-    return savedPosition ? JSON.parse(savedPosition) : { x: 20, y: 20 }; // 默认位置，右下角
+  const [menuPosition, setMenuPosition] = useState<MenuPosition>({
+    x: 20,
+    y: 20,
   });
   const [isDragging, setIsDragging] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const dragStartRef = useRef<{ x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const buttonRef = useRef<HTMLDivElement>(null);
+
+  // 设置初始位置到右下角
+  useEffect(() => {
+    if (containerRef.current && menuRef.current) {
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const menuRect = menuRef.current.getBoundingClientRect();
+
+      setMenuPosition({
+        x: containerRect.width - menuRect.width - 20, // 右边距离20px
+        y: containerRect.height - menuRect.height - 20, // 底部距离20px
+      });
+    }
+  }, []);
 
   // 启动拖动操作
   const startDrag = (clientX: number, clientY: number) => {
@@ -152,12 +163,6 @@ const DraggableMenu: React.FC<{
     if (isDragging) {
       setIsDragging(false);
       dragStartRef.current = null;
-
-      // 保存位置到localStorage
-      localStorage.setItem(
-        "monacoEditorMenuPosition",
-        JSON.stringify(menuPosition),
-      );
     }
   };
 
@@ -226,40 +231,61 @@ const DraggableMenu: React.FC<{
       {/* 拖动手柄区域 */}
       <div
         aria-label="拖动菜单"
-        className="absolute top-0 left-0 w-full h-8 cursor-grab"
+        className="absolute -top-3 -left-3 -right-3 -bottom-3 cursor-grab"
         role="button"
         style={{
           touchAction: "none",
-          zIndex: 10,
+          zIndex: -1,
         }}
         tabIndex={0}
         onKeyDown={(e) => {
-          // 当按下空格或回车键时，允许用户使用键盘"点击"该元素
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            // 在这里不启动拖动，只是表示用户可以用键盘交互
           }
         }}
         onMouseDown={(e) => {
-          e.preventDefault(); // 防止文本选择
-          e.stopPropagation(); // 阻止事件冒泡
+          e.preventDefault();
+          e.stopPropagation();
           startDrag(e.clientX, e.clientY);
         }}
       />
 
       {/* 菜单按钮 */}
-      <Button
+      <div
         ref={buttonRef}
-        isIconOnly
+        aria-expanded={isMenuOpen}
+        aria-label="打开设置菜单"
         className={cn(
-          "rounded-full shadow-lg transition-all duration-300 opacity-80 hover:opacity-100",
+          "w-10 h-10 flex items-center justify-center rounded-full shadow-lg cursor-pointer",
+          "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700",
+          "transform transition-all duration-300 hover:scale-110",
+          "ring-2 ring-white/50 hover:ring-white/80 dark:ring-blue-400/50 dark:hover:ring-blue-400/80",
+          "dark:from-blue-600 dark:to-blue-700 dark:hover:from-blue-700 dark:hover:to-blue-800",
           isMenuOpen ? "rotate-180" : "",
         )}
-        color="primary"
-        onPress={toggleMenu}
+        role="button"
+        tabIndex={0}
+        onClick={toggleMenu}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            toggleMenu();
+          }
+        }}
+        onMouseDown={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          startDrag(e.clientX, e.clientY);
+        }}
       >
-        <Icon icon="heroicons:cog-6-tooth" width={20} />
-      </Button>
+        <Icon
+          className="text-white w-5 h-5"
+          icon="heroicons:cog-6-tooth"
+          style={{
+            filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
+          }}
+        />
+      </div>
 
       {/* 菜单面板 */}
       <div
@@ -270,9 +296,9 @@ const DraggableMenu: React.FC<{
             : "opacity-0 scale-95 translate-y-2 pointer-events-none",
         )}
         style={{
-          top: "calc(100% + 8px)",
+          bottom: "calc(100% + 8px)",
           right: 0,
-          transformOrigin: "top right",
+          transformOrigin: "bottom right",
         }}
       >
         <div className="flex flex-col space-y-4">
