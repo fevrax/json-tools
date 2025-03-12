@@ -8,6 +8,9 @@ interface MenuPosition {
   y: number;
 }
 
+// 定义停靠位置类型
+type DockPosition = "left" | "right" | "top" | "bottom" | null;
+
 // 定义支持的语言列表
 export const SUPPORTED_LANGUAGES = [
   { id: "json", name: "JSON" },
@@ -46,101 +49,231 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   currentFontSize,
 }) => {
   const [menuPosition, setMenuPosition] = useState<MenuPosition>({
-    x: 20,
-    y: 20,
+    x: 0,
+    y: 0,
   });
   const [isDragging, setIsDragging] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
-  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const [dockedPosition, setDockedPosition] = useState<DockPosition>("right"); // 默认右侧停靠
+  const [isRevealed, setIsRevealed] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
-  const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 调整菜单位置，确保不超出容器边界
-  const adjustMenuPosition = () => {
+  // 保存拖动状态，避免状态更新引起的重渲染
+  const dragStateRef = useRef({
+    startX: 0,
+    startY: 0,
+    initialX: 0,
+    initialY: 0,
+    dx: 0,
+    dy: 0,
+    animationFrameId: 0,
+  });
+
+  // 初始化位置到右下角，半隐藏
+  useEffect(() => {
     if (containerRef.current && menuRef.current) {
       const containerRect = containerRef.current.getBoundingClientRect();
-      const menuRect = menuRef.current.getBoundingClientRect();
+      const menuWidth = menuRef.current.offsetWidth;
+      const menuHeight = menuRef.current.offsetHeight;
 
-      setMenuPosition({
-        x:
-          containerRect.width -
-          (isHovered ? menuRect.width : menuRect.width / 2),
-        y: containerRect.height - menuRect.height - 20,
-      });
+      // 计算位置：右下角，右侧隐藏一半
+      const x = containerRect.width - menuWidth / 2;
+      const y = containerRect.height - menuHeight - 20;
+
+      setMenuPosition({ x, y });
+      setDockedPosition("right");
     }
-  };
+  }, [containerRef]);
 
-  // 监听窗口大小变化
+  // 处理窗口大小变化
   useEffect(() => {
     const handleResize = () => {
-      if (resizeTimeoutRef.current) {
-        clearTimeout(resizeTimeoutRef.current);
+      if (containerRef.current && menuRef.current) {
+        const containerRect = containerRef.current.getBoundingClientRect();
+        const menuWidth = menuRef.current.offsetWidth;
+        const menuHeight = menuRef.current.offsetHeight;
+
+        let x = menuPosition.x;
+        let y = menuPosition.y;
+
+        // 根据停靠位置调整
+        if (dockedPosition === "right") {
+          x = containerRect.width - menuWidth / 2;
+        } else if (dockedPosition === "left") {
+          x = -menuWidth / 2;
+        } else if (dockedPosition === "bottom") {
+          y = containerRect.height - menuHeight / 2;
+        } else if (dockedPosition === "top") {
+          y = -menuHeight / 2;
+        } else {
+          // 确保菜单不会完全移出容器
+          x = Math.min(
+            containerRect.width - menuWidth / 4,
+            Math.max(0, menuPosition.x),
+          );
+          y = Math.min(
+            containerRect.height - menuHeight / 2,
+            Math.max(0, menuPosition.y),
+          );
+        }
+
+        setMenuPosition({ x, y });
       }
-      resizeTimeoutRef.current = setTimeout(() => {
-        adjustMenuPosition();
-      }, 100);
     };
 
     window.addEventListener("resize", handleResize);
 
     return () => {
       window.removeEventListener("resize", handleResize);
-      if (resizeTimeoutRef.current) {
-        clearTimeout(resizeTimeoutRef.current);
-      }
     };
-  }, []);
+  }, [menuPosition, containerRef, dockedPosition]);
 
-  // 移动中
-  useEffect(() => {
-    // adjustMenuPosition();
-  }, [isHovered]);
-
-  // 启动拖动操作
+  // 开始拖动
   const startDrag = (clientX: number, clientY: number) => {
     setIsDragging(true);
-    dragStartRef.current = {
-      x: clientX - menuPosition.x,
-      y: clientY - menuPosition.y,
-    };
+    setIsRevealed(false);
+
+    // 记录初始位置
+    dragStateRef.current.startX = clientX;
+    dragStateRef.current.startY = clientY;
+    dragStateRef.current.initialX = menuPosition.x;
+    dragStateRef.current.initialY = menuPosition.y;
+
+    // 使用DOM直接操作，避免状态更新
+    if (menuRef.current) {
+      menuRef.current.style.transition = "none";
+    }
   };
 
-  // 处理拖动过程
+  // 处理拖动中的移动
   const handleDrag = (clientX: number, clientY: number) => {
-    if (!isDragging || !dragStartRef.current || !containerRef.current) return;
+    if (!isDragging || !menuRef.current || !containerRef.current) return;
+
+    const { startX, startY } = dragStateRef.current;
+
+    // 计算移动距离
+    const dx = clientX - startX;
+    const dy = clientY - startY;
+
+    // 保存当前偏移量
+    dragStateRef.current.dx = dx;
+    dragStateRef.current.dy = dy;
+
+    // 直接应用变换，不更新状态
+    menuRef.current.style.transform = `translate(${dx}px, ${dy}px)`;
+  };
+
+  // 使用requestAnimationFrame优化拖动性能
+  const updateDragAnimation = () => {
+    if (isDragging) {
+      dragStateRef.current.animationFrameId =
+        requestAnimationFrame(updateDragAnimation);
+    }
+  };
+
+  // 确定最近的边缘
+  const determineClosestEdge = (x: number, y: number): DockPosition => {
+    if (!containerRef.current || !menuRef.current) return "right";
 
     const containerRect = containerRef.current.getBoundingClientRect();
-    const menuRect = menuRef.current?.getBoundingClientRect();
+    const menuWidth = menuRef.current.offsetWidth;
+    const menuHeight = menuRef.current.offsetHeight;
 
-    if (!menuRect) return;
+    // 计算到各边的距离
+    const distToLeft = x;
+    const distToRight = containerRect.width - (x + menuWidth);
+    const distToTop = y;
+    const distToBottom = containerRect.height - (y + menuHeight);
 
-    // 计算新位置，确保不超出容器边界
-    const newX = Math.max(
-      0,
-      Math.min(
-        clientX - dragStartRef.current.x,
-        containerRect.width - menuRect.width,
-      ),
-    );
-    const newY = Math.max(
-      0,
-      Math.min(
-        clientY - dragStartRef.current.y,
-        containerRect.height - menuRect.height,
-      ),
-    );
+    // 找出最小距离对应的边
+    const minDist = Math.min(distToLeft, distToRight, distToTop, distToBottom);
 
-    setMenuPosition({ x: newX, y: newY });
+    if (minDist === distToLeft) return "left";
+    if (minDist === distToRight) return "right";
+    if (minDist === distToTop) return "top";
+
+    return "bottom";
   };
 
-  // 完成拖动操作
+  // 结束拖动 - 贴边并半隐藏
   const finishDrag = () => {
-    if (isDragging) {
-      setIsDragging(false);
-      dragStartRef.current = null;
+    if (!isDragging || !menuRef.current || !containerRef.current) return;
+
+    cancelAnimationFrame(dragStateRef.current.animationFrameId);
+
+    const { initialX, initialY, dx, dy } = dragStateRef.current;
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const menuWidth = menuRef.current.offsetWidth;
+    const menuHeight = menuRef.current.offsetHeight;
+
+    // 计算中间位置
+    let newX = initialX + dx;
+    let newY = initialY + dy;
+
+    // 确定最近的边缘
+    const closestEdge = determineClosestEdge(newX, newY);
+
+    // 根据最近的边缘调整位置（半隐藏）
+    if (closestEdge === "left") {
+      newX = -menuWidth / 2;
+      newY = Math.min(containerRect.height - menuHeight, Math.max(0, newY));
+    } else if (closestEdge === "right") {
+      newX = containerRect.width - menuWidth / 2;
+      newY = Math.min(containerRect.height - menuHeight, Math.max(0, newY));
+    } else if (closestEdge === "top") {
+      newX = Math.min(containerRect.width - menuWidth, Math.max(0, newX));
+      newY = -menuHeight / 2;
+    } else if (closestEdge === "bottom") {
+      newX = Math.min(containerRect.width - menuWidth, Math.max(0, newX));
+      newY = containerRect.height - menuHeight / 2;
     }
+
+    // 使用FLIP技术避免弹跳
+    // 1. 记录当前视觉位置
+    const firstRect = menuRef.current.getBoundingClientRect();
+
+    // 2. 立即更新实际位置（不带动画）
+    menuRef.current.style.transition = "none";
+    menuRef.current.style.transform = "";
+    menuRef.current.style.left = `${newX}px`;
+    menuRef.current.style.top = `${newY}px`;
+
+    // 强制浏览器重新计算布局
+    void menuRef.current.offsetWidth;
+
+    // 3. 计算调整后的位置与之前视觉位置的差异
+    const lastRect = menuRef.current.getBoundingClientRect();
+    const diffX = firstRect.left - lastRect.left;
+    const diffY = firstRect.top - lastRect.top;
+
+    // 4. 应用反向变换，使元素保持在原来的视觉位置
+    menuRef.current.style.transform = `translate(${diffX}px, ${diffY}px)`;
+
+    // 强制浏览器重新计算布局
+    void menuRef.current.offsetWidth;
+
+    // 5. 平滑过渡到最终位置（包括贴边的变换）
+    const dockTransform = getDockTransform(closestEdge);
+
+    menuRef.current.style.transition = "transform 0.3s ease";
+    menuRef.current.style.transform = dockTransform;
+
+    // 更新状态
+    setMenuPosition({ x: newX, y: newY });
+    setDockedPosition(closestEdge);
+    setIsDragging(false);
+
+    // 动画结束后移除过渡效果但保持变换
+    const onTransitionEnd = () => {
+      if (menuRef.current) {
+        menuRef.current.style.transition = "";
+      }
+    };
+
+    menuRef.current.addEventListener("transitionend", onTransitionEnd, {
+      once: true,
+    });
   };
 
   const toggleMenu = () => {
@@ -158,17 +291,22 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     };
 
     if (isDragging) {
-      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mousemove", handleMouseMove, { passive: true });
       window.addEventListener("mouseup", handleMouseUp);
+
+      // 启动动画帧
+      dragStateRef.current.animationFrameId =
+        requestAnimationFrame(updateDragAnimation);
 
       return () => {
         window.removeEventListener("mousemove", handleMouseMove);
         window.removeEventListener("mouseup", handleMouseUp);
+        cancelAnimationFrame(dragStateRef.current.animationFrameId);
       };
     }
 
     return undefined;
-  }, [isDragging, menuPosition]);
+  }, [isDragging]);
 
   // 点击菜单外部关闭菜单
   useEffect(() => {
@@ -191,27 +329,51 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     };
   }, [isMenuOpen]);
 
+  // 计算当悬浮球停靠时的变换
+  const getDockTransform = (position: DockPosition = dockedPosition) => {
+    if (!position || isDragging) return "";
+
+    // 鼠标悬停时不应用变换
+    if (isRevealed) return "";
+
+    if (position === "left") return "translateX(50%)";
+    if (position === "right") return "translateX(-50%)";
+    if (position === "top") return "translateY(50%)";
+    if (position === "bottom") return "translateY(-50%)";
+
+    return "";
+  };
+
   return (
     <div
       ref={menuRef}
       className={cn(
-        "absolute z-50 transition-all duration-300",
+        "absolute z-50 transition-transform duration-300 ease-in-out",
         isDragging ? "cursor-grabbing" : "cursor-grab",
       )}
       style={{
         left: `${menuPosition.x}px`,
         top: `${menuPosition.y}px`,
+        transition: isDragging
+          ? "none"
+          : "left 0.3s ease, top 0.3s ease, transform 0.3s ease",
+        transform: getDockTransform(),
       }}
-      onMouseEnter={() => setIsHovered(true)}
+      onMouseEnter={() => {
+        if (dockedPosition) {
+          setIsRevealed(false);
+        }
+      }}
       onMouseLeave={() => {
-        setIsHovered(false);
+        setIsRevealed(true);
         setIsMenuOpen(false);
       }}
     >
       {/* 拖动手柄区域 */}
       <div
         aria-label="拖动设置菜单"
-        className="absolute -top-3 -left-3 -right-3 -bottom-3 cursor-grab"
+        className={cn("absolute -top-3 -left-3 -right-3 -bottom-3 cursor-grab",
+          )}
         role="button"
         style={{
           touchAction: "none",
@@ -236,7 +398,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
         aria-expanded={isMenuOpen}
         aria-label="打开设置菜单"
         className={cn(
-          "w-10 h-10 flex items-center justify-center rounded-full shadow-lg cursor-pointer",
+          "w-9 h-9 flex items-center justify-center rounded-full shadow-lg cursor-pointer",
           "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700",
           "transform transition-all duration-300 hover:scale-110",
           "ring-2 ring-white/50 hover:ring-white/80 dark:ring-blue-400/50 dark:hover:ring-blue-400/80",
@@ -251,11 +413,6 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
             e.preventDefault();
             toggleMenu();
           }
-        }}
-        onMouseDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          startDrag(e.clientX, e.clientY);
         }}
       >
         <Icon

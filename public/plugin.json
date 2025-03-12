@@ -1,9 +1,6 @@
 {
   "main": "index.html",
   "logo": "logo.png",
-  "development": {
-    "main": "http://localhost:5173"
-  },
   "features": [
     {
       "code": "json",

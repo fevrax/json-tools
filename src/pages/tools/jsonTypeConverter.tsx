@@ -195,7 +195,7 @@ export default function JsonTypeConverterPage() {
       // 构建提示词
       const promptText = `${prompt}\n以下是 JSON 内容：\n\`\`\`json\n${inputValue}\n\`\`\`\n请仅返回转换后的代码并使用\`\`\`语言标记\`\`\`包裹，不要包含任何解释或其他内容。`;
 
-      if (promptText.length > 2000) {
+      if (promptText.length > 5000) {
         toast.error("内容超出限制，请缩短内容或使用其他方式描述需求。");
         setProcessingStep("");
         setIsAiProcessing(false);
