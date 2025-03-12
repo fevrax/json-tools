@@ -130,6 +130,7 @@ export function jsonParseError(jsonString: string): JsonErrorInfo | undefined {
 export function json5ParseError(jsonString: string): JsonErrorInfo | undefined {
   try {
     JSON5.parse(jsonString);
+
     return undefined;
   } catch (error: unknown) {
     if (!(error instanceof Error)) {

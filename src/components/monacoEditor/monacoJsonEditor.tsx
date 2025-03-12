@@ -1,7 +1,14 @@
 import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { loader, Monaco } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
-import { Button, cn, useDisclosure } from "@heroui/react";
+import {
+  Button,
+  cn,
+  useDisclosure,
+  Select,
+  SelectItem,
+  Slider,
+} from "@heroui/react";
 import { editor } from "monaco-editor";
 import { jsonrepair } from "jsonrepair";
 import { Icon } from "@iconify/react";
@@ -30,6 +37,7 @@ export interface MonacoJsonEditorProps {
   language?: string;
   theme?: string;
   isSetting?: boolean; // 是否显示设置按钮
+  isMenu?: boolean; // 是否显示悬浮菜单按钮
   onUpdateValue: (value: string) => void;
   onMount?: () => void;
   ref?: React.Ref<MonacoJsonEditorRef>;
@@ -49,6 +57,277 @@ export interface MonacoJsonEditorRef {
   setLanguage: (language: string) => void;
 }
 
+// 定义菜单位置类型
+interface MenuPosition {
+  x: number;
+  y: number;
+}
+
+// 定义支持的语言列表
+const SUPPORTED_LANGUAGES = [
+  { id: "json", name: "JSON" },
+  { id: "json5", name: "JSON5" },
+  { id: "javascript", name: "JavaScript" },
+  { id: "typescript", name: "TypeScript" },
+  { id: "html", name: "HTML" },
+  { id: "css", name: "CSS" },
+  { id: "python", name: "Python" },
+  { id: "java", name: "Java" },
+  { id: "csharp", name: "C#" },
+  { id: "cpp", name: "C++" },
+  { id: "markdown", name: "Markdown" },
+  { id: "yaml", name: "YAML" },
+  { id: "xml", name: "XML" },
+  { id: "sql", name: "SQL" },
+  { id: "shell", name: "Shell" },
+];
+
+// 拖动菜单组件
+const DraggableMenu: React.FC<{
+  containerRef: React.RefObject<HTMLDivElement>;
+  onLanguageChange: (language: string) => void;
+  onFontSizeChange: (fontSize: number) => void;
+  onReset: () => void;
+  currentLanguage: string;
+  currentFontSize: number;
+}> = ({
+  containerRef,
+  onLanguageChange,
+  onFontSizeChange,
+  onReset,
+  currentLanguage,
+  currentFontSize,
+}) => {
+  const [menuPosition, setMenuPosition] = useState<MenuPosition>(() => {
+    // 从localStorage中获取保存的位置，如果没有则使用默认位置
+    const savedPosition = localStorage.getItem("monacoEditorMenuPosition");
+
+    return savedPosition ? JSON.parse(savedPosition) : { x: 20, y: 20 }; // 默认位置，右下角
+  });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const dragStartRef = useRef<{ x: number; y: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // 启动拖动操作
+  const startDrag = (clientX: number, clientY: number) => {
+    setIsDragging(true);
+    dragStartRef.current = {
+      x: clientX - menuPosition.x,
+      y: clientY - menuPosition.y,
+    };
+  };
+
+  // 处理拖动过程
+  const handleDrag = (clientX: number, clientY: number) => {
+    if (!isDragging || !dragStartRef.current || !containerRef.current) return;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const menuRect = menuRef.current?.getBoundingClientRect();
+
+    if (!menuRect) return;
+
+    // 计算新位置，确保不超出容器边界
+    const newX = Math.max(
+      0,
+      Math.min(
+        clientX - dragStartRef.current.x,
+        containerRect.width - menuRect.width,
+      ),
+    );
+    const newY = Math.max(
+      0,
+      Math.min(
+        clientY - dragStartRef.current.y,
+        containerRect.height - menuRect.height,
+      ),
+    );
+
+    setMenuPosition({ x: newX, y: newY });
+  };
+
+  // 完成拖动操作
+  const finishDrag = () => {
+    if (isDragging) {
+      setIsDragging(false);
+      dragStartRef.current = null;
+
+      // 保存位置到localStorage
+      localStorage.setItem(
+        "monacoEditorMenuPosition",
+        JSON.stringify(menuPosition),
+      );
+    }
+  };
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
+  // 监听全局鼠标事件
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      handleDrag(e.clientX, e.clientY);
+    };
+
+    const handleMouseUp = () => {
+      finishDrag();
+    };
+
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+
+      return () => {
+        window.removeEventListener("mousemove", handleMouseMove);
+        window.removeEventListener("mouseup", handleMouseUp);
+      };
+    }
+
+    return undefined;
+  }, [isDragging, menuPosition]);
+
+  // 点击菜单外部关闭菜单
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        menuRef.current &&
+        !menuRef.current.contains(e.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(e.target as Node) &&
+        isMenuOpen
+      ) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMenuOpen]);
+
+  return (
+    <div
+      ref={menuRef}
+      aria-label="编辑器设置菜单"
+      className={cn(
+        "absolute z-50 transition-opacity",
+        isDragging ? "cursor-grabbing" : "cursor-grab",
+      )}
+      role="region"
+      style={{
+        left: `${menuPosition.x}px`,
+        top: `${menuPosition.y}px`,
+      }}
+    >
+      {/* 拖动手柄区域 */}
+      <div
+        aria-label="拖动菜单"
+        className="absolute top-0 left-0 w-full h-8 cursor-grab"
+        role="button"
+        style={{
+          touchAction: "none",
+          zIndex: 10,
+        }}
+        tabIndex={0}
+        onKeyDown={(e) => {
+          // 当按下空格或回车键时，允许用户使用键盘"点击"该元素
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            // 在这里不启动拖动，只是表示用户可以用键盘交互
+          }
+        }}
+        onMouseDown={(e) => {
+          e.preventDefault(); // 防止文本选择
+          e.stopPropagation(); // 阻止事件冒泡
+          startDrag(e.clientX, e.clientY);
+        }}
+      />
+
+      {/* 菜单按钮 */}
+      <Button
+        ref={buttonRef}
+        isIconOnly
+        className={cn(
+          "rounded-full shadow-lg transition-all duration-300 opacity-80 hover:opacity-100",
+          isMenuOpen ? "rotate-180" : "",
+        )}
+        color="primary"
+        onPress={toggleMenu}
+      >
+        <Icon icon="heroicons:cog-6-tooth" width={20} />
+      </Button>
+
+      {/* 菜单面板 */}
+      <div
+        className={cn(
+          "absolute bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 w-64 transition-all duration-300",
+          isMenuOpen
+            ? "opacity-100 scale-100 translate-y-0"
+            : "opacity-0 scale-95 translate-y-2 pointer-events-none",
+        )}
+        style={{
+          top: "calc(100% + 8px)",
+          right: 0,
+          transformOrigin: "top right",
+        }}
+      >
+        <div className="flex flex-col space-y-4">
+          <div>
+            <label
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              htmlFor="language-select"
+            >
+              编程语言
+            </label>
+            <Select
+              id="language-select"
+              selectedKeys={[currentLanguage]}
+              size="sm"
+              onChange={(e) => onLanguageChange(e.target.value)}
+            >
+              {SUPPORTED_LANGUAGES.map((lang) => (
+                <SelectItem key={lang.id}>{lang.name}</SelectItem>
+              ))}
+            </Select>
+          </div>
+
+          <div>
+            <label
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              htmlFor="font-size-slider"
+            >
+              字体大小: {currentFontSize}px
+            </label>
+            <Slider
+              className="w-full"
+              id="font-size-slider"
+              maxValue={24}
+              minValue={12}
+              size="sm"
+              step={1}
+              value={currentFontSize}
+              onChange={(value) => onFontSizeChange(value as number)}
+            />
+          </div>
+
+          <Button
+            color="primary"
+            size="sm"
+            startContent={<Icon icon="heroicons:arrow-path" width={16} />}
+            onPress={onReset}
+          >
+            重置设置
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   value,
   tabKey,
@@ -56,6 +335,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   language,
   theme,
   height,
+  isMenu = false,
   onUpdateValue,
   onMount,
   ref,
@@ -71,6 +351,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const editorLayoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const errorDecorationsRef =
     useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+
+  // 菜单状态
+  const [currentLanguage, setCurrentLanguage] = useState(language || "json");
+  const [fontSize, setFontSize] = useState(() => {
+    const savedFontSize = localStorage.getItem("monacoEditorFontSize");
+
+    return savedFontSize ? parseInt(savedFontSize) : 14; // 默认字体大小
+  });
 
   const {
     isOpen: jsonErrorDetailsModel,
@@ -113,6 +401,41 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
   }, [theme]);
 
+  // 字体大小变更监听
+  useEffect(() => {
+    if (editorRef.current) {
+      editorRef.current.updateOptions({
+        fontSize: fontSize,
+      });
+      // 保存字体大小到localStorage
+      localStorage.setItem("monacoEditorFontSize", fontSize.toString());
+    }
+  }, [fontSize]);
+
+  // 语言变更处理函数
+  const handleLanguageChange = (newLanguage: string) => {
+    setCurrentLanguage(newLanguage);
+
+    // 通过ref方法设置语言
+    const model = editorRef.current?.getModel();
+
+    if (model) {
+      monaco.editor.setModelLanguage(model, newLanguage);
+    }
+  };
+
+  // 重置设置
+  const handleReset = () => {
+    setFontSize(14); // 重置字体大小
+    handleLanguageChange(language || "json"); // 重置语言
+
+    // 清除保存的位置
+    localStorage.removeItem("monacoEditorMenuPosition");
+    localStorage.removeItem("monacoEditorFontSize");
+
+    toast.success("已重置编辑器设置");
+  };
+
   // 延迟更新编辑器布局
   const editorDelayLayout = () => {
     if (editorLayoutTimeoutRef.current) {
@@ -145,6 +468,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
 
     editorRef.current?.setModel(model);
+    setCurrentLanguage(language || "json");
   }, [language]);
 
   // 当错误状态变化时，重新布局编辑器
@@ -260,6 +584,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           enabled: true, // 启用缩略图
         },
         // fontFamily: `"Arial","Microsoft YaHei","黑体","宋体", sans-serif`, // 字体
+        fontSize: fontSize, // 使用状态中的字体大小
         colorDecorators: true, // 颜色装饰器
         readOnly: false, // 是否开启已读功能
         theme: theme || "vs-light", // 主题
@@ -677,12 +1002,25 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   }));
 
   return (
-    <div className="flex flex-col" style={{ height: height }}>
+    <div className="flex flex-col relative" style={{ height: height }}>
       <div
         ref={containerRef}
-        className={cn("w-full flex-grow flex-1")}
+        className={cn("w-full flex-grow flex-1 relative")}
         style={{ height: getEditorHeight(), transition: "height 0.1s ease" }}
       />
+
+      {/* 可拖动悬浮菜单 */}
+      {isMenu && (
+        <DraggableMenu
+          containerRef={containerRef}
+          currentFontSize={fontSize}
+          currentLanguage={currentLanguage}
+          onFontSizeChange={setFontSize}
+          onLanguageChange={handleLanguageChange}
+          onReset={handleReset}
+        />
+      )}
+
       <div
         className={cn(
           "flex justify-between items-center px-3 text-white text-base transition-all duration-300 z-50",
@@ -692,7 +1030,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           },
         )}
         style={{
-          height: parseJsonError && parseJsonError.line > 0 ? errorBottomHeight : 0,
+          height:
+            parseJsonError && parseJsonError.line > 0 ? errorBottomHeight : 0,
           backgroundColor: "#ED5241",
           overflow: "hidden",
           position: "sticky",
