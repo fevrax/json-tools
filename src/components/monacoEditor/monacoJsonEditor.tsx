@@ -8,7 +8,7 @@ import { Icon } from "@iconify/react";
 import JSON5 from "json5";
 
 import toast from "@/utils/toast";
-// eslint-disable-next-line import/order
+import { useTabStore } from "@/store/useTabStore";
 import {
   escapeJson,
   isArrayOrObject,
@@ -21,7 +21,7 @@ import {
 
 import "@/styles/monaco.css";
 import ErrorModal from "@/components/monacoEditor/errorModal.tsx";
-import DraggableMenu from "@/components/monacoEditor/DraggableMenu";
+import DraggableMenu from "@/components/monacoEditor/draggableMenu";
 
 export interface MonacoJsonEditorProps {
   tabTitle?: string;
@@ -63,6 +63,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   onMount,
   ref,
 }) => {
+  const { getTabByKey } = useTabStore();
   const errorBottomHeight = 45; // 底部错误详情弹窗的高度
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
@@ -75,13 +76,16 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const errorDecorationsRef =
     useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
 
-  // 菜单状态
-  const [currentLanguage, setCurrentLanguage] = useState(language || "json");
-  const [fontSize, setFontSize] = useState(() => {
-    const savedFontSize = localStorage.getItem("monacoEditorFontSize");
+  // 从 store 获取当前 tab 的设置
+  const currentTab = getTabByKey(tabKey);
+  const editorSettings = currentTab?.editorSettings || {
+    fontSize: 14,
+    language: language || "json",
+  };
 
-    return savedFontSize ? parseInt(savedFontSize) : 14; // 默认字体大小
-  });
+  // 菜单状态
+  const [currentLanguage, setCurrentLanguage] = useState(editorSettings.language);
+  const [fontSize, setFontSize] = useState(editorSettings.fontSize);
 
   const {
     isOpen: jsonErrorDetailsModel,
@@ -130,8 +134,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       editorRef.current.updateOptions({
         fontSize: fontSize,
       });
-      // 保存字体大小到localStorage
-      localStorage.setItem("monacoEditorFontSize", fontSize.toString());
     }
   }, [fontSize]);
 
@@ -145,16 +147,15 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     if (model) {
       monaco.editor.setModelLanguage(model, newLanguage);
     }
+    if (editorFormat()) {
+      setParseJsonError(null);
+    }
   };
 
   // 重置设置
   const handleReset = () => {
     setFontSize(14); // 重置字体大小
-    handleLanguageChange(language || "json"); // 重置语言
-
-    // 清除保存的位置
-    localStorage.removeItem("monacoEditorMenuPosition");
-    localStorage.removeItem("monacoEditorFontSize");
+    handleLanguageChange("json"); // 重置语言
 
     toast.success("已重置编辑器设置");
   };
@@ -738,6 +739,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           containerRef={containerRef}
           currentFontSize={fontSize}
           currentLanguage={currentLanguage}
+          tabKey={tabKey}
           onFontSizeChange={setFontSize}
           onLanguageChange={handleLanguageChange}
           onReset={handleReset}

@@ -179,7 +179,7 @@ export default function IndexPage() {
                     }}
                     height="100%"
                     isMenu={true}
-                    language="json"
+                    language={tab.editorSettings?.language || "json"}
                     tabKey={tab.key}
                     tabTitle={tab.title}
                     theme={theme === "dark" ? "vs-dark" : "vs-light"}
@@ -256,6 +256,7 @@ export default function IndexPage() {
                       }
                     }}
                     height="100%"
+                    language={tab.editorSettings?.language || "json"}
                     modifiedValue={
                       tab.diffModifiedValue ? tab.diffModifiedValue : ""
                     }

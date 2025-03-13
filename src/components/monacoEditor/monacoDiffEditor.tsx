@@ -1,4 +1,4 @@
-import React, { useEffect, useImperativeHandle, useRef } from "react";
+import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { loader } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
 import { cn } from "@heroui/react";
@@ -7,6 +7,8 @@ import { editor } from "monaco-editor";
 import toast from "@/utils/toast";
 import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEntity";
 import { sortJson } from "@/utils/json";
+import { useTabStore } from "@/store/useTabStore";
+import DraggableMenu from "@/components/monacoEditor/draggableMenu";
 
 import "@/styles/monaco.css";
 
@@ -44,16 +46,30 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   language,
   theme,
   height,
+  tabKey,
   onUpdateOriginalValue,
   onUpdateModifiedValue,
   onMount,
   ref,
 }) => {
+  const { getTabByKey } = useTabStore();
   const editorContainerRef = useRef<HTMLDivElement>(null);
-
   const editorRef = useRef<editor.IStandaloneDiffEditor | null>(null);
   const originalEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const modifiedEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+
+  // 从 store 获取当前 tab 的设置
+  const currentTab = getTabByKey(tabKey);
+  const editorSettings = currentTab?.editorSettings || {
+    fontSize: 14,
+    language: language || "json",
+  };
+
+  // 菜单状态
+  const [currentLanguage, setCurrentLanguage] = useState(
+    editorSettings.language,
+  );
+  const [fontSize, setFontSize] = useState(editorSettings.fontSize);
 
   useEffect(() => {
     if (editorRef.current) {
@@ -70,6 +86,27 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       editorRef.current.updateOptions(options);
     }
   }, [theme]);
+
+
+  // 监听字体大小变化
+  useEffect(() => {
+    updateEditorOptions({
+      fontSize: fontSize,
+    });
+  }, [fontSize]);
+
+  // 监听语言变化
+  useEffect(() => {
+    if (originalEditorRef.current && modifiedEditorRef.current) {
+      const originalModel = originalEditorRef.current.getModel();
+      const modifiedModel = modifiedEditorRef.current.getModel();
+
+      if (originalModel && modifiedModel) {
+        monaco.editor.setModelLanguage(originalModel, currentLanguage);
+        monaco.editor.setModelLanguage(modifiedModel, currentLanguage);
+      }
+    }
+  }, [currentLanguage]);
 
   // 添加窗口大小变化监听器
   useEffect(() => {
@@ -109,6 +146,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
         editorRef.current = monacoInstance.editor.createDiffEditor(
           editorContainerRef.current,
           {
+            fontSize: fontSize,
             originalEditable: true, // 允许编辑原始文本
             renderSideBySide: true, // 并排显示
             useInlineViewWhenSpaceIsLimited: false, // 当空间有限时使用InlineView
@@ -358,13 +396,37 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     },
   }));
 
+  // 更新编辑器选项
+  const updateEditorOptions = (options: editor.IEditorOptions) => {
+    if (editorRef.current) {
+      editorRef.current.updateOptions(options);
+      originalEditorRef.current?.updateOptions(options);
+      modifiedEditorRef.current?.updateOptions(options);
+    }
+  };
+
+
   return (
     <>
       <div
         ref={editorContainerRef}
-        className={cn("w-full flex-grow")}
+        className={cn("w-full flex-grow relative")}
         style={{ height: height }}
-      />
+      >
+        {/* 添加 DraggableMenu 组件 */}
+        <DraggableMenu
+          containerRef={editorContainerRef}
+          currentFontSize={fontSize}
+          currentLanguage={currentLanguage}
+          tabKey={tabKey}
+          onFontSizeChange={setFontSize}
+          onLanguageChange={setCurrentLanguage}
+          onReset={() => {
+            setFontSize(14);
+            setCurrentLanguage("json");
+          }}
+        />
+      </div>
     </>
   );
 };

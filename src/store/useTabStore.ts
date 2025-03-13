@@ -17,6 +17,10 @@ export interface TabItem {
   vanillaVersion: number;
   vanillaMode: Mode;
   closable?: boolean;
+  editorSettings: {
+    fontSize: number;
+    language: string;
+  };
 }
 
 interface TabStore {
@@ -44,6 +48,7 @@ interface TabStore {
   closeAllTabs: () => Array<string>;
   vanilla2JsonContent: (key: string) => void;
   jsonContent2VanillaContent: (key: string) => void;
+  updateEditorSettings: (key: string, settings: TabItem["editorSettings"]) => void;
 }
 
 export const useTabStore = create<TabStore>()(
@@ -72,6 +77,10 @@ export const useTabStore = create<TabStore>()(
               closable: true,
               vanillaVersion: 0,
               monacoVersion: 0,
+              editorSettings: {
+                fontSize: 14,
+                language: "json",
+              },
             };
 
             return {
@@ -91,6 +100,10 @@ export const useTabStore = create<TabStore>()(
                 vanillaMode: Mode.text,
                 vanillaVersion: 0,
                 monacoVersion: 0,
+                editorSettings: {
+                  fontSize: 14,
+                  language: "json",
+                },
               },
             ];
 
@@ -131,6 +144,10 @@ export const useTabStore = create<TabStore>()(
               closable: true,
               monacoVersion: 1,
               vanillaVersion: 0,
+              editorSettings: {
+                fontSize: 14,
+                language: "json",
+              },
             };
 
             return {
@@ -347,6 +364,10 @@ export const useTabStore = create<TabStore>()(
                 closable: true,
                 monacoVersion: 0,
                 vanillaVersion: 0,
+                editorSettings: {
+                  fontSize: 14,
+                  language: "json",
+                },
               },
             ];
 
@@ -450,6 +471,22 @@ export const useTabStore = create<TabStore>()(
                 ),
               };
             }
+          }),
+        updateEditorSettings: (key: string, settings: TabItem["editorSettings"]) =>
+          set((state) => {
+            const updatedTabs = state.tabs.map((tab) =>
+              tab.key === key
+                ? {
+                    ...tab,
+                    editorSettings: {
+                      ...tab.editorSettings,
+                      ...settings,
+                    },
+                  }
+                : tab,
+            );
+
+            return { tabs: updatedTabs };
           }),
       }),
       { name: "tabStore", enabled: true },

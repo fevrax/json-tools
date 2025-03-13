@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { Button, cn, Select, SelectItem, Slider } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
+import { useTabStore } from "@/store/useTabStore";
+
 // 定义菜单位置类型
 interface MenuPosition {
   x: number;
@@ -38,6 +40,7 @@ interface DraggableMenuProps {
   onReset: () => void;
   currentLanguage: string;
   currentFontSize: number;
+  tabKey: string;
 }
 
 const DraggableMenu: React.FC<DraggableMenuProps> = ({
@@ -47,7 +50,9 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   onReset,
   currentLanguage,
   currentFontSize,
+  tabKey,
 }) => {
+  const { updateEditorSettings } = useTabStore();
   const [menuPosition, setMenuPosition] = useState<MenuPosition>({
     x: 0,
     y: 0,
@@ -55,7 +60,8 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [dockedPosition, setDockedPosition] = useState<DockPosition>("right"); // 默认右侧停靠
-  const [isRevealed, setIsRevealed] = useState(true);
+  const [isHide, setIsHide] = useState(true);
+  const [isPositionCalculated, setIsPositionCalculated] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
 
@@ -79,12 +85,26 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
 
       // 计算位置：右下角，右侧隐藏一半
       const x = containerRect.width - menuWidth / 2;
-      const y = containerRect.height - menuHeight - 20;
+      const y = containerRect.height - menuHeight - 80;
 
       setMenuPosition({ x, y });
       setDockedPosition("right");
+
+      // 标记位置已计算完成，可以显示悬浮球
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          setIsPositionCalculated(true);
+        }, 300); // 添加较短的延迟，确保DOM更新完成
+      });
     }
   }, [containerRef]);
+
+  useEffect(() => {
+    updateEditorSettings(tabKey, {
+      fontSize: currentFontSize,
+      language: currentLanguage,
+    });
+  }, [currentLanguage, currentFontSize]);
 
   // 处理窗口大小变化
   useEffect(() => {
@@ -132,7 +152,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   // 开始拖动
   const startDrag = (clientX: number, clientY: number) => {
     setIsDragging(true);
-    setIsRevealed(false);
+    setIsHide(false);
 
     // 记录初始位置
     dragStateRef.current.startX = clientX;
@@ -259,6 +279,12 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     menuRef.current.style.transition = "transform 0.3s ease";
     menuRef.current.style.transform = dockTransform;
 
+    // 保存位置到 store
+    updateEditorSettings(tabKey, {
+      fontSize: currentFontSize,
+      language: currentLanguage,
+    });
+
     // 更新状态
     setMenuPosition({ x: newX, y: newY });
     setDockedPosition(closestEdge);
@@ -334,7 +360,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     if (!position || isDragging) return "";
 
     // 鼠标悬停时不应用变换
-    if (isRevealed) return "";
+    if (isHide) return "";
 
     if (position === "left") return "translateX(50%)";
     if (position === "right") return "translateX(-50%)";
@@ -348,7 +374,8 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     <div
       ref={menuRef}
       className={cn(
-        "absolute z-50 transition-transform duration-300 ease-in-out",
+        "absolute z-50",
+        "transition-all duration-500 ease-in-out",
         isDragging ? "cursor-grabbing" : "cursor-grab",
       )}
       style={{
@@ -356,24 +383,25 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
         top: `${menuPosition.y}px`,
         transition: isDragging
           ? "none"
-          : "left 0.3s ease, top 0.3s ease, transform 0.3s ease",
+          : "left 0.3s ease, top 0.3s ease, transform 0.3s ease, opacity 0.5s ease-in-out",
         transform: getDockTransform(),
+        opacity: isPositionCalculated ? 1 : 0,
+        visibility: isPositionCalculated ? "visible" : "hidden",
       }}
       onMouseEnter={() => {
         if (dockedPosition) {
-          setIsRevealed(false);
+          setIsHide(false);
         }
       }}
       onMouseLeave={() => {
-        setIsRevealed(true);
+        setIsHide(true);
         setIsMenuOpen(false);
       }}
     >
       {/* 拖动手柄区域 */}
       <div
         aria-label="拖动设置菜单"
-        className={cn("absolute -top-3 -left-3 -right-3 -bottom-3 cursor-grab",
-          )}
+        className={cn("absolute -top-3 -left-3 -right-3 -bottom-3 cursor-grab")}
         role="button"
         style={{
           touchAction: "none",
