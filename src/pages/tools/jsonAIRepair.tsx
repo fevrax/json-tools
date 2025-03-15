@@ -98,7 +98,7 @@ export default function JsonAIRepairPage() {
 ${originalValue}
 \`\`\``;
 
-    if (promptText.length > 5000) {
+    if (promptText.length > openAIService.maxTokens) {
       toast.error("内容超出限制，请缩短内容或使用其他方式描述需求。");
       setProcessingStep("");
       setIsAiProcessing(false);
