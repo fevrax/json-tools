@@ -179,6 +179,7 @@ export default function IndexPage() {
                     }}
                     height="100%"
                     isMenu={true}
+                    showAi={true}
                     language={tab.editorSettings?.language || "json"}
                     tabKey={tab.key}
                     tabTitle={tab.title}

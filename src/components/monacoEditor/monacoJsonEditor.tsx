@@ -1,7 +1,17 @@
 import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
 import { loader, Monaco } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
-import { Button, cn, useDisclosure } from "@heroui/react";
+import {
+  Button,
+  cn,
+  useDisclosure,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  Textarea,
+} from "@heroui/react";
 import { editor } from "monaco-editor";
 import { jsonrepair } from "jsonrepair";
 import { Icon } from "@iconify/react";
@@ -18,6 +28,7 @@ import {
   removeJsonComments,
   sortJson,
 } from "@/utils/json";
+import { OpenAIService } from "@/services/openAIService";
 
 import "@/styles/monaco.css";
 import ErrorModal from "@/components/monacoEditor/errorModal.tsx";
@@ -32,6 +43,7 @@ export interface MonacoJsonEditorProps {
   theme?: string;
   isSetting?: boolean; // 是否显示设置按钮
   isMenu?: boolean; // 是否显示悬浮菜单按钮
+  showAi?: boolean; // 是否显示AI功能
   onUpdateValue: (value: string) => void;
   onMount?: () => void;
   ref?: React.Ref<MonacoJsonEditorRef>;
@@ -59,6 +71,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   theme,
   height,
   isMenu = false,
+  showAi = false,
   onUpdateValue,
   onMount,
   ref,
@@ -76,6 +89,15 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const errorDecorationsRef =
     useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
 
+  // AI相关状态
+  const [showAiPrompt, setShowAiPrompt] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiResponse, setAiResponse] = useState("");
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [showAiResponse, setShowAiResponse] = useState(false);
+  const aiEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const aiContainerRef = useRef<HTMLDivElement>(null);
+
   // 从 store 获取当前 tab 的设置
   const currentTab = getTabByKey(tabKey);
   const editorSettings = currentTab?.editorSettings || {
@@ -84,7 +106,9 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   };
 
   // 菜单状态
-  const [currentLanguage, setCurrentLanguage] = useState(editorSettings.language);
+  const [currentLanguage, setCurrentLanguage] = useState(
+    editorSettings.language,
+  );
   const [fontSize, setFontSize] = useState(editorSettings.fontSize);
 
   const {
@@ -95,13 +119,122 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
   // 计算编辑器实际高度，当有错误时减去错误信息栏的高度
   const getEditorHeight = () => {
-    if (typeof height === "number") {
-      return parseJsonError ? height - errorBottomHeight : height;
+    // 如果height是数字，直接使用；如果是字符串(如100%)，保持原样
+    let baseHeight =
+      typeof height === "number" ? `${height}px` : height || "100%";
+
+    // 当显示错误信息时，减去错误栏高度
+    if (parseJsonError) {
+      return `calc(${baseHeight} - ${errorBottomHeight}px)`;
     }
 
-    // 如果height是字符串（例如'100%'），需要保持容器高度为传入值，并在内部进行调整
-    return parseJsonError ? `calc(${height} - ${errorBottomHeight}px)` : height;
+    return baseHeight;
   };
+
+  // 处理AI提交
+  const handleAiSubmit = async () => {
+    if (!aiPrompt.trim()) {
+      toast.error("请输入提示词");
+
+      return;
+    }
+
+    setIsAiLoading(true);
+    setShowAiPrompt(false);
+    setShowAiResponse(true);
+
+    // 先让UI渲染完成，延迟执行AI请求
+    setTimeout(async () => {
+      // 初始化AI编辑器，如果还没有初始化
+      if (!aiEditorRef.current && aiContainerRef.current) {
+        const monacoInstance = await loader.init();
+
+        aiEditorRef.current = monacoInstance.editor.create(
+          aiContainerRef.current,
+          {
+            value: "AI正在思考中...",
+            language: currentLanguage,
+            readOnly: true,
+            theme: theme || "vs-light",
+            minimap: { enabled: true },
+            wordWrap: "on",
+            fontSize: fontSize,
+          },
+        );
+      } else if (aiEditorRef.current) {
+        aiEditorRef.current.setValue("AI正在思考中...");
+      }
+
+      // 更新两个编辑器布局
+      editorRef.current?.layout();
+      aiEditorRef.current?.layout();
+
+      // 使用OpenAI服务
+      const openAiService = OpenAIService.createInstance();
+
+      // 修复TypeScript类型问题，确保与ChatCompletionMessageParam兼容
+      const messages = [
+        {
+          role: "system" as const,
+          content: "您是一个JSON工具助手，请帮助用户解决JSON相关问题。",
+        },
+        {
+          role: "user" as const,
+          content: `${aiPrompt}\n\n以下是用户的JSON数据:\n\`\`\`json\n${editorRef.current?.getValue() || ""}\n\`\`\``,
+        },
+      ];
+
+      await openAiService.createChatCompletion(messages, {
+        onStart: () => {
+          if (aiEditorRef.current) {
+            aiEditorRef.current.setValue("AI正在思考中...");
+          }
+        },
+        onChunk: (chunk, accumulated) => {
+          setAiResponse(accumulated);
+          if (aiEditorRef.current) {
+            aiEditorRef.current.setValue(accumulated);
+          }
+        },
+        onComplete: (final) => {
+          setAiResponse(final);
+          setIsAiLoading(false);
+          if (aiEditorRef.current) {
+            aiEditorRef.current.setValue(final);
+          }
+        },
+        onError: (error) => {
+          setIsAiLoading(false);
+          toast.error(`AI回复错误: ${error.message}`);
+          setAiResponse(`处理出错: ${error.message}`);
+          if (aiEditorRef.current) {
+            aiEditorRef.current.setValue(`处理出错: ${error.message}`);
+          }
+        },
+      });
+    }, 500); // 给UI足够的时间渲染编辑器容器
+  };
+
+  // 关闭AI响应
+  const closeAiResponse = () => {
+    setShowAiResponse(false);
+    setAiResponse("");
+
+    // 布局调整
+    setTimeout(() => {
+      editorRef.current?.layout();
+    }, 100);
+  };
+
+  // 监听AI响应状态变化，更新编辑器布局
+  useEffect(() => {
+    if (showAiResponse) {
+      setTimeout(() => {
+        editorRef.current?.layout();
+        aiEditorRef.current?.layout();
+      }, 200);
+    }
+  }, [showAiResponse]);
 
   // 错误信息内容监听
   useEffect(() => {
@@ -126,12 +259,24 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         theme: theme,
       });
     }
+
+    if (aiEditorRef.current) {
+      aiEditorRef.current.updateOptions({
+        theme: theme,
+      });
+    }
   }, [theme]);
 
   // 字体大小变更监听
   useEffect(() => {
     if (editorRef.current) {
       editorRef.current.updateOptions({
+        fontSize: fontSize,
+      });
+    }
+
+    if (aiEditorRef.current) {
+      aiEditorRef.current.updateOptions({
         fontSize: fontSize,
       });
     }
@@ -147,6 +292,16 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     if (model) {
       monaco.editor.setModelLanguage(model, newLanguage);
     }
+
+    // 同时更新AI编辑器的语言
+    if (aiEditorRef.current) {
+      const aiModel = aiEditorRef.current.getModel();
+
+      if (aiModel) {
+        monaco.editor.setModelLanguage(aiModel, newLanguage);
+      }
+    }
+
     if (editorFormat()) {
       setParseJsonError(null);
     }
@@ -167,6 +322,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
     editorLayoutTimeoutRef.current = setTimeout(() => {
       editorRef.current?.layout();
+      aiEditorRef.current?.layout();
     }, 50);
   };
 
@@ -210,6 +366,45 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       clearTimeout(timeoutId);
     };
   }, []); // 空依赖数组确保只在挂载时执行
+
+  // 确保编辑器容器正确显示后初始化编辑器
+  useEffect(() => {
+    // 监听AI响应状态变化
+    if (showAiResponse && aiContainerRef.current) {
+      let initTimeout = setTimeout(() => {
+        if (!aiEditorRef.current && aiContainerRef.current) {
+          const initAiEditor = async () => {
+            const monacoInstance = await loader.init();
+
+            aiEditorRef.current = monacoInstance.editor.create(
+              aiContainerRef.current!,
+              {
+                value: aiResponse || "正在等待AI响应...",
+                language: currentLanguage,
+                readOnly: true,
+                theme: theme || "vs-light",
+                minimap: { enabled: true },
+                wordWrap: "on",
+                fontSize: fontSize,
+              },
+            );
+          };
+
+          initAiEditor().then(() => {
+            // 初始化后更新布局
+            editorRef.current?.layout();
+            aiEditorRef.current?.layout();
+          });
+        } else if (aiEditorRef.current) {
+          // 确保编辑器布局更新
+          editorRef.current?.layout();
+          aiEditorRef.current?.layout();
+        }
+      }, 300);
+
+      return () => clearTimeout(initTimeout);
+    }
+  }, [showAiResponse, currentLanguage, fontSize, theme, aiResponse]);
 
   // 初始化编辑器的函数
   const initializeEditor = async () => {
@@ -581,6 +776,9 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       if (editorRef.current) {
         editorRef.current.layout();
       }
+      if (aiEditorRef.current) {
+        aiEditorRef.current.layout();
+      }
     },
     copy: (type) => {
       if (!editorRef.current) {
@@ -726,12 +924,96 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   }));
 
   return (
-    <div className="flex flex-col relative" style={{ height: height }}>
+    <div className="flex flex-col relative w-full h-full" style={{ height }}>
+      {/* AI浮动按钮 */}
+      {showAi && (
+        <Button
+          isIconOnly
+          className="absolute top-2 right-2 z-50 bg-blue-500/75 hover:bg-blue-600/75"
+          size="sm"
+          title="AI助手"
+          onPress={() => setShowAiPrompt(true)}
+        >
+          <Icon icon="mdi:robot" width={20} />
+        </Button>
+      )}
+
+      {/* AI提示输入模态框 */}
+      <Modal isOpen={showAiPrompt} onClose={() => setShowAiPrompt(false)}>
+        <ModalContent>
+          <ModalHeader>AI助手</ModalHeader>
+          <ModalBody>
+            <Textarea
+              label="输入您的提示词"
+              placeholder="例如：帮我解释这个JSON，检查语法错误，优化结构等"
+              rows={4}
+              value={aiPrompt}
+              onChange={(e) => setAiPrompt(e.target.value)}
+            />
+          </ModalBody>
+          <ModalFooter>
+            <Button
+              color="danger"
+              variant="light"
+              onPress={() => setShowAiPrompt(false)}
+            >
+              取消
+            </Button>
+            <Button
+              color="primary"
+              isLoading={isAiLoading}
+              onPress={handleAiSubmit}
+            >
+              提交
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* 编辑器外层容器 */}
       <div
-        ref={containerRef}
-        className={cn("w-full flex-grow flex-1 relative")}
-        style={{ height: getEditorHeight(), transition: "height 0.1s ease" }}
-      />
+        className={cn(
+          "w-full flex-1",
+          showAiResponse ? "flex flex-row" : "flex flex-col",
+        )}
+        style={{ height: getEditorHeight() }}
+      >
+        {showAiResponse ? (
+          // AI响应模式：显示左右两个编辑器
+          <>
+            {/* 用户输入的编辑器 - 左侧 */}
+            <div className="flex-1 h-full" style={{ width: "50%" }}>
+              <div ref={containerRef} className="h-full w-full" />
+            </div>
+
+            {/* AI响应编辑器 - 右侧 */}
+            <div className="flex-1 h-full" style={{ width: "50%" }}>
+              <div className="flex flex-col h-full">
+                <div className="flex justify-between items-center p-1 bg-gray-100 dark:bg-gray-800">
+                  <span className="text-sm font-medium">AI响应</span>
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    title="关闭AI响应"
+                    variant="light"
+                    onPress={closeAiResponse}
+                  >
+                    <Icon icon="mdi:close" width={16} />
+                  </Button>
+                </div>
+                <div
+                  ref={aiContainerRef}
+                  className="flex-1 w-full"
+                  style={{ height: "calc(100% - 28px)" }}
+                />
+              </div>
+            </div>
+          </>
+        ) : (
+          // 普通模式：只显示一个编辑器
+          <div ref={containerRef} className="w-full h-full" />
+        )}
+      </div>
 
       {/* 可拖动悬浮菜单 */}
       {isMenu && (
