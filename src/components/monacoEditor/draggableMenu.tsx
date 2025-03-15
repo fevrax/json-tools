@@ -15,22 +15,23 @@ type DockPosition = "left" | "right" | "top" | "bottom" | null;
 
 // 定义支持的语言列表
 export const SUPPORTED_LANGUAGES = [
-  { id: "json", name: "JSON" },
-  { id: "json5", name: "JSON5" },
-  { id: "go", name: "Go" },
-  { id: "javascript", name: "JavaScript" },
-  { id: "typescript", name: "TypeScript" },
-  { id: "html", name: "HTML" },
-  { id: "css", name: "CSS" },
-  { id: "python", name: "Python" },
-  { id: "java", name: "Java" },
-  { id: "csharp", name: "C#" },
-  { id: "cpp", name: "C++" },
-  { id: "markdown", name: "Markdown" },
-  { id: "yaml", name: "YAML" },
-  { id: "xml", name: "XML" },
-  { id: "sql", name: "SQL" },
-  { id: "shell", name: "Shell" },
+  { id: "json", name: "JSON", icon: "vscode-icons:file-type-json" },
+  { id: "json5", name: "JSON5", icon: "vscode-icons:file-type-json" },
+  { id: "yaml", name: "YAML", icon: "vscode-icons:file-type-yaml" },
+  { id: "xml", name: "XML", icon: "vscode-icons:file-type-xml" },
+  { id: "toml", name: "TOML", icon: "vscode-icons:file-type-toml" },
+  { id: "go", name: "Go", icon: "vscode-icons:file-type-go" },
+  { id: "javascript", name: "JavaScript", icon: "vscode-icons:file-type-js-official" },
+  { id: "typescript", name: "TypeScript", icon: "vscode-icons:file-type-typescript-official" },
+  { id: "html", name: "HTML", icon: "vscode-icons:file-type-html" },
+  { id: "css", name: "CSS", icon: "vscode-icons:file-type-css" },
+  { id: "python", name: "Python", icon: "vscode-icons:file-type-python" },
+  { id: "java", name: "Java", icon: "vscode-icons:file-type-java" },
+  { id: "csharp", name: "C#", icon: "vscode-icons:file-type-csharp" },
+  { id: "cpp", name: "C++", icon: "vscode-icons:file-type-cpp" },
+  { id: "markdown", name: "Markdown", icon: "vscode-icons:file-type-markdown" },
+  { id: "sql", name: "SQL", icon: "vscode-icons:file-type-sql" },
+  { id: "shell", name: "Shell", icon: "vscode-icons:file-type-shell" },
 ];
 
 interface DraggableMenuProps {
@@ -427,10 +428,9 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
         aria-label="打开设置菜单"
         className={cn(
           "w-9 h-9 flex items-center justify-center rounded-full shadow-lg cursor-pointer",
-          "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700",
+          "bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 border-none",
           "transform transition-all duration-300 hover:scale-110",
           "ring-2 ring-white/50 hover:ring-white/80 dark:ring-blue-400/50 dark:hover:ring-blue-400/80",
-          "dark:from-blue-600 dark:to-blue-700 dark:hover:from-blue-700 dark:hover:to-blue-800",
           isMenuOpen ? "rotate-180" : "",
         )}
         role="button"
@@ -457,7 +457,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
       <div
         aria-label="编辑器设置菜单"
         className={cn(
-          "absolute bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 w-64 transition-all duration-300",
+          "absolute bg-white dark:bg-default-100/80 rounded-lg shadow-xl p-6 w-72 transition-all duration-300",
           isMenuOpen
             ? "opacity-100 scale-100 translate-y-0"
             : "opacity-0 scale-95 translate-y-2 pointer-events-none",
@@ -475,17 +475,31 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
               className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
               htmlFor="language-select"
             >
-              编程语言
+              编辑器语言
             </label>
             <Select
               aria-label="选择编程语言"
               id="language-select"
               selectedKeys={[currentLanguage]}
               size="sm"
+              className="w-full"
+              color="primary"
+              variant="faded"
+              startContent={
+                <Icon
+                  className="mr-1 text-primary"
+                  icon={SUPPORTED_LANGUAGES.find((lang) => lang.id === currentLanguage)?.icon || ""}
+                  width={18}
+                />
+              }
               onChange={(e) => onLanguageChange(e.target.value)}
             >
               {SUPPORTED_LANGUAGES.map((lang) => (
-                <SelectItem key={lang.id} aria-label={lang.name}>
+                <SelectItem 
+                  key={lang.id} 
+                  aria-label={lang.name}
+                  startContent={<Icon className="mr-2" icon={lang.icon} width={18} />}
+                >
                   {lang.name}
                 </SelectItem>
               ))}

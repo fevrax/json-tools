@@ -19,7 +19,7 @@ import MonacoEditor, {
   MonacoJsonEditorRef,
 } from "@/components/monacoEditor/monacoJsonEditor";
 import ToolboxPageTemplate from "@/layouts/toolboxPageTemplate";
-import AIPromptModal from "@/components/ai/AIPromptModal.tsx";
+import AIPromptOverlay from "@/components/ai/AIPromptOverlay.tsx";
 import { useOpenAIConfigStore } from "@/store/useOpenAIConfigStore";
 import { openAIService } from "@/services/openAIService";
 
@@ -53,6 +53,7 @@ export default function JsonTypeConverterPage() {
   const [isAiProcessing, setIsAiProcessing] = useState<boolean>(false);
   const [processingStep, setProcessingStep] = useState<string>("");
   const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
+  const [prompt, setPrompt] = useState<string>("");
 
   // 选择的目标语言
   const [targetLanguage, setTargetLanguage] = useState<string>("typescript");
@@ -181,10 +182,14 @@ export default function JsonTypeConverterPage() {
   };
 
   // AI 转换处理函数
-  const handleAiConvert = async (prompt: string) => {
+  const handleAiConvert = async () => {
     if (!inputValue) {
       toast.warning("请先输入 JSON 内容");
+      return;
+    }
 
+    if (!prompt) {
+      toast.warning("请输入转换需求");
       return;
     }
 
@@ -258,6 +263,7 @@ export default function JsonTypeConverterPage() {
     } finally {
       setIsAiProcessing(false);
       setIsAiModalOpen(false);
+      setPrompt("");
     }
   };
 
@@ -354,16 +360,6 @@ export default function JsonTypeConverterPage() {
       >
         重置
       </Button>
-
-      <AIPromptModal
-        isOpen={isAiModalOpen}
-        isProcessing={isAiProcessing}
-        placeholder="请输入您的需求，例如：'将这个 JSON 转换为 Go 结构体并添加 grom 字段定义，并添加中文注释'"
-        submitButtonText="开始转换"
-        title="AI 智能转换"
-        onClose={() => setIsAiModalOpen(false)}
-        onSubmit={handleAiConvert}
-      />
     </div>
   );
 
@@ -393,7 +389,17 @@ export default function JsonTypeConverterPage() {
       toolIconColor="text-primary"
       toolName="JSON 对象类型转换器"
     >
-      <div className="flex flex-col h-full">
+      <div className="flex flex-col h-full relative">
+        <AIPromptOverlay
+          isOpen={isAiModalOpen}
+          isLoading={isAiProcessing}
+          placeholderText="请输入您的需求，例如：'将这个 JSON 转换为 Go 结构体并添加 grom 字段定义，并添加中文注释'"
+          prompt={prompt}
+          tipText="提示: 您可以让AI将JSON转换为各种语言的类型定义或自定义结构"
+          onClose={() => setIsAiModalOpen(false)}
+          onPromptChange={setPrompt}
+          onSubmit={handleAiConvert}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow h-0 overflow-hidden">
           <Card className="flex-1 overflow-hidden shadow-md border border-default-200 transition-shadow hover:shadow-lg">
             <CardBody className="p-0 h-full flex flex-col">

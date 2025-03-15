@@ -124,6 +124,9 @@ export default function IndexPage() {
       <>
         <MonacoOperationBar
           ref={monacoOperationBarRef}
+          onAiClick={() => {
+            return monacoJsonEditorRefs.current[activeTabKey].showAiPrompt();
+          }}
           onClear={() => {
             return monacoJsonEditorRefs.current[activeTabKey].clear();
           }}

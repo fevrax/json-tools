@@ -21,6 +21,7 @@ interface MonacoOperationBarProps {
   onFieldSort: (type: "asc" | "desc") => boolean;
   onMore: (key: "unescape" | "del_comment") => boolean;
   onSaveFile: () => boolean;
+  onAiClick?: () => void;
   ref?: React.RefObject<MonacoOperationBarRef>;
 }
 
@@ -33,6 +34,7 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
   onFieldSort,
   onSaveFile,
   onMore,
+  onAiClick,
 }) => {
   const [isCopyDropdownOpen, setIsCopyDropdownOpen] = useState(false);
   const [isSortDropdownOpen, setSortDropdownOpen] = useState(false);
@@ -105,7 +107,19 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
 
   return (
     <div className="h-10 flex items-center space-x-2 p-1 bg-default-100">
-      <ButtonGroup className="ml-2" variant="light">
+      {/* AI按钮 */}
+      <Button
+        className="text-sm text-default-600 px-2 rounded-xl"
+        size="sm"
+        startContent={<Icon color="#933DFD" icon="hugeicons:ai-chat-02" width={18} />}
+        title="AI助手"
+        variant="light"
+        onPress={onAiClick}
+      >
+        AI助手
+      </Button>
+
+      <ButtonGroup className="" variant="light">
         <StatusButton
           icon="si:copy-line"
           status={copyStatus}
