@@ -32,6 +32,7 @@ export interface MonacoJsonEditorProps {
   value?: string;
   language?: string;
   theme?: string;
+  minimap?: boolean;
   isSetting?: boolean; // 是否显示设置按钮
   isMenu?: boolean; // 是否显示悬浮菜单按钮
   showAi?: boolean; // 是否显示AI功能
@@ -63,6 +64,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   theme,
   height,
   isMenu = false,
+  minimap = false,
   onUpdateValue,
   onMount,
   ref,
@@ -153,7 +155,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
             language: "go",
             readOnly: true,
             theme: theme || "vs-light",
-            minimap: { enabled: true },
+            minimap: { enabled: false },
             wordWrap: "on",
             fontSize: fontSize,
             mouseWheelZoom: true, // 启用鼠标滚轮缩放
@@ -526,7 +528,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         value: value || "",
         language: language || "json",
         minimap: {
-          enabled: true, // 启用缩略图
+          enabled: minimap, // 启用缩略图
         },
         // fontFamily: `"Arial","Microsoft YaHei","黑体","宋体", sans-serif`, // 字体
         fontSize: fontSize, // 使用状态中的字体大小

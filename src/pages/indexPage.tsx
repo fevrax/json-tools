@@ -182,8 +182,9 @@ export default function IndexPage() {
                     }}
                     height="100%"
                     isMenu={true}
-                    showAi={true}
                     language={tab.editorSettings?.language || "json"}
+                    minimap={true}
+                    showAi={true}
                     tabKey={tab.key}
                     tabTitle={tab.title}
                     theme={theme === "dark" ? "vs-dark" : "vs-light"}

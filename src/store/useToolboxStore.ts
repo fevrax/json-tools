@@ -42,6 +42,14 @@ const demoTools: Tool[] = [
     path: "/toolbox/dataFormatConverter",
     category: ["数据处理", "AI"],
   },
+  {
+    id: "jwtParse",
+    name: "JWT解析与验证",
+    icon: "icon-park-outline:key",
+    description: "解析、验证JWT令牌，查看Header和Payload信息，支持签名验证",
+    path: "/toolbox/jwtParse",
+    category: ["安全工具", "数据处理"],
+  },
 ];
 
 export const useToolboxStore = create<ToolboxState>((set, get) => ({
