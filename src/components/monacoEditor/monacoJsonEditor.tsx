@@ -85,7 +85,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   // AI相关状态
   const [showAiPrompt, setShowAiPrompt] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
-  const [aiResponse, setAiResponse] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [showAiResponse, setShowAiResponse] = useState(false);
   const aiEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
@@ -151,9 +150,9 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         aiEditorRef.current = monacoInstance.editor.create(
           aiContainerRef.current,
           {
-            value: "", // 不再设置初始值为"AI正在思考中..."
+            value: "",
             language: "go",
-            readOnly: true,
+            readOnly: false,
             theme: theme || "vs-light",
             minimap: { enabled: false },
             wordWrap: "on",
@@ -165,10 +164,11 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
             cursorStyle: "line", //  光标样式
             cursorSurroundingLines: 0, // 光标环绕行数 当文字输入超过屏幕时 可以看见右侧滚动条中光标所处位置是在滚动条中间还是顶部还是底部 即光标环绕行数 环绕行数越大 光标在滚动条中位置越居中
             cursorSurroundingLinesStyle: "all", // "default" | "all" 光标环绕样式
+            scrollBeyondLastLine: false, // 不允许编辑器滚动到最后一行
           },
         );
       } else if (aiEditorRef.current) {
-        // 不再设置"AI正在思考中..."
+        // 不设置AI编辑器的值
       }
 
       // 更新两个编辑器布局
@@ -204,14 +204,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
         await openAiService.createChatCompletion(messages, {
           onStart: () => {
-            // 不再设置"AI正在思考中..."
+            // 不要在这里写入编辑器内容
           },
           onChunk: (_chunk, accumulated) => {
             // 检查是否已取消
             if (controller.signal.aborted) {
               throw new Error("已取消生成");
             }
-            setAiResponse(accumulated);
             if (aiEditorRef.current) {
               aiEditorRef.current.setValue(accumulated);
             }
@@ -231,6 +230,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               .replace(/```\s*$/i, "")
               .trim();
 
+            // 完成时一次性更新编辑器内容
             setTimeout(() => {
               const model = monaco.editor.createModel(
                 cleanedResult as string,
@@ -242,7 +242,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               }
             }, 100);
 
-            setAiResponse(final);
             setIsAiLoading(false);
             // 清除控制器引用
             (window as any).currentAiController = null;
@@ -252,13 +251,9 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
             // 如果是取消错误，显示不同的消息
             if (error.message === "已取消生成") {
               toast.warning(`AI解析已取消`);
-              // 不再修改编辑器内容
+              // 不要修改AI编辑器内容
             } else {
               toast.error(`AI回复错误: ${error.message}`);
-              setAiResponse(`处理出错: ${error.message}`);
-              if (aiEditorRef.current) {
-                aiEditorRef.current.setValue(`处理出错: ${error.message}`);
-              }
             }
             // 清除控制器引用
             (window as any).currentAiController = null;
@@ -289,7 +284,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   // 关闭AI响应
   const closeAiResponse = () => {
     setShowAiResponse(false);
-    setAiResponse("");
 
     // 布局调整
     setTimeout(() => {
@@ -979,20 +973,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
             <div className="flex-1 h-full" style={{ width: "50%" }}>
               <div ref={containerRef} className="h-full w-full" />
             </div>
-
-            {/* 垂直分隔线 */}
-            <div className="flex flex-col justify-center h-full px-1.5">
-              <div className="h-[80%] w-[2px] bg-gradient-to-b from-blue-300/50 via-purple-300/50 to-indigo-300/50 dark:from-blue-500/40 dark:via-purple-500/40 dark:to-indigo-500/40 rounded-full shadow-[0_0_4px_rgba(59,130,246,0.3)] dark:shadow-[0_0_4px_rgba(99,102,241,0.4)]" />
-            </div>
-
             {/* AI响应编辑器 - 右侧 */}
             <div className="flex-1 h-full" style={{ width: "50%" }}>
-              <div className="flex flex-col h-full border-l border-blue-100 dark:border-blue-800 shadow-lg dark:shadow-blue-900/20 overflow-hidden">
-                <div className="flex justify-between items-center px-3 py-2.5 bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-blue-50/80 dark:from-blue-950/80 dark:via-indigo-950/80 dark:to-blue-950/80 backdrop-blur-sm border-b border-blue-100 dark:border-blue-800">
+              <div className="flex flex-col h-full border-l-2 border-blue-100 dark:border-neutral-700 shadow-lg dark:shadow-blue-900/20 overflow-hidden">
+                <div className="flex justify-between items-center px-3 py-2.5 bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-blue-50/80 dark:from-neutral-800/80  backdrop-blur-sm border-b border-blue-100 dark:border-neutral-800">
                   <div className="flex items-center space-x-2.5">
                     <div className="relative">
                       <Icon
-                        className="text-blue-600 dark:text-blue-400"
+                        className="text-indigo-600 dark:text-indigo-400"
                         icon="hugeicons:ai-chat-02"
                         width={20}
                       />
@@ -1001,7 +989,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
                       )}
                     </div>
                     <span className="text-sm font-semibold bg-gradient-to-r from-blue-700 to-indigo-700 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-                      AI助手解析结果
+                      {isAiLoading ? "AI正在思考中..." : "AI助手解析结果"}
                     </span>
                     {isAiLoading && (
                       <div className="flex items-center space-x-1 ml-2">
@@ -1024,9 +1012,21 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
                         <Icon icon="tabler:player-stop-filled" width={16} />
                       </Button>
                     )}
+                    {!isAiLoading && (
+                      <Button
+                        isIconOnly
+                        className="bg-indigo-50 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-800/40 rounded-full"
+                        size="sm"
+                        title="重新生成"
+                        variant="flat"
+                        onPress={() => handleAiSubmit()}
+                      >
+                        <Icon icon="tabler:refresh" width={16} />
+                      </Button>
+                    )}
                     <Button
                       isIconOnly
-                      className="bg-blue-50 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-800/40 rounded-full"
+                      className="bg-blue-50 text-indigo-500 hover:text-indigo-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-blue-800/40 rounded-full"
                       size="sm"
                       title="复制内容"
                       variant="flat"

@@ -100,7 +100,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
       <Button
         className="text-sm text-default-600 px-2 rounded-xl"
         size="sm"
-        startContent={<Icon color="#933DFD" icon="hugeicons:ai-chat-02" width={18} />}
+        startContent={<Icon className="text-indigo-500" icon="hugeicons:ai-chat-02" width={18} />}
         title="AI助手"
         variant="light"
         onPress={onAiClick}

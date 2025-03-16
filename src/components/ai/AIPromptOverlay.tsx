@@ -82,18 +82,18 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
       className="absolute z-50 top-[10px] left-1/2 transform -translate-x-1/2 w-[90%] max-w-2xl"
       role="dialog"
     >
-      <div className="flex flex-col rounded-lg shadow-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/90 dark:to-indigo-900/90 border border-blue-200 dark:border-blue-700 overflow-hidden backdrop-blur-sm">
-        <div className="flex items-center p-2 gap-2">
-          <div className="flex items-center flex-1 bg-white dark:bg-gray-800 rounded-md border border-blue-200 dark:border-blue-700 pl-2 pr-1 py-1 shadow-inner">
+      <div className="flex flex-col rounded-lg shadow-xl bg-gradient-to-r from-blue-200/30 to-indigo-50 dark:from-neutral-800/80 border border-blue-200 dark:border-neutral-700 overflow-hidden backdrop-blur-sm">
+        <div className="flex items-center p-4 gap-2">
+          <div className="flex items-center flex-1 bg-white dark:bg-neutral-800 rounded-md border border-blue-200 dark:border-neutral-700 pl-2 pr-1 py-1 shadow-inner">
             <Icon
-              className="text-blue-500 dark:text-blue-400 mx-2"
+              className="text-indigo-500 mx-2"
               icon="hugeicons:ai-chat-02"
               width={20}
             />
             <input
               ref={inputRef}
               aria-label="AI 提示输入"
-              className="h-8 flex-1 bg-transparent border-none outline-none text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500 text-sm"
+              className="h-8 flex-1 bg-transparent border-none outline-none text-gray-700 dark:text-gray-200 placeholder-gray-400 dark:placeholder-neutral-500 text-sm"
               placeholder={placeholderText}
               type="text"
               value={prompt}
@@ -122,7 +122,7 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
           <Button
             isIconOnly
             aria-label="发送提问"
-            className="w-12 bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 border-none"
+            className="w-12 bg-gradient-to-r from-blue-500 to-indigo-600 order-none"
             color="primary"
             isLoading={isLoading}
             size="sm"
@@ -132,7 +132,7 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
           </Button>
         </div>
 
-        <div className="px-2 pb-2 text-xs text-gray-500 dark:text-gray-400 flex items-center">
+        <div className="px-4 pb-4 text-xs text-gray-500 dark:text-gray-400 flex items-center">
           <Icon className="mr-1" icon={tipIcon} width={14} />
           <span>{tipText}</span>
         </div>
