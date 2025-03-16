@@ -151,7 +151,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         aiEditorRef.current = monacoInstance.editor.create(
           aiContainerRef.current,
           {
-            value: "AI正在思考中...",
+            value: "", // 不再设置初始值为"AI正在思考中..."
             language: "go",
             readOnly: true,
             theme: theme || "vs-light",
@@ -168,7 +168,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           },
         );
       } else if (aiEditorRef.current) {
-        aiEditorRef.current.setValue("AI正在思考中...");
+        // 不再设置"AI正在思考中..."
       }
 
       // 更新两个编辑器布局
@@ -204,9 +204,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
         await openAiService.createChatCompletion(messages, {
           onStart: () => {
-            if (aiEditorRef.current) {
-              aiEditorRef.current.setValue("AI正在思考中...");
-            }
+            // 不再设置"AI正在思考中..."
           },
           onChunk: (_chunk, accumulated) => {
             // 检查是否已取消
@@ -253,10 +251,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
             setIsAiLoading(false);
             // 如果是取消错误，显示不同的消息
             if (error.message === "已取消生成") {
-              toast.warning(`AI生成已取消`);
-              if (aiEditorRef.current) {
-                aiEditorRef.current.setValue(aiResponse + "\n\n[已取消生成]");
-              }
+              toast.warning(`AI解析已取消`);
+              // 不再修改编辑器内容
             } else {
               toast.error(`AI回复错误: ${error.message}`);
               setAiResponse(`处理出错: ${error.message}`);
@@ -276,7 +272,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }, 500); // 给UI足够的时间渲染编辑器容器
   };
 
-  // 停止AI生成
+  // 停止AI解析
   const stopAiGeneration = () => {
     // 获取控制器并中止请求
     const controller = (window as any).currentAiController as AbortController;
@@ -285,7 +281,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       controller.abort();
       // 更新状态
       setIsAiLoading(false);
-      toast.success("已停止AI生成");
+      toast.success("已停止AI解析");
+      // 不再清空或修改AI编辑器的内容
     }
   };
 
@@ -996,7 +993,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
                     <div className="relative">
                       <Icon
                         className="text-blue-600 dark:text-blue-400"
-                        icon="carbon:machine-learning-model"
+                        icon="hugeicons:ai-chat-02"
                         width={20}
                       />
                       {isAiLoading && (
@@ -1027,6 +1024,22 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
                         <Icon icon="tabler:player-stop-filled" width={16} />
                       </Button>
                     )}
+                    <Button
+                      isIconOnly
+                      className="bg-blue-50 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-800/40 rounded-full"
+                      size="sm"
+                      title="复制内容"
+                      variant="flat"
+                      onPress={() => {
+                        if (aiEditorRef.current) {
+                          const content = aiEditorRef.current.getValue();
+                          navigator.clipboard.writeText(content);
+                          toast.success("已复制内容");
+                        }
+                      }}
+                    >
+                      <Icon icon="lucide:copy" width={16} />
+                    </Button>
                     <Button
                       isIconOnly
                       className="bg-gray-50 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:bg-gray-800/50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700/50 rounded-full"

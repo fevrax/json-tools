@@ -20,6 +20,7 @@ interface MonacoDiffOperationBarProps {
     type: MonacoDiffEditorEditorType,
     sort: "asc" | "desc",
   ) => boolean;
+  onAiClick?: () => void;
   ref?: React.RefObject<MonacoDiffOperationBarRef>;
 }
 
@@ -30,6 +31,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
   onFormat,
   onClear,
   onFieldSort,
+  onAiClick,
 }) => {
   const [isCopyDropdownOpen, setCopyDropdownOpen] = useState(false);
   const [isFormatDropdownOpen, setFormatDropdownOpen] = useState(false);
@@ -94,6 +96,18 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
 
   return (
     <div className="h-10 flex items-center space-x-2 p-1 bg-default-100">
+      {/* AI按钮 */}
+      <Button
+        className="text-sm text-default-600 px-2 rounded-xl"
+        size="sm"
+        startContent={<Icon color="#933DFD" icon="hugeicons:ai-chat-02" width={18} />}
+        title="AI助手"
+        variant="light"
+        onPress={onAiClick}
+      >
+        AI助手
+      </Button>
+      
       {/* 复制按钮 */}
       <Dropdown
         classNames={{

@@ -229,6 +229,9 @@ export default function IndexPage() {
           onFormat={(type) => {
             return monacoDiffEditorRefs.current[activeTabKey].format(type);
           }}
+          onAiClick={() => {
+            monacoDiffEditorRefs.current[activeTabKey].showAiPrompt();
+          }}
         />
         <div className="editor-container flex-grow overflow-hidden">
           {tabs.map((tab) => {
@@ -267,6 +270,7 @@ export default function IndexPage() {
                     }
                     originalValue={tab.content}
                     tabKey={tab.key}
+                    tabTitle={tab.title}
                     theme={theme === "dark" ? "vs-dark" : "vs-light"}
                     onMount={() => {
                       setEditorLoading((prev) => ({

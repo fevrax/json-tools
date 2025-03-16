@@ -454,7 +454,7 @@ export default function JsonTypeConverterPage() {
                     icon="solar:code-square-linear"
                     width={16}
                   />
-                  输出类型定义
+                  转换后内容
                 </span>
                 <Button
                   isIconOnly
@@ -479,7 +479,9 @@ export default function JsonTypeConverterPage() {
                   tabKey="out"
                   theme={theme === "dark" ? "vs-dark" : "vs-light"}
                   value={outputValue}
-                  onUpdateValue={() => {}}
+                  onUpdateValue={(val) => {
+                    setOutputValue(val || "");
+                  }}
                 />
               </div>
             </CardBody>
