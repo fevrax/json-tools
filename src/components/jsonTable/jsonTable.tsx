@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Icon } from "@iconify/react";
 
 import JsonPathBar from "@/components/jsonTable/jsonPathBar.tsx";
@@ -24,7 +24,47 @@ const JsonTable: React.FC<JsonTableProps> = ({
   hideEmpty = false,
   hideNull = false,
 }) => {
-  const [currentPath, setCurrentPath] = useState<string>("");
+  const [currentPath, setCurrentPath] = useState<string>("root");
+
+  // 修改滚动到元素的函数
+  const scrollToElement = (path: string) => {
+    const element = document.getElementById(`json-path-${path}`);
+
+    if (element) {
+      const container = element.closest(".overflow-auto");
+
+      if (container) {
+        const elementRect = element.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+
+        // 添加滚动偏移量，使滚动位置稍微小一点
+        const offset = 40; // 偏移量，可以根据需要调整
+
+        // 计算水平和垂直方向的滚动位置
+        const scrollLeft =
+          elementRect.left - containerRect.left + container.scrollLeft - offset;
+        const scrollTop =
+          elementRect.top - containerRect.top + container.scrollTop - offset;
+
+        // 平滑滚动到目标位置
+        container.scrollTo({
+          left: Math.max(0, scrollLeft),
+          top: Math.max(0, scrollTop),
+          behavior: "smooth",
+        });
+      } else {
+        // 使用scrollIntoView时添加margin
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  };
+
+  // 监听展开路径变化
+  useEffect(() => {
+    if (currentPath) {
+      scrollToElement(currentPath);
+    }
+  }, [currentPath]);
 
   // 判断值是否为可展开的对象或数组
   const isExpandable = (value: any): boolean => {
@@ -65,14 +105,20 @@ const JsonTable: React.FC<JsonTableProps> = ({
       return (
         <button
           className="flex items-center cursor-pointer hover:text-primary bg-transparent border-0 p-0"
+          id={`json-path-${path}`}
           onClick={() => {
             onToggleExpand(path);
             setCurrentPath(path);
             onPathChange(path);
+            scrollToElement(path);
           }}
         >
           <Icon className="mr-1" icon={icon} width={16} />
-          <span>{Array.isArray(value) ? `[${value.length}]` : "{...}"}</span>
+          <span>
+            {Array.isArray(value)
+              ? `Array[${value.length}]`
+              : `Object{${Object.keys(value).length}}`}
+          </span>
         </button>
       );
     }
@@ -87,19 +133,19 @@ const JsonTable: React.FC<JsonTableProps> = ({
     return <span>{String(value)}</span>;
   };
 
-  // 渲染对象表格 - 使用键值对形式
-  const renderObjectTable = (data: object, path: string = "") => {
+  // 修改表格容器的样式
+  const renderObjectTable = (data: object, path: string = "root") => {
     const entries = Object.entries(data);
 
     return (
-      <div className="rounded-lg border border-default-200 mb-4 overflow-hidden">
-        <table className="w-full border-collapse">
+      <div className="rounded-lg border border-default-200 mb-2 overflow-x-auto inline-block">
+        <table className="border-collapse w-full">
           <thead>
             <tr className="bg-default-50">
-              <th className="w-1/3 px-4 py-2 text-left text-sm font-medium text-default-600 border-b border-default-200">
+              <th className="w-1/3 px-2 py-1 text-left text-sm font-medium text-default-600 border border-default-200">
                 键
               </th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-default-600 border-b border-default-200">
+              <th className="px-2 py-1 text-left text-sm font-medium text-default-600 border border-default-200">
                 值
               </th>
             </tr>
@@ -114,13 +160,13 @@ const JsonTable: React.FC<JsonTableProps> = ({
 
               return (
                 <tr key={key} className="hover:bg-default-50">
-                  <td className="px-4 py-2 text-sm font-medium border-b border-default-200">
+                  <td className="px-2 py-1 text-sm font-medium border border-default-200">
                     {key}
                   </td>
-                  <td className="px-4 py-2 text-sm border-b border-default-200">
+                  <td className="px-2 py-1 text-sm border border-default-200">
                     {renderCell(value, valuePath)}
                     {isExpandable(value) && expandedPaths.has(valuePath) && (
-                      <div className="mt-2">
+                      <div className="mt-1">
                         {Array.isArray(value)
                           ? isObjectArray(value)
                             ? renderObjectsArrayTable(value, valuePath)
@@ -138,17 +184,16 @@ const JsonTable: React.FC<JsonTableProps> = ({
     );
   };
 
-  // 渲染普通数组表格
-  const renderArrayTable = (data: any[], path: string = "") => {
+  const renderArrayTable = (data: any[], path: string = "root") => {
     return (
-      <div className="rounded-lg border border-default-200 mb-4 overflow-hidden">
-        <table className="w-full border-collapse">
+      <div className="rounded-lg border border-default-200 mb-2 overflow-x-auto inline-block">
+        <table className="border-collapse w-full">
           <thead>
             <tr className="bg-default-50">
-              <th className="w-20 px-4 py-2 text-left text-sm font-medium text-default-600 border-b border-default-200">
+              <th className="w-16 px-2 py-1 text-left text-sm font-medium text-default-600 border border-default-200">
                 索引
               </th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-default-600 border-b border-default-200">
+              <th className="px-2 py-1 text-left text-sm font-medium text-default-600 border border-default-200">
                 值
               </th>
             </tr>
@@ -163,13 +208,13 @@ const JsonTable: React.FC<JsonTableProps> = ({
 
               return (
                 <tr key={index} className="hover:bg-default-50">
-                  <td className="px-4 py-2 text-sm border-b border-default-200">
+                  <td className="px-2 py-1 text-sm border border-default-200">
                     {index}
                   </td>
-                  <td className="px-4 py-2 text-sm border-b border-default-200">
+                  <td className="px-2 py-1 text-sm border border-default-200">
                     {renderCell(item, itemPath)}
                     {isExpandable(item) && expandedPaths.has(itemPath) && (
-                      <div className="mt-2">
+                      <div className="mt-1">
                         {Array.isArray(item)
                           ? isObjectArray(item)
                             ? renderObjectsArrayTable(item, itemPath)
@@ -187,8 +232,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
     );
   };
 
-  // 渲染对象数组表格 - 使用字段名作为表头
-  const renderObjectsArrayTable = (data: any[], path: string = "") => {
+  const renderObjectsArrayTable = (data: any[], path: string = "root") => {
     const allKeys = getAllObjectKeys(data);
 
     if (allKeys.length === 0) {
@@ -196,17 +240,17 @@ const JsonTable: React.FC<JsonTableProps> = ({
     }
 
     return (
-      <div className="rounded-lg border border-default-200 mb-4 overflow-hidden">
-        <table className="w-full border-collapse">
+      <div className="rounded-lg border border-default-200 mb-2 overflow-x-auto inline-block">
+        <table className="border-collapse w-full">
           <thead>
             <tr className="bg-default-50">
-              <th className="w-20 px-4 py-2 text-left text-sm font-medium text-default-600 border-b border-default-200">
+              <th className="w-16 px-2 py-1 text-left text-sm font-medium text-default-600 border border-default-200">
                 索引
               </th>
               {allKeys.map((key) => (
                 <th
                   key={key}
-                  className="px-4 py-2 text-left text-sm font-medium text-default-600 border-b border-default-200"
+                  className="px-2 py-1 text-left text-sm font-medium text-default-600 border border-default-200"
                 >
                   {key}
                 </th>
@@ -223,7 +267,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
 
               return (
                 <tr key={index} className="hover:bg-default-50">
-                  <td className="px-4 py-2 text-sm border-b border-default-200">
+                  <td className="px-2 py-1 text-sm border border-default-200">
                     {index}
                   </td>
                   {allKeys.map((key) => {
@@ -237,7 +281,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
                       return (
                         <td
                           key={key}
-                          className="px-4 py-2 text-sm border-b border-default-200"
+                          className="px-2 py-1 text-sm border border-default-200"
                         >
                           -
                         </td>
@@ -247,11 +291,11 @@ const JsonTable: React.FC<JsonTableProps> = ({
                     return (
                       <td
                         key={key}
-                        className="px-4 py-2 text-sm border-b border-default-200"
+                        className="px-2 py-1 text-sm border border-default-200"
                       >
                         {renderCell(value, cellPath)}
                         {isExpandable(value) && expandedPaths.has(cellPath) && (
-                          <div className="mt-2">
+                          <div className="mt-1">
                             {Array.isArray(value)
                               ? isObjectArray(value)
                                 ? renderObjectsArrayTable(value, cellPath)
@@ -273,20 +317,24 @@ const JsonTable: React.FC<JsonTableProps> = ({
 
   // 渲染根表格
   const renderRootTable = () => {
-    if (!data) return <div className="text-center py-4">没有数据</div>;
+    if (!data) return <div className="text-center py-2">没有数据</div>;
 
     if (Array.isArray(data)) {
       if (isObjectArray(data)) {
         // 如果数组中的所有元素都是对象，则使用对象数组表格渲染
-        return renderObjectsArrayTable(data, "");
+        return renderObjectsArrayTable(data, "root");
       } else {
         // 否则使用普通数组表格渲染
-        return renderArrayTable(data, "");
+        return renderArrayTable(data, "root");
       }
     } else if (typeof data === "object" && data !== null) {
-      return renderObjectTable(data, "");
+      return renderObjectTable(data, "root");
     } else {
-      return <div className="p-4">{renderCell(data, "")}</div>;
+      return (
+        <div className="p-2 border border-default-200 rounded-lg">
+          {renderCell(data, "root")}
+        </div>
+      );
     }
   };
 
@@ -297,7 +345,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
         onCollapse={onCollapseAll}
         onExpand={onExpandAll}
       />
-      <div className="flex-grow overflow-auto p-4">{renderRootTable()}</div>
+      <div className="flex-grow overflow-auto p-2">{renderRootTable()}</div>
     </div>
   );
 };
