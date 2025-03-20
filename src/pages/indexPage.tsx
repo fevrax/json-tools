@@ -31,6 +31,7 @@ import { storage } from "@/lib/indexedDBStore";
 
 import "@/styles/index.css";
 import { SidebarKeys } from "@/components/sidebar/items.tsx";
+import JsonTableView from "@/components/jsonTable/jsonTableView";
 
 export default function IndexPage() {
   const { theme } = useTheme();
@@ -73,6 +74,7 @@ export default function IndexPage() {
     monaco: Set<string>;
     diff: Set<string>;
     vanilla: Set<string>;
+    table?: Set<string>;
   }>({
     monaco: new Set(),
     diff: new Set(),
@@ -364,6 +366,8 @@ export default function IndexPage() {
         return renderVanillaJsonEditor();
       case SidebarKeys.diffView:
         return renderMonacoDiffEditor();
+      case SidebarKeys.tableView:
+        return renderJsonTableView();
       default:
         return <div>404</div>;
     }
@@ -518,6 +522,53 @@ export default function IndexPage() {
     tabSwitchHandle();
     sidebarStore.switchActiveKey();
   }, [sidebarStore.clickSwitchKey]);
+
+  // 添加renderJsonTableView函数
+  const renderJsonTableView = () => {
+    return (
+      <div className="h-full">
+        {tabs.map((tab) => {
+          const shouldRender = loadedEditors.table?.has(tab.key);
+          const isVisible = tab.key === activeTabKey;
+
+          if (!shouldRender && isVisible) {
+            setLoadedEditors((prev) => ({
+              ...prev,
+              table: new Set([...(prev.table || []), tab.key]),
+            }));
+          }
+
+          return (
+            <div
+              key={"table-" + tab.key}
+              className={cn(
+                "w-full h-full",
+                isVisible && "visible",
+                !editorLoading[tab.key] && "loaded",
+                {
+                  hidden: tab.key !== activeTabKey,
+                }
+              )}
+            >
+              {shouldRender && (
+                <JsonTableView
+                  data={JSON.parse(tab.content)}
+                  onCopy={(type) => {
+                    // 实现复制功能
+                    return true;
+                  }}
+                  onExport={(type) => {
+                    // 实现导出功能
+                    return true;
+                  }}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className="flex flex-col h-full dark:bg-vscode-dark">

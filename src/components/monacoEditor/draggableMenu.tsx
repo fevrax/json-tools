@@ -21,8 +21,16 @@ export const SUPPORTED_LANGUAGES = [
   { id: "xml", name: "XML", icon: "vscode-icons:file-type-xml" },
   { id: "toml", name: "TOML", icon: "vscode-icons:file-type-toml" },
   { id: "go", name: "Go", icon: "vscode-icons:file-type-go" },
-  { id: "javascript", name: "JavaScript", icon: "vscode-icons:file-type-js-official" },
-  { id: "typescript", name: "TypeScript", icon: "vscode-icons:file-type-typescript-official" },
+  {
+    id: "javascript",
+    name: "JavaScript",
+    icon: "vscode-icons:file-type-js-official",
+  },
+  {
+    id: "typescript",
+    name: "TypeScript",
+    icon: "vscode-icons:file-type-typescript-official",
+  },
   { id: "html", name: "HTML", icon: "vscode-icons:file-type-html" },
   { id: "css", name: "CSS", icon: "vscode-icons:file-type-css" },
   { id: "python", name: "Python", icon: "vscode-icons:file-type-python" },
@@ -65,6 +73,8 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   const [isPositionCalculated, setIsPositionCalculated] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
+  // 添加延时关闭的定时器引用
+  const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // 保存拖动状态，避免状态更新引起的重渲染
   const dragStateRef = useRef({
@@ -304,6 +314,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   };
 
   const toggleMenu = () => {
+    clearCloseTimer(); // 清除可能存在的定时器
     setIsMenuOpen(!isMenuOpen);
   };
 
@@ -345,7 +356,10 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
         !buttonRef.current.contains(e.target as Node) &&
         isMenuOpen
       ) {
+        // 点击外部时立即关闭菜单，而不是延时关闭
+        clearCloseTimer(); // 清除可能存在的定时器
         setIsMenuOpen(false);
+        setIsHide(true);
       }
     };
 
@@ -371,6 +385,32 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     return "";
   };
 
+  // 清除菜单关闭定时器的函数
+  const clearCloseTimer = () => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  };
+
+  // 设置延时关闭菜单的函数
+  // 添加600ms延迟，给用户足够的时间在悬浮菜单和菜单面板之间移动鼠标
+  // 这样可以提高用户体验，避免菜单过早关闭
+  const setCloseTimer = () => {
+    clearCloseTimer();
+    closeTimerRef.current = setTimeout(() => {
+      setIsHide(true);
+      setIsMenuOpen(false);
+    }, 1000); // 600ms 后关闭菜单
+  };
+
+  // 确保组件卸载时清除定时器
+  useEffect(() => {
+    return () => {
+      clearCloseTimer();
+    };
+  }, []);
+
   return (
     <div
       ref={menuRef}
@@ -390,13 +430,13 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
         visibility: isPositionCalculated ? "visible" : "hidden",
       }}
       onMouseEnter={() => {
+        clearCloseTimer(); // 清除可能存在的关闭定时器
         if (dockedPosition) {
           setIsHide(false);
         }
       }}
       onMouseLeave={() => {
-        setIsHide(true);
-        setIsMenuOpen(false);
+        setCloseTimer(); // 设置延时关闭定时器
       }}
     >
       {/* 拖动手柄区域 */}
@@ -468,6 +508,8 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
           right: 0,
           transformOrigin: "bottom right",
         }}
+        onMouseEnter={clearCloseTimer}
+        onMouseLeave={setCloseTimer}
       >
         <div className="flex flex-col space-y-4">
           <div>
@@ -479,26 +521,32 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
             </label>
             <Select
               aria-label="选择编程语言"
+              className="w-full"
+              color="primary"
               id="language-select"
               selectedKeys={[currentLanguage]}
               size="sm"
-              className="w-full"
-              color="primary"
-              variant="faded"
               startContent={
                 <Icon
                   className="mr-1 text-primary"
-                  icon={SUPPORTED_LANGUAGES.find((lang) => lang.id === currentLanguage)?.icon || ""}
+                  icon={
+                    SUPPORTED_LANGUAGES.find(
+                      (lang) => lang.id === currentLanguage,
+                    )?.icon || ""
+                  }
                   width={18}
                 />
               }
+              variant="faded"
               onChange={(e) => onLanguageChange(e.target.value)}
             >
               {SUPPORTED_LANGUAGES.map((lang) => (
-                <SelectItem 
-                  key={lang.id} 
+                <SelectItem
+                  key={lang.id}
                   aria-label={lang.name}
-                  startContent={<Icon className="mr-2" icon={lang.icon} width={18} />}
+                  startContent={
+                    <Icon className="mr-2" icon={lang.icon} width={18} />
+                  }
                 >
                   {lang.name}
                 </SelectItem>

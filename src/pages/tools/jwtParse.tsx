@@ -659,7 +659,7 @@ export default function JwtParsePage() {
     <ToolboxPageTemplate
       toolIcon="solar:document-lock-linear"
       toolIconColor="text-primary"
-      toolName="JWT 解析工具"
+      toolName="JWT 解析与验证"
     >
       <div className="flex flex-col h-full">
         {/* 解码/验证界面 */}

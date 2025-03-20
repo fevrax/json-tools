@@ -270,11 +270,13 @@ export default function DataFormatConverterPage() {
   const handleAiConvert = async () => {
     if (!inputValue) {
       toast.warning("请先输入内容");
+
       return;
     }
 
     if (!prompt) {
       toast.warning("请输入转换需求");
+
       return;
     }
 
@@ -515,8 +517,8 @@ export default function DataFormatConverterPage() {
     >
       <div className="flex flex-col h-full relative">
         <AIPromptOverlay
-          isOpen={isAiModalOpen}
           isLoading={isAiProcessing}
+          isOpen={isAiModalOpen}
           placeholderText="请输入您的需求，例如：'将这个 JSON 转换为 Go 结构体并添加 grom 字段定义，并添加中文注释'"
           prompt={prompt}
           tipText="提示: 您可以要求AI将数据转换为各种格式或生成各种语言的代码结构"

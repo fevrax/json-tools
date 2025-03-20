@@ -8,6 +8,7 @@ export enum SidebarKeys {
   textView = "textView",
   treeView = "treeView",
   diffView = "diffView",
+  tableView = "tableView",
   toolbox = "toolbox",
 }
 
@@ -26,6 +27,11 @@ export const items: SidebarItem[] = [
     key: SidebarKeys.diffView,
     icon: "solar:checklist-minimalistic-outline",
     title: "DIFF视图",
+  },
+  {
+    key: SidebarKeys.tableView,
+    icon: "mynaui:table",
+    title: "表格视图",
   },
   {
     key: SidebarKeys.toolbox,
