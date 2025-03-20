@@ -367,12 +367,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     if (model) {
       monaco.editor.setModelLanguage(model, newLanguage);
     }
-
-    // 不再更新AI编辑器的语言
-
-    if (editorFormat()) {
-      setParseJsonError(null);
-    }
   };
 
   // 重置设置
