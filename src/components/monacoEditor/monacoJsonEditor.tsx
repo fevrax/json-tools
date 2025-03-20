@@ -193,6 +193,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
       if (messages[1].content.length > openAiService.maxTokens) {
         toast.error("内容超出限制，请缩短内容或使用其他方式描述需求。");
+
         return;
       }
 

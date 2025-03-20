@@ -21,8 +21,16 @@ export const SUPPORTED_LANGUAGES = [
   { id: "xml", name: "XML", icon: "vscode-icons:file-type-xml" },
   { id: "toml", name: "TOML", icon: "vscode-icons:file-type-toml" },
   { id: "go", name: "Go", icon: "vscode-icons:file-type-go" },
-  { id: "javascript", name: "JavaScript", icon: "vscode-icons:file-type-js-official" },
-  { id: "typescript", name: "TypeScript", icon: "vscode-icons:file-type-typescript-official" },
+  {
+    id: "javascript",
+    name: "JavaScript",
+    icon: "vscode-icons:file-type-js-official",
+  },
+  {
+    id: "typescript",
+    name: "TypeScript",
+    icon: "vscode-icons:file-type-typescript-official",
+  },
   { id: "html", name: "HTML", icon: "vscode-icons:file-type-html" },
   { id: "css", name: "CSS", icon: "vscode-icons:file-type-css" },
   { id: "python", name: "Python", icon: "vscode-icons:file-type-python" },
@@ -479,26 +487,32 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
             </label>
             <Select
               aria-label="选择编程语言"
+              className="w-full"
+              color="primary"
               id="language-select"
               selectedKeys={[currentLanguage]}
               size="sm"
-              className="w-full"
-              color="primary"
-              variant="faded"
               startContent={
                 <Icon
                   className="mr-1 text-primary"
-                  icon={SUPPORTED_LANGUAGES.find((lang) => lang.id === currentLanguage)?.icon || ""}
+                  icon={
+                    SUPPORTED_LANGUAGES.find(
+                      (lang) => lang.id === currentLanguage,
+                    )?.icon || ""
+                  }
                   width={18}
                 />
               }
+              variant="faded"
               onChange={(e) => onLanguageChange(e.target.value)}
             >
               {SUPPORTED_LANGUAGES.map((lang) => (
-                <SelectItem 
-                  key={lang.id} 
+                <SelectItem
+                  key={lang.id}
                   aria-label={lang.name}
-                  startContent={<Icon className="mr-2" icon={lang.icon} width={18} />}
+                  startContent={
+                    <Icon className="mr-2" icon={lang.icon} width={18} />
+                  }
                 >
                   {lang.name}
                 </SelectItem>

@@ -48,7 +48,10 @@ interface TabStore {
   closeAllTabs: () => Array<string>;
   vanilla2JsonContent: (key: string) => void;
   jsonContent2VanillaContent: (key: string) => void;
-  updateEditorSettings: (key: string, settings: TabItem["editorSettings"]) => void;
+  updateEditorSettings: (
+    key: string,
+    settings: TabItem["editorSettings"],
+  ) => void;
 }
 
 export const useTabStore = create<TabStore>()(
@@ -472,7 +475,10 @@ export const useTabStore = create<TabStore>()(
               };
             }
           }),
-        updateEditorSettings: (key: string, settings: TabItem["editorSettings"]) =>
+        updateEditorSettings: (
+          key: string,
+          settings: TabItem["editorSettings"],
+        ) =>
           set((state) => {
             const updatedTabs = state.tabs.map((tab) =>
               tab.key === key

@@ -23,10 +23,7 @@ function App() {
         element={<DataFormatConverter />}
         path="/toolbox/dataFormatConverter"
       />
-      <Route
-        element={<JwtParsePage />}
-        path="/toolbox/jwtParse"
-      />
+      <Route element={<JwtParsePage />} path="/toolbox/jwtParse" />
     </Routes>
   );
 }

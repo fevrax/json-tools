@@ -87,7 +87,6 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     }
   }, [theme]);
 
-
   // 监听字体大小变化
   useEffect(() => {
     updateEditorOptions({
@@ -404,7 +403,6 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       modifiedEditorRef.current?.updateOptions(options);
     }
   };
-
 
   return (
     <>
