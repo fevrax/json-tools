@@ -417,7 +417,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
 
             // 清理结果，移除所有的 markdown 代码标记
             const cleanedResult = final
-              .replace(/```[\s\S]*?```/g, function(match) {
+              .replace(/```[\s\S]*?```/g, function (match) {
                 // 提取代码块内容，去除首尾的 ``` 和语言标记
                 return match
                   .replace(/^```[a-z]*\s*/i, "")
@@ -859,6 +859,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
               onPress={() => {
                 if (aiEditorRef.current) {
                   const content = aiEditorRef.current.getValue();
+
                   navigator.clipboard.writeText(content);
                   toast.success("已复制内容");
                 }

@@ -1,7 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Icon } from "@iconify/react";
 
 import JsonPathBar from "@/components/jsonTable/jsonPathBar.tsx";
+
+// 添加动画相关的CSS样式
+const animationStyles = {
+  expandable: {
+    overflow: "hidden",
+    transition: "max-height 0.2s ease-in-out, opacity 0.2s ease-in-out",
+    maxHeight: "0px",
+    opacity: 0,
+  },
+  expanded: {
+    maxHeight: "1000px", // 足够大的值以容纳大多数内容
+    opacity: 1,
+  },
+};
 
 interface JsonTableProps {
   data: any;
@@ -25,9 +39,15 @@ const JsonTable: React.FC<JsonTableProps> = ({
   hideNull = false,
 }) => {
   const [currentPath, setCurrentPath] = useState<string>("root");
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const lastAutoExpandedDataRef = useRef<any>(null);
 
   // 添加自动展开单个子元素的函数
-  const collectSingleChildPaths = (value: any, path: string = "root", paths: Set<string> = new Set()): Set<string> => {
+  const collectSingleChildPaths = (
+    value: any,
+    path: string = "root",
+    paths: Set<string> = new Set(),
+  ): Set<string> => {
     if (typeof value !== "object" || value === null) {
       return paths;
     }
@@ -46,12 +66,13 @@ const JsonTable: React.FC<JsonTableProps> = ({
       }
     } else {
       const keys = Object.keys(value);
+
       if (keys.length === 1) {
         paths.add(path);
         collectSingleChildPaths(value[keys[0]], `${path}.${keys[0]}`, paths);
       } else {
         // 遍历对象中的所有属性
-        keys.forEach(key => {
+        keys.forEach((key) => {
           if (typeof value[key] === "object" && value[key] !== null) {
             collectSingleChildPaths(value[key], `${path}.${key}`, paths);
           }
@@ -62,15 +83,56 @@ const JsonTable: React.FC<JsonTableProps> = ({
     return paths;
   };
 
-  // 添加初始化自动展开的useEffect
-  useEffect(() => {
+  // 检查路径是否是选定路径的子路径
+  const isPathSelected = (path: string): boolean => {
+    if (!selectedPath) return false;
+
+    // 完全匹配
+    if (path === selectedPath) return true;
+
+    // 检查是否是子路径
+    if (
+      path.startsWith(selectedPath + ".") ||
+      path.startsWith(selectedPath + "[")
+    ) {
+      return true;
+    }
+
+    return false;
+  };
+
+  // 处理元素点击
+  const handleElementClick = (path: string, event: React.SyntheticEvent) => {
+    event.stopPropagation();
+    setSelectedPath(path);
+    setCurrentPath(path);
+    onPathChange && onPathChange(path);
+    scrollToElement(path);
+  };
+
+  // 使用useCallback包装自动展开逻辑，防止不必要的重复执行
+  const autoExpandSingleChildren = useCallback(() => {
+    // 如果数据没有变化，则不重复执行
+    if (lastAutoExpandedDataRef.current === data) {
+      return;
+    }
+
     const pathsToExpand = collectSingleChildPaths(data);
+
     pathsToExpand.forEach((path) => {
       if (!expandedPaths.has(path)) {
         onToggleExpand(path);
       }
     });
-  }, [data]); // 仅在data变化时执行
+
+    // 记录已经自动展开过的数据
+    lastAutoExpandedDataRef.current = data;
+  }, [data, expandedPaths, onToggleExpand]);
+
+  // 初始化时和数据变化时执行自动展开
+  useEffect(() => {
+    autoExpandSingleChildren();
+  }, [data, autoExpandSingleChildren]); // 只在数据变化时触发
 
   // 修改滚动到元素的函数
   const scrollToElement = (path: string) => {
@@ -152,15 +214,21 @@ const JsonTable: React.FC<JsonTableProps> = ({
         <button
           className="flex items-center cursor-pointer hover:text-primary bg-transparent border-0 p-0"
           id={`json-path-${path}`}
-          onClick={() => {
+          onClick={(e) => {
             onToggleExpand(path);
-            setCurrentPath(path);
-            onPathChange && onPathChange(path);
-            scrollToElement(path);
+            handleElementClick(path, e);
           }}
         >
-          <Icon className="mr-1" icon={icon} width={16} />
-          <span>
+          <Icon 
+            className="mr-1" 
+            icon={icon} 
+            width={16} 
+            style={{ 
+              transition: "transform 0.2s ease", 
+              transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" 
+            }} 
+          />
+          <span className="whitespace-nowrap">
             {Array.isArray(value)
               ? `Array[ ${value.length} ]`
               : `Object{ ${Object.keys(value).length} }`}
@@ -169,22 +237,44 @@ const JsonTable: React.FC<JsonTableProps> = ({
       );
     }
 
-    if (typeof value === "string")
-      return <span className="text-green-600">&quot;{value}&quot;</span>;
-    if (typeof value === "number")
-      return <span className="text-blue-600">{value}</span>;
-    if (typeof value === "boolean")
-      return <span className="text-purple-600">{String(value)}</span>;
-
-    return <span>{String(value)}</span>;
+    // 为非可展开的元素添加点击处理器
+    return (
+      <span
+        className="cursor-pointer"
+        role="button"
+        tabIndex={0}
+        onClick={(e) => handleElementClick(path, e)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            handleElementClick(path, e);
+          }
+        }}
+      >
+        {typeof value === "string" ? (
+          <span className="text-green-600">&quot;{value}&quot;</span>
+        ) : typeof value === "number" ? (
+          <span className="text-blue-600">{value}</span>
+        ) : typeof value === "boolean" ? (
+          <span className="text-purple-600">{String(value)}</span>
+        ) : (
+          <span>{String(value)}</span>
+        )}
+      </span>
+    );
   };
 
-  // 修改表格容器的样式
-  const renderObjectTable = (data: object, path: string = "root") => {
+  // 修改表格容器的样式，优化嵌套边框
+  const renderObjectTable = (
+    data: object,
+    path: string = "root",
+    isNested: boolean = false,
+  ) => {
     const entries = Object.entries(data);
 
     return (
-      <div className="border border-default-200 mb-2 overflow-x-auto inline-block">
+      <div
+        className={`${isNested ? "border-0" : "border border-gray-400 rounded"} mb-2 overflow-x-auto inline-block`}
+      >
         <table className="border-collapse w-auto">
           <tbody>
             {entries.map(([key, value]) => {
@@ -193,21 +283,40 @@ const JsonTable: React.FC<JsonTableProps> = ({
               }
 
               const valuePath = path ? `${path}.${key}` : key;
+              const isSelected = isPathSelected(valuePath);
+              const isExpanded = isExpandable(value) && expandedPaths.has(valuePath);
 
               return (
-                <tr key={key} className="hover:bg-default-50">
-                  <td className="px-4 py-1 text-sm font-medium border border-default-200">
+                <tr
+                  key={key}
+                  className={`${isSelected ? "!bg-blue-100" : ""} hover:bg-default-50`}
+                >
+                  <td
+                    className="px-4 py-1 text-sm font-medium border border-gray-400 whitespace-nowrap cursor-pointer"
+                    onClick={(e) => handleElementClick(valuePath, e)}
+                  >
                     {key}
                   </td>
-                  <td className="px-4 py-1 text-sm border border-default-200">
+                  <td 
+                    className="px-4 py-1 text-sm border border-gray-400 whitespace-nowrap cursor-pointer"
+                    onClick={(e) => handleElementClick(valuePath, e)}
+                  >
                     {renderCell(value, valuePath)}
-                    {isExpandable(value) && expandedPaths.has(valuePath) && (
-                      <div className="mt-1">
-                        {Array.isArray(value)
-                          ? isObjectArray(value)
-                            ? renderObjectsArrayTable(value, valuePath)
-                            : renderArrayTable(value, valuePath)
-                          : renderObjectTable(value, valuePath)}
+                    {isExpandable(value) && (
+                      <div 
+                        className="mt-1 pl-4"
+                        style={{
+                          ...animationStyles.expandable,
+                          ...(isExpanded ? animationStyles.expanded : {}),
+                        }}
+                      >
+                        {isExpanded && (
+                          Array.isArray(value)
+                            ? isObjectArray(value)
+                              ? renderObjectsArrayTable(value, valuePath, true)
+                              : renderArrayTable(value, valuePath, true)
+                            : renderObjectTable(value, valuePath, true)
+                        )}
                       </div>
                     )}
                   </td>
@@ -220,20 +329,16 @@ const JsonTable: React.FC<JsonTableProps> = ({
     );
   };
 
-  const renderArrayTable = (data: any[], path: string = "root") => {
+  const renderArrayTable = (
+    data: any[],
+    path: string = "root",
+    isNested: boolean = false,
+  ) => {
     return (
-      <div className="border border-default-200 mb-2 overflow-x-auto inline-block">
+      <div
+        className={`${isNested ? "border-0" : "border border-gray-400 rounded"} mb-2 overflow-x-auto inline-block`}
+      >
         <table className="border-collapse w-auto">
-          <thead>
-            <tr className="bg-default-50">
-              <th className="w-16 px-4 py-1 text-left text-sm font-medium text-default-600 border border-default-200">
-                #
-              </th>
-              <th className="px-4 py-1 text-left text-sm font-medium text-default-600 border border-default-200">
-                值
-              </th>
-            </tr>
-          </thead>
           <tbody>
             {data.map((item, index) => {
               if ((hideEmpty && item === "") || (hideNull && item === null)) {
@@ -241,21 +346,40 @@ const JsonTable: React.FC<JsonTableProps> = ({
               }
 
               const itemPath = `${path}[${index}]`;
+              const isSelected = isPathSelected(itemPath);
+              const isExpanded = isExpandable(item) && expandedPaths.has(itemPath);
 
               return (
-                <tr key={index} className="hover:bg-default-50">
-                  <td className="px-4 py-1 text-sm border border-default-200">
+                <tr
+                  key={index}
+                  className={`${isSelected ? "!bg-blue-100" : ""} hover:bg-default-50`}
+                >
+                  <td
+                    className="px-4 py-1 text-sm border border-gray-400 whitespace-nowrap cursor-pointer"
+                    onClick={(e) => handleElementClick(itemPath, e)}
+                  >
                     {index}
                   </td>
-                  <td className="px-4 py-1 text-sm border border-default-200">
+                  <td 
+                    className="px-4 py-1 text-sm border border-gray-400 whitespace-nowrap cursor-pointer"
+                    onClick={(e) => handleElementClick(itemPath, e)}
+                  >
                     {renderCell(item, itemPath)}
-                    {isExpandable(item) && expandedPaths.has(itemPath) && (
-                      <div className="mt-1">
-                        {Array.isArray(item)
-                          ? isObjectArray(item)
-                            ? renderObjectsArrayTable(item, itemPath)
-                            : renderArrayTable(item, itemPath)
-                          : renderObjectTable(item, itemPath)}
+                    {isExpandable(item) && (
+                      <div 
+                        className="mt-1 pl-4"
+                        style={{
+                          ...animationStyles.expandable,
+                          ...(isExpanded ? animationStyles.expanded : {}),
+                        }}
+                      >
+                        {isExpanded && (
+                          Array.isArray(item)
+                            ? isObjectArray(item)
+                              ? renderObjectsArrayTable(item, itemPath, true)
+                              : renderArrayTable(item, itemPath, true)
+                            : renderObjectTable(item, itemPath, true)
+                        )}
                       </div>
                     )}
                   </td>
@@ -268,25 +392,31 @@ const JsonTable: React.FC<JsonTableProps> = ({
     );
   };
 
-  const renderObjectsArrayTable = (data: any[], path: string = "root") => {
+  const renderObjectsArrayTable = (
+    data: any[],
+    path: string = "root",
+    isNested: boolean = false,
+  ) => {
     const allKeys = getAllObjectKeys(data);
 
     if (allKeys.length === 0) {
-      return renderArrayTable(data, path);
+      return renderArrayTable(data, path, isNested);
     }
 
     return (
-      <div className="border border-default-200 mb-2 overflow-x-auto inline-block">
+      <div
+        className={`${isNested ? "border-0" : "border border-gray-400 rounded"} mb-2 overflow-x-auto inline-block`}
+      >
         <table className="border-collapse w-auto">
           <thead>
             <tr className="bg-default-50">
-              <th className="w-16 px-4 py-1 text-left text-sm font-medium text-default-600 border border-default-200">
+              <th className="w-16 px-4 py-1 text-left text-sm font-medium text-default-600 border border-gray-400 whitespace-nowrap">
                 #
               </th>
               {allKeys.map((key) => (
                 <th
                   key={key}
-                  className="px-4 py-1 text-left text-sm font-medium text-default-600 border border-default-200"
+                  className="px-4 py-1 text-left text-sm font-medium text-default-600 border border-gray-400 whitespace-nowrap"
                 >
                   {key}
                 </th>
@@ -300,15 +430,24 @@ const JsonTable: React.FC<JsonTableProps> = ({
               }
 
               const itemPath = `${path}[${index}]`;
+              const isSelected = isPathSelected(itemPath);
 
               return (
-                <tr key={index} className="hover:bg-default-50">
-                  <td className="px-4 py-1 text-sm border border-default-200">
+                <tr
+                  key={index}
+                  className={`${isSelected ? "!bg-blue-100" : ""} hover:bg-default-50`}
+                >
+                  <td
+                    className="px-4 py-1 text-sm border border-gray-400 whitespace-nowrap cursor-pointer"
+                    onClick={(e) => handleElementClick(itemPath, e)}
+                  >
                     {index}
                   </td>
                   {allKeys.map((key) => {
                     const value = item[key];
                     const cellPath = `${itemPath}.${key}`;
+                    const isCellSelected = isPathSelected(cellPath);
+                    const isExpanded = isExpandable(value) && expandedPaths.has(cellPath);
 
                     if (
                       (hideEmpty && value === "") ||
@@ -317,7 +456,8 @@ const JsonTable: React.FC<JsonTableProps> = ({
                       return (
                         <td
                           key={key}
-                          className="px-4 py-1 text-sm border border-default-200"
+                          className="px-4 py-1 text-sm border border-gray-400 whitespace-nowrap cursor-pointer"
+                          onClick={(e) => handleElementClick(cellPath, e)}
                         >
                           -
                         </td>
@@ -327,16 +467,25 @@ const JsonTable: React.FC<JsonTableProps> = ({
                     return (
                       <td
                         key={key}
-                        className="px-4 py-1 text-sm border border-default-200"
+                        className={`${isCellSelected ? "!bg-blue-100" : ""} px-4 py-1 text-sm border border-gray-400 whitespace-nowrap cursor-pointer`}
+                        onClick={(e) => handleElementClick(cellPath, e)}
                       >
                         {renderCell(value, cellPath)}
-                        {isExpandable(value) && expandedPaths.has(cellPath) && (
-                          <div className="mt-1">
-                            {Array.isArray(value)
-                              ? isObjectArray(value)
-                                ? renderObjectsArrayTable(value, cellPath)
-                                : renderArrayTable(value, cellPath)
-                              : renderObjectTable(value, cellPath)}
+                        {isExpandable(value) && (
+                          <div 
+                            className="mt-1 pl-4"
+                            style={{
+                              ...animationStyles.expandable,
+                              ...(isExpanded ? animationStyles.expanded : {}),
+                            }}
+                          >
+                            {isExpanded && (
+                              Array.isArray(value)
+                                ? isObjectArray(value)
+                                  ? renderObjectsArrayTable(value, cellPath, true)
+                                  : renderArrayTable(value, cellPath, true)
+                                : renderObjectTable(value, cellPath, true)
+                            )}
                           </div>
                         )}
                       </td>
@@ -358,16 +507,26 @@ const JsonTable: React.FC<JsonTableProps> = ({
     if (Array.isArray(data)) {
       if (isObjectArray(data)) {
         // 如果数组中的所有元素都是对象，则使用对象数组表格渲染
-        return renderObjectsArrayTable(data, "root");
+        return renderObjectsArrayTable(data, "root", false);
       } else {
         // 否则使用普通数组表格渲染
-        return renderArrayTable(data, "root");
+        return renderArrayTable(data, "root", false);
       }
     } else if (typeof data === "object" && data !== null) {
-      return renderObjectTable(data, "root");
+      return renderObjectTable(data, "root", false);
     } else {
       return (
-        <div className="p-2 border border-default-200">
+        <div
+          className={`p-2 border border-gray-400 rounded ${isPathSelected("root") ? "bg-blue-100" : ""}`}
+          role="button"
+          tabIndex={0}
+          onClick={(e) => handleElementClick("root", e)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              handleElementClick("root", e);
+            }
+          }}
+        >
           {renderCell(data, "root")}
         </div>
       );
