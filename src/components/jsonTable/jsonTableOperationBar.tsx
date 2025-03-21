@@ -15,13 +15,11 @@ import StatusButton, { IconStatus } from "../button/statusButton";
 import toast from "@/utils/toast";
 
 interface JsonTableOperationBarProps {
-  onCopy: (type?: "default" | "compress" | "escape") => boolean;
-  onFilter: () => void;
-  onSearch: () => void;
-  onExport: (type: "csv" | "excel") => boolean;
+  onCopy: (type?: "default" | "node" | "path") => boolean;
   onExpand: () => void;
   onCollapse: () => void;
   onCustomView: (key: "hideEmpty" | "hideNull" | "showAll") => void;
+  onClear?: () => boolean;
   ref?: React.RefObject<JsonTableOperationBarRef>;
 }
 
@@ -29,39 +27,24 @@ export interface JsonTableOperationBarRef {}
 
 const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
   onCopy,
-  onFilter,
-  onSearch,
-  onExport,
   onExpand,
   onCollapse,
   onCustomView,
+  onClear,
 }) => {
   const [isCopyDropdownOpen, setIsCopyDropdownOpen] = useState(false);
-  const [isExportDropdownOpen, setExportDropdownOpen] = useState(false);
   const [isViewDropdownOpen, setViewDropdownOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState<IconStatus>(IconStatus.Default);
+  const [clearStatus, setClearStatus] = useState<IconStatus>(IconStatus.Default);
 
   // 防止下拉菜单打开时，鼠标移开后立即关闭
-  const exportDropdownOpenTimeoutRef = React.useRef<NodeJS.Timeout>();
   const viewDropdownOpenTimeoutRef = React.useRef<NodeJS.Timeout>();
 
   const dropdownTimeout = 300;
 
-  const handleCopy = (type?: "compress" | "escape") => {
+  const handleCopy = (type?: "node" | "path") => {
     onCopy(type);
     setIsCopyDropdownOpen(false);
-  };
-
-  // 导出下拉菜单
-  const showExportDropdown = () => {
-    clearTimeout(exportDropdownOpenTimeoutRef.current);
-    setExportDropdownOpen(true);
-  };
-  const unShowExportDropdown = () => {
-    clearTimeout(exportDropdownOpenTimeoutRef.current);
-    exportDropdownOpenTimeoutRef.current = setTimeout(() => {
-      setExportDropdownOpen(false);
-    }, dropdownTimeout);
   };
 
   // 视图选项下拉菜单
@@ -78,17 +61,6 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
 
   return (
     <div className="h-10 flex items-center space-x-2 p-1 bg-default-100">
-      {/* 搜索按钮 */}
-      <Button
-        className="text-sm text-default-600 px-2 rounded-xl"
-        size="sm"
-        startContent={<Icon icon="uil:search" width={18} />}
-        title="搜索"
-        variant="light"
-        onPress={onSearch}
-      >
-        搜索
-      </Button>
 
       {/* 复制按钮组 */}
       <ButtonGroup className="" variant="light">
@@ -125,120 +97,59 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
             aria-label="Copy options"
             onAction={(key) => {
               switch (key) {
-                case "compress":
-                  handleCopy("compress");
+                case "node":
+                  handleCopy("node");
                   break;
-                case "escape":
-                  handleCopy("escape");
+                case "path":
+                  handleCopy("path");
                   break;
               }
             }}
           >
-            <DropdownItem key="compress" textValue="压缩后复制">
+            <DropdownItem key="node" textValue="复制节点">
               <div className="flex items-center space-x-2">
-                <Icon icon="f7:rectangle-compress-vertical" width={16} />
-                <span>压缩后复制</span>
+                <Icon icon="mingcute:node-line" width={16} />
+                <span>复制节点</span>
               </div>
             </DropdownItem>
-            <DropdownItem key="escape" textValue="转义后复制">
+            <DropdownItem key="path" textValue="复制路径">
               <div className="flex items-center space-x-2">
-                <Icon icon="si:swap-horiz-line" width={16} />
-                <span>转义后复制</span>
+                <Icon icon="solar:folder-path-outline" width={16} />
+                <span>复制路径</span>
               </div>
             </DropdownItem>
           </DropdownMenu>
         </Dropdown>
       </ButtonGroup>
 
-      {/* 过滤按钮 */}
-      <Button
-        className="text-sm text-default-600 px-2"
-        size="sm"
-        startContent={<Icon icon="solar:filter-linear" width={18} />}
-        title="过滤"
-        variant="light"
-        onPress={onFilter}
-      >
-        过滤
-      </Button>
-
-      {/* 展开/折叠按钮 */}
-      <ButtonGroup className="" variant="light">
-        <Button
-          className="text-sm text-default-600 px-2"
-          size="sm"
-          startContent={<Icon icon="tabler:fold-down" width={18} />}
-          title="展开所有"
-          onPress={onExpand}
-        >
-          展开
-        </Button>
-        <Button
-          className="text-sm text-default-600 px-2"
-          size="sm"
-          startContent={<Icon icon="tabler:fold-up" width={18} />}
-          title="折叠所有"
-          onPress={onCollapse}
-        >
-          折叠
-        </Button>
-      </ButtonGroup>
-
-      {/* 导出下拉菜单 */}
-      <Dropdown
-        classNames={{
-          base: "before:bg-default-200", // change arrow background
-          content: "min-w-[140px]",
-        }}
-        isOpen={isExportDropdownOpen}
-        radius="sm"
-      >
-        <DropdownTrigger
-          onMouseEnter={showExportDropdown}
-          onMouseLeave={unShowExportDropdown}
-        >
-          <Button
-            className={cn("pl-2 pr-1 h-8 gap-1 text-default-600")}
-            startContent={<Icon icon="solar:export-line-duotone" width={16} />}
-            variant="light"
-          >
-            导出
-          </Button>
-        </DropdownTrigger>
-        <DropdownMenu
-          aria-label="Export options"
-          onAction={(key) => {
-            switch (key) {
-              case "csv":
-                if (onExport("csv")) {
-                  toast.success("已导出为CSV文件");
-                }
-                break;
-              case "excel":
-                if (onExport("excel")) {
-                  toast.success("已导出为Excel文件");
-                }
-                break;
-            }
-            setExportDropdownOpen(false);
+      {/* 清空按钮 */}
+      {onClear && (
+        <StatusButton
+          icon="mynaui:trash"
+          status={clearStatus}
+          successText="已清空"
+          text="清空"
+          onClick={() => {
+            setTimeout(() => {
+              setClearStatus(IconStatus.Default);
+            }, 1000);
+            setClearStatus(onClear() ? IconStatus.Success : IconStatus.Error);
           }}
-          onMouseEnter={showExportDropdown}
-          onMouseLeave={unShowExportDropdown}
-        >
-          <DropdownItem key="csv" textValue="导出为CSV">
-            <div className="flex items-center space-x-2">
-              <Icon icon="vscode-icons:file-type-csv" width={16} />
-              <span>导出为CSV</span>
-            </div>
-          </DropdownItem>
-          <DropdownItem key="excel" textValue="导出为Excel">
-            <div className="flex items-center space-x-2">
-              <Icon icon="vscode-icons:file-type-excel" width={16} />
-              <span>导出为Excel</span>
-            </div>
-          </DropdownItem>
-        </DropdownMenu>
-      </Dropdown>
+        />
+      )}
+
+      {/*/!* 过滤按钮 *!/*/}
+      {/*<Button*/}
+      {/*  className="text-sm text-default-600 px-2"*/}
+      {/*  size="sm"*/}
+      {/*  startContent={<Icon icon="solar:filter-linear" width={18} />}*/}
+      {/*  title="过滤"*/}
+      {/*  variant="light"*/}
+      {/*  onPress={onFilter}*/}
+      {/*>*/}
+      {/*  过滤*/}
+      {/*</Button>*/}
+
 
       {/* 视图选项下拉菜单 */}
       <Dropdown
@@ -303,6 +214,28 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
           </DropdownItem>
         </DropdownMenu>
       </Dropdown>
+
+      {/* 展开/折叠按钮 */}
+      <ButtonGroup className="" variant="light">
+        <Button
+          className="text-sm text-default-600 px-2"
+          size="sm"
+          startContent={<Icon icon="tabler:fold-down" width={18} />}
+          title="展开所有"
+          onPress={onExpand}
+        >
+          展开
+        </Button>
+        <Button
+          className="text-sm text-default-600 px-2"
+          size="sm"
+          startContent={<Icon icon="tabler:fold-up" width={18} />}
+          title="折叠所有"
+          onPress={onCollapse}
+        >
+          折叠
+        </Button>
+      </ButtonGroup>
     </div>
   );
 };

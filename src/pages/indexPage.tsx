@@ -31,7 +31,11 @@ import { storage } from "@/lib/indexedDBStore";
 
 import "@/styles/index.css";
 import { SidebarKeys } from "@/components/sidebar/items.tsx";
-import JsonTableView, { JsonTableViewRef } from "@/components/jsonTable/jsonTableView";
+import JsonTableView, {
+  JsonTableViewRef,
+} from "@/components/jsonTable/jsonTableView";
+import clipboard from "@/utils/clipboard";
+import toast from "@/utils/toast";
 
 export default function IndexPage() {
   const { theme } = useTheme();
@@ -581,17 +585,65 @@ export default function IndexPage() {
                     }
                   }}
                   data={tab.content}
-                  onCopy={() => {
+                  onCopy={(type) => {
                     // 实现复制功能
-                    return true;
+                    try {
+                      let content = "";
+                      const currentTab = activeTab();
+
+                      if (!currentTab) return false;
+
+                      switch (type) {
+                        case "node":
+                          // 复制选中节点的值
+                          if (jsonTableViewRefs.current[tab.key]) {
+                            const selectedNode =
+                              jsonTableViewRefs.current[
+                                tab.key
+                              ].getSelectedNode();
+
+                            if (selectedNode) {
+                              content = JSON.stringify(selectedNode, null, 2);
+                              clipboard.copy(content, "已复制选中节点");
+
+                              return true;
+                            }
+                          }
+
+                          return false;
+                        case "path":
+                          // 复制选中节点的路径
+                          if (jsonTableViewRefs.current[tab.key]) {
+                            const selectedPath =
+                              jsonTableViewRefs.current[
+                                tab.key
+                              ].getSelectedPath();
+
+                            if (selectedPath) {
+                              clipboard.copy(selectedPath, "已复制选中路径");
+
+                              return true;
+                            }
+                          }
+
+                          return false;
+                        default:
+                          // 默认复制整个JSON内容
+                          content = tab.content || "{}";
+                          clipboard.copy(content, "已复制全部内容");
+
+                          return true;
+                      }
+                    } catch (err) {
+                      console.error("复制失败:", err);
+                      toast.error("复制失败: " + (err as Error).message);
+
+                      return false;
+                    }
                   }}
                   onDataUpdate={(newData) => {
                     // 更新tab内容
                     setTabContent(tab.key, newData);
-                  }}
-                  onExport={() => {
-                    // 实现导出功能
-                    return true;
                   }}
                   onMount={() => {
                     setEditorLoading((prev) => ({

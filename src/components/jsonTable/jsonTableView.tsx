@@ -17,12 +17,18 @@ import clipboard from "@/utils/clipboard";
 import { useSidebarStore } from "@/store/useSidebarStore";
 import { SidebarKeys } from "@/components/sidebar/items.tsx";
 
-export interface JsonTableViewRef {}
+export interface JsonTableViewRef {
+  focus: () => void;
+  layout: () => void;
+  getSelectedNode: () => any;
+  getSelectedPath: () => string | null;
+  exportAsCSV: () => string | null;
+  exportAsExcel: () => ArrayBuffer | null;
+}
 
 interface JsonTableViewProps {
   data: string;
-  onCopy: (type?: "default" | "compress" | "escape") => boolean;
-  onExport: (type: "csv" | "excel") => boolean;
+  onCopy: (type?: "default" | "node" | "path") => boolean;
   onDataUpdate?: (data: string) => void;
   onMount?: () => void;
   ref?: React.Ref<JsonTableViewRef>;
@@ -31,7 +37,6 @@ interface JsonTableViewProps {
 const JsonTableView: React.FC<JsonTableViewProps> = ({
   data,
   onCopy,
-  onExport,
   onDataUpdate,
   onMount,
   ref,
@@ -51,6 +56,7 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
   const sidebarStore = useSidebarStore();
   const [shouldShowEmpty, setShouldShowEmpty] = useState(false);
   const emptyStateTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [selectedPath, setSelectedPath] = useState<string | null>(null);
 
   useEffect(() => {
     const handlePasteAction = async () => {
@@ -341,17 +347,6 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
                   )}
                 </span>
               </button>
-
-              <button
-                className="px-6 py-3 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 shadow-sm hover:shadow transition-all duration-300 flex items-center justify-center"
-                onClick={handleSwitchToTextEditor}
-              >
-                <Icon
-                  className="w-4 h-4 mr-2 text-blue-500"
-                  icon="solar:home-2-linear"
-                />
-                <span>返回主页</span>
-              </button>
             </div>
 
             <div className="mt-8 text-center">
@@ -485,6 +480,11 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
     };
   }, []);
 
+  // 添加选择路径的处理函数
+  const handlePathSelection = useCallback((path: string) => {
+    setSelectedPath(path);
+  }, []);
+
   const currentContent = React.useMemo(() => {
     if (isSwitchingEditor) {
       if (previousRenderedView) {
@@ -498,6 +498,7 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
             hideNull={hideNull}
             onCollapseAll={handleCollapseAll}
             onExpandAll={handleExpandAll}
+            onPathChange={handlePathSelection}
             onToggleExpand={handleToggleExpand}
           />
         );
@@ -532,6 +533,7 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
         hideNull={hideNull}
         onCollapseAll={handleCollapseAll}
         onExpandAll={handleExpandAll}
+        onPathChange={handlePathSelection}
         onToggleExpand={handleToggleExpand}
       />
     );
@@ -545,7 +547,186 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
     hideEmpty,
     hideNull,
     shouldShowEmpty,
+    handleCollapseAll,
+    handleExpandAll,
+    handleToggleExpand,
+    handlePathSelection,
   ]);
+
+  // 获取选中路径的节点数据
+  const getNodeAtPath = useCallback((path: string | null, data: any): any => {
+    if (!path || !data) return null;
+
+    try {
+      // 处理根路径
+      if (path === "root") {
+        return data;
+      }
+
+      // 移除根路径前缀
+      const cleanPath = path.startsWith("root") ? path.substring(4) : path;
+
+      // 解析路径并获取节点
+      const parts = cleanPath.split(/\.|\[|\]/).filter(Boolean);
+      let current = data;
+
+      for (const part of parts) {
+        if (!current) return null;
+
+        // 处理数组索引或对象键
+        if (!isNaN(Number(part))) {
+          // 数组索引
+          current = current[Number(part)];
+        } else {
+          // 对象键
+          current = current[part];
+        }
+      }
+
+      return current;
+    } catch (error) {
+      console.error("获取节点数据失败:", error);
+
+      return null;
+    }
+  }, []);
+
+  // 将JSON数据转换为CSV格式
+  const convertToCSV = useCallback(
+    (jsonData: any): string | null => {
+      if (!jsonData) return null;
+
+      try {
+        // 如果选择了特定节点，则只导出该节点
+        let dataToExport = jsonData;
+
+        if (selectedPath && selectedPath !== "root") {
+          const selectedData = getNodeAtPath(selectedPath, jsonData);
+
+          if (selectedData) {
+            dataToExport = selectedData;
+            // 在CSV第一行添加路径信息
+            const pathInfo = `# 选中路径: ${selectedPath}`;
+
+            // 处理选中的单个基本类型值
+            if (typeof selectedData !== "object" || selectedData === null) {
+              return `${pathInfo}\n${String(selectedData)}`;
+            }
+          }
+        }
+
+        // 处理对象数组
+        if (
+          Array.isArray(dataToExport) &&
+          dataToExport.length > 0 &&
+          typeof dataToExport[0] === "object"
+        ) {
+          // 获取所有可能的列
+          const allKeys = new Set<string>();
+
+          dataToExport.forEach((item) => {
+            if (item && typeof item === "object") {
+              Object.keys(item).forEach((key) => allKeys.add(key));
+            }
+          });
+
+          // 创建标题行
+          const headers = Array.from(allKeys);
+          const csvRows = [headers.join(",")];
+
+          // 创建数据行
+          dataToExport.forEach((item) => {
+            const row = headers.map((header) => {
+              const value = item[header];
+
+              // 处理不同类型的值，确保CSV格式正确
+              if (value === null || value === undefined) return "";
+              if (typeof value === "object")
+                return JSON.stringify(value)
+                  .replace(/,/g, ";")
+                  .replace(/"/g, '""');
+              if (typeof value === "string")
+                return `"${value.replace(/"/g, '""')}"`;
+
+              return value;
+            });
+
+            csvRows.push(row.join(","));
+          });
+
+          return csvRows.join("\n");
+        }
+
+        // 处理简单对象
+        if (typeof dataToExport === "object" && !Array.isArray(dataToExport)) {
+          const headers = Object.keys(dataToExport);
+          const values = Object.values(dataToExport).map((value) => {
+            if (value === null || value === undefined) return "";
+            if (typeof value === "object")
+              return JSON.stringify(value)
+                .replace(/,/g, ";")
+                .replace(/"/g, '""');
+            if (typeof value === "string")
+              return `"${value.replace(/"/g, '""')}"`;
+
+            return value;
+          });
+
+          return [headers.join(","), values.join(",")].join("\n");
+        }
+
+        // 处理简单数组
+        if (Array.isArray(dataToExport)) {
+          const values = dataToExport.map((value) => {
+            if (value === null || value === undefined) return "";
+            if (typeof value === "object")
+              return JSON.stringify(value)
+                .replace(/,/g, ";")
+                .replace(/"/g, '""');
+            if (typeof value === "string")
+              return `"${value.replace(/"/g, '""')}"`;
+
+            return value;
+          });
+
+          return values.join("\n");
+        }
+
+        // 处理简单值
+        return String(dataToExport);
+      } catch (error) {
+        console.error("转换CSV失败:", error);
+        toast.error("转换CSV失败：" + (error as Error).message);
+
+        return null;
+      }
+    },
+    [jsonData, selectedPath, getNodeAtPath],
+  );
+
+  // 将JSON数据转换为Excel二进制格式
+  const convertToExcel = useCallback(
+    (jsonData: any): ArrayBuffer | null => {
+      // 由于实际生成Excel需要依赖第三方库如xlsx，
+      // 这里使用一个简化的实现方式
+      try {
+        const csv = convertToCSV(jsonData);
+
+        if (!csv) return null;
+
+        // 简单将CSV转为ArrayBuffer，在实际应用中应使用专门的Excel库
+        const encoder = new TextEncoder();
+
+        return encoder.encode(csv).buffer;
+      } catch (error) {
+        console.error("转换Excel失败:", error);
+        toast.error("转换Excel失败：" + (error as Error).message);
+
+        return null;
+      }
+    },
+    [convertToCSV],
+  );
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -557,6 +738,22 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
       // 表格视图的布局刷新，可以根据需要实现
       // 例如，可能需要重新计算容器尺寸等
     },
+    getSelectedNode: () => {
+      // 获取选中节点的数据
+      return getNodeAtPath(selectedPath, jsonData);
+    },
+    getSelectedPath: () => {
+      // 返回当前选中的路径
+      return selectedPath;
+    },
+    exportAsCSV: () => {
+      // 导出为CSV
+      return convertToCSV(jsonData);
+    },
+    exportAsExcel: () => {
+      // 导出为Excel格式
+      return convertToExcel(jsonData);
+    },
   }));
 
   useEffect(() => {
@@ -565,6 +762,23 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
     }
   }, []);
 
+  // 添加清空JSON数据的方法
+  const handleClear = useCallback(() => {
+    if (jsonData || error) {
+      setJsonData(null);
+      setError(null);
+      if (onDataUpdate) {
+        onDataUpdate("");
+      }
+      toast.success("JSON数据已清空");
+      setShouldShowEmpty(true);
+
+      return true;
+    }
+
+    return false;
+  }, [jsonData, error, onDataUpdate]);
+
   return (
     <div
       ref={containerRef}
@@ -572,13 +786,11 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
     >
       <JsonTableOperationBar
         ref={operationBarRef}
+        onClear={handleClear}
         onCollapse={handleCollapseAll}
         onCopy={onCopy}
         onCustomView={handleCustomView}
         onExpand={handleExpandAll}
-        onExport={onExport}
-        onFilter={() => {}}
-        onSearch={() => {}}
       />
       <div className="flex-grow overflow-hidden border border-default-200 bg-white dark:bg-gray-900">
         {currentContent}
