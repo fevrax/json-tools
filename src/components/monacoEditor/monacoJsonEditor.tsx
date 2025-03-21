@@ -24,6 +24,7 @@ import "@/styles/monaco.css";
 import ErrorModal from "@/components/monacoEditor/errorModal.tsx";
 import DraggableMenu from "@/components/monacoEditor/draggableMenu";
 import AIPromptOverlay from "@/components/ai/AIPromptOverlay";
+import MarkdownRenderer from "@/components/markdown/MarkdownRenderer";
 
 export interface MonacoJsonEditorProps {
   tabTitle?: string;
@@ -90,6 +91,10 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const aiEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const aiContainerRef = useRef<HTMLDivElement>(null);
 
+  // 添加这些新状态变量
+  const [aiResponseContent, setAiResponseContent] = useState("");
+  const [isAiResponseCode, setIsAiResponseCode] = useState(true);
+
   // 从 store 获取当前 tab 的设置
   const currentTab = getTabByKey(tabKey);
   const editorSettings = currentTab?.editorSettings || {
@@ -121,6 +126,35 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
 
     return baseHeight;
+  };
+
+  // 在组件顶部定义这个辅助函数
+  const isContentOnlyCodeBlock = (content: string): boolean => {
+    // 清理内容
+    const trimmedContent = content.trim();
+    
+    // 检测是否是完整代码块模式 (整个内容是一个代码块)
+    const isCompleteCodeBlock = /^```[\w]*[\s\S]*```\s*$/m.test(trimmedContent);
+    
+    // 检测是否包含解释性文本 (含有一行不是代码块的非空行)
+    const hasExplanatoryText = trimmedContent
+      .split('\n')
+      .some(line => {
+        const trimmedLine = line.trim();
+        return trimmedLine && 
+               !trimmedLine.startsWith('```') && 
+               !trimmedLine.endsWith('```');
+      });
+    
+    // 检测代码块的数量
+    const codeBlockStartCount = (trimmedContent.match(/```[\w]*/g) || []).length;
+    const codeBlockEndCount = (trimmedContent.match(/```\s*$/gm) || []).length;
+    
+    // 判断逻辑:
+    // 1. 如果是完整代码块且没有解释性文本，判定为代码
+    // 2. 如果代码块起始和结束标记数量不等，判定为Markdown
+    // 3. 如果包含解释性文本，判定为Markdown
+    return isCompleteCodeBlock && !hasExplanatoryText && (codeBlockStartCount === codeBlockEndCount);
   };
 
   // 处理AI提交
@@ -178,12 +212,12 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       // 使用OpenAI服务
       const openAiService = OpenAIService.createInstance();
 
-      // 修复TypeScript类型问题，确保与ChatCompletionMessageParam兼容
+      // 修改AI系统提示
       const messages = [
         {
           role: "system" as const,
           content:
-            "您是一个JSON工具助手，请帮助用户解决JSON相关问题，返回数据并使用\\`\\`\\`语言标记\\`\\`\\`包裹，不要包含任何解释或其他内容。",
+            "您是一个JSON工具助手，请帮助用户解决JSON相关问题。您可以：\n1. 返回纯代码，请使用```语言标记```包裹代码\n2. 返回解释性文本，使用Markdown格式进行排版\n\n请根据问题类型选择最合适的回复格式。",
         },
         {
           role: "user" as const,
@@ -212,36 +246,56 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
             if (controller.signal.aborted) {
               throw new Error("已取消生成");
             }
-            if (aiEditorRef.current) {
+
+            // 更新AI响应内容
+            setAiResponseContent(accumulated);
+
+            // 新的代码检测逻辑：
+            // 1. 如果整个内容是一个完整的代码块，认为是代码
+            // 2. 如果不是纯代码块，则认为是Markdown
+            const isCode = isContentOnlyCodeBlock(accumulated);
+            setIsAiResponseCode(isCode);
+
+            // 如果是代码，显示在Monaco编辑器中
+            if (isCode && aiEditorRef.current) {
               aiEditorRef.current.setValue(accumulated);
             }
           },
           onComplete: (final) => {
-            // 提取语言标记
-            const langMatch = final.match(/^```([a-z]+)\s/i);
-            let detectedLang = langMatch ? langMatch[1].toLowerCase() : "json";
+            // 最终更新AI响应内容
+            setAiResponseContent(final);
 
-            if (!detectedLang) {
-              detectedLang = "yaml";
-            }
+            // 判断最终内容是否为代码
+            const isCode = isContentOnlyCodeBlock(final);
+            setIsAiResponseCode(isCode);
 
-            // 清理结果，移除 markdown 格式标记
-            const cleanedResult = final
-              .replace(/^```[a-z]*\s*/i, "")
-              .replace(/```\s*$/i, "")
-              .trim();
+            if (isCode) {
+              // 提取语言标记
+              const langMatch = final.match(/^```([a-z]+)\s/i);
+              let detectedLang = langMatch ? langMatch[1].toLowerCase() : "json";
 
-            // 完成时一次性更新编辑器内容
-            setTimeout(() => {
-              const model = monaco.editor.createModel(
-                cleanedResult as string,
-                detectedLang || "json",
-              );
-
-              if (aiEditorRef.current) {
-                aiEditorRef.current.setModel(model);
+              if (!detectedLang) {
+                detectedLang = "yaml";
               }
-            }, 100);
+
+              // 清理结果，移除 markdown 格式标记
+              const cleanedResult = final
+                .replace(/^```[a-z]*\s*/i, "")
+                .replace(/```\s*$/i, "")
+                .trim();
+
+              // 完成时一次性更新编辑器内容
+              setTimeout(() => {
+                const model = monaco.editor.createModel(
+                  cleanedResult as string,
+                  detectedLang || "json",
+                );
+
+                if (aiEditorRef.current) {
+                  aiEditorRef.current.setModel(model);
+                }
+              }, 100);
+            }
 
             setIsAiLoading(false);
             // 清除控制器引用
@@ -968,91 +1022,106 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
             <div className="flex-1 h-full" style={{ width: "50%" }}>
               <div ref={containerRef} className="h-full w-full" />
             </div>
-            {/* AI响应编辑器 - 右侧 */}
+            {/* AI响应编辑器或Markdown渲染 - 右侧 */}
             <div className="flex-1 h-full" style={{ width: "50%" }}>
               <div className="flex flex-col h-full border-l-2 border-blue-100 dark:border-neutral-700 shadow-lg dark:shadow-blue-900/20 overflow-hidden">
-                <div className="flex justify-between items-center px-3 py-2.5 bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-blue-50/80 dark:from-neutral-800/80  backdrop-blur-sm border-b border-blue-100 dark:border-neutral-800">
-                  <div className="flex items-center space-x-2.5">
-                    <div className="relative">
-                      <Icon
-                        className="text-indigo-600 dark:text-indigo-400"
-                        icon="hugeicons:ai-chat-02"
-                        width={20}
-                      />
-                      {isAiLoading && (
-                        <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-blue-500 animate-ping" />
-                      )}
-                    </div>
-                    <span className="text-sm font-semibold bg-gradient-to-r from-blue-700 to-indigo-700 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-                      {isAiLoading ? "AI正在思考中..." : "AI助手解析结果"}
-                    </span>
-                    {isAiLoading && (
-                      <div className="flex items-center space-x-1 ml-2">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" />
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse delay-150" />
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse delay-300" />
+                {isAiResponseCode ? (
+                  // 代码模式 - 使用Monaco编辑器
+                  <>
+                    <div className="flex justify-between items-center px-3 py-2.5 bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-blue-50/80 dark:from-neutral-800/80  backdrop-blur-sm border-b border-blue-100 dark:border-neutral-800">
+                      <div className="flex items-center space-x-2.5">
+                        <div className="relative">
+                          <Icon
+                            className="text-indigo-600 dark:text-indigo-400"
+                            icon="hugeicons:ai-chat-02"
+                            width={20}
+                          />
+                          {isAiLoading && (
+                            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-blue-500 animate-ping" />
+                          )}
+                        </div>
+                        <span className="text-sm font-semibold bg-gradient-to-r from-blue-700 to-indigo-700 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                          {isAiLoading ? "AI正在思考中..." : "AI助手解析结果"}
+                        </span>
+                        {isAiLoading && (
+                          <div className="flex items-center space-x-1 ml-2">
+                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" />
+                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse delay-150" />
+                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse delay-300" />
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <div className="flex space-x-1.5">
-                    {isAiLoading && (
-                      <Button
-                        isIconOnly
-                        className="bg-red-50 text-red-500 hover:text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-800/40 rounded-full"
-                        size="sm"
-                        title="停止生成"
-                        variant="flat"
-                        onPress={stopAiGeneration}
-                      >
-                        <Icon icon="tabler:player-stop-filled" width={16} />
-                      </Button>
-                    )}
-                    {!isAiLoading && (
-                      <Button
-                        isIconOnly
-                        className="bg-indigo-50 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-800/40 rounded-full"
-                        size="sm"
-                        title="重新生成"
-                        variant="flat"
-                        onPress={() => handleAiSubmit()}
-                      >
-                        <Icon icon="tabler:refresh" width={16} />
-                      </Button>
-                    )}
-                    <Button
-                      isIconOnly
-                      className="bg-blue-50 text-indigo-500 hover:text-indigo-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-blue-800/40 rounded-full"
-                      size="sm"
-                      title="复制内容"
-                      variant="flat"
-                      onPress={() => {
-                        if (aiEditorRef.current) {
-                          const content = aiEditorRef.current.getValue();
+                      <div className="flex space-x-1.5">
+                        {isAiLoading && (
+                          <Button
+                            isIconOnly
+                            className="bg-red-50 text-red-500 hover:text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-800/40 rounded-full"
+                            size="sm"
+                            title="停止生成"
+                            variant="flat"
+                            onPress={stopAiGeneration}
+                          >
+                            <Icon icon="tabler:player-stop-filled" width={16} />
+                          </Button>
+                        )}
+                        {!isAiLoading && (
+                          <Button
+                            isIconOnly
+                            className="bg-indigo-50 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-800/40 rounded-full"
+                            size="sm"
+                            title="重新生成"
+                            variant="flat"
+                            onPress={() => handleAiSubmit()}
+                          >
+                            <Icon icon="tabler:refresh" width={16} />
+                          </Button>
+                        )}
+                        <Button
+                          isIconOnly
+                          className="bg-blue-50 text-indigo-500 hover:text-indigo-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-blue-800/40 rounded-full"
+                          size="sm"
+                          title="复制内容"
+                          variant="flat"
+                          onPress={() => {
+                            if (aiEditorRef.current) {
+                              const content = aiEditorRef.current.getValue();
 
-                          navigator.clipboard.writeText(content);
-                          toast.success("已复制内容");
-                        }
+                              navigator.clipboard.writeText(content);
+                              toast.success("已复制内容");
+                            }
+                          }}
+                        >
+                          <Icon icon="lucide:copy" width={16} />
+                        </Button>
+                        <Button
+                          isIconOnly
+                          className="bg-gray-50 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:bg-gray-800/50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700/50 rounded-full"
+                          size="sm"
+                          title="关闭AI助手结果"
+                          variant="flat"
+                          onPress={closeAiResponse}
+                        >
+                          <Icon icon="mdi:close" width={16} />
+                        </Button>
+                      </div>
+                    </div>
+                    <div
+                      ref={aiContainerRef}
+                      className="flex-1 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm"
+                      style={{ height: "calc(100% - 45px)" }}
+                    />
+                  </>
+                ) : (
+                  // Markdown模式 - 使用MarkdownRenderer
+                  <div className="flex-1 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm h-full">
+                    <MarkdownRenderer
+                      content={aiResponseContent}
+                      onCopy={() => {
+                        toast.success("已复制Markdown内容");
                       }}
-                    >
-                      <Icon icon="lucide:copy" width={16} />
-                    </Button>
-                    <Button
-                      isIconOnly
-                      className="bg-gray-50 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:bg-gray-800/50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700/50 rounded-full"
-                      size="sm"
-                      title="关闭AI助手结果"
-                      variant="flat"
-                      onPress={closeAiResponse}
-                    >
-                      <Icon icon="mdi:close" width={16} />
-                    </Button>
+                    />
                   </div>
-                </div>
-                <div
-                  ref={aiContainerRef}
-                  className="flex-1 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm"
-                  style={{ height: "calc(100% - 45px)" }}
-                />
+                )}
               </div>
             </div>
           </>
