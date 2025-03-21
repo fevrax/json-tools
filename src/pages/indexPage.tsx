@@ -216,6 +216,9 @@ export default function IndexPage() {
       <div className="w-full h-full flex flex-col">
         <MonacoDiffOperationBar
           ref={monacoDiffOperationBarRef}
+          onAiClick={() => {
+            monacoDiffEditorRefs.current[activeTabKey].showAiPrompt();
+          }}
           onClear={(type) => {
             return monacoDiffEditorRefs.current[activeTabKey].clear(type);
           }}
@@ -230,9 +233,6 @@ export default function IndexPage() {
           }}
           onFormat={(type) => {
             return monacoDiffEditorRefs.current[activeTabKey].format(type);
-          }}
-          onAiClick={() => {
-            monacoDiffEditorRefs.current[activeTabKey].showAiPrompt();
           }}
         />
         <div className="editor-container flex-grow overflow-hidden">
@@ -547,15 +547,19 @@ export default function IndexPage() {
                 !editorLoading[tab.key] && "loaded",
                 {
                   hidden: tab.key !== activeTabKey,
-                }
+                },
               )}
             >
               {shouldRender && (
                 <JsonTableView
-                  data={JSON.parse(tab.content)}
+                  data={tab.content}
                   onCopy={(type) => {
                     // 实现复制功能
                     return true;
+                  }}
+                  onDataUpdate={(newData) => {
+                    // 更新tab内容
+                    setTabContent(tab.key, newData);
                   }}
                   onExport={(type) => {
                     // 实现导出功能

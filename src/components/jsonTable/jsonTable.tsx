@@ -5,7 +5,7 @@ import JsonPathBar from "@/components/jsonTable/jsonPathBar.tsx";
 
 interface JsonTableProps {
   data: any;
-  onPathChange: (path: string) => void;
+  onPathChange?: (path: string) => void;
   expandedPaths: Set<string>;
   onToggleExpand: (path: string) => void;
   onExpandAll: () => void;
@@ -25,6 +25,52 @@ const JsonTable: React.FC<JsonTableProps> = ({
   hideNull = false,
 }) => {
   const [currentPath, setCurrentPath] = useState<string>("root");
+
+  // 添加自动展开单个子元素的函数
+  const collectSingleChildPaths = (value: any, path: string = "root", paths: Set<string> = new Set()): Set<string> => {
+    if (typeof value !== "object" || value === null) {
+      return paths;
+    }
+
+    if (Array.isArray(value)) {
+      if (value.length === 1) {
+        paths.add(path);
+        collectSingleChildPaths(value[0], `${path}[0]`, paths);
+      } else {
+        // 遍历数组中的所有元素
+        value.forEach((item, index) => {
+          if (typeof item === "object" && item !== null) {
+            collectSingleChildPaths(item, `${path}[${index}]`, paths);
+          }
+        });
+      }
+    } else {
+      const keys = Object.keys(value);
+      if (keys.length === 1) {
+        paths.add(path);
+        collectSingleChildPaths(value[keys[0]], `${path}.${keys[0]}`, paths);
+      } else {
+        // 遍历对象中的所有属性
+        keys.forEach(key => {
+          if (typeof value[key] === "object" && value[key] !== null) {
+            collectSingleChildPaths(value[key], `${path}.${key}`, paths);
+          }
+        });
+      }
+    }
+
+    return paths;
+  };
+
+  // 添加初始化自动展开的useEffect
+  useEffect(() => {
+    const pathsToExpand = collectSingleChildPaths(data);
+    pathsToExpand.forEach((path) => {
+      if (!expandedPaths.has(path)) {
+        onToggleExpand(path);
+      }
+    });
+  }, [data]); // 仅在data变化时执行
 
   // 修改滚动到元素的函数
   const scrollToElement = (path: string) => {
@@ -109,15 +155,15 @@ const JsonTable: React.FC<JsonTableProps> = ({
           onClick={() => {
             onToggleExpand(path);
             setCurrentPath(path);
-            onPathChange(path);
+            onPathChange && onPathChange(path);
             scrollToElement(path);
           }}
         >
           <Icon className="mr-1" icon={icon} width={16} />
           <span>
             {Array.isArray(value)
-              ? `Array[${value.length}]`
-              : `Object{${Object.keys(value).length}}`}
+              ? `Array[ ${value.length} ]`
+              : `Object{ ${Object.keys(value).length} }`}
           </span>
         </button>
       );
@@ -138,18 +184,8 @@ const JsonTable: React.FC<JsonTableProps> = ({
     const entries = Object.entries(data);
 
     return (
-      <div className="rounded-lg border border-default-200 mb-2 overflow-x-auto inline-block">
-        <table className="border-collapse w-full">
-          <thead>
-            <tr className="bg-default-50">
-              <th className="w-1/3 px-2 py-1 text-left text-sm font-medium text-default-600 border border-default-200">
-                键
-              </th>
-              <th className="px-2 py-1 text-left text-sm font-medium text-default-600 border border-default-200">
-                值
-              </th>
-            </tr>
-          </thead>
+      <div className="border border-default-200 mb-2 overflow-x-auto inline-block">
+        <table className="border-collapse w-auto">
           <tbody>
             {entries.map(([key, value]) => {
               if ((hideEmpty && value === "") || (hideNull && value === null)) {
@@ -160,10 +196,10 @@ const JsonTable: React.FC<JsonTableProps> = ({
 
               return (
                 <tr key={key} className="hover:bg-default-50">
-                  <td className="px-2 py-1 text-sm font-medium border border-default-200">
+                  <td className="px-4 py-1 text-sm font-medium border border-default-200">
                     {key}
                   </td>
-                  <td className="px-2 py-1 text-sm border border-default-200">
+                  <td className="px-4 py-1 text-sm border border-default-200">
                     {renderCell(value, valuePath)}
                     {isExpandable(value) && expandedPaths.has(valuePath) && (
                       <div className="mt-1">
@@ -186,14 +222,14 @@ const JsonTable: React.FC<JsonTableProps> = ({
 
   const renderArrayTable = (data: any[], path: string = "root") => {
     return (
-      <div className="rounded-lg border border-default-200 mb-2 overflow-x-auto inline-block">
-        <table className="border-collapse w-full">
+      <div className="border border-default-200 mb-2 overflow-x-auto inline-block">
+        <table className="border-collapse w-auto">
           <thead>
             <tr className="bg-default-50">
-              <th className="w-16 px-2 py-1 text-left text-sm font-medium text-default-600 border border-default-200">
-                索引
+              <th className="w-16 px-4 py-1 text-left text-sm font-medium text-default-600 border border-default-200">
+                #
               </th>
-              <th className="px-2 py-1 text-left text-sm font-medium text-default-600 border border-default-200">
+              <th className="px-4 py-1 text-left text-sm font-medium text-default-600 border border-default-200">
                 值
               </th>
             </tr>
@@ -208,10 +244,10 @@ const JsonTable: React.FC<JsonTableProps> = ({
 
               return (
                 <tr key={index} className="hover:bg-default-50">
-                  <td className="px-2 py-1 text-sm border border-default-200">
+                  <td className="px-4 py-1 text-sm border border-default-200">
                     {index}
                   </td>
-                  <td className="px-2 py-1 text-sm border border-default-200">
+                  <td className="px-4 py-1 text-sm border border-default-200">
                     {renderCell(item, itemPath)}
                     {isExpandable(item) && expandedPaths.has(itemPath) && (
                       <div className="mt-1">
@@ -240,17 +276,17 @@ const JsonTable: React.FC<JsonTableProps> = ({
     }
 
     return (
-      <div className="rounded-lg border border-default-200 mb-2 overflow-x-auto inline-block">
-        <table className="border-collapse w-full">
+      <div className="border border-default-200 mb-2 overflow-x-auto inline-block">
+        <table className="border-collapse w-auto">
           <thead>
             <tr className="bg-default-50">
-              <th className="w-16 px-2 py-1 text-left text-sm font-medium text-default-600 border border-default-200">
-                索引
+              <th className="w-16 px-4 py-1 text-left text-sm font-medium text-default-600 border border-default-200">
+                #
               </th>
               {allKeys.map((key) => (
                 <th
                   key={key}
-                  className="px-2 py-1 text-left text-sm font-medium text-default-600 border border-default-200"
+                  className="px-4 py-1 text-left text-sm font-medium text-default-600 border border-default-200"
                 >
                   {key}
                 </th>
@@ -267,7 +303,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
 
               return (
                 <tr key={index} className="hover:bg-default-50">
-                  <td className="px-2 py-1 text-sm border border-default-200">
+                  <td className="px-4 py-1 text-sm border border-default-200">
                     {index}
                   </td>
                   {allKeys.map((key) => {
@@ -281,7 +317,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
                       return (
                         <td
                           key={key}
-                          className="px-2 py-1 text-sm border border-default-200"
+                          className="px-4 py-1 text-sm border border-default-200"
                         >
                           -
                         </td>
@@ -291,7 +327,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
                     return (
                       <td
                         key={key}
-                        className="px-2 py-1 text-sm border border-default-200"
+                        className="px-4 py-1 text-sm border border-default-200"
                       >
                         {renderCell(value, cellPath)}
                         {isExpandable(value) && expandedPaths.has(cellPath) && (
@@ -331,7 +367,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
       return renderObjectTable(data, "root");
     } else {
       return (
-        <div className="p-2 border border-default-200 rounded-lg">
+        <div className="p-2 border border-default-200">
           {renderCell(data, "root")}
         </div>
       );
