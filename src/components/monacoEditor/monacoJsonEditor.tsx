@@ -183,7 +183,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         {
           role: "system" as const,
           content:
-            "您是一个JSON工具助手，请帮助用户解决JSON相关问题，请仅返回数据或代码并使用\\`\\`\\`语言标记\\`\\`\\`包裹，不要包含任何解释或其他内容。",
+            "您是一个JSON工具助手，请帮助用户解决JSON相关问题，返回数据并使用\\`\\`\\`语言标记\\`\\`\\`包裹，不要包含任何解释或其他内容。",
         },
         {
           role: "user" as const,
@@ -1028,6 +1028,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
                       onPress={() => {
                         if (aiEditorRef.current) {
                           const content = aiEditorRef.current.getValue();
+
                           navigator.clipboard.writeText(content);
                           toast.success("已复制内容");
                         }
