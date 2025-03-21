@@ -35,7 +35,9 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
   const [isCopyDropdownOpen, setIsCopyDropdownOpen] = useState(false);
   const [isViewDropdownOpen, setViewDropdownOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState<IconStatus>(IconStatus.Default);
-  const [clearStatus, setClearStatus] = useState<IconStatus>(IconStatus.Default);
+  const [clearStatus, setClearStatus] = useState<IconStatus>(
+    IconStatus.Default,
+  );
 
   // 防止下拉菜单打开时，鼠标移开后立即关闭
   const viewDropdownOpenTimeoutRef = React.useRef<NodeJS.Timeout>();
@@ -61,7 +63,6 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
 
   return (
     <div className="h-10 flex items-center space-x-2 p-1 bg-default-100">
-
       {/* 复制按钮组 */}
       <ButtonGroup className="" variant="light">
         <StatusButton
@@ -108,35 +109,19 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
           >
             <DropdownItem key="node" textValue="复制节点">
               <div className="flex items-center space-x-2">
-                <Icon icon="mingcute:node-line" width={16} />
+                <Icon icon="hugeicons:node-edit" width={16} />
                 <span>复制节点</span>
               </div>
             </DropdownItem>
             <DropdownItem key="path" textValue="复制路径">
               <div className="flex items-center space-x-2">
-                <Icon icon="solar:folder-path-outline" width={16} />
+                <Icon icon="lsicon:path-filled" width={16} />
                 <span>复制路径</span>
               </div>
             </DropdownItem>
           </DropdownMenu>
         </Dropdown>
       </ButtonGroup>
-
-      {/* 清空按钮 */}
-      {onClear && (
-        <StatusButton
-          icon="mynaui:trash"
-          status={clearStatus}
-          successText="已清空"
-          text="清空"
-          onClick={() => {
-            setTimeout(() => {
-              setClearStatus(IconStatus.Default);
-            }, 1000);
-            setClearStatus(onClear() ? IconStatus.Success : IconStatus.Error);
-          }}
-        />
-      )}
 
       {/*/!* 过滤按钮 *!/*/}
       {/*<Button*/}
@@ -149,7 +134,6 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
       {/*>*/}
       {/*  过滤*/}
       {/*</Button>*/}
-
 
       {/* 视图选项下拉菜单 */}
       <Dropdown
@@ -236,6 +220,23 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
           折叠
         </Button>
       </ButtonGroup>
+
+      {/* 清空按钮 */}
+      {onClear && (
+        <StatusButton
+          icon="mynaui:trash"
+          status={clearStatus}
+          successText="已清空"
+          text="清空"
+          onClick={() => {
+            setTimeout(() => {
+              setClearStatus(IconStatus.Default);
+            }, 1000);
+            setClearStatus(onClear() ? IconStatus.Success : IconStatus.Error);
+          }}
+        />
+      )}
+
     </div>
   );
 };

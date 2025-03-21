@@ -18,7 +18,7 @@ const animationStyles = {
 };
 
 // 添加动画持续时间常量（与transition时间匹配）
-const ANIMATION_DURATION = 300; // 300ms
+const ANIMATION_DURATION = 200; // 300ms
 
 interface JsonTableProps {
   data: any;
@@ -46,7 +46,9 @@ const JsonTable: React.FC<JsonTableProps> = ({
   const lastAutoExpandedDataRef = useRef<any>(null);
 
   // 新增：存储每个节点的内容可见性状态的Map
-  const [visibleContents, setVisibleContents] = useState<Map<string, boolean>>(new Map());
+  const [visibleContents, setVisibleContents] = useState<Map<string, boolean>>(
+    new Map(),
+  );
 
   // 添加自动展开单个子元素的函数
   const collectSingleChildPaths = (
@@ -225,19 +227,19 @@ const JsonTable: React.FC<JsonTableProps> = ({
             handleElementClick(path, e);
           }}
         >
-          <Icon 
-            className="mr-1" 
-            icon={icon} 
-            width={16} 
-            style={{ 
-              transition: "transform 0.2s ease", 
-              transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" 
-            }} 
+          <Icon
+            className="mr-1"
+            icon={icon}
+            style={{
+              transition: "transform 0.2s ease",
+              transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)",
+            }}
+            width={16}
           />
           <span className="whitespace-nowrap">
             {Array.isArray(value)
-              ? `Array[ ${value.length} ]`
-              : `Object{ ${Object.keys(value).length} }`}
+              ? <>Array[ <span className="text-indigo-600">{value.length}</span> ]</>
+              : <>Object{"{"} <span className="text-indigo-600">{Object.keys(value).length}</span> {"}"}</>}
           </span>
         </button>
       );
@@ -272,28 +274,30 @@ const JsonTable: React.FC<JsonTableProps> = ({
   // 监听expandedPaths的变化，更新内容可见性
   useEffect(() => {
     const newVisibleContents = new Map(visibleContents);
-    
+
     // 处理新展开的路径
-    expandedPaths.forEach(path => {
+    expandedPaths.forEach((path) => {
       if (!visibleContents.has(path)) {
         newVisibleContents.set(path, true);
       }
     });
-    
+
     // 处理被收起的路径
     visibleContents.forEach((_, path) => {
       if (!expandedPaths.has(path)) {
         // 不立即移除，等待动画完成后再处理
         setTimeout(() => {
-          setVisibleContents(prev => {
+          setVisibleContents((prev) => {
             const updated = new Map(prev);
+
             updated.delete(path);
+
             return updated;
           });
         }, ANIMATION_DURATION);
       }
     });
-    
+
     setVisibleContents(newVisibleContents);
   }, [expandedPaths]);
 
