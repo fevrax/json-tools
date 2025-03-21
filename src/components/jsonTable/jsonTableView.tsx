@@ -18,7 +18,6 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
 }) => {
   const operationBarRef = useRef<JsonTableOperationBarRef>(null);
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set());
-  const [currentPath, setCurrentPath] = useState<string>("");
   const [hideEmpty, setHideEmpty] = useState(false);
   const [hideNull, setHideNull] = useState(false);
 
@@ -97,7 +96,7 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
         onFilter={() => {}}
         onSearch={() => {}}
       />
-      <div className="flex-grow overflow-hidden border border-default-200 rounded-lg">
+      <div className="flex-grow overflow-hidden border border-default-200">
         <JsonTable
           data={data}
           expandedPaths={expandedPaths}
@@ -105,7 +104,6 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
           hideNull={hideNull}
           onCollapseAll={handleCollapseAll}
           onExpandAll={handleExpandAll}
-          onPathChange={setCurrentPath}
           onToggleExpand={handleToggleExpand}
         />
       </div>

@@ -1,4 +1,4 @@
-import React, { Key, useState } from "react";
+import React, { useState } from "react";
 import {
   Button,
   ButtonGroup,
@@ -307,4 +307,4 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
   );
 };
 
-export default JsonTableOperationBar; 
+export default JsonTableOperationBar;
