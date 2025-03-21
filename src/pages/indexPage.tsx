@@ -31,7 +31,7 @@ import { storage } from "@/lib/indexedDBStore";
 
 import "@/styles/index.css";
 import { SidebarKeys } from "@/components/sidebar/items.tsx";
-import JsonTableView from "@/components/jsonTable/jsonTableView";
+import JsonTableView, { JsonTableViewRef } from "@/components/jsonTable/jsonTableView";
 
 export default function IndexPage() {
   const { theme } = useTheme();
@@ -40,6 +40,8 @@ export default function IndexPage() {
   const vanillaJsonEditorRefs = useRef<Record<string, VanillaJsonEditorRef>>(
     {},
   );
+  // 添加JsonTableView的引用
+  const jsonTableViewRefs = useRef<Record<string, JsonTableViewRef>>({});
 
   const {
     tabs,
@@ -74,11 +76,12 @@ export default function IndexPage() {
     monaco: Set<string>;
     diff: Set<string>;
     vanilla: Set<string>;
-    table?: Set<string>;
+    table: Set<string>; // 将table从可选改为必需
   }>({
     monaco: new Set(),
     diff: new Set(),
     vanilla: new Set(),
+    table: new Set(), // 初始化table集合
   });
 
   const closeTabHandle = (keys: string[]) => {
@@ -90,6 +93,7 @@ export default function IndexPage() {
       delete monacoJsonEditorRefs.current[key];
       delete monacoDiffEditorRefs.current[key];
       delete vanillaJsonEditorRefs.current[key];
+      delete jsonTableViewRefs.current[key]; // 添加删除JsonTableView引用
     });
 
     // 删除 loadedEditors 中对象
@@ -98,6 +102,7 @@ export default function IndexPage() {
       monaco: new Set([...prev.monaco].filter((key) => !keys.includes(key))),
       diff: new Set([...prev.diff].filter((key) => !keys.includes(key))),
       vanilla: new Set([...prev.vanilla].filter((key) => !keys.includes(key))),
+      table: new Set([...prev.table].filter((key) => !keys.includes(key))), // 添加处理table集合
     }));
   };
 
@@ -430,6 +435,16 @@ export default function IndexPage() {
             ]?.updateEditorContentAndMode(tempTab.vanillaMode, tempTab.vanilla);
           }
           break;
+        case SidebarKeys.tableView:
+          // 如果切换到表格视图，确保使用最新的数据
+          if (sidebarStore.activeKey == SidebarKeys.treeView) {
+            // 如果从树形视图切换，先同步数据
+            if (currentTab.vanillaVersion > currentTab.monacoVersion) {
+              vanilla2JsonContent(activeTabKey);
+              setMonacoVersion(activeTabKey, currentTab.vanillaVersion);
+            }
+          }
+          break;
       }
     }
 
@@ -512,6 +527,12 @@ export default function IndexPage() {
               monacoDiffEditorRefs.current[activeTabKey].focus();
             }
             break;
+          case SidebarKeys.tableView:
+            setLoadedEditors((prev) => ({
+              ...prev,
+              table: new Set([...prev.table, tab.key]),
+            }));
+            break;
         }
       });
     }
@@ -528,13 +549,13 @@ export default function IndexPage() {
     return (
       <div className="h-full">
         {tabs.map((tab) => {
-          const shouldRender = loadedEditors.table?.has(tab.key);
+          const shouldRender = loadedEditors.table.has(tab.key);
           const isVisible = tab.key === activeTabKey;
 
           if (!shouldRender && isVisible) {
             setLoadedEditors((prev) => ({
               ...prev,
-              table: new Set([...(prev.table || []), tab.key]),
+              table: new Set([...prev.table, tab.key]),
             }));
           }
 
@@ -543,6 +564,7 @@ export default function IndexPage() {
               key={"table-" + tab.key}
               className={cn(
                 "w-full h-full",
+                "editor-transition", // 添加与其他编辑器一致的过渡效果
                 isVisible && "visible",
                 !editorLoading[tab.key] && "loaded",
                 {
@@ -552,8 +574,14 @@ export default function IndexPage() {
             >
               {shouldRender && (
                 <JsonTableView
+                  key={tab.key}
+                  ref={(ref) => {
+                    if (ref) {
+                      jsonTableViewRefs.current[tab.key] = ref;
+                    }
+                  }}
                   data={tab.content}
-                  onCopy={(type) => {
+                  onCopy={() => {
                     // 实现复制功能
                     return true;
                   }}
@@ -561,9 +589,15 @@ export default function IndexPage() {
                     // 更新tab内容
                     setTabContent(tab.key, newData);
                   }}
-                  onExport={(type) => {
+                  onExport={() => {
                     // 实现导出功能
                     return true;
+                  }}
+                  onMount={() => {
+                    setEditorLoading((prev) => ({
+                      ...prev,
+                      [tab.key]: false,
+                    }));
                   }}
                 />
               )}
