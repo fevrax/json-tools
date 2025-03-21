@@ -1,7 +1,6 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import { cn } from "@heroui/react";
-import { Icon } from "@iconify/react";
 import { Button } from "@heroui/react";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -13,143 +12,359 @@ import {
 
 import toast from "@/utils/toast";
 
+// 内联SVG图标替代动态加载的图标
+const ICONS = {
+  chevronRight: (
+    <svg
+      height="18"
+      viewBox="0 0 24 24"
+      width="18"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M8.59 16.59L13.17 12L8.59 7.41L10 6l6 6l-6 6z"
+        fill="currentColor"
+      />
+    </svg>
+  ),
+  chevronDown: (
+    <svg
+      height="18"
+      viewBox="0 0 24 24"
+      width="18"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6l-6-6z"
+        fill="currentColor"
+      />
+    </svg>
+  ),
+  copy: (
+    <svg
+      height={14}
+      viewBox="0 0 24 24"
+      width={14}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+      >
+        <rect height={14} rx={2} ry={2} width={14} x={8} y={8} />
+        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+      </g>
+    </svg>
+  ),
+  apply: (
+    <svg
+      height={12}
+      viewBox="0 0 24 24"
+      width={12}
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="m6 3l14 9l-14 9z"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+      />
+    </svg>
+  ),
+};
+
 // Markdown渲染器组件接口
 interface MarkdownRendererProps {
   content: string;
   className?: string;
   onCopy?: () => void;
+  // AI响应相关props
+  isAi?: boolean;
+  isAiLoading?: boolean;
+  onStopGeneration?: () => void;
+  onRegenerate?: () => void;
+  onClose?: () => void;
+  // 代码块应用功能
+  onApplyCode?: (code: string) => void;
 }
+
+// 定义代码块组件，独立处理折叠逻辑
+interface CodeBlockProps {
+  language: string;
+  content: string;
+  theme: string;
+  onApplyCode?: (code: string) => void;
+}
+
+// 定义内联代码组件，处理内联代码样式
+const InlineCode: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  return (
+    <code className="text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-1 py-0.5 rounded-md">
+      {children}
+    </code>
+  );
+};
+
+const CodeBlock: React.FC<CodeBlockProps> = ({
+  language,
+  content,
+  theme,
+  onApplyCode,
+}) => {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // 折叠动画处理
+  const toggleCollapse = () => {
+    if (!isCollapsed) {
+      setIsCollapsed(true);
+      setTimeout(() => setIsVisible(false), 300); // 动画结束后隐藏内容
+    } else {
+      setIsVisible(true);
+      setIsCollapsed(false);
+    }
+  };
+
+  return (
+    <div className="rounded-md overflow-hidden my-3 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md dark:hover:shadow-neutral-900/50 transition-shadow duration-200">
+      <div className="flex items-center justify-between px-3 py-1.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+        <div className="flex items-center space-x-2">
+          <Button
+            isIconOnly
+            className="h-5 w-5 min-w-5 bg-transparent hover:bg-gray-300 dark:hover:bg-gray-600 rounded-full transition-colors"
+            size="sm"
+            title={isCollapsed ? "展开代码" : "收起代码"}
+            variant="flat"
+            onPress={toggleCollapse}
+          >
+            {isCollapsed ? ICONS.chevronRight : ICONS.chevronDown}
+          </Button>
+          <span className="font-mono font-medium">{language || "text"}</span>
+        </div>
+        <div className="flex items-center space-x-1">
+          {onApplyCode && (
+            <Button
+              className="h-6 text-xs px-2 bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-800/40 rounded-md transition-colors"
+              size="sm"
+              title="应用到编辑器"
+              variant="flat"
+              onPress={() => onApplyCode(content)}
+            >
+              {ICONS.apply}
+              应用
+            </Button>
+          )}
+          <Button
+            isIconOnly
+            className="h-5 w-5 min-w-5 bg-transparent hover:bg-gray-300 dark:hover:bg-gray-600 rounded-full transition-colors"
+            size="sm"
+            title="复制代码"
+            variant="flat"
+            onPress={() => {
+              navigator.clipboard.writeText(content);
+              toast.success("已复制代码");
+            }}
+          >
+            {ICONS.copy}
+          </Button>
+        </div>
+      </div>
+      <div
+        ref={contentRef}
+        className={cn(
+          "w-full transition-all duration-300 ease-in-out overflow-hidden",
+          isCollapsed ? "opacity-0 max-h-0" : "opacity-100",
+        )}
+        style={{ display: !isVisible && isCollapsed ? "none" : "block" }}
+      >
+        <SyntaxHighlighter
+          PreTag="div"
+          customStyle={{
+            margin: 0,
+            borderRadius: "0 0 6px 6px",
+            padding: "1rem",
+            width: "100%"
+          }}
+          language={language || "text"}
+          showLineNumbers={true}
+          style={theme === "dark" ? vscDarkPlus : vs}
+          wrapLines={true}
+        >
+          {content}
+        </SyntaxHighlighter>
+      </div>
+    </div>
+  );
+};
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content,
   className,
-  onCopy,
+  onApplyCode,
 }) => {
   // 正确使用钩子 - 始终在组件顶层无条件调用
   const { theme } = useTheme();
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(content);
-    toast.success("已复制内容");
-    onCopy?.();
-  };
-
   return (
-    <div className="flex flex-col h-full w-full">
-      <div className="flex justify-between items-center px-3 py-2.5 bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-blue-50/80 dark:from-neutral-800/80 backdrop-blur-sm border-b border-blue-100 dark:border-neutral-800">
-        <div className="flex items-center space-x-2.5">
-          <Icon
-            className="text-indigo-600 dark:text-indigo-400"
-            icon="ri:markdown-fill"
-            width={20}
-          />
-          <span className="text-sm font-semibold bg-gradient-to-r from-blue-700 to-indigo-700 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-            Markdown预览
-          </span>
-        </div>
-        <div className="flex space-x-1.5">
-          <Button
-            isIconOnly
-            className="bg-blue-50 text-indigo-500 hover:text-indigo-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-blue-800/40 rounded-full"
-            size="sm"
-            title="复制内容"
-            variant="flat"
-            onPress={handleCopy}
-          >
-            <Icon icon="lucide:copy" width={16} />
-          </Button>
-        </div>
-      </div>
+    <div className={cn(className, "flex flex-col h-full w-full")}>
+      <ReactMarkdown
+        components={{
+          // 添加 pre 组件处理
+          pre({ children }) {
+            // 直接返回子元素，不添加额外的 pre 标签
+            return <>{children}</>;
+          },
+          // 添加 p 组件处理
+          p({ children, ...props }) {
+            // React.Children.toArray 将 children 转换为扁平数组
+            const childArray = React.Children.toArray(children);
 
-      <div
-        className={cn(
-          "flex-1 overflow-auto p-4 prose prose-sm dark:prose-invert max-w-none",
-          "prose-headings:my-3 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5",
-          "prose-h1:text-xl prose-h2:text-lg prose-h3:text-base",
-          "prose-pre:bg-transparent prose-pre:p-0 prose-pre:m-0",
-          "prose-code:text-blue-600 prose-code:dark:text-blue-400 prose-code:bg-blue-50 prose-code:dark:bg-blue-900/30 prose-code:px-1 prose-code:py-0.5 prose-code:rounded-md",
-          className,
-        )}
+            // 检查是否包含代码块
+            const hasCodeBlock = childArray.some((child) => {
+              if (React.isValidElement(child) && child.type === CodeBlock) {
+                return true;
+              }
+
+              return false;
+            });
+
+            // 如果包含代码块，直接返回子元素，不包装在 p 标签中
+            if (hasCodeBlock) {
+              return <>{children}</>;
+            }
+
+            // 否则，正常渲染 p 标签
+            return <p {...props}>{children}</p>;
+          },
+          code({ className, children }) {
+            // 检查是否是代码块（具有 language- 前缀的类名）
+            const isCodeBlock = /language-(\w+)/.exec(className || "");
+
+            if (!isCodeBlock) {
+              // 内联代码
+              return <InlineCode>{children}</InlineCode>;
+            }
+
+            // 代码块
+            const language = isCodeBlock ? isCodeBlock[1] : "";
+            const content = String(children).replace(/\n$/, "");
+
+            // 使用提取的CodeBlock组件
+            return (
+              <CodeBlock
+                content={content}
+                language={language}
+                theme={theme || "light"}
+                onApplyCode={onApplyCode}
+              />
+            );
+          },
+          // 表格样式优化
+          table({ node, ...props }) {
+            return (
+              <div className="overflow-x-auto my-4 rounded-md border border-gray-200 dark:border-gray-700">
+                <table className="min-w-full border-collapse" {...props} />
+              </div>
+            );
+          },
+          th({ node, ...props }) {
+            return (
+              <th
+                className="border-b border-gray-300 dark:border-gray-700 px-4 py-2 bg-gray-100 dark:bg-gray-800 text-left font-medium text-gray-700 dark:text-gray-300"
+                {...props}
+              />
+            );
+          },
+          td({ node, ...props }) {
+            return (
+              <td
+                className="border-b border-gray-200 dark:border-gray-800 px-4 py-2 text-sm"
+                {...props}
+              />
+            );
+          },
+          // 增强引用块样式
+          blockquote({ node, ...props }) {
+            return (
+              <blockquote
+                className="pl-4 border-l-4 border-blue-300 dark:border-blue-700 bg-blue-50/50 dark:bg-blue-900/20 py-1 my-4 rounded-r-md italic text-gray-700 dark:text-gray-300"
+                {...props}
+              />
+            );
+          },
+          // 增强标题样式
+          h1({ node, children, ...props }) {
+            return (
+              <h1
+                className="mt-6 mb-4 pb-2 border-b border-gray-200 dark:border-gray-800 font-bold text-gray-900 dark:text-gray-100"
+                {...props}
+              >
+                {children}
+              </h1>
+            );
+          },
+          h2({ node, children, ...props }) {
+            return (
+              <h2
+                className="mt-5 mb-3 pb-1 font-semibold text-gray-800 dark:text-gray-200"
+                {...props}
+              >
+                {children}
+              </h2>
+            );
+          },
+          // 优化列表项样式
+          ul({ node, ...props }) {
+            return (
+              <ul
+                className="pl-6 list-disc marker:text-blue-500 dark:marker:text-blue-400 my-3"
+                {...props}
+              />
+            );
+          },
+          ol({ node, ...props }) {
+            return (
+              <ol
+                className="pl-6 list-decimal marker:text-blue-500 dark:marker:text-blue-400 my-3"
+                {...props}
+              />
+            );
+          },
+          // 优化链接样式
+          a({ node, children, ...props }) {
+            return (
+              <a
+                className="text-blue-600 dark:text-blue-400 hover:underline hover:text-blue-800 dark:hover:text-blue-300 transition-colors duration-200"
+                rel="noopener noreferrer"
+                target="_blank"
+                {...props}
+              >
+                {children}
+              </a>
+            );
+          },
+          // 优化图片样式
+          img({ node, alt, src, ...props }) {
+            return (
+              <img
+                alt={alt || "Markdown图片"}
+                className="rounded-md max-w-full h-auto my-4 border border-gray-200 dark:border-gray-700 shadow-sm"
+                src={src}
+                {...props}
+              />
+            );
+          },
+        }}
+        remarkPlugins={[remarkGfm]}
       >
-        <ReactMarkdown
-          components={{
-            code({  className, children }) {
-              const match = /language-(\w+)/.exec(className || "");
-              const language = match ? match[1] : "";
-
-              // 确保children是字符串
-              const content = String(children).replace(/\n$/, "");
-
-              return (
-                <div className="rounded-md overflow-hidden my-3">
-                  <div className="flex items-center justify-between px-3 py-1.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
-                    <span>{language || "text"}</span>
-                    <Button
-                      isIconOnly
-                      className="h-5 w-5 min-w-5 bg-transparent hover:bg-gray-300 dark:hover:bg-gray-600 rounded-full"
-                      size="sm"
-                      title="复制代码"
-                      variant="flat"
-                      onPress={() => {
-                        navigator.clipboard.writeText(content);
-                        toast.success("已复制代码");
-                      }}
-                    >
-                      <Icon icon="lucide:copy" width={12} />
-                    </Button>
-                  </div>
-                  <SyntaxHighlighter
-                    PreTag="div"
-                    customStyle={{
-                      margin: 0,
-                      borderRadius: "0 0 6px 6px",
-                      fontSize: "0.85rem",
-                    }}
-                    language={language || "text"}
-                    showLineNumbers={true}
-                    style={theme === "dark" ? vscDarkPlus : vs}
-                    wrapLines={true}
-                  >
-                    {content}
-                  </SyntaxHighlighter>
-                </div>
-              );
-            },
-            // @ts-ignore - 忽略类型检查错误
-            table({ node, ...props }) {
-              return (
-                <div className="overflow-x-auto">
-                  <table
-                    className="border-collapse border border-gray-300 dark:border-gray-700"
-                    {...props}
-                  />
-                </div>
-              );
-            },
-            // @ts-ignore - 忽略类型检查错误
-            th({ node, ...props }) {
-              return (
-                <th
-                  className="border border-gray-300 dark:border-gray-700 px-4 py-2 bg-gray-100 dark:bg-gray-800"
-                  {...props}
-                />
-              );
-            },
-            // @ts-ignore - 忽略类型检查错误
-            td({ node, ...props }) {
-              return (
-                <td
-                  className="border border-gray-300 dark:border-gray-700 px-4 py-2"
-                  {...props}
-                />
-              );
-            },
-          }}
-          remarkPlugins={[remarkGfm]}
-        >
-          {content}
-        </ReactMarkdown>
-      </div>
+        {content}
+      </ReactMarkdown>
     </div>
   );
 };

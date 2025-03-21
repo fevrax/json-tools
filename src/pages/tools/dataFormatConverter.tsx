@@ -517,7 +517,6 @@ export default function DataFormatConverterPage() {
     >
       <div className="flex flex-col h-full relative">
         <AIPromptOverlay
-          isLoading={isAiProcessing}
           isOpen={isAiModalOpen}
           placeholderText="请输入您的需求，例如：'将这个 JSON 转换为 Go 结构体并添加 grom 字段定义，并添加中文注释'"
           prompt={prompt}

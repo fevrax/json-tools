@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Button, cn, Select, SelectItem, Slider } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
@@ -87,6 +87,59 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     animationFrameId: 0,
   });
 
+  // 重新计算菜单位置的函数
+  const recalculatePosition = useCallback(() => {
+    if (containerRef.current && menuRef.current) {
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const menuWidth = menuRef.current.offsetWidth;
+      const menuHeight = menuRef.current.offsetHeight;
+
+      let x = menuPosition.x;
+      let y = menuPosition.y;
+
+      // 根据停靠位置调整
+      if (dockedPosition === "right") {
+        x = containerRect.width - menuWidth / 2;
+        // 确保Y坐标不超出容器底部
+        y = Math.min(containerRect.height - menuHeight, Math.max(0, y));
+      } else if (dockedPosition === "left") {
+        x = -menuWidth / 2;
+        // 确保Y坐标不超出容器底部
+        y = Math.min(containerRect.height - menuHeight, Math.max(0, y));
+      } else if (dockedPosition === "bottom") {
+        // 确保X坐标不超出容器右侧
+        x = Math.min(containerRect.width - menuWidth, Math.max(0, x));
+        y = containerRect.height - menuHeight / 2;
+      } else if (dockedPosition === "top") {
+        // 确保X坐标不超出容器右侧
+        x = Math.min(containerRect.width - menuWidth, Math.max(0, x));
+        y = -menuHeight / 2;
+      } else {
+        // 确保菜单不会完全移出容器
+        x = Math.min(
+          containerRect.width - menuWidth / 4,
+          Math.max(0, menuPosition.x),
+        );
+        y = Math.min(
+          containerRect.height - menuHeight / 2,
+          Math.max(0, menuPosition.y),
+        );
+      }
+
+      // 确保菜单在窗口缩小时不会完全隐藏，至少保留一个可点击的区域
+      if (dockedPosition === "right" && containerRect.width < menuWidth) {
+        x = containerRect.width - menuWidth / 4; // 确保至少有1/4的菜单可见
+      } else if (dockedPosition === "left" && containerRect.width < menuWidth) {
+        x = -menuWidth * 3/4; // 确保至少有1/4的菜单可见
+      }
+
+      // 应用新位置
+      if (x !== menuPosition.x || y !== menuPosition.y) {
+        setMenuPosition({ x, y });
+      }
+    }
+  }, [menuPosition, containerRef, dockedPosition]);
+
   // 初始化位置到右下角，半隐藏
   useEffect(() => {
     if (containerRef.current && menuRef.current) {
@@ -120,45 +173,31 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   // 处理窗口大小变化
   useEffect(() => {
     const handleResize = () => {
-      if (containerRef.current && menuRef.current) {
-        const containerRect = containerRef.current.getBoundingClientRect();
-        const menuWidth = menuRef.current.offsetWidth;
-        const menuHeight = menuRef.current.offsetHeight;
-
-        let x = menuPosition.x;
-        let y = menuPosition.y;
-
-        // 根据停靠位置调整
-        if (dockedPosition === "right") {
-          x = containerRect.width - menuWidth / 2;
-        } else if (dockedPosition === "left") {
-          x = -menuWidth / 2;
-        } else if (dockedPosition === "bottom") {
-          y = containerRect.height - menuHeight / 2;
-        } else if (dockedPosition === "top") {
-          y = -menuHeight / 2;
-        } else {
-          // 确保菜单不会完全移出容器
-          x = Math.min(
-            containerRect.width - menuWidth / 4,
-            Math.max(0, menuPosition.x),
-          );
-          y = Math.min(
-            containerRect.height - menuHeight / 2,
-            Math.max(0, menuPosition.y),
-          );
-        }
-
-        setMenuPosition({ x, y });
-      }
+      recalculatePosition();
     };
 
+    // 监听窗口大小变化
     window.addEventListener("resize", handleResize);
+    
+    // 定期检查容器尺寸变化（变通方案，适用于容器大小变化但不触发resize事件的情况）
+    // 例如：AI面板打开/关闭，或其他可能影响布局的变化
+    const intervalId = setInterval(recalculatePosition, 1000); // 减少到1秒以提高响应性
+
+    // 监听可能导致布局变化的DOM变化
+    const resizeObserver = new ResizeObserver(() => {
+      recalculatePosition();
+    });
+    
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
 
     return () => {
       window.removeEventListener("resize", handleResize);
+      clearInterval(intervalId);
+      resizeObserver.disconnect();
     };
-  }, [menuPosition, containerRef, dockedPosition]);
+  }, [recalculatePosition]);
 
   // 开始拖动
   const startDrag = (clientX: number, clientY: number) => {
@@ -258,6 +297,13 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     } else if (closestEdge === "bottom") {
       newX = Math.min(containerRect.width - menuWidth, Math.max(0, newX));
       newY = containerRect.height - menuHeight / 2;
+    }
+
+    // 确保菜单在窗口缩小时不会完全隐藏，至少保留一个可点击的区域
+    if (closestEdge === "right" && containerRect.width < menuWidth) {
+      newX = containerRect.width - menuWidth / 4; // 确保至少有1/4的菜单可见
+    } else if (closestEdge === "left" && containerRect.width < menuWidth) {
+      newX = -menuWidth * 3/4; // 确保至少有1/4的菜单可见
     }
 
     // 使用FLIP技术避免弹跳
@@ -377,13 +423,39 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     // 鼠标悬停时不应用变换
     if (isHide) return "";
 
-    if (position === "left") return "translateX(50%)";
-    if (position === "right") return "translateX(-50%)";
+    // 对小容器做特殊处理
+    if (position === "left") {
+      // 返回默认变换
+      return "translateX(50%)";
+    }
+    
+    if (position === "right") {
+      // 返回默认变换
+      return "translateX(-50%)";
+    }
+    
     if (position === "top") return "translateY(50%)";
     if (position === "bottom") return "translateY(-50%)";
 
     return "";
   };
+
+  // 移动检测容器宽度的逻辑到一个副作用函数中
+  useEffect(() => {
+    if (!isHide && menuRef.current && containerRef.current) {
+      const containerWidth = containerRef.current.getBoundingClientRect().width;
+      const menuWidth = menuRef.current.offsetWidth;
+      
+      // 根据容器宽度调整变换样式
+      if ((dockedPosition === "left" || dockedPosition === "right") && containerWidth < menuWidth) {
+        if (menuRef.current) {
+          // 应用特殊变换
+          const transform = dockedPosition === "left" ? "translateX(25%)" : "translateX(-25%)";
+          menuRef.current.style.transform = transform;
+        }
+      }
+    }
+  }, [isHide, dockedPosition]);
 
   // 清除菜单关闭定时器的函数
   const clearCloseTimer = () => {

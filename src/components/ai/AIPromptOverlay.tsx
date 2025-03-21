@@ -5,7 +5,6 @@ import { Icon } from "@iconify/react";
 interface AIPromptOverlayProps {
   isOpen: boolean;
   prompt: string;
-  isLoading?: boolean;
   placeholderText?: string;
   tipText?: string;
   tipIcon?: string;
@@ -17,8 +16,7 @@ interface AIPromptOverlayProps {
 const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
   isOpen,
   prompt,
-  isLoading = false,
-  placeholderText = "向AI提问关于当前数据的问题...",
+  placeholderText = "输入您的问题...",
   tipText = "提示: 您可以让AI为您处理关于数据修复，数据优化，模拟数据生成等问题",
   tipIcon = "mdi:lightbulb-outline",
   onPromptChange,
@@ -124,11 +122,10 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
             aria-label="发送提问"
             className="w-12 bg-gradient-to-r from-blue-500 to-indigo-600 order-none"
             color="primary"
-            isLoading={isLoading}
             size="sm"
             onPress={onSubmit}
           >
-            {!isLoading && <Icon icon="tabler:send" width={16} />}
+            <Icon icon="tabler:send" width={16} />
           </Button>
         </div>
 

@@ -7,6 +7,8 @@ import { jsonrepair } from "jsonrepair";
 import { Icon } from "@iconify/react";
 import JSON5 from "json5";
 
+import { AIResultHeader } from "./AIResultHeader";
+
 import toast from "@/utils/toast";
 import { useTabStore } from "@/store/useTabStore";
 import {
@@ -18,13 +20,14 @@ import {
   removeJsonComments,
   sortJson,
 } from "@/utils/json";
-import { OpenAIService } from "@/services/openAIService";
 
 import "@/styles/monaco.css";
 import ErrorModal from "@/components/monacoEditor/errorModal.tsx";
 import DraggableMenu from "@/components/monacoEditor/draggableMenu";
 import AIPromptOverlay from "@/components/ai/AIPromptOverlay";
-import MarkdownRenderer from "@/components/markdown/MarkdownRenderer";
+import PromptContainer, {
+  PromptContainerRef,
+} from "@/components/ai/PromptContainer";
 
 export interface MonacoJsonEditorProps {
   tabTitle?: string;
@@ -73,6 +76,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const { getTabByKey } = useTabStore();
   const errorBottomHeight = 45; // 底部错误详情弹窗的高度
   const containerRef = useRef<HTMLDivElement>(null);
+  const rootContainerRef = useRef<HTMLDivElement>(null); // 新增：根容器引用
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const [parseJsonError, setParseJsonError] = useState<JsonErrorInfo | null>(
     null,
@@ -86,14 +90,15 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   // AI相关状态
   const [showAiPrompt, setShowAiPrompt] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
-  const [isAiLoading, setIsAiLoading] = useState(false);
   const [showAiResponse, setShowAiResponse] = useState(false);
-  const aiEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
-  const aiContainerRef = useRef<HTMLDivElement>(null);
 
-  // 添加这些新状态变量
-  const [aiResponseContent, setAiResponseContent] = useState("");
-  const [isAiResponseCode, setIsAiResponseCode] = useState(true);
+  // 添加一个引用以便访问PromptContainer组件的方法
+  const promptContainerRef = useRef<PromptContainerRef>(null);
+
+  // 为PromptContainer组件准备消息数组
+  const [aiMessages, setAiMessages] = useState<
+    Array<{ role: "user" | "assistant"; content: string; timestamp: number }>
+  >([]);
 
   // 从 store 获取当前 tab 的设置
   const currentTab = getTabByKey(tabKey);
@@ -128,35 +133,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     return baseHeight;
   };
 
-  // 在组件顶部定义这个辅助函数
-  const isContentOnlyCodeBlock = (content: string): boolean => {
-    // 清理内容
-    const trimmedContent = content.trim();
-    
-    // 检测是否是完整代码块模式 (整个内容是一个代码块)
-    const isCompleteCodeBlock = /^```[\w]*[\s\S]*```\s*$/m.test(trimmedContent);
-    
-    // 检测是否包含解释性文本 (含有一行不是代码块的非空行)
-    const hasExplanatoryText = trimmedContent
-      .split('\n')
-      .some(line => {
-        const trimmedLine = line.trim();
-        return trimmedLine && 
-               !trimmedLine.startsWith('```') && 
-               !trimmedLine.endsWith('```');
-      });
-    
-    // 检测代码块的数量
-    const codeBlockStartCount = (trimmedContent.match(/```[\w]*/g) || []).length;
-    const codeBlockEndCount = (trimmedContent.match(/```\s*$/gm) || []).length;
-    
-    // 判断逻辑:
-    // 1. 如果是完整代码块且没有解释性文本，判定为代码
-    // 2. 如果代码块起始和结束标记数量不等，判定为Markdown
-    // 3. 如果包含解释性文本，判定为Markdown
-    return isCompleteCodeBlock && !hasExplanatoryText && (codeBlockStartCount === codeBlockEndCount);
-  };
-
   // 处理AI提交
   const handleAiSubmit = async () => {
     if (!aiPrompt.trim()) {
@@ -165,196 +141,94 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       return;
     }
 
-    setIsAiLoading(true);
     setShowAiPrompt(false);
     setShowAiResponse(true);
 
-    // 创建一个中止控制器用于取消请求
-    const controller = new AbortController();
+    // 添加用户消息到消息数组
+    const userMessage = {
+      role: "user" as const,
+      content: aiPrompt,
+      timestamp: Date.now(),
+    };
 
-    // 将控制器保存在组件状态上，以便停止按钮可以访问
-    (window as any).currentAiController = controller;
+    setAiMessages((prev) => [...prev, userMessage]);
 
-    // 先让UI渲染完成，延迟执行AI请求
-    setTimeout(async () => {
-      // 初始化AI编辑器，如果还没有初始化
-      if (!aiEditorRef.current && aiContainerRef.current) {
-        const monacoInstance = await loader.init();
+    // 保存prompt内容用于稍后发送
+    const promptToSend = aiPrompt;
 
-        aiEditorRef.current = monacoInstance.editor.create(
-          aiContainerRef.current,
-          {
-            value: "",
-            language: "go",
-            readOnly: false,
-            theme: theme || "vs-light",
-            minimap: { enabled: false },
-            wordWrap: "on",
-            fontSize: fontSize,
-            mouseWheelZoom: true, // 启用鼠标滚轮缩放
-            autoSurround: "never", // 是否应自动环绕选择
-            cursorBlinking: "smooth", // 光标动画样式
-            cursorSmoothCaretAnimation: "on", // 是否启用光标平滑插入动画  当你在快速输入文字的时候 光标是直接平滑的移动还是直接"闪现"到当前文字所处位置
-            cursorStyle: "line", //  光标样式
-            cursorSurroundingLines: 0, // 光标环绕行数 当文字输入超过屏幕时 可以看见右侧滚动条中光标所处位置是在滚动条中间还是顶部还是底部 即光标环绕行数 环绕行数越大 光标在滚动条中位置越居中
-            cursorSurroundingLinesStyle: "all", // "default" | "all" 光标环绕样式
-            scrollBeyondLastLine: false, // 不允许编辑器滚动到最后一行
-          },
-        );
-      } else if (aiEditorRef.current) {
-        // 不设置AI编辑器的值
-      }
+    setAiPrompt("");
 
-      // 更新两个编辑器布局
+    // 更新布局
+    setTimeout(() => {
       editorRef.current?.layout();
-      aiEditorRef.current?.layout();
+      // 触发编辑器布局更新
+      // DraggableMenu会自动重新计算位置
 
-      // 使用OpenAI服务
-      const openAiService = OpenAIService.createInstance();
-
-      // 修改AI系统提示
-      const messages = [
-        {
-          role: "system" as const,
-          content:
-            "您是一个JSON工具助手，请帮助用户解决JSON相关问题。您可以：\n1. 返回纯代码，请使用```语言标记```包裹代码\n2. 返回解释性文本，使用Markdown格式进行排版\n\n请根据问题类型选择最合适的回复格式。",
-        },
-        {
-          role: "user" as const,
-          content: `${aiPrompt}\n\n以下是用户的JSON数据:\n\`\`\`json\n${editorRef.current?.getValue() || ""}\n\`\`\``,
-        },
-      ];
-
-      if (messages[1].content.length > openAiService.maxTokens) {
-        toast.error("内容超出限制，请缩短内容或使用其他方式描述需求。");
-
-        return;
-      }
-
-      try {
-        // 检查是否已取消
-        if (controller.signal.aborted) {
-          return;
+      // 使用setTimeout确保PromptContainer组件已经挂载并初始化
+      setTimeout(() => {
+        // 直接触发PromptContainer的sendMessage方法
+        if (promptContainerRef.current) {
+          promptContainerRef.current.sendMessage(promptToSend);
+        } else {
+          // 如果还没有获取到ref，添加一个思考中的消息
+          setAiMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: "思考中...",
+              timestamp: Date.now(),
+            },
+          ]);
         }
-
-        await openAiService.createChatCompletion(messages, {
-          onStart: () => {
-            // 不要在这里写入编辑器内容
-          },
-          onChunk: (_chunk, accumulated) => {
-            // 检查是否已取消
-            if (controller.signal.aborted) {
-              throw new Error("已取消生成");
-            }
-
-            // 更新AI响应内容
-            setAiResponseContent(accumulated);
-
-            // 新的代码检测逻辑：
-            // 1. 如果整个内容是一个完整的代码块，认为是代码
-            // 2. 如果不是纯代码块，则认为是Markdown
-            const isCode = isContentOnlyCodeBlock(accumulated);
-            setIsAiResponseCode(isCode);
-
-            // 如果是代码，显示在Monaco编辑器中
-            if (isCode && aiEditorRef.current) {
-              aiEditorRef.current.setValue(accumulated);
-            }
-          },
-          onComplete: (final) => {
-            // 最终更新AI响应内容
-            setAiResponseContent(final);
-
-            // 判断最终内容是否为代码
-            const isCode = isContentOnlyCodeBlock(final);
-            setIsAiResponseCode(isCode);
-
-            if (isCode) {
-              // 提取语言标记
-              const langMatch = final.match(/^```([a-z]+)\s/i);
-              let detectedLang = langMatch ? langMatch[1].toLowerCase() : "json";
-
-              if (!detectedLang) {
-                detectedLang = "yaml";
-              }
-
-              // 清理结果，移除 markdown 格式标记
-              const cleanedResult = final
-                .replace(/^```[a-z]*\s*/i, "")
-                .replace(/```\s*$/i, "")
-                .trim();
-
-              // 完成时一次性更新编辑器内容
-              setTimeout(() => {
-                const model = monaco.editor.createModel(
-                  cleanedResult as string,
-                  detectedLang || "json",
-                );
-
-                if (aiEditorRef.current) {
-                  aiEditorRef.current.setModel(model);
-                }
-              }, 100);
-            }
-
-            setIsAiLoading(false);
-            // 清除控制器引用
-            (window as any).currentAiController = null;
-          },
-          onError: (error) => {
-            setIsAiLoading(false);
-            // 如果是取消错误，显示不同的消息
-            if (error.message === "已取消生成") {
-              toast.warning(`AI解析已取消`);
-              // 不要修改AI编辑器内容
-            } else {
-              toast.error(`AI回复错误: ${error.message}`);
-            }
-            // 清除控制器引用
-            (window as any).currentAiController = null;
-          },
-        });
-      } catch (error) {
-        setIsAiLoading(false);
-        // 清除控制器引用
-        (window as any).currentAiController = null;
-      }
-    }, 500); // 给UI足够的时间渲染编辑器容器
+      }, 100);
+    }, 300);
   };
-
-  // 停止AI解析
-  const stopAiGeneration = () => {
-    // 获取控制器并中止请求
-    const controller = (window as any).currentAiController as AbortController;
-
-    if (controller) {
-      controller.abort();
-      // 更新状态
-      setIsAiLoading(false);
-      toast.success("已停止AI解析");
-      // 不再清空或修改AI编辑器的内容
-    }
-  };
+  
 
   // 关闭AI响应
   const closeAiResponse = () => {
     setShowAiResponse(false);
+    // 清空消息历史
+    setAiMessages([]);
 
     // 布局调整
     setTimeout(() => {
       editorRef.current?.layout();
+      // 触发编辑器布局更新
+      // DraggableMenu会自动重新计算位置
     }, 100);
   };
 
-  // 监听AI响应状态变化，更新编辑器布局
-  useEffect(() => {
-    if (showAiResponse) {
-      setTimeout(() => {
-        editorRef.current?.layout();
-        aiEditorRef.current?.layout();
-      }, 200);
+  // 处理关闭按钮的函数
+  const handleCloseAiResponse = () => {
+    closeAiResponse();
+  };
+
+  // 添加应用代码到编辑器的函数
+  const handleApplyCode = (code: string) => {
+    if (!code || !editorRef.current) {
+      toast.error("无法应用代码到编辑器");
+
+      return;
     }
-  }, [showAiResponse, isAiLoading]);
+
+    try {
+      // 尝试解析JSON，确保是有效的JSON
+      const jsonObj = JSON.parse(code);
+
+      // 如果解析成功，格式化并设置到编辑器
+      setEditorValue(JSON.stringify(jsonObj, null, 2));
+      toast.success("已应用代码到编辑器");
+    } catch (error) {
+      // 如果解析失败，尝试直接设置文本
+      try {
+        setEditorValue(code);
+        toast.success("已应用代码到编辑器");
+      } catch (e) {
+        toast.error("应用代码失败，格式可能不正确");
+      }
+    }
+  };
 
   // 错误信息内容监听
   useEffect(() => {
@@ -379,24 +253,12 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         theme: theme,
       });
     }
-
-    if (aiEditorRef.current) {
-      aiEditorRef.current.updateOptions({
-        theme: theme,
-      });
-    }
   }, [theme]);
 
   // 字体大小变更监听
   useEffect(() => {
     if (editorRef.current) {
       editorRef.current.updateOptions({
-        fontSize: fontSize,
-      });
-    }
-
-    if (aiEditorRef.current) {
-      aiEditorRef.current.updateOptions({
         fontSize: fontSize,
       });
     }
@@ -429,7 +291,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
     editorLayoutTimeoutRef.current = setTimeout(() => {
       editorRef.current?.layout();
-      aiEditorRef.current?.layout();
     }, 50);
   };
 
@@ -844,9 +705,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       if (editorRef.current) {
         editorRef.current.layout();
       }
-      if (aiEditorRef.current) {
-        aiEditorRef.current.layout();
-      }
     },
     showAiPrompt: () => {
       setShowAiPrompt(true);
@@ -995,12 +853,11 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   }));
 
   return (
-    <div className="flex flex-col relative w-full h-full" style={{ height }}>
+    <div ref={rootContainerRef} className="flex flex-col relative w-full h-full" style={{ height }}>
       {/* 使用AIPromptOverlay组件 */}
       <AIPromptOverlay
-        isLoading={isAiLoading}
         isOpen={showAiPrompt}
-        placeholderText="向AI提问关于当前JSON的问题..."
+        placeholderText="输入您的问题..."
         prompt={aiPrompt}
         onClose={() => setShowAiPrompt(false)}
         onPromptChange={setAiPrompt}
@@ -1010,118 +867,34 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       {/* 编辑器外层容器 */}
       <div
         className={cn(
-          "w-full flex-1",
-          showAiResponse ? "flex flex-row" : "flex flex-col",
+          "w-full h-full overflow-hidden",
+          showAiResponse ? "flex flex-row" : "",
         )}
         style={{ height: getEditorHeight() }}
       >
         {showAiResponse ? (
-          // AI响应模式：显示左右两个编辑器
           <>
-            {/* 用户输入的编辑器 - 左侧 */}
-            <div className="flex-1 h-full" style={{ width: "50%" }}>
+            {/* 左侧编辑器区域 */}
+            <div className="w-[40%] h-full overflow-hidden border-r border-default-200 dark:border-default-100/20">
               <div ref={containerRef} className="h-full w-full" />
             </div>
-            {/* AI响应编辑器或Markdown渲染 - 右侧 */}
-            <div className="flex-1 h-full" style={{ width: "50%" }}>
-              <div className="flex flex-col h-full border-l-2 border-blue-100 dark:border-neutral-700 shadow-lg dark:shadow-blue-900/20 overflow-hidden">
-                {isAiResponseCode ? (
-                  // 代码模式 - 使用Monaco编辑器
-                  <>
-                    <div className="flex justify-between items-center px-3 py-2.5 bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-blue-50/80 dark:from-neutral-800/80  backdrop-blur-sm border-b border-blue-100 dark:border-neutral-800">
-                      <div className="flex items-center space-x-2.5">
-                        <div className="relative">
-                          <Icon
-                            className="text-indigo-600 dark:text-indigo-400"
-                            icon="hugeicons:ai-chat-02"
-                            width={20}
-                          />
-                          {isAiLoading && (
-                            <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-blue-500 animate-ping" />
-                          )}
-                        </div>
-                        <span className="text-sm font-semibold bg-gradient-to-r from-blue-700 to-indigo-700 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-                          {isAiLoading ? "AI正在思考中..." : "AI助手解析结果"}
-                        </span>
-                        {isAiLoading && (
-                          <div className="flex items-center space-x-1 ml-2">
-                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" />
-                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse delay-150" />
-                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse delay-300" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex space-x-1.5">
-                        {isAiLoading && (
-                          <Button
-                            isIconOnly
-                            className="bg-red-50 text-red-500 hover:text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-800/40 rounded-full"
-                            size="sm"
-                            title="停止生成"
-                            variant="flat"
-                            onPress={stopAiGeneration}
-                          >
-                            <Icon icon="tabler:player-stop-filled" width={16} />
-                          </Button>
-                        )}
-                        {!isAiLoading && (
-                          <Button
-                            isIconOnly
-                            className="bg-indigo-50 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-800/40 rounded-full"
-                            size="sm"
-                            title="重新生成"
-                            variant="flat"
-                            onPress={() => handleAiSubmit()}
-                          >
-                            <Icon icon="tabler:refresh" width={16} />
-                          </Button>
-                        )}
-                        <Button
-                          isIconOnly
-                          className="bg-blue-50 text-indigo-500 hover:text-indigo-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-blue-800/40 rounded-full"
-                          size="sm"
-                          title="复制内容"
-                          variant="flat"
-                          onPress={() => {
-                            if (aiEditorRef.current) {
-                              const content = aiEditorRef.current.getValue();
 
-                              navigator.clipboard.writeText(content);
-                              toast.success("已复制内容");
-                            }
-                          }}
-                        >
-                          <Icon icon="lucide:copy" width={16} />
-                        </Button>
-                        <Button
-                          isIconOnly
-                          className="bg-gray-50 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:bg-gray-800/50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700/50 rounded-full"
-                          size="sm"
-                          title="关闭AI助手结果"
-                          variant="flat"
-                          onPress={closeAiResponse}
-                        >
-                          <Icon icon="mdi:close" width={16} />
-                        </Button>
-                      </div>
-                    </div>
-                    <div
-                      ref={aiContainerRef}
-                      className="flex-1 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm"
-                      style={{ height: "calc(100% - 45px)" }}
-                    />
-                  </>
-                ) : (
-                  // Markdown模式 - 使用MarkdownRenderer
-                  <div className="flex-1 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm h-full">
-                    <MarkdownRenderer
-                      content={aiResponseContent}
-                      onCopy={() => {
-                        toast.success("已复制Markdown内容");
-                      }}
-                    />
-                  </div>
-                )}
+            {/* 右侧AI响应区域 */}
+            <div className="w-[60%] h-full overflow-hidden flex flex-col bg-white/95 dark:bg-neutral-900/95">
+              {/* AI标题栏 */}
+              <AIResultHeader onClose={handleCloseAiResponse} />
+
+              {/* AI对话区域 */}
+              <div className="flex-1 h-full overflow-hidden">
+                <PromptContainer
+                  ref={promptContainerRef}
+                  className="h-full"
+                  editorContent={editorRef.current?.getValue() || ""}
+                  initialMessages={aiMessages}
+                  showAttachButtons={false}
+                  useDirectApi={true}
+                  onApplyCode={handleApplyCode}
+                />
               </div>
             </div>
           </>
@@ -1134,7 +907,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       {/* 可拖动悬浮菜单 */}
       {isMenu && (
         <DraggableMenu
-          containerRef={containerRef}
+          containerRef={rootContainerRef}
           currentFontSize={fontSize}
           currentLanguage={currentLanguage}
           tabKey={tabKey}

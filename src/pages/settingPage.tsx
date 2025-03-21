@@ -4,16 +4,18 @@ import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
 
 import toast from "@/utils/toast";
-import { useSettingsStore } from "@/store/useSettingsStore.ts";
+import { useSettingsStore, ChatStyle } from "@/store/useSettingsStore.ts";
 import { storage } from "@/lib/indexedDBStore.ts";
 
 export default function SettingsPage() {
   const {
     editDataSaveLocal,
     expandSidebar,
+    chatStyle,
     // monacoEditorCDN,
     setEditDataSaveLocal,
     setExpandSidebar,
+    setChatStyle,
     setMonacoEditorCDN,
   } = useSettingsStore();
 
@@ -34,6 +36,10 @@ export default function SettingsPage() {
         break;
       case "expandSidebar":
         setExpandSidebar(value);
+        break;
+      case "chatStyle":
+        setChatStyle(value);
+        toast.success("聊天窗口样式已更改");
         break;
       case "monacoEditorCDN":
         setMonacoEditorCDN(value);
@@ -165,6 +171,104 @@ export default function SettingsPage() {
                   />
                 </div>
               ))}
+
+              {/* 聊天窗口样式设置 */}
+              <div className="p-6 hover:bg-default-50/40 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2.5 rounded-full bg-default/20">
+                      <Icon icon="solar:chat-round-dots-bold" width={22} />
+                    </div>
+                    <div>
+                      <p className="text-default-900 font-medium">
+                        聊天窗口样式
+                      </p>
+                      <p className="text-sm text-default-500 mt-1">
+                        选择您喜欢的聊天界面显示风格
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4">
+                    <div
+                      aria-label="选择对话模式聊天样式"
+                      className={`flex flex-col items-center gap-2 cursor-pointer transition-all duration-200 ${
+                        chatStyle === "bubble"
+                          ? "scale-105 opacity-100"
+                          : "opacity-70 hover:opacity-90"
+                      }`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() =>
+                        handleSettingChange("chatStyle", "bubble" as ChatStyle)
+                      }
+                      onKeyDown={(e) =>
+                        e.key === "Enter" &&
+                        handleSettingChange("chatStyle", "bubble" as ChatStyle)
+                      }
+                    >
+                      <div
+                        className={`border p-2 rounded-lg w-24 h-20 flex items-center justify-center transition-colors duration-200 ${
+                          chatStyle === "bubble"
+                            ? "border-primary/50 bg-primary/5 shadow-sm"
+                            : "border-default-200 dark:border-default-700"
+                        }`}
+                      >
+                        <div className="flex flex-col gap-2 w-full">
+                          <div className="w-full h-4 rounded-full bg-primary/20" />
+                          <div className="w-3/4 h-4 ml-auto rounded-full bg-default-200" />
+                        </div>
+                      </div>
+                      <p
+                        className={`text-xs font-medium ${chatStyle === "bubble" ? "text-primary" : "text-default-600"}`}
+                      >
+                        气泡模式
+                      </p>
+                    </div>
+                    <div
+                      aria-label="选择文档模式聊天样式"
+                      className={`flex flex-col items-center gap-2 cursor-pointer transition-all duration-200 ${
+                        chatStyle === "document"
+                          ? "scale-105 opacity-100"
+                          : "opacity-70 hover:opacity-90"
+                      }`}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() =>
+                        handleSettingChange(
+                          "chatStyle",
+                          "document" as ChatStyle,
+                        )
+                      }
+                      onKeyDown={(e) =>
+                        e.key === "Enter" &&
+                        handleSettingChange(
+                          "chatStyle",
+                          "document" as ChatStyle,
+                        )
+                      }
+                    >
+                      <div
+                        className={`border p-2 rounded-lg w-24 h-20 flex items-center justify-center transition-colors duration-200 ${
+                          chatStyle === "document"
+                            ? "border-primary/50 bg-primary/5 shadow-sm"
+                            : "border-default-200 dark:border-default-700"
+                        }`}
+                      >
+                        <div className="flex flex-col gap-2 w-full">
+                          <div className="w-full h-3 rounded-sm bg-primary/20" />
+                          <div className="w-full h-3 rounded-sm bg-default-200" />
+                          <div className="w-3/4 h-3 rounded-sm bg-primary/20" />
+                        </div>
+                      </div>
+                      <p
+                        className={`text-xs font-medium ${chatStyle === "document" ? "text-primary" : "text-default-600"}`}
+                      >
+                        文档模式
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               {/* 重置应用 */}
               <div className="p-6">

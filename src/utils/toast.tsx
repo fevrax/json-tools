@@ -24,7 +24,7 @@ class ToastUtil {
       title,
       description,
       color: type,
-      duration: options?.duration || 3000,
+      timeout: options?.duration || 2000,
       ...options,
     });
   }

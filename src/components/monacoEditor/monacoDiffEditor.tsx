@@ -472,8 +472,6 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       controller.abort();
       // 更新状态
       setIsAiLoading(false);
-      toast.success("已停止AI解析");
-      // 不再清空或修改AI编辑器的内容
     }
   };
 
@@ -697,7 +695,6 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     <div className="flex flex-col w-full h-full relative" style={{ height }}>
       {/* 使用AIPromptOverlay组件 */}
       <AIPromptOverlay
-        isLoading={isAiLoading}
         isOpen={showAiPrompt}
         placeholderText="向AI提问关于当前JSON比较的问题..."
         prompt={aiPrompt}
