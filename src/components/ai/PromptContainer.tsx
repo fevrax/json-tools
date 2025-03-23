@@ -76,6 +76,10 @@ interface MessageCardProps {
   messageClassName?: string;
   isLoading?: boolean;
   isUser?: boolean; // 新增参数标识是否为用户消息
+  timestamp?: number; // 添加时间戳参数
+  onCopyMessage?: () => void; // 添加复制消息回调
+  onDeleteMessage?: () => void; // 添加删除消息回调
+  onRegenerateMessage?: () => void; // 添加重新生成回调
 }
 
 const MessageCard: React.FC<MessageCardProps> = ({
@@ -84,7 +88,23 @@ const MessageCard: React.FC<MessageCardProps> = ({
   messageClassName,
   isLoading = false,
   isUser = false,
+  timestamp,
+  onCopyMessage,
+  onDeleteMessage,
+  onRegenerateMessage,
 }) => {
+  const [showMenu, setShowMenu] = useState(false);
+
+  // 格式化时间
+  const formattedTime = timestamp
+    ? new Date(timestamp).toLocaleTimeString("zh-CN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      })
+    : "";
+
   return (
     <div
       className={cn(
@@ -113,6 +133,107 @@ const MessageCard: React.FC<MessageCardProps> = ({
           )}
         >
           <div className="text-small break-words">{message}</div>
+
+          {/* 时间显示和菜单按钮并排 */}
+          <div className="flex items-center justify-between mt-1">
+            {timestamp && (
+              <div className="text-xs text-default-400">{formattedTime}</div>
+            )}
+
+            {/* 按钮组 */}
+            {!isLoading && (
+              <div className="relative flex items-center gap-1">
+                {/* 复制按钮 */}
+                <Button
+                  isIconOnly
+                  className="min-w-0 w-5 h-5 p-0"
+                  size="sm"
+                  title="复制"
+                  variant="light"
+                  onPress={() => {
+                    onCopyMessage?.();
+                  }}
+                >
+                  <Icon icon="solar:copy-linear" width={14} />
+                </Button>
+
+                {/* 更多功能按钮 */}
+                <div className="relative">
+                  <Button
+                    isIconOnly
+                    className="min-w-0 w-5 h-5 p-0"
+                    size="sm"
+                    title="更多"
+                    variant="light"
+                    onPress={() => setShowMenu(!showMenu)}
+                  >
+                    <Icon icon="solar:menu-dots-bold" width={14} />
+                  </Button>
+
+                  {/* 更多功能下拉菜单 */}
+                  {showMenu && (
+                    <div
+                      className={cn(
+                        "absolute z-10 top-full mt-1 bg-content2 shadow-md rounded-md p-1 flex flex-col gap-1 min-w-[160px]",
+                        isUser ? "right-0" : "left-0",
+                      )}
+                    >
+                      <Button
+                        className="text-tiny justify-start"
+                        size="sm"
+                        startContent={
+                          <Icon
+                            icon="solar:trash-bin-trash-linear"
+                            width={16}
+                          />
+                        }
+                        variant="light"
+                        onPress={() => {
+                          onDeleteMessage?.();
+                          setShowMenu(false);
+                        }}
+                      >
+                        删除
+                      </Button>
+                      {!isUser && (
+                        <>
+                          <Button
+                            className="text-tiny justify-start"
+                            size="sm"
+                            startContent={
+                              <Icon icon="solar:refresh-linear" width={16} />
+                            }
+                            variant="light"
+                            onPress={() => {
+                              onRegenerateMessage?.();
+                              setShowMenu(false);
+                            }}
+                          >
+                            重新生成
+                          </Button>
+                          <Button
+                            className="text-tiny justify-start"
+                            size="sm"
+                            startContent={
+                              <Icon icon="ic:baseline-autorenew" width={16} />
+                            }
+                            variant="light"
+                            onPress={() => {
+                              onDeleteMessage?.();
+                              onRegenerateMessage?.();
+                              setShowMenu(false);
+                            }}
+                          >
+                            删除并重新生成
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -124,17 +245,37 @@ interface DocumentMessageProps {
   role: "user" | "assistant";
   message?: React.ReactNode;
   isLoading?: boolean;
+  timestamp?: number; // 添加时间戳参数
+  onCopyMessage?: () => void; // 添加复制消息回调
+  onDeleteMessage?: () => void; // 添加删除消息回调
+  onRegenerateMessage?: () => void; // 添加重新生成回调
 }
 
 const DocumentMessage: React.FC<DocumentMessageProps> = ({
   role,
   message,
   isLoading = false,
+  timestamp,
+  onCopyMessage,
+  onDeleteMessage,
+  onRegenerateMessage,
 }) => {
+  const [showMenu, setShowMenu] = useState(false);
+
+  // 格式化时间
+  const formattedTime = timestamp
+    ? new Date(timestamp).toLocaleTimeString("zh-CN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      })
+    : "";
+
   return (
     <div
       className={cn(
-        "w-full py-2 px-3",
+        "w-full py-2 px-3 relative",
         role === "user"
           ? "bg-primary/5 border-l-4 border-primary/30"
           : "bg-content2/20 border-l-4 border-content2/30",
@@ -146,11 +287,95 @@ const DocumentMessage: React.FC<DocumentMessageProps> = ({
           size="sm"
           src={
             role === "user"
-              ? "https://d2u8k2ocievbld.cloudfront.net/memojis/male/6.png"
+              ? "https://g.aizuo.net/images/avatar/avatar-30.jpg"
               : "https://nextuipro.nyc3.cdn.digitaloceanspaces.com/components-images/avatar_ai.png"
           }
         />
-        <div className="mt-1 flex-1 w-full text-small ">{message}</div>
+        <div className="mt-1 flex-1 w-full text-small">
+          {message}
+
+          {/* 时间显示和菜单按钮并排 */}
+          <div className="flex items-center mt-1">
+            {timestamp && (
+              <div className="text-xs text-default-400">{formattedTime}</div>
+            )}
+
+            {/* 按钮组 */}
+            {!isLoading && (
+              <div className="relative flex items-center gap-1 ml-2">
+                {/* 复制按钮 */}
+                <Button
+                  isIconOnly
+                  className="min-w-0 w-5 h-5 p-0"
+                  size="sm"
+                  title="复制"
+                  variant="light"
+                  onPress={() => {
+                    onCopyMessage?.();
+                  }}
+                >
+                  <Icon icon="solar:copy-linear" width={14} />
+                </Button>
+
+                {/* 更多功能按钮 */}
+                <div className="relative">
+                  <Button
+                    isIconOnly
+                    className="min-w-0 w-5 h-5 p-0"
+                    size="sm"
+                    title="更多"
+                    variant="light"
+                    onPress={() => setShowMenu(!showMenu)}
+                  >
+                    <Icon icon="solar:menu-dots-bold" width={14} />
+                  </Button>
+
+                  {/* 更多功能下拉菜单 */}
+                  {showMenu && (
+                    <div className="absolute z-10 top-full left-0 mt-1 bg-content2 shadow-md rounded-md p-1 flex flex-col gap-1 min-w-[160px]">
+                      <Button
+                        className="text-tiny justify-start"
+                        size="sm"
+                        startContent={
+                          <Icon
+                            icon="solar:trash-bin-trash-linear"
+                            width={16}
+                          />
+                        }
+                        variant="light"
+                        onPress={() => {
+                          onDeleteMessage?.();
+                          setShowMenu(false);
+                        }}
+                      >
+                        删除
+                      </Button>
+                      {role === "assistant" && (
+                        <>
+                          <Button
+                            className="text-tiny justify-start"
+                            size="sm"
+                            startContent={
+                              <Icon icon="ic:baseline-autorenew" width={16} />
+                            }
+                            variant="light"
+                            onPress={() => {
+                              onDeleteMessage?.();
+                              onRegenerateMessage?.();
+                              setShowMenu(false);
+                            }}
+                          >
+                            重新生成
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -338,6 +563,37 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
       }
     };
 
+    // 复制消息
+    const handleCopyMessage = (content: string) => {
+      navigator.clipboard
+        .writeText(content)
+        .then(() => toast.success("已复制到剪贴板"))
+        .catch(() => toast.error("复制失败"));
+    };
+
+    // 删除消息
+    const handleDeleteMessage = (index: number) => {
+      setMessages((prevMessages) => prevMessages.filter((_, i) => i !== index));
+    };
+
+    // 删除并重新生成消息（找到前一个用户消息并重新提交）
+    const handleRegenerateMessage = (index: number) => {
+      // 删除当前消息及之后所有消息
+      const newMessages = messages.slice(0, index);
+
+      setMessages(newMessages);
+
+      // 找到最后一个用户消息
+      const lastUserMessage = [...newMessages]
+        .reverse()
+        .find((msg) => msg.role === "user");
+
+      if (lastUserMessage) {
+        // 重新发送该消息
+        handleSendMessage(lastUserMessage.content);
+      }
+    };
+
     // 处理发送消息
     const handleSendMessage = async (customPrompt?: string) => {
       const messageContent = customPrompt || prompt;
@@ -477,6 +733,9 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
                       isUser={true}
                       message={message.content}
                       messageClassName="shadow-sm"
+                      timestamp={message.timestamp}
+                      onCopyMessage={() => handleCopyMessage(message.content)}
+                      onDeleteMessage={() => handleDeleteMessage(index)}
                     />
                   ) : (
                     <MessageCard
@@ -493,6 +752,10 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
                         isLastMessage &&
                           "border-blue-200 dark:border-blue-800/40",
                       )}
+                      timestamp={message.timestamp}
+                      onCopyMessage={() => handleCopyMessage(message.content)}
+                      onDeleteMessage={() => handleDeleteMessage(index)}
+                      onRegenerateMessage={() => handleRegenerateMessage(index)}
                     />
                   )}
                 </div>
@@ -512,6 +775,14 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
                     }
                     message={messageContent}
                     role={message.role}
+                    timestamp={message.timestamp}
+                    onCopyMessage={() => handleCopyMessage(message.content)}
+                    onDeleteMessage={() => handleDeleteMessage(index)}
+                    onRegenerateMessage={
+                      message.role === "assistant"
+                        ? () => handleRegenerateMessage(index)
+                        : undefined
+                    }
                   />
                 </div>
               );

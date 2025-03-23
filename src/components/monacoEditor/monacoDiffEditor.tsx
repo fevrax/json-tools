@@ -18,7 +18,10 @@ import { sortJson } from "@/utils/json";
 import { useTabStore } from "@/store/useTabStore";
 import DraggableMenu from "@/components/monacoEditor/draggableMenu";
 import AIPromptOverlay from "@/components/ai/AIPromptOverlay";
-import { OpenAIService } from "@/services/openAIService";
+import { AIResultHeader } from "./AIResultHeader";
+import PromptContainer, {
+  PromptContainerRef,
+} from "@/components/ai/PromptContainer";
 
 import "@/styles/monaco.css";
 
@@ -73,12 +76,21 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   // AI相关状态
   const [showAiPrompt, setShowAiPrompt] = useState(false);
   const [aiPrompt, setAiPrompt] = useState("");
-  const [isAiLoading, setIsAiLoading] = useState(false);
   const [showAiResponse, setShowAiResponse] = useState(false);
-  const aiEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
-  const aiContainerRef = useRef<HTMLDivElement>(null);
+  const [aiMessages, setAiMessages] = useState<
+    Array<{ role: "user" | "assistant"; content: string; timestamp: number }>
+  >([]);
+  
+  // 添加编辑器内容状态，用于传递给PromptContainer
+  const [editorContent, setEditorContent] = useState("");
+  
+  // 添加一个引用以便访问PromptContainer组件的方法
+  const promptContainerRef = useRef<PromptContainerRef>(null);
+  
   const aiPanelRef = useRef<HTMLDivElement>(null);
-  const [aiPanelHeight, setAiPanelHeight] = useState<number>(300); // 默认高度
+  const [aiPanelHeight, setAiPanelHeight] = useState<number>(
+    typeof window !== 'undefined' ? Math.floor(window.innerHeight * 0.8) : 500
+  ); // 默认高度为窗口高度的80%
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef<number>(0);
   const dragStartHeight = useRef<number>(0);
@@ -132,6 +144,16 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     }
   }, [currentLanguage]);
 
+  // 监听原始编辑器内容变化
+  useEffect(() => {
+    if (originalEditorRef.current && modifiedEditorRef.current) {
+      // 更新编辑器内容状态
+      const originalText = originalEditorRef.current.getValue() || "";
+      const modifiedText = modifiedEditorRef.current.getValue() || "";
+      setEditorContent(`原始内容:\n${originalText}\n\n修改后内容:\n${modifiedText}`);
+    }
+  }, [originalValue, modifiedValue]);
+
   // 简化的鼠标移动处理函数 - 直接修改DOM，不经过React状态更新
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
@@ -152,12 +174,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       }
 
       // 请求布局更新
-      if (aiEditorRef.current) {
-        aiEditorRef.current.layout();
-      }
-      if (editorRef.current) {
-        editorRef.current.layout();
-      }
+      editorRef.current?.layout();
     },
     [isDragging],
   );
@@ -215,6 +232,39 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       document.body.style.cursor = "";
     };
   }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  // 监听窗口大小变化，调整AI面板高度
+  useEffect(() => {
+    const handleResize = () => {
+      // 如果用户没有手动调整过高度，则自动调整为窗口高度的80%
+      if (!isDragging && showAiResponse) {
+        const newHeight = Math.min(
+          Math.floor(window.innerHeight * 0.8),
+          window.innerHeight - 100 // 确保至少留出100px给编辑器
+        );
+        
+        // 直接更新DOM以避免状态更新延迟
+        if (aiPanelRef.current) {
+          aiPanelRef.current.style.height = `${newHeight}px`;
+        }
+        if (editorContainerRef.current) {
+          editorContainerRef.current.style.height = `calc(100% - ${newHeight}px)`;
+        }
+        
+        // 同步状态
+        setAiPanelHeight(newHeight);
+        
+        // 请求布局更新
+        editorRef.current?.layout();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [isDragging, showAiResponse]);
 
   // 创建差异编辑器实例
   async function createDiffEditor() {
@@ -279,13 +329,26 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
 
         // 监听原始编辑器内容变化
         originalEditorRef.current.onDidChangeModelContent(() => {
-          onUpdateOriginalValue(originalEditorRef.current!.getValue());
+          const originalText = originalEditorRef.current!.getValue();
+          onUpdateOriginalValue(originalText);
+          
+          // 更新编辑器内容状态
+          if (modifiedEditorRef.current) {
+            const modifiedText = modifiedEditorRef.current.getValue() || "";
+            setEditorContent(`原始内容:\n${originalText}\n\n修改后内容:\n${modifiedText}`);
+          }
         });
 
         // 监听修改编辑器内容变化
         modifiedEditorRef.current.onDidChangeModelContent(() => {
-          onUpdateModifiedValue &&
-            onUpdateModifiedValue(modifiedEditorRef.current!.getValue());
+          const modifiedText = modifiedEditorRef.current!.getValue();
+          onUpdateModifiedValue && onUpdateModifiedValue(modifiedText);
+          
+          // 更新编辑器内容状态
+          if (originalEditorRef.current) {
+            const originalText = originalEditorRef.current.getValue() || "";
+            setEditorContent(`原始内容:\n${originalText}\n\n修改后内容:\n${modifiedText}`);
+          }
         });
       }
     });
@@ -311,181 +374,119 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   const handleAiSubmit = async () => {
     if (!aiPrompt.trim()) {
       toast.error("请输入提示词");
-
       return;
     }
 
-    setIsAiLoading(true);
     setShowAiPrompt(false);
     setShowAiResponse(true);
 
-    // 创建一个中止控制器用于取消请求
-    const controller = new AbortController();
-
-    // 将控制器保存在组件状态上，以便停止按钮可以访问
-    (window as any).currentAiController = controller;
-
-    // 先让UI渲染完成，延迟执行AI请求
-    setTimeout(async () => {
-      // 初始化AI编辑器，如果还没有初始化
-      if (!aiEditorRef.current && aiContainerRef.current) {
-        const monacoInstance = await loader.init();
-
-        aiEditorRef.current = monacoInstance.editor.create(
-          aiContainerRef.current,
-          {
-            value: "",
-            language: "go",
-            readOnly: false,
-            theme: theme || "vs-light",
-            minimap: { enabled: false },
-            wordWrap: "on",
-            fontSize: fontSize,
-            mouseWheelZoom: true, // 启用鼠标滚轮缩放
-            autoSurround: "never", // 是否应自动环绕选择
-            cursorBlinking: "smooth", // 光标动画样式
-            cursorSmoothCaretAnimation: "on", // 是否启用光标平滑插入动画  当你在快速输入文字的时候 光标是直接平滑的移动还是直接"闪现"到当前文字所处位置
-            cursorStyle: "line", //  光标样式
-            cursorSurroundingLines: 0, // 光标环绕行数 当文字输入超过屏幕时 可以看见右侧滚动条中光标所处位置是在滚动条中间还是顶部还是底部 即光标环绕行数 环绕行数越大 光标在滚动条中位置越居中
-            cursorSurroundingLinesStyle: "all", // "default" | "all" 光标环绕样式
-            scrollBeyondLastLine: false, // 不允许编辑器滚动到最后一行
-          },
-        );
-      } else if (aiEditorRef.current) {
-        // 不设置AI编辑器的值
-      }
-
-      // 更新编辑器布局
-      editorRef.current?.layout();
-      aiEditorRef.current?.layout();
-
-      // 使用OpenAI服务
-      const openAiService = OpenAIService.createInstance();
-
-      // 准备消息内容
-      const originalText = originalEditorRef.current?.getValue() || "";
-      const modifiedText = modifiedEditorRef.current?.getValue() || "";
-      const diffContent = `原始内容:\n\`\`\`json\n${originalText}\n\`\`\`\n\n修改后内容:\n\`\`\`json\n${modifiedText}\n\`\`\``;
-
-      // 修复TypeScript类型问题，确保与ChatCompletionMessageParam兼容
-      const messages = [
-        {
-          role: "system" as const,
-          content:
-            "您是一个JSON DIFF差异化比较工具助手，请帮助用户解决JSON相关问题，返回数据或代码并使用\\`\\`\\`语言标记\\`\\`\\`包裹，请输出数据再会回复说明。",
-        },
-        {
-          role: "user" as const,
-          content: `${aiPrompt}\n\n以下是用户的差异化比较JSON数据:\n${diffContent}`,
-        },
-      ];
-
-      if (messages[1].content.length > openAiService.maxTokens) {
-        toast.error("内容超出限制，请缩短内容或使用其他方式描述需求。");
-        setIsAiLoading(false);
-
-        return;
-      }
-
-      try {
-        // 检查是否已取消
-        if (controller.signal.aborted) {
-          return;
-        }
-
-        await openAiService.createChatCompletion(messages, {
-          onStart: () => {
-            // 不要在这里写入编辑器内容
-          },
-          onChunk: (_chunk, accumulated) => {
-            // 检查是否已取消
-            if (controller.signal.aborted) {
-              throw new Error("已取消生成");
-            }
-            if (aiEditorRef.current) {
-              aiEditorRef.current.setValue(accumulated);
-            }
-          },
-          onComplete: (final) => {
-            // 提取语言标记
-            const langMatch = final.match(/^```([a-z]+)\s/i);
-            let detectedLang = langMatch ? langMatch[1].toLowerCase() : "json";
-
-            if (!detectedLang) {
-              detectedLang = "yaml";
-            }
-
-            // 清理结果，移除所有的 markdown 代码标记
-            const cleanedResult = final
-              .replace(/```[\s\S]*?```/g, function (match) {
-                // 提取代码块内容，去除首尾的 ``` 和语言标记
-                return match
-                  .replace(/^```[a-z]*\s*/i, "")
-                  .replace(/```\s*$/i, "");
-              })
-              .trim();
-
-            // 完成时一次性更新编辑器内容
-            setTimeout(() => {
-              const model = monaco.editor.createModel(
-                cleanedResult as string,
-                detectedLang || "json",
-              );
-
-              if (aiEditorRef.current) {
-                aiEditorRef.current.setModel(model);
-              }
-            }, 100);
-
-            setIsAiLoading(false);
-            // 清除控制器引用
-            (window as any).currentAiController = null;
-          },
-          onError: (error) => {
-            setIsAiLoading(false);
-            // 如果是取消错误，显示不同的消息
-            if (error.message === "已取消生成") {
-              toast.warning(`AI解析已取消`);
-              // 不要修改AI编辑器内容
-            } else {
-              toast.error(`AI回复错误: ${error.message}`);
-              // 不要修改AI编辑器内容
-            }
-            // 清除控制器引用
-            (window as any).currentAiController = null;
-          },
-        });
-      } catch (error) {
-        setIsAiLoading(false);
-        // 清除控制器引用
-        (window as any).currentAiController = null;
-      }
-    }, 500); // 给UI足够的时间渲染编辑器容器
-  };
-
-  // 停止AI解析
-  const stopAiGeneration = () => {
-    // 获取控制器并中止请求
-    const controller = (window as any).currentAiController as AbortController;
-
-    if (controller) {
-      controller.abort();
-      // 更新状态
-      setIsAiLoading(false);
+    // 设置面板高度为窗口高度的80%
+    const panelHeight = Math.min(
+      Math.floor(window.innerHeight * 0.8),
+      window.innerHeight - 100
+    );
+    setAiPanelHeight(panelHeight);
+    
+    // 直接更新DOM元素
+    if (aiPanelRef.current) {
+      aiPanelRef.current.style.height = `${panelHeight}px`;
     }
+    if (editorContainerRef.current) {
+      editorContainerRef.current.style.height = `calc(100% - ${panelHeight}px)`;
+    }
+
+    // 添加用户消息到消息数组
+    const userMessage = {
+      role: "user" as const,
+      content: aiPrompt,
+      timestamp: Date.now(),
+    };
+
+    setAiMessages((prev) => [...prev, userMessage]);
+
+    // 保存prompt内容用于稍后发送
+    const promptToSend = aiPrompt;
+
+    setAiPrompt("");
+
+    // 更新布局
+    setTimeout(() => {
+      editorRef.current?.layout();
+      
+      // 在提交前再次更新编辑器内容
+      if (originalEditorRef.current && modifiedEditorRef.current) {
+        const originalText = originalEditorRef.current.getValue() || "";
+        const modifiedText = modifiedEditorRef.current.getValue() || "";
+        setEditorContent(`原始内容:\n${originalText}\n\n修改后内容:\n${modifiedText}`);
+      }
+      
+      // 触发编辑器布局更新
+
+      // 使用setTimeout确保PromptContainer组件已经挂载并初始化
+      setTimeout(() => {
+        // 直接触发PromptContainer的sendMessage方法
+        if (promptContainerRef.current) {
+          promptContainerRef.current.sendMessage(promptToSend);
+        } else {
+          // 如果还没有获取到ref，添加一个思考中的消息
+          setAiMessages((prev) => [
+            ...prev,
+            {
+              role: "assistant",
+              content: "思考中...",
+              timestamp: Date.now(),
+            },
+          ]);
+        }
+      }, 100);
+    }, 300);
   };
 
   // 关闭AI响应
   const closeAiResponse = useCallback(() => {
-    // 先设置状态为隐藏
     setShowAiResponse(false);
+    // 清空消息历史
+    setAiMessages([]);
 
-    // 使用过渡动画的时间后再清理相关状态
+    // 布局调整
     setTimeout(() => {
-      // 调整编辑器布局
       editorRef.current?.layout();
-    }, 300);
+    }, 100);
   }, []);
+
+  // 处理关闭按钮的函数
+  const handleCloseAiResponse = () => {
+    closeAiResponse();
+  };
+
+  // 添加应用代码到编辑器的函数
+  const handleApplyCode = (code: string) => {
+    if (!code || !editorRef.current) {
+      toast.error("无法应用代码到编辑器");
+      return;
+    }
+
+    try {
+      // 尝试解析JSON，确保是有效的JSON
+      const jsonObj = JSON.parse(code);
+
+      // 如果解析成功，格式化并设置到编辑器
+      if (modifiedEditorRef.current) {
+        setEditorValue(modifiedEditorRef.current, JSON.stringify(jsonObj, null, 2));
+        toast.success("已应用代码到编辑器");
+      }
+    } catch (error) {
+      // 如果解析失败，尝试直接设置文本
+      try {
+        if (modifiedEditorRef.current) {
+          setEditorValue(modifiedEditorRef.current, code);
+          toast.success("已应用代码到编辑器");
+        }
+      } catch (e) {
+        toast.error("应用代码失败，格式可能不正确");
+      }
+    }
+  };
 
   const formatEditorAction = (
     editorRef: React.MutableRefObject<editor.IStandaloneCodeEditor | null>,
@@ -585,9 +586,6 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
         editorRef.current.layout();
         originalEditorRef.current?.layout();
         modifiedEditorRef.current?.layout();
-      }
-      if (aiEditorRef.current) {
-        aiEditorRef.current?.layout();
       }
     },
     showAiPrompt: () => {
@@ -731,7 +729,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       <div
         ref={aiPanelRef}
         className={cn(
-          "fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-lg transition-transform duration-300 ease-out",
+          "fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-lg transition-transform duration-300 ease-out rounded-t-lg",
           showAiResponse ? "translate-y-0" : "translate-y-full",
           isDragging ? "transition-none" : "",
         )}
@@ -746,10 +744,10 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
             : "transform 0.3s ease-out, opacity 0.3s, visibility 0.3s",
         }}
       >
-        {/* 拖动条 - 样式优化 */}
+        {/* 拖动条 - 面板内部顶部 */}
         <div
           aria-label="拖动调整AI面板高度"
-          className="absolute top-0 left-0 right-0 h-3 cursor-ns-resize bg-gradient-to-r from-blue-100 via-indigo-100 to-blue-100 dark:from-neutral-800/80   border-none outline-none focus:ring-2 focus:ring-blue-400 flex items-center justify-center"
+          className="w-full h-7 cursor-ns-resize bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 dark:from-neutral-800 dark:via-neutral-800 dark:to-neutral-800 border-b border-blue-200 dark:border-neutral-700 rounded-t-lg flex items-center justify-center"
           role="button"
           style={{
             touchAction: "none",
@@ -771,7 +769,6 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
                 editorContainerRef.current.style.height = `calc(100% - ${newHeight}px)`;
               }
 
-              aiEditorRef.current?.layout();
               editorRef.current?.layout();
             } else if (e.key === "ArrowDown") {
               const newHeight = Math.min(
@@ -789,103 +786,32 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
                 editorContainerRef.current.style.height = `calc(100% - ${newHeight}px)`;
               }
 
-              aiEditorRef.current?.layout();
               editorRef.current?.layout();
             }
           }}
           onMouseDown={handleDragStart}
         >
-          <div className="w-16 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+          <div className="w-32 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
         </div>
 
-        {/* AI面板标题栏 */}
-        <div className="flex justify-between items-center px-3 py-2.5 bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-blue-50/80 dark:from-neutral-800/80  border-b border-blue-100 dark:border-neutral-800 mt-3">
-          <div className="flex items-center space-x-2.5">
-            <div className="relative">
-              <Icon
-                className="text-indigo-600 dark:text-indigo-400"
-                icon="hugeicons:ai-chat-02"
-                width={20}
-              />
-              {isAiLoading && (
-                <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-blue-500 animate-ping" />
-              )}
-            </div>
-            <span className="text-sm font-semibold bg-gradient-to-r from-blue-700 to-indigo-700 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
-              {isAiLoading ? "AI正在思考中..." : "AI助手解析结果"}
-            </span>
-            {isAiLoading && (
-              <div className="flex items-center space-x-1 ml-2">
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse" />
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse delay-150" />
-                <span className="inline-block h-1.5 w-1.5 rounded-full bg-blue-500 dark:bg-blue-400 animate-pulse delay-300" />
-              </div>
-            )}
-          </div>
-          <div className="flex space-x-1.5">
-            {isAiLoading && (
-              <Button
-                isIconOnly
-                className="bg-red-50 text-red-500 hover:text-red-700 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-800/40 rounded-full"
-                size="sm"
-                title="停止生成"
-                variant="flat"
-                onPress={stopAiGeneration}
-              >
-                <Icon icon="tabler:player-stop-filled" width={16} />
-              </Button>
-            )}
-            {!isAiLoading && (
-              <Button
-                isIconOnly
-                className="bg-indigo-50 text-indigo-500 hover:text-indigo-700 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-indigo-800/40 rounded-full"
-                size="sm"
-                title="重新生成"
-                variant="flat"
-                onPress={() => handleAiSubmit()}
-              >
-                <Icon icon="tabler:refresh" width={16} />
-              </Button>
-            )}
-            <Button
-              isIconOnly
-              className="bg-blue-50 text-indigo-500 hover:text-indigo-700 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-indigo-400 dark:hover:text-indigo-300 dark:hover:bg-blue-800/40 rounded-full"
-              size="sm"
-              title="复制内容"
-              variant="flat"
-              onPress={() => {
-                if (aiEditorRef.current) {
-                  const content = aiEditorRef.current.getValue();
+        {/* AI面板内容 */}
+        <div className="flex flex-col h-[calc(100%-7px)] overflow-hidden">
+          {/* AI标题栏 */}
+          <AIResultHeader onClose={handleCloseAiResponse} />
 
-                  navigator.clipboard.writeText(content);
-                  toast.success("已复制内容");
-                }
-              }}
-            >
-              <Icon icon="lucide:copy" width={16} />
-            </Button>
-            <Button
-              isIconOnly
-              className="bg-gray-50 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:bg-gray-800/50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700/50 rounded-full"
-              size="sm"
-              title="关闭AI助手结果"
-              variant="flat"
-              onPress={closeAiResponse}
-            >
-              <Icon icon="mdi:close" width={16} />
-            </Button>
+          {/* AI对话区域 */}
+          <div className="flex-1 h-full overflow-hidden">
+            <PromptContainer
+              ref={promptContainerRef}
+              className="h-full"
+              editorContent={editorContent}
+              initialMessages={aiMessages}
+              showAttachButtons={false}
+              useDirectApi={true}
+              onApplyCode={handleApplyCode}
+            />
           </div>
         </div>
-
-        {/* AI编辑器容器 */}
-        <div
-          ref={aiContainerRef}
-          className="flex-1 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm overflow-hidden"
-          style={{
-            height: "calc(100% - 55px)",
-            transform: "translateZ(0)", // 强制创建合成层，提高性能
-          }}
-        />
       </div>
     </div>
   );
