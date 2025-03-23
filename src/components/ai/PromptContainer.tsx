@@ -5,7 +5,7 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import { Button, Avatar, Spinner } from "@heroui/react";
+import { Button, Avatar, Spinner, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { cn } from "@heroui/react";
 
@@ -93,8 +93,6 @@ const MessageCard: React.FC<MessageCardProps> = ({
   onDeleteMessage,
   onRegenerateMessage,
 }) => {
-  const [showMenu, setShowMenu] = useState(false);
-
   // 格式化时间
   const formattedTime = timestamp
     ? new Date(timestamp).toLocaleTimeString("zh-CN", {
@@ -157,80 +155,47 @@ const MessageCard: React.FC<MessageCardProps> = ({
                   <Icon icon="solar:copy-linear" width={14} />
                 </Button>
 
-                {/* 更多功能按钮 */}
-                <div className="relative">
-                  <Button
-                    isIconOnly
-                    className="min-w-0 w-5 h-5 p-0"
-                    size="sm"
-                    title="更多"
-                    variant="light"
-                    onPress={() => setShowMenu(!showMenu)}
-                  >
-                    <Icon icon="solar:menu-dots-bold" width={14} />
-                  </Button>
-
-                  {/* 更多功能下拉菜单 */}
-                  {showMenu && (
-                    <div
-                      className={cn(
-                        "absolute z-10 top-full mt-1 bg-content2 shadow-md rounded-md p-1 flex flex-col gap-1 min-w-[160px]",
-                        isUser ? "right-0" : "left-0",
-                      )}
+                {/* 更多功能下拉菜单 */}
+                <Dropdown placement={isUser ? "bottom-end" : "bottom-start"}>
+                  <DropdownTrigger>
+                    <Button
+                      isIconOnly
+                      className="min-w-0 w-5 h-5 p-0"
+                      size="sm"
+                      title="更多"
+                      variant="light"
                     >
-                      <Button
-                        className="text-tiny justify-start"
-                        size="sm"
+                      <Icon icon="solar:menu-dots-bold" width={14} />
+                    </Button>
+                  </DropdownTrigger>
+                  <DropdownMenu aria-label="消息操作">
+                    <DropdownItem
+                      key="delete"
+                      startContent={
+                        <Icon icon="solar:trash-bin-trash-linear" width={16} />
+                      }
+                      onPress={() => {
+                        onDeleteMessage?.();
+                      }}
+                    >
+                      删除
+                    </DropdownItem>
+                    {!isUser ? (
+                      <DropdownItem
+                        key="regenerate"
                         startContent={
-                          <Icon
-                            icon="solar:trash-bin-trash-linear"
-                            width={16}
-                          />
+                          <Icon icon="solar:refresh-linear" width={16} />
                         }
-                        variant="light"
                         onPress={() => {
                           onDeleteMessage?.();
-                          setShowMenu(false);
+                          onRegenerateMessage?.();
                         }}
                       >
-                        删除
-                      </Button>
-                      {!isUser && (
-                        <>
-                          <Button
-                            className="text-tiny justify-start"
-                            size="sm"
-                            startContent={
-                              <Icon icon="solar:refresh-linear" width={16} />
-                            }
-                            variant="light"
-                            onPress={() => {
-                              onRegenerateMessage?.();
-                              setShowMenu(false);
-                            }}
-                          >
-                            重新生成
-                          </Button>
-                          <Button
-                            className="text-tiny justify-start"
-                            size="sm"
-                            startContent={
-                              <Icon icon="ic:baseline-autorenew" width={16} />
-                            }
-                            variant="light"
-                            onPress={() => {
-                              onDeleteMessage?.();
-                              onRegenerateMessage?.();
-                              setShowMenu(false);
-                            }}
-                          >
-                            删除并重新生成
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
+                        重新生成
+                      </DropdownItem>
+                    ) : null}
+                  </DropdownMenu>
+                </Dropdown>
               </div>
             )}
           </div>
@@ -260,8 +225,6 @@ const DocumentMessage: React.FC<DocumentMessageProps> = ({
   onDeleteMessage,
   onRegenerateMessage,
 }) => {
-  const [showMenu, setShowMenu] = useState(false);
-
   // 格式化时间
   const formattedTime = timestamp
     ? new Date(timestamp).toLocaleTimeString("zh-CN", {
@@ -317,61 +280,47 @@ const DocumentMessage: React.FC<DocumentMessageProps> = ({
                   <Icon icon="solar:copy-linear" width={14} />
                 </Button>
 
-                {/* 更多功能按钮 */}
-                <div className="relative">
-                  <Button
-                    isIconOnly
-                    className="min-w-0 w-5 h-5 p-0"
-                    size="sm"
-                    title="更多"
-                    variant="light"
-                    onPress={() => setShowMenu(!showMenu)}
-                  >
-                    <Icon icon="solar:menu-dots-bold" width={14} />
-                  </Button>
-
-                  {/* 更多功能下拉菜单 */}
-                  {showMenu && (
-                    <div className="absolute z-10 top-full left-0 mt-1 bg-content2 shadow-md rounded-md p-1 flex flex-col gap-1 min-w-[160px]">
-                      <Button
-                        className="text-tiny justify-start"
-                        size="sm"
+                {/* 更多功能下拉菜单 */}
+                <Dropdown placement="bottom-start">
+                  <DropdownTrigger>
+                    <Button
+                      isIconOnly
+                      className="min-w-0 w-5 h-5 p-0"
+                      size="sm"
+                      title="更多"
+                      variant="light"
+                    >
+                      <Icon icon="solar:menu-dots-bold" width={14} />
+                    </Button>
+                  </DropdownTrigger>
+                  <DropdownMenu aria-label="消息操作">
+                    <DropdownItem
+                      key="delete"
+                      startContent={
+                        <Icon icon="solar:trash-bin-trash-linear" width={16} />
+                      }
+                      onPress={() => {
+                        onDeleteMessage?.();
+                      }}
+                    >
+                      删除
+                    </DropdownItem>
+                    {role === "assistant" ? (
+                      <DropdownItem
+                        key="regenerate"
                         startContent={
-                          <Icon
-                            icon="solar:trash-bin-trash-linear"
-                            width={16}
-                          />
+                          <Icon icon="solar:refresh-linear" width={16} />
                         }
-                        variant="light"
                         onPress={() => {
                           onDeleteMessage?.();
-                          setShowMenu(false);
+                          onRegenerateMessage?.();
                         }}
                       >
-                        删除
-                      </Button>
-                      {role === "assistant" && (
-                        <>
-                          <Button
-                            className="text-tiny justify-start"
-                            size="sm"
-                            startContent={
-                              <Icon icon="ic:baseline-autorenew" width={16} />
-                            }
-                            variant="light"
-                            onPress={() => {
-                              onDeleteMessage?.();
-                              onRegenerateMessage?.();
-                              setShowMenu(false);
-                            }}
-                          >
-                            重新生成
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
+                        重新生成
+                      </DropdownItem>
+                    ) : null}
+                  </DropdownMenu>
+                </Dropdown>
               </div>
             )}
           </div>
