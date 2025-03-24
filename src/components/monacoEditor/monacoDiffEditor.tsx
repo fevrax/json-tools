@@ -9,8 +9,8 @@ import { loader } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
 import { cn } from "@heroui/react";
 import { editor } from "monaco-editor";
-import { Button } from "@heroui/react";
-import { Icon } from "@iconify/react";
+
+import { AIResultHeader } from "./AIResultHeader";
 
 import toast from "@/utils/toast";
 import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEntity";
@@ -18,7 +18,6 @@ import { sortJson } from "@/utils/json";
 import { useTabStore } from "@/store/useTabStore";
 import DraggableMenu from "@/components/monacoEditor/draggableMenu";
 import AIPromptOverlay from "@/components/ai/AIPromptOverlay";
-import { AIResultHeader } from "./AIResultHeader";
 import PromptContainer, {
   PromptContainerRef,
 } from "@/components/ai/PromptContainer";
@@ -80,16 +79,16 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   const [aiMessages, setAiMessages] = useState<
     Array<{ role: "user" | "assistant"; content: string; timestamp: number }>
   >([]);
-  
+
   // 添加编辑器内容状态，用于传递给PromptContainer
   const [editorContent, setEditorContent] = useState("");
-  
+
   // 添加一个引用以便访问PromptContainer组件的方法
   const promptContainerRef = useRef<PromptContainerRef>(null);
-  
+
   const aiPanelRef = useRef<HTMLDivElement>(null);
   const [aiPanelHeight, setAiPanelHeight] = useState<number>(
-    typeof window !== 'undefined' ? Math.floor(window.innerHeight * 0.8) : 500
+    typeof window !== "undefined" ? Math.floor(window.innerHeight * 0.8) : 500,
   ); // 默认高度为窗口高度的80%
   const [isDragging, setIsDragging] = useState(false);
   const dragStartY = useRef<number>(0);
@@ -150,7 +149,10 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       // 更新编辑器内容状态
       const originalText = originalEditorRef.current.getValue() || "";
       const modifiedText = modifiedEditorRef.current.getValue() || "";
-      setEditorContent(`原始内容:\n${originalText}\n\n修改后内容:\n${modifiedText}`);
+
+      setEditorContent(
+        `原始内容:\n${originalText}\n\n修改后内容:\n${modifiedText}`,
+      );
     }
   }, [originalValue, modifiedValue]);
 
@@ -240,9 +242,9 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       if (!isDragging && showAiResponse) {
         const newHeight = Math.min(
           Math.floor(window.innerHeight * 0.8),
-          window.innerHeight - 100 // 确保至少留出100px给编辑器
+          window.innerHeight - 100, // 确保至少留出100px给编辑器
         );
-        
+
         // 直接更新DOM以避免状态更新延迟
         if (aiPanelRef.current) {
           aiPanelRef.current.style.height = `${newHeight}px`;
@@ -250,19 +252,19 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
         if (editorContainerRef.current) {
           editorContainerRef.current.style.height = `calc(100% - ${newHeight}px)`;
         }
-        
+
         // 同步状态
         setAiPanelHeight(newHeight);
-        
+
         // 请求布局更新
         editorRef.current?.layout();
       }
     };
 
-    window.addEventListener('resize', handleResize);
-    
+    window.addEventListener("resize", handleResize);
+
     return () => {
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
     };
   }, [isDragging, showAiResponse]);
 
@@ -330,24 +332,32 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
         // 监听原始编辑器内容变化
         originalEditorRef.current.onDidChangeModelContent(() => {
           const originalText = originalEditorRef.current!.getValue();
+
           onUpdateOriginalValue(originalText);
-          
+
           // 更新编辑器内容状态
           if (modifiedEditorRef.current) {
             const modifiedText = modifiedEditorRef.current.getValue() || "";
-            setEditorContent(`原始内容:\n${originalText}\n\n修改后内容:\n${modifiedText}`);
+
+            setEditorContent(
+              `原始内容:\n${originalText}\n\n修改后内容:\n${modifiedText}`,
+            );
           }
         });
 
         // 监听修改编辑器内容变化
         modifiedEditorRef.current.onDidChangeModelContent(() => {
           const modifiedText = modifiedEditorRef.current!.getValue();
+
           onUpdateModifiedValue && onUpdateModifiedValue(modifiedText);
-          
+
           // 更新编辑器内容状态
           if (originalEditorRef.current) {
             const originalText = originalEditorRef.current.getValue() || "";
-            setEditorContent(`原始内容:\n${originalText}\n\n修改后内容:\n${modifiedText}`);
+
+            setEditorContent(
+              `原始内容:\n${originalText}\n\n修改后内容:\n${modifiedText}`,
+            );
           }
         });
       }
@@ -374,6 +384,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   const handleAiSubmit = async () => {
     if (!aiPrompt.trim()) {
       toast.error("请输入提示词");
+
       return;
     }
 
@@ -383,10 +394,11 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     // 设置面板高度为窗口高度的80%
     const panelHeight = Math.min(
       Math.floor(window.innerHeight * 0.8),
-      window.innerHeight - 100
+      window.innerHeight - 100,
     );
+
     setAiPanelHeight(panelHeight);
-    
+
     // 直接更新DOM元素
     if (aiPanelRef.current) {
       aiPanelRef.current.style.height = `${panelHeight}px`;
@@ -412,14 +424,17 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     // 更新布局
     setTimeout(() => {
       editorRef.current?.layout();
-      
+
       // 在提交前再次更新编辑器内容
       if (originalEditorRef.current && modifiedEditorRef.current) {
         const originalText = originalEditorRef.current.getValue() || "";
         const modifiedText = modifiedEditorRef.current.getValue() || "";
-        setEditorContent(`原始内容:\n${originalText}\n\n修改后内容:\n${modifiedText}`);
+
+        setEditorContent(
+          `原始内容:\n${originalText}\n\n修改后内容:\n${modifiedText}`,
+        );
       }
-      
+
       // 触发编辑器布局更新
 
       // 使用setTimeout确保PromptContainer组件已经挂载并初始化
@@ -459,10 +474,10 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     closeAiResponse();
   };
 
-  // 添加应用代码到编辑器的函数
-  const handleApplyCode = (code: string) => {
-    if (!code || !editorRef.current) {
-      toast.error("无法应用代码到编辑器");
+  // 添加应用代码到左侧编辑器的函数
+  const handleApplyCodeToLeft = (code: string) => {
+    if (!code || !originalEditorRef.current) {
+      toast.error("无法应用代码到左侧编辑器");
       return;
     }
 
@@ -470,18 +485,45 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       // 尝试解析JSON，确保是有效的JSON
       const jsonObj = JSON.parse(code);
 
-      // 如果解析成功，格式化并设置到编辑器
-      if (modifiedEditorRef.current) {
-        setEditorValue(modifiedEditorRef.current, JSON.stringify(jsonObj, null, 2));
-        toast.success("已应用代码到编辑器");
-      }
+      // 如果解析成功，格式化并设置到左侧编辑器
+      setEditorValue(
+        originalEditorRef.current,
+        JSON.stringify(jsonObj, null, 2),
+      );
+      toast.success("已应用代码到左侧编辑器");
     } catch (error) {
       // 如果解析失败，尝试直接设置文本
       try {
-        if (modifiedEditorRef.current) {
-          setEditorValue(modifiedEditorRef.current, code);
-          toast.success("已应用代码到编辑器");
-        }
+        setEditorValue(originalEditorRef.current, code);
+        toast.success("已应用代码到左侧编辑器");
+      } catch (e) {
+        toast.error("应用代码失败，格式可能不正确");
+      }
+    }
+  };
+
+  // 添加应用代码到右侧编辑器的函数
+  const handleApplyCodeToRight = (code: string) => {
+    if (!code || !modifiedEditorRef.current) {
+      toast.error("无法应用代码到右侧编辑器");
+      return;
+    }
+
+    try {
+      // 尝试解析JSON，确保是有效的JSON
+      const jsonObj = JSON.parse(code);
+
+      // 如果解析成功，格式化并设置到右侧编辑器
+      setEditorValue(
+        modifiedEditorRef.current,
+        JSON.stringify(jsonObj, null, 2),
+      );
+      toast.success("已应用代码到右侧编辑器");
+    } catch (error) {
+      // 如果解析失败，尝试直接设置文本
+      try {
+        setEditorValue(modifiedEditorRef.current, code);
+        toast.success("已应用代码到右侧编辑器");
       } catch (e) {
         toast.error("应用代码失败，格式可能不正确");
       }
@@ -747,7 +789,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
         {/* 拖动条 - 面板内部顶部 */}
         <div
           aria-label="拖动调整AI面板高度"
-          className="w-full h-7 cursor-ns-resize bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 dark:from-neutral-800 dark:via-neutral-800 dark:to-neutral-800 border-b border-blue-200 dark:border-neutral-700 rounded-t-lg flex items-center justify-center"
+          className="w-full h-4 cursor-ns-resize bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 dark:from-neutral-800 dark:via-neutral-800 dark:to-neutral-800 border-b border-blue-200 dark:border-neutral-700 rounded-t-lg flex items-center justify-center"
           role="button"
           style={{
             touchAction: "none",
@@ -791,7 +833,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
           }}
           onMouseDown={handleDragStart}
         >
-          <div className="w-32 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-full" />
+          <div className="w-24 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
         </div>
 
         {/* AI面板内容 */}
@@ -806,9 +848,11 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
               className="h-full"
               editorContent={editorContent}
               initialMessages={aiMessages}
+              isDiffEditor={true}
+              onApplyCodeToLeft={handleApplyCodeToLeft}
+              onApplyCodeToRight={handleApplyCodeToRight}
               showAttachButtons={false}
               useDirectApi={true}
-              onApplyCode={handleApplyCode}
             />
           </div>
         </div>

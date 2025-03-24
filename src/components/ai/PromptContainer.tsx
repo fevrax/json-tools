@@ -5,11 +5,20 @@ import React, {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import { Button, Avatar, Spinner, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem } from "@heroui/react";
+import {
+  Button,
+  Avatar,
+  Spinner,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
+} from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { cn } from "@heroui/react";
 
 import MarkdownRenderer from "../markdown/MarkdownRenderer";
+import { CopyIcon, MenuDotsIcon } from "@/components/icons";
 
 import { OpenAIService } from "@/services/openAIService";
 import toast from "@/utils/toast";
@@ -140,7 +149,7 @@ const MessageCard: React.FC<MessageCardProps> = ({
 
             {/* 按钮组 */}
             {!isLoading && (
-              <div className="relative flex items-center gap-1">
+              <div className="relative flex items-center gap-1 ml-5">
                 {/* 复制按钮 */}
                 <Button
                   isIconOnly
@@ -152,7 +161,7 @@ const MessageCard: React.FC<MessageCardProps> = ({
                     onCopyMessage?.();
                   }}
                 >
-                  <Icon icon="solar:copy-linear" width={14} />
+                  <CopyIcon />
                 </Button>
 
                 {/* 更多功能下拉菜单 */}
@@ -165,7 +174,7 @@ const MessageCard: React.FC<MessageCardProps> = ({
                       title="更多"
                       variant="light"
                     >
-                      <Icon icon="solar:menu-dots-bold" width={14} />
+                      <MenuDotsIcon size={18} />
                     </Button>
                   </DropdownTrigger>
                   <DropdownMenu aria-label="消息操作">
@@ -277,7 +286,7 @@ const DocumentMessage: React.FC<DocumentMessageProps> = ({
                     onCopyMessage?.();
                   }}
                 >
-                  <Icon icon="solar:copy-linear" width={14} />
+                  <CopyIcon />
                 </Button>
 
                 {/* 更多功能下拉菜单 */}
@@ -290,7 +299,7 @@ const DocumentMessage: React.FC<DocumentMessageProps> = ({
                       title="更多"
                       variant="light"
                     >
-                      <Icon icon="solar:menu-dots-bold" width={14} />
+                      <MenuDotsIcon size={16} />
                     </Button>
                   </DropdownTrigger>
                   <DropdownMenu aria-label="消息操作">
@@ -351,6 +360,10 @@ interface PromptContainerProps {
   onApplyCode?: (code: string) => void;
   editorContent?: string; // 编辑器内容，用于AI分析
   useDirectApi?: boolean; // 是否直接使用API而不通过父组件的onSubmit
+  // 差异编辑器相关属性
+  isDiffEditor?: boolean; // 是否是差异编辑器
+  onApplyCodeToLeft?: (code: string) => void; // 应用到左侧编辑器
+  onApplyCodeToRight?: (code: string) => void; // 应用到右侧编辑器
 }
 
 const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
@@ -364,6 +377,9 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
       onApplyCode,
       editorContent = "",
       useDirectApi = false,
+      isDiffEditor = false,
+      onApplyCodeToLeft,
+      onApplyCodeToRight,
     },
     ref,
   ) => {
@@ -476,10 +492,11 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
                 updatedMessages.length > 0 &&
                 updatedMessages[updatedMessages.length - 1].role === "assistant"
               ) {
+                const lastMessage = updatedMessages[updatedMessages.length - 1];
                 updatedMessages[updatedMessages.length - 1] = {
                   role: "assistant",
                   content: accumulated,
-                  timestamp: Date.now(),
+                  timestamp: lastMessage.timestamp, // 保持原有时间戳不变
                 };
               }
 
@@ -592,7 +609,7 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
           {
             role: "assistant",
             content: response,
-            timestamp: Date.now(),
+            timestamp: loadingMessage.timestamp, // 使用初始加载消息的时间戳
           },
         ]);
       } catch (error) {
@@ -665,7 +682,10 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
                     isLoading && isAssistantLastMessage && "relative",
                   )}
                   content={message.content}
+                  isDiffEditor={isDiffEditor}
                   onApplyCode={onApplyCode}
+                  onApplyCodeToLeft={onApplyCodeToLeft}
+                  onApplyCodeToRight={onApplyCodeToRight}
                 />
               );
 

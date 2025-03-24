@@ -11,72 +11,12 @@ import {
 } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 import toast from "@/utils/toast";
-
-// 内联SVG图标替代动态加载的图标
-const ICONS = {
-  chevronRight: (
-    <svg
-      height="18"
-      viewBox="0 0 24 24"
-      width="18"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M8.59 16.59L13.17 12L8.59 7.41L10 6l6 6l-6 6z"
-        fill="currentColor"
-      />
-    </svg>
-  ),
-  chevronDown: (
-    <svg
-      height="18"
-      viewBox="0 0 24 24"
-      width="18"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6l-6-6z"
-        fill="currentColor"
-      />
-    </svg>
-  ),
-  copy: (
-    <svg
-      height={14}
-      viewBox="0 0 24 24"
-      width={14}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <g
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-      >
-        <rect height={14} rx={2} ry={2} width={14} x={8} y={8} />
-        <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
-      </g>
-    </svg>
-  ),
-  apply: (
-    <svg
-      height={12}
-      viewBox="0 0 24 24"
-      width={12}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="m6 3l14 9l-14 9z"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-      />
-    </svg>
-  ),
-};
+import {
+  ChevronRightIcon,
+  ChevronDownIcon,
+  CopyIcon,
+  ApplyIcon,
+} from "@/components/icons";
 
 // Markdown渲染器组件接口
 interface MarkdownRendererProps {
@@ -91,6 +31,10 @@ interface MarkdownRendererProps {
   onClose?: () => void;
   // 代码块应用功能
   onApplyCode?: (code: string) => void;
+  // 差异编辑器相关功能
+  isDiffEditor?: boolean; // 添加是否为差异编辑器的标志
+  onApplyCodeToLeft?: (code: string) => void; // 应用到左侧编辑器
+  onApplyCodeToRight?: (code: string) => void; // 应用到右侧编辑器
 }
 
 // 定义代码块组件，独立处理折叠逻辑
@@ -99,6 +43,10 @@ interface CodeBlockProps {
   content: string;
   theme: string;
   onApplyCode?: (code: string) => void;
+  // 差异编辑器相关功能
+  isDiffEditor?: boolean; // 添加是否为差异编辑器的标志
+  onApplyCodeToLeft?: (code: string) => void; // 应用到左侧编辑器
+  onApplyCodeToRight?: (code: string) => void; // 应用到右侧编辑器
 }
 
 // 定义内联代码组件，处理内联代码样式
@@ -115,6 +63,9 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
   content,
   theme,
   onApplyCode,
+  isDiffEditor,
+  onApplyCodeToLeft,
+  onApplyCodeToRight,
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
@@ -143,22 +94,51 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
             variant="flat"
             onPress={toggleCollapse}
           >
-            {isCollapsed ? ICONS.chevronRight : ICONS.chevronDown}
+            {isCollapsed ? <ChevronRightIcon /> : <ChevronDownIcon />}
           </Button>
           <span className="font-mono font-medium">{language || "text"}</span>
         </div>
         <div className="flex items-center space-x-1">
-          {onApplyCode && (
-            <Button
-              className="h-6 text-xs px-2 bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-800/40 rounded-md transition-colors"
-              size="sm"
-              title="应用到编辑器"
-              variant="flat"
-              onPress={() => onApplyCode(content)}
-            >
-              {ICONS.apply}
-              应用
-            </Button>
+          {/* 差异编辑器模式下显示两个应用按钮 */}
+          {isDiffEditor ? (
+            <>
+              <Button
+                className="h-6 text-xs px-2 bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-800/40 rounded-md transition-colors"
+                size="sm"
+                title="应用到左侧编辑器"
+                variant="flat"
+                onPress={() => onApplyCodeToLeft && onApplyCodeToLeft(content)}
+              >
+                <ApplyIcon />
+                应用到左侧
+              </Button>
+              <Button
+                className="h-6 text-xs px-2 bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-800/40 rounded-md transition-colors"
+                size="sm"
+                title="应用到右侧编辑器"
+                variant="flat"
+                onPress={() =>
+                  onApplyCodeToRight && onApplyCodeToRight(content)
+                }
+              >
+                <ApplyIcon />
+                应用到右侧
+              </Button>
+            </>
+          ) : (
+            /* 普通模式下显示单个应用按钮 */
+            onApplyCode && (
+              <Button
+                className="h-6 text-xs px-2 bg-green-100 text-green-700 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-800/40 rounded-md transition-colors"
+                size="sm"
+                title="应用到编辑器"
+                variant="flat"
+                onPress={() => onApplyCode(content)}
+              >
+                <ApplyIcon />
+                应用
+              </Button>
+            )
           )}
           <Button
             isIconOnly
@@ -171,7 +151,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
               toast.success("已复制代码");
             }}
           >
-            {ICONS.copy}
+            <CopyIcon />
           </Button>
         </div>
       </div>
@@ -189,7 +169,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
             margin: 0,
             borderRadius: "0 0 6px 6px",
             padding: "1rem",
-            width: "100%"
+            width: "100%",
           }}
           language={language || "text"}
           showLineNumbers={true}
@@ -207,6 +187,9 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content,
   className,
   onApplyCode,
+  isDiffEditor,
+  onApplyCodeToLeft,
+  onApplyCodeToRight,
 }) => {
   // 正确使用钩子 - 始终在组件顶层无条件调用
   const { theme } = useTheme();
@@ -255,13 +238,16 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             const language = isCodeBlock ? isCodeBlock[1] : "";
             const content = String(children).replace(/\n$/, "");
 
-            // 使用提取的CodeBlock组件
+            // 使用提取的CodeBlock组件，并传递差异编辑器相关属性
             return (
               <CodeBlock
                 content={content}
+                isDiffEditor={isDiffEditor}
                 language={language}
                 theme={theme || "light"}
                 onApplyCode={onApplyCode}
+                onApplyCodeToLeft={onApplyCodeToLeft}
+                onApplyCodeToRight={onApplyCodeToRight}
               />
             );
           },
