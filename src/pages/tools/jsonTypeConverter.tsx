@@ -19,7 +19,9 @@ import MonacoEditor, {
   MonacoJsonEditorRef,
 } from "@/components/monacoEditor/monacoJsonEditor";
 import ToolboxPageTemplate from "@/layouts/toolboxPageTemplate";
-import AIPromptOverlay from "@/components/ai/AIPromptOverlay.tsx";
+import AIPromptOverlay, {
+  QuickPrompt,
+} from "@/components/ai/AIPromptOverlay.tsx";
 import { useOpenAIConfigStore } from "@/store/useOpenAIConfigStore";
 import { openAIService } from "@/services/openAIService";
 
@@ -37,6 +39,80 @@ const TARGET_LANGUAGES = [
   { value: "rust", label: "Rust", icon: "devicon:rust" },
   { value: "php", label: "PHP", icon: "devicon:php" },
   { value: "plaintext", label: "plainText", icon: "weui:text-filled" },
+];
+
+// 为AI转换定义快捷指令
+const quickPrompts: QuickPrompt[] = [
+  {
+    id: "convert_to_typescript",
+    label: "转换为TS接口",
+    icon: "simple-icons:typescript",
+    prompt: "请将这个JSON转换为TypeScript接口定义，添加适当的注释",
+    color: "primary",
+  },
+  {
+    id: "convert_to_go",
+    label: "转换为Go结构体",
+    icon: "simple-icons:go",
+    prompt: "请将这个JSON转换为Go语言结构体，包含json和form标签，添加中文注释",
+    color: "secondary",
+  },
+  {
+    id: "convert_to_java",
+    label: "转换为Java类",
+    icon: "logos:java",
+    prompt: "请将这个JSON转换为Java POJO类，添加Jackson注解和Lombok支持",
+    color: "success",
+  },
+  {
+    id: "convert_to_python",
+    label: "转换为Python类",
+    icon: "simple-icons:python",
+    prompt: "请将这个JSON转换为Python的Pydantic模型，添加字段验证和中文描述",
+    color: "warning",
+  },
+  {
+    id: "convert_to_csharp",
+    label: "转换为C#类",
+    icon: "simple-icons:csharp",
+    prompt: "请将这个JSON转换为C#类，使用属性和Newtonsoft.Json注解",
+    color: "primary",
+  },
+  {
+    id: "convert_to_rust",
+    label: "转换为Rust结构体",
+    icon: "simple-icons:rust",
+    prompt: "请将这个JSON转换为Rust结构体，添加serde注解和类型注释",
+    color: "danger",
+  },
+  {
+    id: "convert_to_swift",
+    label: "转换为Swift结构",
+    icon: "simple-icons:swift",
+    prompt: "请将这个JSON转换为Swift结构体，实现Codable协议",
+    color: "success",
+  },
+  {
+    id: "convert_to_kotlin",
+    label: "转换为Kotlin类",
+    icon: "simple-icons:kotlin",
+    prompt: "请将这个JSON转换为Kotlin数据类，添加序列化注解",
+    color: "secondary",
+  },
+  {
+    id: "generate_graphql",
+    label: "生成GraphQL Schema",
+    icon: "simple-icons:graphql",
+    prompt: "根据这个JSON生成一个完整的GraphQL Schema定义",
+    color: "default",
+  },
+  {
+    id: "generate_db_schema",
+    label: "生成数据库模型",
+    icon: "solar:database-outline",
+    prompt: "根据这个JSON生成MySQL表结构定义和ORM模型",
+    color: "warning",
+  },
 ];
 
 export default function JsonTypeConverterPage() {
@@ -269,6 +345,12 @@ export default function JsonTypeConverterPage() {
     }
   };
 
+  // 处理快捷指令点击
+  const handleQuickPromptClick = (quickPrompt: QuickPrompt) => {
+    setPrompt(quickPrompt.prompt);
+    setIsAiModalOpen(true);
+  };
+
   // 工具特定的操作按钮
   const actionButtons = (
     <div className="flex items-center gap-2 flex-wrap">
@@ -396,9 +478,11 @@ export default function JsonTypeConverterPage() {
           isOpen={isAiModalOpen}
           placeholderText="请输入您的需求，例如：'将这个 JSON 转换为 Go 结构体并添加 grom 字段定义，并添加中文注释'"
           prompt={prompt}
+          quickPrompts={quickPrompts}
           tipText="提示: 您可以让AI将JSON转换为各种语言的类型定义或自定义结构"
           onClose={() => setIsAiModalOpen(false)}
           onPromptChange={setPrompt}
+          onQuickPromptClick={handleQuickPromptClick}
           onSubmit={handleAiConvert}
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow h-0 overflow-hidden">

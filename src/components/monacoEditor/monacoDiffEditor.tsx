@@ -17,7 +17,7 @@ import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEnti
 import { sortJson } from "@/utils/json";
 import { useTabStore } from "@/store/useTabStore";
 import DraggableMenu from "@/components/monacoEditor/draggableMenu";
-import AIPromptOverlay from "@/components/ai/AIPromptOverlay";
+import AIPromptOverlay, { QuickPrompt } from "@/components/ai/AIPromptOverlay";
 import PromptContainer, {
   PromptContainerRef,
 } from "@/components/ai/PromptContainer";
@@ -32,6 +32,7 @@ export interface MonacoDiffEditorProps {
   modifiedValue: string;
   language?: string;
   theme?: string;
+  customQuickPrompts?: QuickPrompt[];
   onUpdateOriginalValue: (value: string) => void;
   onUpdateModifiedValue?: (value: string) => void;
   onMount?: () => void;
@@ -61,6 +62,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   theme,
   height,
   tabKey,
+  customQuickPrompts,
   onUpdateOriginalValue,
   onUpdateModifiedValue,
   onMount,
@@ -106,6 +108,57 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     editorSettings.language,
   );
   const [fontSize, setFontSize] = useState(editorSettings.fontSize);
+
+  // 定义适合JSON差异比较的快捷指令
+  const diffJsonQuickPrompts: QuickPrompt[] = [
+    {
+      id: "analyze_diff",
+      label: "分析差异",
+      icon: "mdi:file-compare",
+      prompt: "请帮我分析这两个 JSON 之间的主要差异",
+      color: "primary",
+    },
+    {
+      id: "suggest_merge",
+      label: "合并建议",
+      icon: "fluent:arrow-merge-20-filled",
+      prompt: "请帮我智能合并这两个 JSON 文本，保留双方的有效内容并解决所有冲突",
+      color: "success",
+    },
+    {
+      id: "generate_patch",
+      label: "生成补丁",
+      icon: "material-symbols:add-notes",
+      prompt: "根据这两个 JSON 之间的差异，生成一个补丁文件",
+      color: "secondary",
+    },
+    {
+      id: "find_conflicts",
+      label: "查找冲突",
+      icon: "ooui:error",
+      prompt:
+        "请详细检查这两个 JSON 文本之间是否存在冲突或不兼容的部分，指出具体的冲突点和解决建议",
+      color: "danger",
+    },
+    {
+      id: "convert_to_ts_diff",
+      label: "生成 TS 类型差异",
+      icon: "simple-icons:typescript",
+      prompt: "请根据这两个版本的 JSON 生成 TypeScript 接口定义的差异",
+      color: "default",
+    },
+    {
+      id: "explain_changes",
+      label: "解释变更",
+      icon: "solar:document-text-linear",
+      prompt:
+        "请用详细的表格形式解释右侧 JSON 相比左侧发生了哪些变更，包括新增、修改和删除的字段，以及这些变更可能的目的",
+      color: "warning",
+    },
+  ];
+
+  // 使用自定义快捷指令或默认快捷指令
+  const finalQuickPrompts = customQuickPrompts || diffJsonQuickPrompts;
 
   useEffect(() => {
     if (editorRef.current) {
@@ -478,6 +531,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   const handleApplyCodeToLeft = (code: string) => {
     if (!code || !originalEditorRef.current) {
       toast.error("无法应用代码到左侧编辑器");
+
       return;
     }
 
@@ -506,6 +560,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   const handleApplyCodeToRight = (code: string) => {
     if (!code || !modifiedEditorRef.current) {
       toast.error("无法应用代码到右侧编辑器");
+
       return;
     }
 
@@ -733,11 +788,11 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
 
   return (
     <div className="flex flex-col w-full h-full relative" style={{ height }}>
-      {/* 使用AIPromptOverlay组件 */}
       <AIPromptOverlay
         isOpen={showAiPrompt}
         placeholderText="向AI提问关于当前JSON比较的问题..."
         prompt={aiPrompt}
+        quickPrompts={finalQuickPrompts}
         onClose={() => setShowAiPrompt(false)}
         onPromptChange={setAiPrompt}
         onSubmit={handleAiSubmit}
@@ -849,10 +904,10 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
               editorContent={editorContent}
               initialMessages={aiMessages}
               isDiffEditor={true}
-              onApplyCodeToLeft={handleApplyCodeToLeft}
-              onApplyCodeToRight={handleApplyCodeToRight}
               showAttachButtons={false}
               useDirectApi={true}
+              onApplyCodeToLeft={handleApplyCodeToLeft}
+              onApplyCodeToRight={handleApplyCodeToRight}
             />
           </div>
         </div>

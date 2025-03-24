@@ -1,6 +1,22 @@
 import React, { useRef, useEffect } from "react";
-import { Button } from "@heroui/react";
+import { Button, Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
+
+// 快捷指令类型定义
+export interface QuickPrompt {
+  id: string;
+  label: string;
+  icon?: string;
+  prompt: string;
+  color?:
+    | "primary"
+    | "secondary"
+    | "success"
+    | "warning"
+    | "danger"
+    | "default";
+  handler?: () => void; // 可选的自定义处理函数
+}
 
 interface AIPromptOverlayProps {
   isOpen: boolean;
@@ -8,9 +24,11 @@ interface AIPromptOverlayProps {
   placeholderText?: string;
   tipText?: string;
   tipIcon?: string;
+  quickPrompts?: QuickPrompt[]; // 新增：快捷指令数组
   onPromptChange: (prompt: string) => void;
   onSubmit: () => void;
   onClose: () => void;
+  onQuickPromptClick?: (quickPrompt: QuickPrompt) => void; // 新增：自定义快捷指令点击处理函数
 }
 
 const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
@@ -19,9 +37,11 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
   placeholderText = "输入您的问题...",
   tipText = "提示: 您可以让AI为您处理关于数据修复，数据优化，模拟数据生成等问题",
   tipIcon = "mdi:lightbulb-outline",
+  quickPrompts = [], // 默认为空数组
   onPromptChange,
   onSubmit,
   onClose,
+  onQuickPromptClick,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -69,6 +89,27 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isOpen, onClose]);
+
+  // 处理快捷指令点击
+  const handleQuickPromptClick = (quickPrompt: QuickPrompt) => {
+    // 如果传入了自定义点击处理函数，则使用它
+    if (onQuickPromptClick) {
+      onQuickPromptClick(quickPrompt);
+      return;
+    }
+    
+    // 如果有自定义处理函数，则执行它
+    if (quickPrompt.handler) {
+      quickPrompt.handler();
+      return;
+    }
+
+    // 否则执行默认行为：替换提示文本
+    onPromptChange(quickPrompt.prompt);
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -128,6 +169,27 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
             <Icon icon="tabler:send" width={16} />
           </Button>
         </div>
+
+        {/* 快捷指令区域 */}
+        {quickPrompts.length > 0 && (
+          <div className="px-4 py-4 flex flex-wrap gap-2 border-t border-blue-100 dark:border-neutral-700/50 bg-white/30 dark:bg-neutral-800/30">
+            {quickPrompts.map((prompt) => (
+              <Chip
+                key={prompt.id}
+                className="cursor-pointer hover:scale-105 transition-transform"
+                color={prompt.color || "primary"}
+                size="sm"
+                startContent={
+                  prompt.icon && <Icon icon={prompt.icon} width={14} />
+                }
+                variant="flat"
+                onClick={() => handleQuickPromptClick(prompt)}
+              >
+                {prompt.label}
+              </Chip>
+            ))}
+          </div>
+        )}
 
         <div className="px-4 pb-4 text-xs text-gray-500 dark:text-gray-400 flex items-center">
           <Icon className="mr-1" icon={tipIcon} width={14} />

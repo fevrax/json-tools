@@ -262,31 +262,33 @@ ${originalValue}
       toolIconColor="text-primary"
       toolName="JSON AI 修复工具"
     >
-      <Card className="flex-1 overflow-hidden shadow-sm">
-        <CardBody className="p-0 h-full flex flex-col">
-          <MonacoDiffOperationBar
-            ref={operationBarRef}
-            onClear={(type) => editorRef.current?.clear(type) == true}
-            onCopy={(type) => editorRef.current?.copy(type) == true}
-            onFieldSort={(type, sort) =>
-              editorRef.current?.fieldSort(type, sort) == true
-            }
-            onFormat={(type) => editorRef.current?.format(type) == true}
-          />
-          <div className="flex-1 min-h-0">
-            <MonacoDiffEditor
-              ref={editorRef}
-              height="100%"
-              modifiedValue={fixedValue}
-              originalValue={originalValue}
-              tabKey="json-fix-tool"
-              theme={theme === "dark" ? "vs-dark" : "vs-light"}
-              onUpdateModifiedValue={setFixedValue}
-              onUpdateOriginalValue={setOriginalValue}
+      <div className="w-full h-full flex overflow-hidden">
+        <Card className="flex-1 w-full shadow-sm flex flex-col">
+          <CardBody className="p-0 flex-1 flex flex-col overflow-hidden">
+            <MonacoDiffOperationBar
+              ref={operationBarRef}
+              onClear={(type) => editorRef.current?.clear(type) == true}
+              onCopy={(type) => editorRef.current?.copy(type) == true}
+              onFieldSort={(type, sort) =>
+                editorRef.current?.fieldSort(type, sort) == true
+              }
+              onFormat={(type) => editorRef.current?.format(type) == true}
             />
-          </div>
-        </CardBody>
-      </Card>
+            <div className="flex-1 h-full w-full overflow-hidden flex relative">
+              <MonacoDiffEditor
+                ref={editorRef}
+                height="100%"
+                modifiedValue={fixedValue}
+                originalValue={originalValue}
+                tabKey="json-fix-tool"
+                theme={theme === "dark" ? "vs-dark" : "vs-light"}
+                onUpdateModifiedValue={setFixedValue}
+                onUpdateOriginalValue={setOriginalValue}
+              />
+            </div>
+          </CardBody>
+        </Card>
+      </div>
     </ToolboxPageTemplate>
   );
 }

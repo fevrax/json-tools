@@ -23,7 +23,9 @@ import MonacoEditor, {
   MonacoJsonEditorRef,
 } from "@/components/monacoEditor/monacoJsonEditor";
 import ToolboxPageTemplate from "@/layouts/toolboxPageTemplate";
-import AIPromptOverlay from "@/components/ai/AIPromptOverlay.tsx";
+import AIPromptOverlay, {
+  QuickPrompt,
+} from "@/components/ai/AIPromptOverlay.tsx";
 import { useOpenAIConfigStore } from "@/store/useOpenAIConfigStore";
 import { openAIService } from "@/services/openAIService";
 
@@ -34,6 +36,17 @@ const DATA_FORMATS = [
   { value: "yaml", label: "YAML", icon: "vscode-icons:file-type-yaml" },
   { value: "xml", label: "XML", icon: "vscode-icons:file-type-xml" },
   { value: "toml", label: "TOML", icon: "vscode-icons:file-type-toml" },
+];
+
+// 为AI转换定义快捷指令
+const quickPrompts: QuickPrompt[] = [
+  {
+    id: "convert_json_to_csv",
+    label: "JSON转CSV",
+    icon: "material-symbols:csv-outline",
+    prompt: "请将这个JSON数据转换为CSV格式，保持结构和数据不变",
+    color: "primary",
+  },
 ];
 
 export default function DataFormatConverterPage() {
@@ -55,6 +68,12 @@ export default function DataFormatConverterPage() {
   // 数据格式转换相关状态
   const [inputFormat, setInputFormat] = useState<string>("json");
   const [outputFormat, setOutputFormat] = useState<string>("yaml");
+
+  // 处理快捷指令点击
+  const handleQuickPromptClick = (quickPrompt: QuickPrompt) => {
+    setPrompt(quickPrompt.prompt);
+    setIsAiModalOpen(true);
+  };
 
   // 使用 OpenAI 配置 store
   const { syncConfig } = useOpenAIConfigStore();
@@ -280,6 +299,7 @@ export default function DataFormatConverterPage() {
       return;
     }
 
+    setIsAiModalOpen(false);
     setIsAiProcessing(true);
     setProcessingStep("正在处理转换...");
 
@@ -310,35 +330,95 @@ export default function DataFormatConverterPage() {
           },
           onComplete: (final) => {
             // 提取语言标记
-            const langMatch = final.match(/^```([a-z]+)\s/i);
+            const langMatch = final.match(/^```([a-z0-9+#]+)\s/i);
             let detectedLang = langMatch
               ? langMatch[1].toLowerCase()
               : outputFormat;
 
-            if (!detectedLang) {
-              detectedLang = "yaml";
+            // 更好地映射常见语言标记到编辑器支持的语言
+            switch (detectedLang) {
+              case "typescript":
+              case "ts":
+                detectedLang = "typescript";
+                break;
+              case "javascript":
+              case "js":
+                detectedLang = "javascript";
+                break;
+              case "golang":
+              case "go":
+                detectedLang = "go";
+                break;
+              case "java":
+                detectedLang = "java";
+                break;
+              case "csharp":
+              case "c#":
+                detectedLang = "csharp";
+                break;
+              case "python":
+              case "py":
+                detectedLang = "python";
+                break;
+              case "yaml":
+              case "yml":
+                detectedLang = "yaml";
+                break;
+              case "jsonschema":
+              case "json-schema":
+                detectedLang = "json";
+                break;
+              case "json5":
+                detectedLang = "json5";
+                break;
+              default:
+                // 检查是否是输出格式中的一种
+                if (!DATA_FORMATS.some((f) => f.value === detectedLang)) {
+                  detectedLang = outputFormat;
+                }
+                break;
             }
+
             // 清理结果，移除 markdown 格式标记
             const cleanedResult = final
-              .replace(/^```[a-z]*\s*/i, "")
+              .replace(/^```[a-z0-9+#]*\s*/i, "")
               .replace(/```\s*$/i, "")
               .trim();
 
-            // 更新编辑器语言和内容
-            outputEditorRef.current?.updateValue(cleanedResult);
-            setOutputFormat(detectedLang);
-            setOutputValue(cleanedResult);
-            toast.success("转换成功");
-            setProcessingStep("转换完成");
+            try {
+              // 更新编辑器语言和内容
+              outputEditorRef.current?.updateValue(cleanedResult);
+              outputEditorRef.current?.setLanguage(detectedLang);
+              setOutputFormat(
+                DATA_FORMATS.some((f) => f.value === detectedLang)
+                  ? detectedLang
+                  : outputFormat,
+              );
+              setOutputValue(cleanedResult);
+              toast.success("转换成功");
+              setProcessingStep("转换完成");
+            } catch (formatError) {
+              console.error("格式更新错误:", formatError);
+              // 即使格式设置失败，也展示内容
+              outputEditorRef.current?.updateValue(cleanedResult);
+              setOutputValue(cleanedResult);
+              toast.success("内容已生成，但格式设置失败");
+              setProcessingStep("转换部分完成");
+            }
           },
-          onError: () => {
+          onError: (error) => {
+            console.error("AI转换错误:", error);
+            toast.error(`转换失败: ${error.message || "未知错误"}`);
             setProcessingStep("");
           },
         },
       );
     } catch (error) {
       console.error("AI转换错误:", error);
-      toast.error(`转换失败: ${(error as Error).message}`);
+      toast.error(
+        `转换失败: ${(error as Error).message || "未知错误，请重试"}`,
+      );
+      setProcessingStep("转换失败");
     } finally {
       setIsAiProcessing(false);
       setIsAiModalOpen(false);
@@ -520,9 +600,11 @@ export default function DataFormatConverterPage() {
           isOpen={isAiModalOpen}
           placeholderText="请输入您的需求，例如：'将这个 JSON 转换为 Go 结构体并添加 grom 字段定义，并添加中文注释'"
           prompt={prompt}
+          quickPrompts={quickPrompts}
           tipText="提示: 您可以要求AI将数据转换为各种格式或生成各种语言的代码结构"
           onClose={() => setIsAiModalOpen(false)}
           onPromptChange={setPrompt}
+          onQuickPromptClick={handleQuickPromptClick}
           onSubmit={handleAiConvert}
         />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow h-0 overflow-hidden">

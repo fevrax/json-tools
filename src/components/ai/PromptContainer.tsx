@@ -18,8 +18,8 @@ import { Icon } from "@iconify/react";
 import { cn } from "@heroui/react";
 
 import MarkdownRenderer from "../markdown/MarkdownRenderer";
-import { CopyIcon, MenuDotsIcon } from "@/components/icons";
 
+import { CopyIcon, MenuDotsIcon } from "@/components/icons";
 import { OpenAIService } from "@/services/openAIService";
 import toast from "@/utils/toast";
 import { useSettingsStore } from "@/store/useSettingsStore";
@@ -84,7 +84,7 @@ interface MessageCardProps {
   message?: React.ReactNode;
   messageClassName?: string;
   isLoading?: boolean;
-  isUser?: boolean; // 新增参数标识是否为用户消息
+  isUser?: boolean; // 标识是否为用户消息
   timestamp?: number; // 添加时间戳参数
   onCopyMessage?: () => void; // 添加复制消息回调
   onDeleteMessage?: () => void; // 添加删除消息回调
@@ -126,12 +126,12 @@ const MessageCard: React.FC<MessageCardProps> = ({
         className={cn(
           "flex flex-col",
           isUser ? "items-end" : "items-start",
-          "max-w-[70%]", // 限制消息宽度
+          "max-w-[85%]",
         )}
       >
         <div
           className={cn(
-            "relative rounded-lg px-4 py-3 text-default-600 shadow-sm",
+            "relative rounded-lg px-4 py-3 text-default-600 shadow-sm w-full overflow-hidden",
             isLoading && "animate-pulse-gentle",
             isUser
               ? "rounded-tr-none bg-primary/10 text-foreground border border-primary/10"
@@ -139,7 +139,9 @@ const MessageCard: React.FC<MessageCardProps> = ({
             messageClassName,
           )}
         >
-          <div className="text-small break-words">{message}</div>
+          <div className="text-small break-words overflow-hidden">
+            {message}
+          </div>
 
           {/* 时间显示和菜单按钮并排 */}
           <div className="flex items-center justify-between mt-1">
@@ -257,13 +259,9 @@ const DocumentMessage: React.FC<DocumentMessageProps> = ({
       <div className="flex items-start gap-3 w-full">
         <Avatar
           size="sm"
-          src={
-            role === "user"
-              ? "https://g.aizuo.net/images/avatar/avatar-30.jpg"
-              : "https://nextuipro.nyc3.cdn.digitaloceanspaces.com/components-images/avatar_ai.png"
-          }
+          src={role === "user" ? "/avatar_user.png" : "./avatar_ai.png"}
         />
-        <div className="mt-1 flex-1 w-full text-small">
+        <div className="mt-1 flex-1 w-full text-small overflow-hidden break-words">
           {message}
 
           {/* 时间显示和菜单按钮并排 */}
@@ -457,7 +455,7 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
           {
             role: "system" as const,
             content:
-              "您是一个JSON工具助手，请帮助用户解决JSON相关问题。您可以：\n1. 返回纯代码，请使用```json```包裹代码\n2. 返回解释性文本，使用Markdown格式进行排版\n\n请根据问题类型选择最合适的回复格式。",
+              "您是一个JSON工具助手，请帮助用户解决JSON相关问题。您可以：\n1. 返回纯代码，请使用```json```包裹代码\n2. 返回解释性文本，使用Markdown格式进行排版\n\n请根据问题类型选择最合适的回复格式。只提供json业务、编码和技术相关的回答，其他不相关的请拒绝回答。",
           },
           {
             role: "user" as const,
@@ -493,6 +491,7 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
                 updatedMessages[updatedMessages.length - 1].role === "assistant"
               ) {
                 const lastMessage = updatedMessages[updatedMessages.length - 1];
+
                 updatedMessages[updatedMessages.length - 1] = {
                   role: "assistant",
                   content: accumulated,
@@ -677,9 +676,15 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
               ) : (
                 <MarkdownRenderer
                   className={cn(
-                    "prose prose-sm dark:prose-invert max-w-none",
+                    "prose prose-sm dark:prose-invert max-w-none overflow-hidden break-words",
                     chatStyle === "document" && "prose-compact w-full",
                     isLoading && isAssistantLastMessage && "relative",
+                    "[&_pre]:overflow-x-auto [&_pre]:whitespace-pre-wrap [&_pre]:break-words [&_pre]:max-w-full",
+                    "[&_code]:whitespace-pre-wrap [&_code]:break-words",
+                    "[&_table]:block [&_table]:overflow-x-auto [&_table]:max-w-full",
+                    "[&_img]:max-w-full [&_img]:h-auto",
+                    "[&_p]:break-words [&_p]:overflow-wrap-normal",
+                    "[&_ul]:break-words [&_ol]:break-words [&_li]:break-words",
                   )}
                   content={message.content}
                   isDiffEditor={isDiffEditor}
@@ -698,7 +703,7 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
                 >
                   {message.role === "user" ? (
                     <MessageCard
-                      avatar="https://d2u8k2ocievbld.cloudfront.net/memojis/male/6.png"
+                      avatar="/avatar_user.png"
                       isUser={true}
                       message={message.content}
                       messageClassName="shadow-sm"
@@ -708,7 +713,7 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
                     />
                   ) : (
                     <MessageCard
-                      avatar="https://nextuipro.nyc3.cdn.digitaloceanspaces.com/components-images/avatar_ai.png"
+                      avatar="/avatar_ai.png"
                       isLoading={
                         isLoading &&
                         isAssistantLastMessage &&

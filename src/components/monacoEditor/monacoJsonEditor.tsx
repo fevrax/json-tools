@@ -24,7 +24,7 @@ import {
 import "@/styles/monaco.css";
 import ErrorModal from "@/components/monacoEditor/errorModal.tsx";
 import DraggableMenu from "@/components/monacoEditor/draggableMenu";
-import AIPromptOverlay from "@/components/ai/AIPromptOverlay";
+import AIPromptOverlay, { QuickPrompt } from "@/components/ai/AIPromptOverlay";
 import PromptContainer, {
   PromptContainerRef,
 } from "@/components/ai/PromptContainer";
@@ -40,6 +40,7 @@ export interface MonacoJsonEditorProps {
   isSetting?: boolean; // 是否显示设置按钮
   isMenu?: boolean; // 是否显示悬浮菜单按钮
   showAi?: boolean; // 是否显示AI功能
+  customQuickPrompts?: QuickPrompt[]; // 自定义快捷指令
   onUpdateValue: (value: string) => void;
   onMount?: () => void;
   ref?: React.Ref<MonacoJsonEditorRef>;
@@ -69,6 +70,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   height,
   isMenu = false,
   minimap = false,
+  customQuickPrompts,
   onUpdateValue,
   onMount,
   ref,
@@ -119,6 +121,47 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     onClose: closeJsonErrorDetailsModel,
   } = useDisclosure();
 
+  const jsonQuickPrompts: QuickPrompt[] = [
+    {
+      id: "fix_json",
+      label: "修复JSON",
+      icon: "mdi:wrench",
+      prompt: "这个JSON有错误，请帮我修复",
+      color: "success",
+    },
+    {
+      id: "convert_to_go",
+      label: "生成 Go 结构体",
+      icon: "simple-icons:go",
+      prompt: "请根据这个JSON生成 Go 结构体定义",
+      color: "primary",
+    },
+    {
+      id: "convert_to_typescript",
+      label: "生成 TS 类型",
+      icon: "simple-icons:typescript",
+      prompt: "请根据这个JSON 生成 TypeScript 接口定义",
+      color: "default",
+    },
+    {
+      id: "generate_sample",
+      label: "生成示例数据",
+      icon: "mdi:database-outline",
+      prompt: "根据这个JSON结构生成10条示例数据",
+      color: "warning",
+    },
+    {
+      id: "validate_json",
+      label: "校验数据",
+      icon: "mdi:check-circle-outline",
+      prompt: "请检查这个JSON是否有逻辑错误或格式问题",
+      color: "danger",
+    },
+  ];
+
+  // 使用自定义快捷指令或默认快捷指令
+  const finalQuickPrompts = customQuickPrompts || jsonQuickPrompts;
+
   // 计算编辑器实际高度，当有错误时减去错误信息栏的高度
   const getEditorHeight = () => {
     // 如果height是数字，直接使用；如果是字符串(如100%)，保持原样
@@ -151,7 +194,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       timestamp: Date.now(),
     };
 
-    setAiMessages((prev) => [...prev, userMessage]);
+    setAiMessages([userMessage]);
 
     // 保存prompt内容用于稍后发送
     const promptToSend = aiPrompt;
@@ -183,7 +226,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       }, 100);
     }, 300);
   };
-  
 
   // 关闭AI响应
   const closeAiResponse = () => {
@@ -853,18 +895,21 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   }));
 
   return (
-    <div ref={rootContainerRef} className="flex flex-col relative w-full h-full" style={{ height }}>
-      {/* 使用AIPromptOverlay组件 */}
+    <div
+      ref={rootContainerRef}
+      className="flex flex-col relative w-full h-full"
+      style={{ height }}
+    >
       <AIPromptOverlay
         isOpen={showAiPrompt}
         placeholderText="输入您的问题..."
         prompt={aiPrompt}
+        quickPrompts={finalQuickPrompts}
         onClose={() => setShowAiPrompt(false)}
         onPromptChange={setAiPrompt}
         onSubmit={handleAiSubmit}
       />
 
-      {/* 编辑器外层容器 */}
       <div
         className={cn(
           "w-full h-full overflow-hidden",
@@ -884,7 +929,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               {/* AI标题栏 */}
               <AIResultHeader onClose={handleCloseAiResponse} />
 
-              {/* AI对话区域 */}
+              {/* AI面板 */}
               <div className="flex-1 h-full overflow-hidden">
                 <PromptContainer
                   ref={promptContainerRef}
