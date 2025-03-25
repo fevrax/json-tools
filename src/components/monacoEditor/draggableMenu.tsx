@@ -64,7 +64,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   const { updateEditorSettings } = useTabStore();
   const [menuPosition, setMenuPosition] = useState<MenuPosition>({
     x: 0,
-    y: 0,
+    y: 300,
   });
   const [isDragging, setIsDragging] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -130,7 +130,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
       if (dockedPosition === "right" && containerRect.width < menuWidth) {
         x = containerRect.width - menuWidth / 4; // 确保至少有1/4的菜单可见
       } else if (dockedPosition === "left" && containerRect.width < menuWidth) {
-        x = -menuWidth * 3/4; // 确保至少有1/4的菜单可见
+        x = (-menuWidth * 3) / 4; // 确保至少有1/4的菜单可见
       }
 
       // 应用新位置
@@ -142,25 +142,25 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
 
   // 初始化位置到右下角，半隐藏
   useEffect(() => {
-    if (containerRef.current && menuRef.current) {
-      const containerRect = containerRef.current.getBoundingClientRect();
-      const menuWidth = menuRef.current.offsetWidth;
-      const menuHeight = menuRef.current.offsetHeight;
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        if (containerRef.current && menuRef.current) {
+          const containerRect = containerRef.current.getBoundingClientRect();
+          const menuWidth = menuRef.current.offsetWidth;
+          const menuHeight = menuRef.current.offsetHeight;
 
-      // 计算位置：右下角，右侧隐藏一半
-      const x = containerRect.width - menuWidth / 2;
-      const y = containerRect.height - menuHeight - 80;
+          // 计算位置：右下角，右侧隐藏一半
+          const x = containerRect.width - menuWidth / 2;
+          const y = containerRect.height - menuHeight - 80;
 
-      setMenuPosition({ x, y });
-      setDockedPosition("right");
-
-      // 标记位置已计算完成，可以显示悬浮球
-      requestAnimationFrame(() => {
+          setMenuPosition({ x, y });
+          setDockedPosition("right");
+        }
         setTimeout(() => {
           setIsPositionCalculated(true);
-        }, 300); // 添加较短的延迟，确保DOM更新完成
-      });
-    }
+        }, 200);
+      }, 500); // 添加较短的延迟，确保DOM更新完成
+    });
   }, [containerRef]);
 
   useEffect(() => {
@@ -178,7 +178,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
 
     // 监听窗口大小变化
     window.addEventListener("resize", handleResize);
-    
+
     // 定期检查容器尺寸变化（变通方案，适用于容器大小变化但不触发resize事件的情况）
     // 例如：AI面板打开/关闭，或其他可能影响布局的变化
     const intervalId = setInterval(recalculatePosition, 1000); // 减少到1秒以提高响应性
@@ -187,7 +187,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     const resizeObserver = new ResizeObserver(() => {
       recalculatePosition();
     });
-    
+
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
@@ -303,7 +303,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     if (closestEdge === "right" && containerRect.width < menuWidth) {
       newX = containerRect.width - menuWidth / 4; // 确保至少有1/4的菜单可见
     } else if (closestEdge === "left" && containerRect.width < menuWidth) {
-      newX = -menuWidth * 3/4; // 确保至少有1/4的菜单可见
+      newX = (-menuWidth * 3) / 4; // 确保至少有1/4的菜单可见
     }
 
     // 使用FLIP技术避免弹跳
@@ -428,12 +428,12 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
       // 返回默认变换
       return "translateX(50%)";
     }
-    
+
     if (position === "right") {
       // 返回默认变换
       return "translateX(-50%)";
     }
-    
+
     if (position === "top") return "translateY(50%)";
     if (position === "bottom") return "translateY(-50%)";
 
@@ -445,12 +445,17 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     if (!isHide && menuRef.current && containerRef.current) {
       const containerWidth = containerRef.current.getBoundingClientRect().width;
       const menuWidth = menuRef.current.offsetWidth;
-      
+
       // 根据容器宽度调整变换样式
-      if ((dockedPosition === "left" || dockedPosition === "right") && containerWidth < menuWidth) {
+      if (
+        (dockedPosition === "left" || dockedPosition === "right") &&
+        containerWidth < menuWidth
+      ) {
         if (menuRef.current) {
           // 应用特殊变换
-          const transform = dockedPosition === "left" ? "translateX(25%)" : "translateX(-25%)";
+          const transform =
+            dockedPosition === "left" ? "translateX(25%)" : "translateX(-25%)";
+
           menuRef.current.style.transform = transform;
         }
       }

@@ -204,8 +204,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     // 更新布局
     setTimeout(() => {
       editorRef.current?.layout();
-      // 触发编辑器布局更新
-      // DraggableMenu会自动重新计算位置
 
       // 使用setTimeout确保PromptContainer组件已经挂载并初始化
       setTimeout(() => {
@@ -236,8 +234,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     // 布局调整
     setTimeout(() => {
       editorRef.current?.layout();
-      // 触发编辑器布局更新
-      // DraggableMenu会自动重新计算位置
     }, 100);
   };
 
