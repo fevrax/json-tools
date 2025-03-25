@@ -252,14 +252,15 @@ const DocumentMessage: React.FC<DocumentMessageProps> = ({
         "w-full py-2 px-3 relative",
         role === "user"
           ? "bg-primary/5 border-l-4 border-primary/30"
-          : "bg-content2/20 border-l-4 border-content2/30",
+          : "border-default-50 border-l-4",
         isLoading && "animate-pulse-gentle",
       )}
     >
       <div className="flex items-start gap-3 w-full">
         <Avatar
+          className="bg-default-50"
           size="sm"
-          src={role === "user" ? "/avatar_user.png" : "./avatar_ai.png"}
+          src={role === "user" ? "/avatar_user.png" : "./logo.png"}
         />
         <div className="mt-1 flex-1 w-full text-small overflow-hidden break-words">
           {message}
@@ -476,7 +477,7 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
           onChunk: (_chunk, accumulated) => {
             // 检查是否已取消
             if (controller.signal.aborted) {
-              return;
+              throw new Error("已取消生成");
             }
 
             // 更新响应文本
@@ -713,7 +714,7 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
                     />
                   ) : (
                     <MessageCard
-                      avatar="/avatar_ai.png"
+                      avatar="./logo.png"
                       isLoading={
                         isLoading &&
                         isAssistantLastMessage &&
@@ -783,7 +784,7 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
         </div>
 
         {/* 输入区域 - 使用自适应高度 */}
-        <div className="flex-none w-full flex flex-col gap-3 p-4 border-t border-default-200 dark:border-default-50/20 bg-content1/80 backdrop-blur-sm">
+        <div className="flex-none w-full flex flex-col gap-3 p-4 border-t border-default-200 bg-content1/80 backdrop-blur-sm">
           <form
             className="flex-none w-full flex flex-col items-start rounded-lg bg-default-50/50 transition-colors hover:bg-default-100/70 dark:bg-default-100/10 dark:hover:bg-default-100/20 shadow-sm"
             onSubmit={(e) => {

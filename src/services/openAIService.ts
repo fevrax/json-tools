@@ -116,16 +116,16 @@ export class OpenAIService {
     callbacks.onStart?.();
     callbacks.onProcessing?.("Connecting to OpenAI...");
 
+    // 使用流式请求
+    const stream = await this.openai!.chat.completions.create({
+      model: this.model,
+      messages: messages,
+      temperature: this.temperature,
+      stream: true,
+    });
+
     try {
       callbacks.onProcessing?.("AI 正在接收数据...");
-
-      // 使用流式请求
-      const stream = await this.openai!.chat.completions.create({
-        model: this.model,
-        messages: messages,
-        temperature: this.temperature,
-        stream: true,
-      });
 
       let accumulated = "";
 
@@ -147,10 +147,10 @@ export class OpenAIService {
 
       return true;
     } catch (err) {
+      stream.controller.abort();
       const error = err as Error;
 
       callbacks.onError?.(error);
-      toast.error("OpenAI API 错误: " + error.message);
 
       return false;
     }

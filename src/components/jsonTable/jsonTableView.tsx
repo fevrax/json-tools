@@ -792,7 +792,7 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
         onCustomView={handleCustomView}
         onExpand={handleExpandAll}
       />
-      <div className="flex-grow overflow-hidden border border-default-200 bg-white dark:bg-gray-900">
+      <div className="flex-grow overflow-hidden border border-default-200 bg-white dark:bg-vscode-dark">
         {currentContent}
       </div>
     </div>

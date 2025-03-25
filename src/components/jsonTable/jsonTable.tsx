@@ -237,9 +237,19 @@ const JsonTable: React.FC<JsonTableProps> = ({
             width={16}
           />
           <span className="whitespace-nowrap">
-            {Array.isArray(value)
-              ? <>Array[ <span className="text-indigo-600">{value.length}</span> ]</>
-              : <>Object{"{"} <span className="text-indigo-600">{Object.keys(value).length}</span> {"}"}</>}
+            {Array.isArray(value) ? (
+              <>
+                Array[ <span className="text-indigo-600">{value.length}</span> ]
+              </>
+            ) : (
+              <>
+                Object{"{"}{" "}
+                <span className="text-indigo-600">
+                  {Object.keys(value).length}
+                </span>{" "}
+                {"}"}
+              </>
+            )}
           </span>
         </button>
       );
@@ -259,7 +269,19 @@ const JsonTable: React.FC<JsonTableProps> = ({
         }}
       >
         {typeof value === "string" ? (
-          <span className="text-green-600" style={value.length > 30 ? {maxWidth: "300px", display: "inline-block", overflowWrap: "break-word", wordBreak: "normal"} : undefined}>
+          <span
+            className="text-green-600"
+            style={
+              value.length > 30
+                ? {
+                    maxWidth: "300px",
+                    display: "inline-block",
+                    overflowWrap: "break-word",
+                    wordBreak: "normal",
+                  }
+                : undefined
+            }
+          >
             {value}
           </span>
         ) : typeof value === "number" ? (
@@ -307,13 +329,12 @@ const JsonTable: React.FC<JsonTableProps> = ({
   const renderObjectTable = (
     data: object,
     path: string = "root",
-    isNested: boolean = false,
   ) => {
     const entries = Object.entries(data);
 
     return (
       <div
-        className={`${isNested ? "border-0" : "border border-gray-400 rounded"} mb-2 overflow-x-auto inline-block`}
+        className="mb-2 overflow-x-auto inline-block"
       >
         <table className="border-collapse w-auto">
           <tbody>
@@ -331,18 +352,18 @@ const JsonTable: React.FC<JsonTableProps> = ({
               return (
                 <tr
                   key={key}
-                  className={`${isSelected ? "!bg-blue-100" : ""} hover:bg-default-50`}
+                  className={`${isSelected ? "!bg-default-200/60" : ""} hover:bg-default-50`}
                 >
                   <td
-                    className="px-4 py-1 text-sm font-medium border border-gray-400 cursor-pointer"
+                    className="px-4 py-1 text-sm font-medium border border-default-300 cursor-pointer"
                     onClick={(e) => handleElementClick(valuePath, e)}
                   >
                     {key}
                   </td>
                   <td
-                    className="px-4 py-1 text-sm border border-gray-400 cursor-pointer"
-                    onClick={(e) => handleElementClick(valuePath, e)}
+                    className="px-4 py-1 text-sm border border-default-300 cursor-pointer"
                     style={{ minWidth: "200px" }}
+                    onClick={(e) => handleElementClick(valuePath, e)}
                   >
                     {renderCell(value, valuePath)}
                     {isExpandable(value) && (
@@ -358,7 +379,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
                             ? isObjectArray(value)
                               ? renderObjectsArrayTable(value, valuePath, true)
                               : renderArrayTable(value, valuePath, true)
-                            : renderObjectTable(value, valuePath, true))}
+                            : renderObjectTable(value, valuePath))}
                       </div>
                     )}
                   </td>
@@ -378,7 +399,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
   ) => {
     return (
       <div
-        className={`${isNested ? "border-0" : "border border-gray-400 rounded"} mb-2 overflow-x-auto inline-block`}
+        className={`${isNested ? "border-0" : "border border-default-300 rounded"} mb-2 overflow-x-auto inline-block`}
       >
         <table className="border-collapse w-auto">
           <tbody>
@@ -396,18 +417,18 @@ const JsonTable: React.FC<JsonTableProps> = ({
               return (
                 <tr
                   key={index}
-                  className={`${isSelected ? "!bg-blue-100" : ""} hover:bg-default-50`}
+                  className={`${isSelected ? "!bg-default-200/60" : ""} hover:bg-default-50`}
                 >
                   <td
-                    className="px-4 py-1 text-sm border border-gray-400 cursor-pointer"
+                    className="px-4 py-1 text-sm border border-default-300 cursor-pointer"
                     onClick={(e) => handleElementClick(itemPath, e)}
                   >
                     {index}
                   </td>
                   <td
-                    className="px-4 py-1 text-sm border border-gray-400 cursor-pointer"
-                    onClick={(e) => handleElementClick(itemPath, e)}
+                    className="px-4 py-1 text-sm border border-default-300 cursor-pointer"
                     style={{ minWidth: "200px" }}
+                    onClick={(e) => handleElementClick(itemPath, e)}
                   >
                     {renderCell(item, itemPath)}
                     {isExpandable(item) && (
@@ -423,7 +444,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
                             ? isObjectArray(item)
                               ? renderObjectsArrayTable(item, itemPath, true)
                               : renderArrayTable(item, itemPath, true)
-                            : renderObjectTable(item, itemPath, true))}
+                            : renderObjectTable(item, itemPath))}
                       </div>
                     )}
                   </td>
@@ -455,7 +476,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
           <thead>
             <tr className="bg-default-50">
               <th
-                className={`${isPathSelected(path) ? "!bg-blue-100" : ""} w-16 px-4 py-1 text-left text-sm font-medium text-default-600 border border-gray-400 cursor-pointer`}
+                className={`${isPathSelected(path) ? "!bg-default-200/60" : ""} w-16 px-4 py-1 text-left text-sm font-medium text-default-600 border border-default-300 cursor-pointer`}
                 onClick={(e) => handleElementClick(path, e)}
               >
                 #
@@ -468,7 +489,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
                 return (
                   <th
                     key={key}
-                    className={`${isHeaderSelected ? "!bg-blue-100" : ""} px-4 py-1 text-left text-sm font-medium text-default-600 border border-gray-400 cursor-pointer`}
+                    className={`${isHeaderSelected ? "!bg-default-200/60" : ""} px-4 py-1 text-left text-sm font-medium text-default-600 border border-default-300 cursor-pointer`}
                     onClick={(e) => handleElementClick(headerPath, e)}
                   >
                     {key}
@@ -489,10 +510,10 @@ const JsonTable: React.FC<JsonTableProps> = ({
               return (
                 <tr
                   key={index}
-                  className={`${isSelected ? "!bg-blue-100" : ""} hover:bg-default-50`}
+                  className={`${isSelected ? "!bg-default-200/60" : ""} hover:bg-default-50`}
                 >
                   <td
-                    className="px-4 py-1 text-sm border border-gray-400 cursor-pointer"
+                    className="px-4 py-1 text-sm border border-default-300 cursor-pointer"
                     onClick={(e) => handleElementClick(itemPath, e)}
                   >
                     {index}
@@ -512,9 +533,9 @@ const JsonTable: React.FC<JsonTableProps> = ({
                       return (
                         <td
                           key={key}
-                          className={`${isPathSelected(cellPath) ? "!bg-blue-100" : ""} px-4 py-1 text-sm border border-gray-400 cursor-pointer`}
-                          onClick={(e) => handleElementClick(cellPath, e)}
+                          className={`${isPathSelected(cellPath) ? "!bg-default-200/60" : ""} px-4 py-1 text-sm border border-default-300 cursor-pointer`}
                           style={{ minWidth: "200px" }}
+                          onClick={(e) => handleElementClick(cellPath, e)}
                         >
                           -
                         </td>
@@ -524,9 +545,9 @@ const JsonTable: React.FC<JsonTableProps> = ({
                     return (
                       <td
                         key={key}
-                        className={`${isCellSelected ? "!bg-blue-100" : ""} px-4 py-1 text-sm border border-gray-400 cursor-pointer`}
-                        onClick={(e) => handleElementClick(cellPath, e)}
+                        className={`${isCellSelected ? "!bg-default-200/60" : ""} px-4 py-1 text-sm border border-default-300 cursor-pointer`}
                         style={{ minWidth: "200px" }}
+                        onClick={(e) => handleElementClick(cellPath, e)}
                       >
                         {renderCell(value, cellPath)}
                         {isExpandable(value) && (
@@ -546,7 +567,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
                                       true,
                                     )
                                   : renderArrayTable(value, cellPath, true)
-                                : renderObjectTable(value, cellPath, true))}
+                                : renderObjectTable(value, cellPath))}
                           </div>
                         )}
                       </td>
@@ -573,12 +594,12 @@ const JsonTable: React.FC<JsonTableProps> = ({
         // 否则使用普通数组表格渲染
         return renderArrayTable(data, "root", false);
       }
-    } else if (typeof data === "object" && data !== null) {
-      return renderObjectTable(data, "root", false);
+    } else if (typeof data === "object") {
+      return renderObjectTable(data, "root");
     } else {
       return (
         <div
-          className={`p-2 border border-gray-400 rounded ${isPathSelected("root") ? "bg-blue-100" : ""}`}
+          className={`p-2 border border-default-300 rounded ${isPathSelected("root") ? "bg-default-300" : ""}`}
           role="button"
           tabIndex={0}
           onClick={(e) => handleElementClick("root", e)}
