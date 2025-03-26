@@ -5,8 +5,8 @@ import { motion } from "framer-motion";
 import { Chip } from "@heroui/chip";
 import { Button } from "@heroui/button";
 
-import { SearchBox } from "@/components/toolbox/searchBox.tsx";
-import { ToolCard } from "@/components/toolbox/toolCard.tsx";
+import { SearchBox } from "@/components/toolbox/SearchBox.tsx";
+import { ToolCard } from "@/components/toolbox/ToolCard.tsx";
 import { useToolboxStore } from "@/store/useToolboxStore";
 
 const ToolboxPage: React.FC = () => {

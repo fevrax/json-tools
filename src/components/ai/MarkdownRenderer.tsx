@@ -10,13 +10,13 @@ import {
   vs,
 } from "react-syntax-highlighter/dist/esm/styles/prism";
 
-import toast from "@/utils/toast";
+import toast from "@/utils/toast.tsx";
 import {
   ChevronRightIcon,
   ChevronDownIcon,
   CopyIcon,
   ApplyIcon,
-} from "@/components/icons";
+} from "@/components/Icons.tsx";
 
 // Markdown渲染器组件接口
 interface MarkdownRendererProps {

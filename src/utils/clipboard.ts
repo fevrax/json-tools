@@ -140,7 +140,7 @@ export async function copyToClipboard(
     }
     // 如果不是安全上下文，继续尝试其他方法
   } catch (err) {
-    console.warn("Navigator clipboard API failed:", err);
+    console.error("Navigator clipboard API failed:", err);
     // 错误时继续尝试其他方法
   }
 
@@ -160,14 +160,16 @@ export async function readFromClipboard(
   try {
     if (navigator.clipboard && window.isSecureContext) {
       const text = await navigator.clipboard.readText();
+
       return text;
     } else {
       toast.error(errorMessage);
+
       return null;
     }
-  } catch (err) {
-    console.warn("Navigator clipboard readText failed:", err);
+  } catch {
     toast.error(errorMessage);
+
     return null;
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Button,
   ButtonGroup,
@@ -10,8 +10,7 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
-import StatusButton, { IconStatus } from "../button/statusButton";
-
+import StatusButton, { IconStatus } from "@/components/button/StatusButton.tsx";
 import toast from "@/utils/toast";
 
 interface JsonTableOperationBarProps {
@@ -20,7 +19,7 @@ interface JsonTableOperationBarProps {
   onCollapse: () => void;
   onCustomView: (key: "hideEmpty" | "hideNull" | "showAll") => void;
   onClear?: () => boolean;
-  ref?: React.RefObject<JsonTableOperationBarRef>;
+  ref?: React.Ref<JsonTableOperationBarRef>;
 }
 
 export interface JsonTableOperationBarRef {}
@@ -40,7 +39,7 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
   );
 
   // 防止下拉菜单打开时，鼠标移开后立即关闭
-  const viewDropdownOpenTimeoutRef = React.useRef<NodeJS.Timeout>();
+  const viewDropdownOpenTimeoutRef = useRef<NodeJS.Timeout>(null);
 
   const dropdownTimeout = 300;
 
@@ -51,11 +50,15 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
 
   // 视图选项下拉菜单
   const showViewDropdown = () => {
-    clearTimeout(viewDropdownOpenTimeoutRef.current);
+    if (viewDropdownOpenTimeoutRef.current) {
+      clearTimeout(viewDropdownOpenTimeoutRef.current);
+    }
     setViewDropdownOpen(true);
   };
   const unShowViewDropdown = () => {
-    clearTimeout(viewDropdownOpenTimeoutRef.current);
+    if (viewDropdownOpenTimeoutRef.current) {
+      clearTimeout(viewDropdownOpenTimeoutRef.current);
+    }
     viewDropdownOpenTimeoutRef.current = setTimeout(() => {
       setViewDropdownOpen(false);
     }, dropdownTimeout);
@@ -236,7 +239,6 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
           }}
         />
       )}
-
     </div>
   );
 };

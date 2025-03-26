@@ -1,4 +1,4 @@
-import React, { Key, useState } from "react";
+import React, { Key, useState, useRef } from "react";
 import {
   Button,
   ButtonGroup,
@@ -10,8 +10,7 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
-import StatusButton, { IconStatus } from "../button/statusButton";
-
+import StatusButton, { IconStatus } from "@/components/button/StatusButton.tsx";
 import toast from "@/utils/toast";
 
 interface MonacoOperationBarProps {
@@ -22,7 +21,7 @@ interface MonacoOperationBarProps {
   onMore: (key: "unescape" | "del_comment") => boolean;
   onSaveFile: () => boolean;
   onAiClick?: () => void;
-  ref?: React.RefObject<MonacoOperationBarRef>;
+  ref?: React.Ref<MonacoOperationBarRef>;
 }
 
 export interface MonacoOperationBarRef {}
@@ -48,8 +47,8 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
   );
 
   // 防止下拉菜单打开时，鼠标移开后立即关闭
-  const sortDropdownOpenTimeoutRef = React.useRef<NodeJS.Timeout>();
-  const moreDropdownOpenTimeoutRef = React.useRef<NodeJS.Timeout>();
+  const sortDropdownOpenTimeoutRef = useRef<NodeJS.Timeout>(null);
+  const moreDropdownOpenTimeoutRef = useRef<NodeJS.Timeout>(null);
 
   const dropdownTimeout = 300;
 
@@ -60,11 +59,15 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
 
   // 字段排序下拉菜单
   const showSortDropdown = () => {
-    clearTimeout(sortDropdownOpenTimeoutRef.current);
+    if (sortDropdownOpenTimeoutRef.current) {
+      clearTimeout(sortDropdownOpenTimeoutRef.current);
+    }
     setSortDropdownOpen(true);
   };
   const unShowSortDropdown = () => {
-    clearTimeout(sortDropdownOpenTimeoutRef.current);
+    if (sortDropdownOpenTimeoutRef.current) {
+      clearTimeout(sortDropdownOpenTimeoutRef.current);
+    }
     sortDropdownOpenTimeoutRef.current = setTimeout(() => {
       setSortDropdownOpen(false);
     }, dropdownTimeout);
@@ -72,11 +75,15 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
 
   // 更多下拉菜单
   const showMoreDropdown = () => {
-    clearTimeout(moreDropdownOpenTimeoutRef.current);
+    if (moreDropdownOpenTimeoutRef.current) {
+      clearTimeout(moreDropdownOpenTimeoutRef.current);
+    }
     setMoreDropdownOpen(true);
   };
   const unShowMoreDropdown = () => {
-    clearTimeout(moreDropdownOpenTimeoutRef.current);
+    if (moreDropdownOpenTimeoutRef.current) {
+      clearTimeout(moreDropdownOpenTimeoutRef.current);
+    }
     moreDropdownOpenTimeoutRef.current = setTimeout(() => {
       setMoreDropdownOpen(false);
     }, dropdownTimeout);
@@ -111,7 +118,13 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
       <Button
         className="text-sm text-default-600 px-2 rounded-xl"
         size="sm"
-        startContent={<Icon className="text-indigo-500" icon="hugeicons:ai-chat-02" width={18} />}
+        startContent={
+          <Icon
+            className="text-indigo-500"
+            icon="hugeicons:ai-chat-02"
+            width={18}
+          />
+        }
         title="AI助手"
         variant="light"
         onPress={onAiClick}

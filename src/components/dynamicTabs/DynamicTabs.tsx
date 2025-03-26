@@ -11,7 +11,7 @@ import {
 } from "@heroui/react";
 
 import { useTabStore, TabItem } from "@/store/useTabStore";
-import { IcRoundClose } from "@/components/icons";
+import { IcRoundClose } from "@/components/Icons.tsx";
 
 export interface DynamicTabsRef {
   getPositionTop: () => number;

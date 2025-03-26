@@ -18,7 +18,7 @@ export type SidebarItem = {
   key: string;
   title: string;
   icon?: string;
-  href?: string;
+  href?: string; // Hash 跳转有问题
   type?: SidebarItemType.Nest;
   startContent?: React.ReactNode;
   endContent?: React.ReactNode;

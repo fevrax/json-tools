@@ -33,7 +33,6 @@ export function escapeJson(input: string): string {
         })
       : jsonString;
   } catch (error) {
-    console.error("Invalid JSON string:", error);
     throw error;
   }
 }

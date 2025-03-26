@@ -17,7 +17,7 @@ import * as quicktype from "quicktype-core";
 import toast from "@/utils/toast";
 import MonacoEditor, {
   MonacoJsonEditorRef,
-} from "@/components/monacoEditor/monacoJsonEditor";
+} from "@/components/monacoEditor/MonacoJsonEditor.tsx";
 import ToolboxPageTemplate from "@/layouts/toolboxPageTemplate";
 import AIPromptOverlay, {
   QuickPrompt,
@@ -171,7 +171,7 @@ export default function JsonTypeConverterPage() {
       // 验证JSON格式是否有效
       try {
         JSON.parse(jsonInput);
-      } catch (e) {
+      } catch {
         toast.error("无效的JSON格式");
         setIsProcessing(false);
         setProcessingStep("");

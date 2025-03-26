@@ -6,34 +6,34 @@ import { Content } from "vanilla-jsoneditor-cn";
 import { useTabStore } from "@/store/useTabStore";
 import DynamicTabs, {
   DynamicTabsRef,
-} from "@/components/dynamicTabs/dynamicTabs";
+} from "@/components/dynamicTabs/DynamicTabs.tsx";
 import MonacoJsonEditor, {
   MonacoJsonEditorRef,
-} from "@/components/monacoEditor/monacoJsonEditor";
+} from "@/components/monacoEditor/MonacoJsonEditor.tsx";
 import { useSidebarStore } from "@/store/useSidebarStore";
 // eslint-disable-next-line import/order
 import VanillaJsonEditor, {
   VanillaJsonEditorRef,
-} from "@/components/vanillaJsonEditor/vanillaJsonEditor";
+} from "@/components/vanillaJsonEditor/VanillaJsonEditor.tsx";
 
 import "vanilla-jsoneditor-cn/themes/jse-theme-dark.css";
 import MonacoDiffEditor, {
   MonacoDiffEditorRef,
-} from "@/components/monacoEditor/monacoDiffEditor";
+} from "@/components/monacoEditor/MonacoDiffEditor.tsx";
 import MonacoDiffOperationBar, {
   MonacoDiffOperationBarRef,
 } from "@/components/monacoEditor/MonacoDiffOperationBar";
 import MonacoOperationBar, {
   MonacoOperationBarRef,
-} from "@/components/monacoEditor/monacoOperationBar";
+} from "@/components/monacoEditor/MonacoOperationBar.tsx";
 import { SettingsState } from "@/store/useSettingsStore";
 import { storage } from "@/lib/indexedDBStore";
 
 import "@/styles/index.css";
-import { SidebarKeys } from "@/components/sidebar/items.tsx";
+import { SidebarKeys } from "@/components/sidebar/Items.tsx";
 import JsonTableView, {
   JsonTableViewRef,
-} from "@/components/jsonTable/jsonTableView";
+} from "@/components/jsonTable/JsonTableView.tsx";
 import clipboard from "@/utils/clipboard";
 import toast from "@/utils/toast";
 

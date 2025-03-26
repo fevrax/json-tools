@@ -1,5 +1,4 @@
-"use client";
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Button,
   cn,
@@ -10,7 +9,7 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
-import { MonacoDiffEditorEditorType } from "./monacoEntity";
+import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEntity";
 
 interface MonacoDiffOperationBarProps {
   onCopy: (type: MonacoDiffEditorEditorType) => boolean;
@@ -21,7 +20,7 @@ interface MonacoDiffOperationBarProps {
     sort: "asc" | "desc",
   ) => boolean;
   onAiClick?: () => void;
-  ref?: React.RefObject<MonacoDiffOperationBarRef>;
+  ref?: React.Ref<MonacoDiffOperationBarRef>;
 }
 
 export interface MonacoDiffOperationBarRef {}
@@ -39,20 +38,24 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
   const [isClearDropdownOpen, setClearDropdownOpen] = useState(false);
 
   // 防止下拉菜单打开时，鼠标移开后立即关闭
-  const copyDropdownOpenTimeoutRef = React.useRef<NodeJS.Timeout>();
-  const formatDropdownOpenTimeoutRef = React.useRef<NodeJS.Timeout>();
-  const sortDropdownOpenTimeoutRef = React.useRef<NodeJS.Timeout>();
-  const clearDropdownOpenTimeoutRef = React.useRef<NodeJS.Timeout>();
+  const copyDropdownOpenTimeoutRef = useRef<NodeJS.Timeout>(null);
+  const formatDropdownOpenTimeoutRef = useRef<NodeJS.Timeout>(null);
+  const sortDropdownOpenTimeoutRef = useRef<NodeJS.Timeout>(null);
+  const clearDropdownOpenTimeoutRef = useRef<NodeJS.Timeout>(null);
 
   const dropdownTimeout = 300;
 
   // 字段排序下拉菜单
   const showCopyDropdown = () => {
-    clearTimeout(copyDropdownOpenTimeoutRef.current);
+    if (copyDropdownOpenTimeoutRef.current) {
+      clearTimeout(copyDropdownOpenTimeoutRef.current);
+    }
     setCopyDropdownOpen(true);
   };
   const unShowCopyDropdown = () => {
-    clearTimeout(copyDropdownOpenTimeoutRef.current);
+    if (copyDropdownOpenTimeoutRef.current) {
+      clearTimeout(copyDropdownOpenTimeoutRef.current);
+    }
     copyDropdownOpenTimeoutRef.current = setTimeout(() => {
       setCopyDropdownOpen(false);
     }, dropdownTimeout);
@@ -60,11 +63,15 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
 
   // 格式化下拉菜单
   const showFormatDropdown = () => {
-    clearTimeout(formatDropdownOpenTimeoutRef.current);
+    if (formatDropdownOpenTimeoutRef.current) {
+      clearTimeout(formatDropdownOpenTimeoutRef.current);
+    }
     setFormatDropdownOpen(true);
   };
   const unShowFormatDropdown = () => {
-    clearTimeout(formatDropdownOpenTimeoutRef.current);
+    if (formatDropdownOpenTimeoutRef.current) {
+      clearTimeout(formatDropdownOpenTimeoutRef.current);
+    }
     formatDropdownOpenTimeoutRef.current = setTimeout(() => {
       setFormatDropdownOpen(false);
     }, dropdownTimeout);
@@ -72,11 +79,15 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
 
   // 字段排序下拉菜单
   const showSortDropdown = () => {
-    clearTimeout(sortDropdownOpenTimeoutRef.current);
+    if (sortDropdownOpenTimeoutRef.current) {
+      clearTimeout(sortDropdownOpenTimeoutRef.current);
+    }
     setSortDropdownOpen(true);
   };
   const unShowSortDropdown = () => {
-    clearTimeout(sortDropdownOpenTimeoutRef.current);
+    if (sortDropdownOpenTimeoutRef.current) {
+      clearTimeout(sortDropdownOpenTimeoutRef.current);
+    }
     sortDropdownOpenTimeoutRef.current = setTimeout(() => {
       setSortDropdownOpen(false);
     }, dropdownTimeout);
@@ -84,11 +95,15 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
 
   // 字段排序下拉菜单
   const showClearDropdown = () => {
-    clearTimeout(clearDropdownOpenTimeoutRef.current);
+    if (clearDropdownOpenTimeoutRef.current) {
+      clearTimeout(clearDropdownOpenTimeoutRef.current);
+    }
     setClearDropdownOpen(true);
   };
   const unShowClearDropdown = () => {
-    clearTimeout(clearDropdownOpenTimeoutRef.current);
+    if (clearDropdownOpenTimeoutRef.current) {
+      clearTimeout(clearDropdownOpenTimeoutRef.current);
+    }
     clearDropdownOpenTimeoutRef.current = setTimeout(() => {
       setClearDropdownOpen(false);
     }, dropdownTimeout);

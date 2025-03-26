@@ -22,8 +22,8 @@ import {
 } from "@/utils/json";
 
 import "@/styles/monaco.css";
-import ErrorModal from "@/components/monacoEditor/errorModal.tsx";
-import DraggableMenu from "@/components/monacoEditor/draggableMenu";
+import ErrorModal from "@/components/monacoEditor/ErrorModal.tsx";
+import DraggableMenu from "@/components/monacoEditor/DraggableMenu.tsx";
 import AIPromptOverlay, { QuickPrompt } from "@/components/ai/AIPromptOverlay";
 import PromptContainer, {
   PromptContainerRef,
@@ -257,12 +257,12 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       // 如果解析成功，格式化并设置到编辑器
       setEditorValue(JSON.stringify(jsonObj, null, 2));
       toast.success("已应用代码到编辑器");
-    } catch (error) {
+    } catch {
       // 如果解析失败，尝试直接设置文本
       try {
         setEditorValue(code);
         toast.success("已应用代码到编辑器");
-      } catch (e) {
+      } catch {
         toast.error("应用代码失败，格式可能不正确");
       }
     }

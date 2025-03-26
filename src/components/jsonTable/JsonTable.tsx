@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Icon } from "@iconify/react";
 
-import JsonPathBar from "@/components/jsonTable/jsonPathBar.tsx";
+import JsonPathBar from "@/components/jsonTable/JsonPathBar.tsx";
 
 // 添加动画相关的CSS样式
 const animationStyles = {
@@ -326,16 +326,11 @@ const JsonTable: React.FC<JsonTableProps> = ({
   }, [expandedPaths]);
 
   // 渲染对象表格
-  const renderObjectTable = (
-    data: object,
-    path: string = "root",
-  ) => {
+  const renderObjectTable = (data: object, path: string = "root") => {
     const entries = Object.entries(data);
 
     return (
-      <div
-        className="mb-2 overflow-x-auto inline-block"
-      >
+      <div className="mb-2 overflow-x-auto inline-block">
         <table className="border-collapse w-auto">
           <tbody>
             {entries.map(([key, value]) => {

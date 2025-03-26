@@ -11,10 +11,10 @@ import { Icon } from "@iconify/react";
 import React, { useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
-import SidebarDrawer from "@/components/sidebar/sidebar-drawer";
-import Sidebar from "@/components/sidebar/sidebar";
-import { items, SidebarKeys } from "@/components/sidebar/items";
-import { ThemeSwitch } from "@/components/theme-switch";
+import SidebarDrawer from "@/components/sidebar/SidebarDrawer.tsx";
+import Sidebar from "@/components/sidebar/Sidebar.tsx";
+import { items, SidebarKeys } from "@/components/sidebar/Items.tsx";
+import { ThemeSwitch } from "@/components/button/ThemeSwitch.tsx";
 import { useSidebarStore } from "@/store/useSidebarStore";
 import { SettingsState, useSettingsStore } from "@/store/useSettingsStore";
 import { storage } from "@/lib/indexedDBStore";

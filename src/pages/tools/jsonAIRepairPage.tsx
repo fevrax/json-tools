@@ -7,7 +7,7 @@ import { jsonrepair } from "jsonrepair";
 import toast from "@/utils/toast";
 import MonacoDiffEditor, {
   MonacoDiffEditorRef,
-} from "@/components/monacoEditor/monacoDiffEditor";
+} from "@/components/monacoEditor/MonacoDiffEditor.tsx";
 import MonacoDiffOperationBar, {
   MonacoDiffOperationBarRef,
 } from "@/components/monacoEditor/MonacoDiffOperationBar";
@@ -140,7 +140,7 @@ ${originalValue}
 
             editorRef.current?.updateModifiedValue(formattedJson);
             setFixedValue(formattedJson);
-          } catch (e) {
+          } catch {
             // 如果无法解析最终结果，则保留清理后的版本
             const cleanedJson = final
               .replace(/^```json\s*/i, "")

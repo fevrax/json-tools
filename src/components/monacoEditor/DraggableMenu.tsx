@@ -43,7 +43,7 @@ export const SUPPORTED_LANGUAGES = [
 ];
 
 interface DraggableMenuProps {
-  containerRef: React.RefObject<HTMLDivElement>;
+  containerRef: React.Ref<HTMLDivElement>;
   onLanguageChange: (language: string) => void;
   onFontSizeChange: (fontSize: number) => void;
   onReset: () => void;

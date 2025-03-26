@@ -1,4 +1,4 @@
-import { type SidebarItem } from "./sidebar";
+import { type SidebarItem } from "./Sidebar.tsx";
 
 /**
  * Please check the https://nextui.org/docs/guide/routing to have a seamless router integration
@@ -35,7 +35,6 @@ export const items: SidebarItem[] = [
   },
   {
     key: SidebarKeys.toolbox,
-    href: "./toolbox",
     icon: "solar:box-outline",
     title: "工具箱",
   },

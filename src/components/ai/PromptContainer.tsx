@@ -17,9 +17,8 @@ import {
 import { Icon } from "@iconify/react";
 import { cn } from "@heroui/react";
 
-import MarkdownRenderer from "../markdown/MarkdownRenderer";
-
-import { CopyIcon, MenuDotsIcon } from "@/components/icons";
+import MarkdownRenderer from "@/components/ai/MarkdownRenderer.tsx";
+import { CopyIcon, MenuDotsIcon } from "@/components/Icons.tsx";
 import { OpenAIService } from "@/services/openAIService";
 import toast from "@/utils/toast";
 import { useSettingsStore } from "@/store/useSettingsStore";

@@ -95,12 +95,14 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
     // 如果传入了自定义点击处理函数，则使用它
     if (onQuickPromptClick) {
       onQuickPromptClick(quickPrompt);
+
       return;
     }
-    
+
     // 如果有自定义处理函数，则执行它
     if (quickPrompt.handler) {
       quickPrompt.handler();
+
       return;
     }
 

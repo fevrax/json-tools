@@ -16,7 +16,7 @@ import jwt from "jsonwebtoken";
 
 import MonacoEditor, {
   MonacoJsonEditorRef,
-} from "@/components/monacoEditor/monacoJsonEditor";
+} from "@/components/monacoEditor/MonacoJsonEditor.tsx";
 import ToolboxPageTemplate from "@/layouts/toolboxPageTemplate";
 
 interface JwtPayload {

@@ -3,10 +3,9 @@
 import { create } from "zustand";
 import { devtools, subscribeWithSelector } from "zustand/middleware";
 
-import { useSettingsStore } from "./useSettingsStore";
-
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { storage } from "@/lib/indexedDBStore";
-import { SidebarKeys } from "@/components/sidebar/items.tsx";
+import { SidebarKeys } from "@/components/sidebar/Items.tsx";
 
 interface SidebarStore {
   activeKey: SidebarKeys;

@@ -7,9 +7,7 @@ interface AIResultHeaderProps {
   onClose?: () => void;
 }
 
-export const AIResultHeader: React.FC<AIResultHeaderProps> = ({
-  onClose,
-}) => {
+export const AIResultHeader: React.FC<AIResultHeaderProps> = ({ onClose }) => {
   return (
     <div className="flex justify-between items-center px-3 py-1 bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-blue-50/80 dark:from-neutral-900/80 dark:via-neutral-800/80 dark:to-neutral-900/80 border-b border-blue-100 dark:border-neutral-800 backdrop-blur-sm">
       <div className="flex items-center space-x-2.5">

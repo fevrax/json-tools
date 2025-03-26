@@ -16,7 +16,7 @@ import toast from "@/utils/toast";
 import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEntity";
 import { sortJson } from "@/utils/json";
 import { useTabStore } from "@/store/useTabStore";
-import DraggableMenu from "@/components/monacoEditor/draggableMenu";
+import DraggableMenu from "@/components/monacoEditor/DraggableMenu.tsx";
 import AIPromptOverlay, { QuickPrompt } from "@/components/ai/AIPromptOverlay";
 import PromptContainer, {
   PromptContainerRef,
@@ -122,7 +122,8 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       id: "suggest_merge",
       label: "合并建议",
       icon: "fluent:arrow-merge-20-filled",
-      prompt: "请帮我智能合并这两个 JSON 文本，保留双方的有效内容并解决所有冲突",
+      prompt:
+        "请帮我智能合并这两个 JSON 文本，保留双方的有效内容并解决所有冲突",
       color: "success",
     },
     {
@@ -545,12 +546,12 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
         JSON.stringify(jsonObj, null, 2),
       );
       toast.success("已应用代码到左侧编辑器");
-    } catch (error) {
+    } catch {
       // 如果解析失败，尝试直接设置文本
       try {
         setEditorValue(originalEditorRef.current, code);
         toast.success("已应用代码到左侧编辑器");
-      } catch (e) {
+      } catch {
         toast.error("应用代码失败，格式可能不正确");
       }
     }
@@ -574,12 +575,12 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
         JSON.stringify(jsonObj, null, 2),
       );
       toast.success("已应用代码到右侧编辑器");
-    } catch (error) {
+    } catch {
       // 如果解析失败，尝试直接设置文本
       try {
         setEditorValue(modifiedEditorRef.current, code);
         toast.success("已应用代码到右侧编辑器");
-      } catch (e) {
+      } catch {
         toast.error("应用代码失败，格式可能不正确");
       }
     }

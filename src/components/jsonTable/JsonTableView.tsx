@@ -9,13 +9,12 @@ import { Icon } from "@iconify/react";
 
 import JsonTableOperationBar, {
   JsonTableOperationBarRef,
-} from "./jsonTableOperationBar";
-import JsonTable from "./jsonTable";
-
+} from "@/components/jsonTable/JsonTableOperationBar.tsx";
+import JsonTable from "@/components/jsonTable/JsonTable.tsx";
 import toast from "@/utils/toast";
 import clipboard from "@/utils/clipboard";
 import { useSidebarStore } from "@/store/useSidebarStore";
-import { SidebarKeys } from "@/components/sidebar/items.tsx";
+import { SidebarKeys } from "@/components/sidebar/Items.tsx";
 
 export interface JsonTableViewRef {
   focus: () => void;

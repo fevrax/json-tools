@@ -1,4 +1,3 @@
-// components/Divider/index.tsx
 import React from "react";
 import { cn } from "@heroui/react";
 

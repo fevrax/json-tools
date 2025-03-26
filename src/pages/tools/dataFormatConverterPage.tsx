@@ -21,7 +21,7 @@ import JSON5 from "json5";
 import toast from "@/utils/toast";
 import MonacoEditor, {
   MonacoJsonEditorRef,
-} from "@/components/monacoEditor/monacoJsonEditor";
+} from "@/components/monacoEditor/MonacoJsonEditor.tsx";
 import ToolboxPageTemplate from "@/layouts/toolboxPageTemplate";
 import AIPromptOverlay, {
   QuickPrompt,

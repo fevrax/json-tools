@@ -3,10 +3,10 @@ import { Route, Routes } from "react-router-dom";
 import IndexPage from "@/pages/indexPage";
 import SettingsPage from "@/pages/settingPage";
 import ToolboxPage from "@/pages/toolboxPage";
-import JsonAIRepairPage from "@/pages/tools/jsonAIRepair.tsx";
-import JsonTypeConverter from "@/pages/tools/jsonTypeConverter";
-import DataFormatConverter from "@/pages/tools/dataFormatConverter";
-import JwtParsePage from "@/pages/tools/jwtParse";
+import JsonAIRepairPage from "@/pages/tools/jsonAIRepairPage.tsx";
+import JsonTypeConverter from "@/pages/tools/jsonTypeConverterPage.tsx";
+import DataFormatConverter from "@/pages/tools/dataFormatConverterPage.tsx";
+import JwtParsePage from "@/pages/tools/jwtParsePage.tsx";
 
 function App() {
   return (
