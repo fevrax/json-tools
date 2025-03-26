@@ -21,7 +21,7 @@ interface MonacoOperationBarProps {
   onMore: (key: "unescape" | "del_comment") => boolean;
   onSaveFile: () => boolean;
   onAiClick?: () => void;
-  ref?: React.Ref<MonacoOperationBarRef>;
+  ref?: React.RefObject<MonacoOperationBarRef> | null;
 }
 
 export interface MonacoOperationBarRef {}

@@ -108,7 +108,7 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
   }));
 
   useEffect(() => {
-    if (!editorRef.current) {
+    if (!editorRef) {
       initEditor();
     }
   }, []);

@@ -23,9 +23,7 @@ import MonacoDiffEditor, {
 import MonacoDiffOperationBar, {
   MonacoDiffOperationBarRef,
 } from "@/components/monacoEditor/MonacoDiffOperationBar";
-import MonacoOperationBar, {
-  MonacoOperationBarRef,
-} from "@/components/monacoEditor/MonacoOperationBar.tsx";
+import MonacoOperationBar from "@/components/monacoEditor/MonacoOperationBar.tsx";
 import { SettingsState } from "@/store/useSettingsStore";
 import { storage } from "@/lib/indexedDBStore";
 
@@ -65,7 +63,6 @@ export default function IndexPage() {
 
   const sidebarStore = useSidebarStore();
   const tabRef = useRef<DynamicTabsRef>(null);
-  const monacoOperationBarRef = useRef<MonacoOperationBarRef>(null);
   const monacoDiffOperationBarRef = useRef<MonacoDiffOperationBarRef>(null);
 
   const monacoUpdateContentTimeoutId = useRef<Record<string, NodeJS.Timeout>>(
@@ -134,7 +131,6 @@ export default function IndexPage() {
     return (
       <>
         <MonacoOperationBar
-          ref={monacoOperationBarRef}
           onAiClick={() => {
             return monacoJsonEditorRefs.current[activeTabKey].showAiPrompt();
           }}
