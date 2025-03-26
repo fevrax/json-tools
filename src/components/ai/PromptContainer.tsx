@@ -259,7 +259,7 @@ const DocumentMessage: React.FC<DocumentMessageProps> = ({
         <Avatar
           className="bg-default-50"
           size="sm"
-          src={role === "user" ? "/avatar_user.png" : "./logo.png"}
+          src={role === "user" ? "./avatar_user.png" : "./logo.png"}
         />
         <div className="mt-1 flex-1 w-full text-small overflow-hidden break-words">
           {message}
@@ -703,7 +703,7 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
                 >
                   {message.role === "user" ? (
                     <MessageCard
-                      avatar="/avatar_user.png"
+                      avatar="./avatar_user.png"
                       isUser={true}
                       message={message.content}
                       messageClassName="shadow-sm"

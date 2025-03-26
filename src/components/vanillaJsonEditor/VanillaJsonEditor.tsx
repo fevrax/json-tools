@@ -35,7 +35,7 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
   onMount,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<JsonEditor>(null);
+  var editorRef : JsonEditor
   //
   // const clearButtonItem = {
   //   type: 'button',
@@ -93,7 +93,7 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
 
   const initEditor = () => {
     if (containerRef.current) {
-      editorRef.current = createJSONEditor({
+      editorRef = createJSONEditor({
         target: containerRef.current,
         props: options,
       });

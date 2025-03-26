@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
   Button,
   cn,
@@ -38,73 +38,73 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
   const [isClearDropdownOpen, setClearDropdownOpen] = useState(false);
 
   // 防止下拉菜单打开时，鼠标移开后立即关闭
-  const copyDropdownOpenTimeoutRef = useRef<NodeJS.Timeout>(null);
-  const formatDropdownOpenTimeoutRef = useRef<NodeJS.Timeout>(null);
-  const sortDropdownOpenTimeoutRef = useRef<NodeJS.Timeout>(null);
-  const clearDropdownOpenTimeoutRef = useRef<NodeJS.Timeout>(null);
+  var copyDropdownOpenTimeoutRef: NodeJS.Timeout;
+  var formatDropdownOpenTimeoutRef: NodeJS.Timeout;
+  var sortDropdownOpenTimeoutRef: NodeJS.Timeout;
+  var clearDropdownOpenTimeoutRef: NodeJS.Timeout;
 
   const dropdownTimeout = 300;
 
   // 字段排序下拉菜单
   const showCopyDropdown = () => {
-    if (copyDropdownOpenTimeoutRef.current) {
-      clearTimeout(copyDropdownOpenTimeoutRef.current);
+    if (copyDropdownOpenTimeoutRef) {
+      clearTimeout(copyDropdownOpenTimeoutRef);
     }
     setCopyDropdownOpen(true);
   };
   const unShowCopyDropdown = () => {
-    if (copyDropdownOpenTimeoutRef.current) {
-      clearTimeout(copyDropdownOpenTimeoutRef.current);
+    if (copyDropdownOpenTimeoutRef) {
+      clearTimeout(copyDropdownOpenTimeoutRef);
     }
-    copyDropdownOpenTimeoutRef.current = setTimeout(() => {
+    copyDropdownOpenTimeoutRef = setTimeout(() => {
       setCopyDropdownOpen(false);
     }, dropdownTimeout);
   };
 
   // 格式化下拉菜单
   const showFormatDropdown = () => {
-    if (formatDropdownOpenTimeoutRef.current) {
-      clearTimeout(formatDropdownOpenTimeoutRef.current);
+    if (formatDropdownOpenTimeoutRef) {
+      clearTimeout(formatDropdownOpenTimeoutRef);
     }
     setFormatDropdownOpen(true);
   };
   const unShowFormatDropdown = () => {
-    if (formatDropdownOpenTimeoutRef.current) {
-      clearTimeout(formatDropdownOpenTimeoutRef.current);
+    if (formatDropdownOpenTimeoutRef) {
+      clearTimeout(formatDropdownOpenTimeoutRef);
     }
-    formatDropdownOpenTimeoutRef.current = setTimeout(() => {
+    formatDropdownOpenTimeoutRef = setTimeout(() => {
       setFormatDropdownOpen(false);
     }, dropdownTimeout);
   };
 
   // 字段排序下拉菜单
   const showSortDropdown = () => {
-    if (sortDropdownOpenTimeoutRef.current) {
-      clearTimeout(sortDropdownOpenTimeoutRef.current);
+    if (sortDropdownOpenTimeoutRef) {
+      clearTimeout(sortDropdownOpenTimeoutRef);
     }
     setSortDropdownOpen(true);
   };
   const unShowSortDropdown = () => {
-    if (sortDropdownOpenTimeoutRef.current) {
-      clearTimeout(sortDropdownOpenTimeoutRef.current);
+    if (sortDropdownOpenTimeoutRef) {
+      clearTimeout(sortDropdownOpenTimeoutRef);
     }
-    sortDropdownOpenTimeoutRef.current = setTimeout(() => {
+    sortDropdownOpenTimeoutRef = setTimeout(() => {
       setSortDropdownOpen(false);
     }, dropdownTimeout);
   };
 
   // 字段排序下拉菜单
   const showClearDropdown = () => {
-    if (clearDropdownOpenTimeoutRef.current) {
-      clearTimeout(clearDropdownOpenTimeoutRef.current);
+    if (clearDropdownOpenTimeoutRef) {
+      clearTimeout(clearDropdownOpenTimeoutRef);
     }
     setClearDropdownOpen(true);
   };
   const unShowClearDropdown = () => {
-    if (clearDropdownOpenTimeoutRef.current) {
-      clearTimeout(clearDropdownOpenTimeoutRef.current);
+    if (clearDropdownOpenTimeoutRef) {
+      clearTimeout(clearDropdownOpenTimeoutRef);
     }
-    clearDropdownOpenTimeoutRef.current = setTimeout(() => {
+    clearDropdownOpenTimeoutRef = setTimeout(() => {
       setClearDropdownOpen(false);
     }, dropdownTimeout);
   };

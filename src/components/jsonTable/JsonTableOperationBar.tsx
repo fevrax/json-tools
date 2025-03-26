@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
   Button,
   ButtonGroup,
@@ -39,7 +39,7 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
   );
 
   // 防止下拉菜单打开时，鼠标移开后立即关闭
-  const viewDropdownOpenTimeoutRef = useRef<NodeJS.Timeout>(null);
+  var viewDropdownOpenTimeoutRef: NodeJS.Timeout;
 
   const dropdownTimeout = 300;
 
@@ -50,16 +50,16 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
 
   // 视图选项下拉菜单
   const showViewDropdown = () => {
-    if (viewDropdownOpenTimeoutRef.current) {
-      clearTimeout(viewDropdownOpenTimeoutRef.current);
+    if (viewDropdownOpenTimeoutRef) {
+      clearTimeout(viewDropdownOpenTimeoutRef);
     }
     setViewDropdownOpen(true);
   };
   const unShowViewDropdown = () => {
-    if (viewDropdownOpenTimeoutRef.current) {
-      clearTimeout(viewDropdownOpenTimeoutRef.current);
+    if (viewDropdownOpenTimeoutRef) {
+      clearTimeout(viewDropdownOpenTimeoutRef);
     }
-    viewDropdownOpenTimeoutRef.current = setTimeout(() => {
+    viewDropdownOpenTimeoutRef = setTimeout(() => {
       setViewDropdownOpen(false);
     }, dropdownTimeout);
   };

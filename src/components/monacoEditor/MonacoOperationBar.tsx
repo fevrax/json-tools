@@ -1,4 +1,4 @@
-import React, { Key, useState, useRef } from "react";
+import React, { Key, useState } from "react";
 import {
   Button,
   ButtonGroup,
@@ -47,8 +47,8 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
   );
 
   // 防止下拉菜单打开时，鼠标移开后立即关闭
-  const sortDropdownOpenTimeoutRef = useRef<NodeJS.Timeout>(null);
-  const moreDropdownOpenTimeoutRef = useRef<NodeJS.Timeout>(null);
+  var sortDropdownOpenTimeoutRef :NodeJS.Timeout
+  var moreDropdownOpenTimeoutRef :NodeJS.Timeout
 
   const dropdownTimeout = 300;
 
@@ -59,32 +59,32 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
 
   // 字段排序下拉菜单
   const showSortDropdown = () => {
-    if (sortDropdownOpenTimeoutRef.current) {
-      clearTimeout(sortDropdownOpenTimeoutRef.current);
+    if (sortDropdownOpenTimeoutRef) {
+      clearTimeout(sortDropdownOpenTimeoutRef);
     }
     setSortDropdownOpen(true);
   };
   const unShowSortDropdown = () => {
-    if (sortDropdownOpenTimeoutRef.current) {
-      clearTimeout(sortDropdownOpenTimeoutRef.current);
+    if (sortDropdownOpenTimeoutRef) {
+      clearTimeout(sortDropdownOpenTimeoutRef);
     }
-    sortDropdownOpenTimeoutRef.current = setTimeout(() => {
+    sortDropdownOpenTimeoutRef = setTimeout(() => {
       setSortDropdownOpen(false);
     }, dropdownTimeout);
   };
 
   // 更多下拉菜单
   const showMoreDropdown = () => {
-    if (moreDropdownOpenTimeoutRef.current) {
-      clearTimeout(moreDropdownOpenTimeoutRef.current);
+    if (moreDropdownOpenTimeoutRef) {
+      clearTimeout(moreDropdownOpenTimeoutRef);
     }
     setMoreDropdownOpen(true);
   };
   const unShowMoreDropdown = () => {
-    if (moreDropdownOpenTimeoutRef.current) {
-      clearTimeout(moreDropdownOpenTimeoutRef.current);
+    if (moreDropdownOpenTimeoutRef) {
+      clearTimeout(moreDropdownOpenTimeoutRef);
     }
-    moreDropdownOpenTimeoutRef.current = setTimeout(() => {
+    moreDropdownOpenTimeoutRef = setTimeout(() => {
       setMoreDropdownOpen(false);
     }, dropdownTimeout);
   };
