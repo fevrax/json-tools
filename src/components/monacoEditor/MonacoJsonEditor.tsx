@@ -1,4 +1,10 @@
-import React, { useEffect, useImperativeHandle, useRef, useState } from "react";
+import React, {
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  useCallback,
+} from "react";
 import { loader, Monaco } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
 import { Button, cn, useDisclosure } from "@heroui/react";
@@ -101,6 +107,109 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const [aiMessages, setAiMessages] = useState<
     Array<{ role: "user" | "assistant"; content: string; timestamp: number }>
   >([]);
+
+  // 左右推拉相关状态
+  const [aiPanelWidth, setAiPanelWidth] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartX = useRef<number>(0);
+  const dragStartWidth = useRef<number>(0);
+
+  // 开始拖动处理
+  const handleDragStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      dragStartX.current = e.clientX;
+      dragStartWidth.current = aiPanelWidth;
+      setIsDragging(true);
+    },
+    [aiPanelWidth],
+  );
+
+  // 拖动AI面板
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isDragging || !rootContainerRef.current) return;
+
+      // 使用requestAnimationFrame优化性能
+      requestAnimationFrame(() => {
+        if (!rootContainerRef.current) return;
+
+        const totalWidth = rootContainerRef.current.offsetWidth;
+
+        if (totalWidth <= 0) return; // 如果宽度无效则避免计算
+
+        const minPanelWidthPx = 200; // 两个面板的最小宽度（像素）
+
+        // 确保最小面板宽度不超过总宽度的一半（减去缓冲区）
+        const effectiveMinWidth = Math.min(
+          minPanelWidthPx,
+          totalWidth / 2 - 10,
+        );
+
+        // 基于有效最小宽度计算aiPanelWidth的边界
+        // 下限：确保AI面板至少为effectiveMinWidth
+        const lowerBound = effectiveMinWidth - 0.4 * totalWidth;
+        // 上限：确保编辑器面板至少为effectiveMinWidth
+        const upperBound = 0.6 * totalWidth - effectiveMinWidth;
+
+        // 根据拖动偏移量计算潜在的aiPanelWidth
+        const deltaX = e.clientX - dragStartX.current;
+        // 向左拖动时aiPanelWidth增加（deltaX为负）
+        let potentialAiPanelWidth = dragStartWidth.current - deltaX;
+
+        // 将潜在宽度限制在计算的边界内，确保lowerBound <= upperBound
+        if (lowerBound <= upperBound) {
+          const clampedAiPanelWidth = Math.max(
+            lowerBound,
+            Math.min(potentialAiPanelWidth, upperBound),
+          );
+
+          setAiPanelWidth(clampedAiPanelWidth);
+        } else {
+          // 处理边界无效的边缘情况（例如，totalWidth太小）
+          // 可选：设置为默认值或中间状态，或者不更新
+          console.warn("Invalid resize bounds", {
+            totalWidth,
+            lowerBound,
+            upperBound,
+          });
+          // 作为回退，如果边界无效则居中
+          // setAiPanelWidth(0); // 或者不做任何操作保留上一个值
+        }
+
+        // 更新编辑器布局
+        editorRef.current?.layout();
+      });
+    },
+    [isDragging],
+  );
+
+  // 鼠标抬起处理
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // 添加/移除鼠标事件监听
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "none";
+      document.body.style.cursor = "ew-resize";
+    } else {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   // 从 store 获取当前 tab 的设置
   const currentTab = getTabByKey(tabKey);
@@ -746,11 +855,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     },
     showAiPrompt: () => {
       const val = editorRef.current?.getValue() || "";
+
       if (val.trim() === "") {
         toast.error("编辑器内容为空，请先输入内容");
+
         return false;
       }
       setShowAiPrompt(true);
+
       return true;
     },
     copy: (type) => {
@@ -922,12 +1034,28 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         {showAiResponse ? (
           <>
             {/* 左侧编辑器区域 */}
-            <div className="w-[40%] h-full overflow-hidden border-r border-default-200 dark:border-default-100/20">
+            <div
+              className="h-full overflow-hidden border-r border-default-200 dark:border-default-100/20 monaco-editor-container"
+              style={{ width: `calc(60% - ${aiPanelWidth}px)` }}
+            >
               <div ref={containerRef} className="h-full w-full" />
             </div>
 
+            {/* 拖动条 */}
+            <div
+              className="w-2 h-full cursor-ew-resize bg-gradient-to-b from-blue-50/80 via-indigo-50/80 to-blue-50/80 dark:from-neutral-900/80 dark:via-neutral-800/80 dark:to-neutral-900/80 dark:border-neutral-800 backdrop-blur-sm flex items-center justify-center"
+              role="button"
+              style={{ touchAction: "none" }}
+              onMouseDown={handleDragStart}
+            >
+              <div className="h-24 w-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+            </div>
+
             {/* 右侧AI响应区域 */}
-            <div className="w-[60%] h-full overflow-hidden flex flex-col bg-white/95 dark:bg-neutral-900/95">
+            <div
+              className="h-full overflow-hidden flex flex-col bg-white/95 dark:bg-neutral-900/95 ai-panel"
+              style={{ width: `calc(40% + ${aiPanelWidth}px)` }}
+            >
               {/* AI标题栏 */}
               <AIResultHeader onClose={handleCloseAiResponse} />
 

@@ -852,7 +852,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
         {/* 拖动条 - 面板内部顶部 */}
         <div
           aria-label="拖动调整AI面板高度"
-          className="w-full h-4 cursor-ns-resize bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-blue-50/80 dark:from-neutral-900/80 dark:via-neutral-800/80 dark:to-neutral-900/80 dark:border-neutral-800 backdrop-blur-sm rounded-t-lg flex items-center justify-center"
+          className="w-full h-2 pt-1.5 cursor-ns-resize bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-blue-50/80 dark:from-neutral-900/80 dark:via-neutral-800/80 dark:to-neutral-900/80 dark:border-neutral-800 backdrop-blur-sm rounded-t-lg flex items-center justify-center"
           role="button"
           style={{
             touchAction: "none",
