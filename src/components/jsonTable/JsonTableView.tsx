@@ -284,7 +284,7 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
             <div className="absolute -bottom-40 -right-20 w-96 h-96 bg-indigo-100/50 dark:bg-indigo-900/20 rounded-full blur-3xl" />
           </div>
 
-          <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-8 transform transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+          <div className="bg-white/80 dark:bg-neutral-900/30 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 p-8 transform transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
             <div className="json-empty-float mx-auto mb-8 w-32 h-32 relative">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl opacity-10 dark:opacity-20 blur-xl" />
               <div className="relative flex items-center justify-center w-full h-full">
@@ -368,7 +368,7 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
             <div className="absolute -bottom-40 -right-20 w-96 h-96 bg-pink-100/50 dark:bg-pink-900/20 rounded-full blur-3xl" />
           </div>
 
-          <div className="bg-white/80 dark:bg-gray-800/90 backdrop-blur-sm rounded-2xl shadow-xl border border-red-100 dark:border-red-900/30 p-8 transform transition-all duration-300">
+          <div className="bg-white/80 dark:bg-neutral-900/70 backdrop-blur-sm rounded-2xl shadow-xl border border-red-100 dark:border-red-900/30 p-8 transform transition-all duration-300">
             <div className="mx-auto mb-6 w-24 h-24 relative flex items-center justify-center">
               <div
                 className="absolute inset-0 bg-red-500/10 dark:bg-red-500/20 rounded-full animate-ping opacity-70"

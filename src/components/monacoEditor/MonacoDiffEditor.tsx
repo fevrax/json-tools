@@ -41,18 +41,18 @@ export interface MonacoDiffEditorProps {
 }
 
 export interface MonacoDiffEditorRef {
-  focus: () => void;
-  layout: () => void;
-  copy: (type?: MonacoDiffEditorEditorType) => boolean;
-  format: (type?: MonacoDiffEditorEditorType) => boolean;
   clear: (type?: MonacoDiffEditorEditorType) => boolean;
+  copy: (type?: MonacoDiffEditorEditorType) => boolean;
   fieldSort: (
     type?: MonacoDiffEditorEditorType,
     sort?: "asc" | "desc",
   ) => boolean;
-  updateOriginalValue: (value: string) => void;
-  updateModifiedValue: (value: string) => void;
+  focus: () => void;
+  format: (type?: MonacoDiffEditorEditorType) => boolean;
+  layout: () => void;
   showAiPrompt: () => void;
+  updateModifiedValue: (value: string) => void;
+  updateOriginalValue: (value: string) => void;
 }
 
 const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
@@ -676,7 +676,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     },
     focus: () => {
       if (editorRef.current) {
-        editorRef.current.focus();
+        originalEditorRef.current?.focus();
       }
     },
     layout: () => {

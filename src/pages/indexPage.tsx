@@ -112,7 +112,7 @@ export default function IndexPage() {
     clearTimeout(monacoUpdateContentTimeoutId.current[key]);
     monacoUpdateContentTimeoutId.current[key] = setTimeout(() => {
       setTabContent(key, content);
-    }, 800);
+    }, 200);
   };
 
   // VanillaJsonEditor 更新内容后同步
@@ -120,7 +120,7 @@ export default function IndexPage() {
     clearTimeout(vanillaUpdateContentTimeoutId.current[key]);
     vanillaUpdateContentTimeoutId.current[key] = setTimeout(() => {
       setTabVanillaContent(key, content);
-    }, 1500);
+    }, 200);
   };
 
   const [editorLoading, setEditorLoading] = useState<{
