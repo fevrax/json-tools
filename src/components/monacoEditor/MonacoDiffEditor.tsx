@@ -687,7 +687,14 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       }
     },
     showAiPrompt: () => {
+      const originalVal = originalEditorRef.current?.getValue() || "";
+      const modifiedVal = modifiedEditorRef.current?.getValue() || "";
+      if (originalVal.trim() === "" && modifiedVal.trim() === "") {
+        toast.error("编辑器内容为空，请先输入内容");
+        return false;
+      }
       setShowAiPrompt(true);
+      return true;
     },
     copy: (type) => {
       if (!editorRef.current) {
@@ -827,7 +834,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       <div
         ref={aiPanelRef}
         className={cn(
-          "fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-lg transition-transform duration-300 ease-out rounded-t-lg",
+          "fixed bottom-0 left-0 right-0 bg-white dark:bg-neutral-900 shadow-lg transition-transform duration-300 ease-out rounded-t-lg",
           showAiResponse ? "translate-y-0" : "translate-y-full",
           isDragging ? "transition-none" : "",
         )}
@@ -845,7 +852,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
         {/* 拖动条 - 面板内部顶部 */}
         <div
           aria-label="拖动调整AI面板高度"
-          className="w-full h-4 cursor-ns-resize bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 dark:from-neutral-800 dark:via-neutral-800 dark:to-neutral-800 border-b border-blue-200 dark:border-neutral-700 rounded-t-lg flex items-center justify-center"
+          className="w-full h-4 cursor-ns-resize bg-gradient-to-r from-blue-50/80 via-indigo-50/80 to-blue-50/80 dark:from-neutral-900/80 dark:via-neutral-800/80 dark:to-neutral-900/80 dark:border-neutral-800 backdrop-blur-sm rounded-t-lg flex items-center justify-center"
           role="button"
           style={{
             touchAction: "none",

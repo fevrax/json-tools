@@ -745,7 +745,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       }
     },
     showAiPrompt: () => {
+      const val = editorRef.current?.getValue() || "";
+      if (val.trim() === "") {
+        toast.error("编辑器内容为空，请先输入内容");
+        return false;
+      }
       setShowAiPrompt(true);
+      return true;
     },
     copy: (type) => {
       if (!editorRef.current) {

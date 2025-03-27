@@ -99,14 +99,6 @@ JSON Tools Next 是一个多功能的JSON工具集，提供了直观的界面和
 - **Zustand**：简洁的状态管理
 - **OpenAI API**：AI增强功能支持
 
-## 🙏 致谢
-
-感谢以下优秀工具对项目的支持：
-
-- [Cursor](https://www.cursor.com/) - 强大的AI代码编辑器
-- [Cline](https://github.com/cline/cline/) - AI开发助手
-- [uTools](https://u.tools/) - 高效的效率工具平台
-
 ## 🚀 快速开始
 
 ### 安装依赖
@@ -147,6 +139,16 @@ pnpm preview
 ## 🤝 贡献
 
 欢迎提交PR、创建Issue或提供功能建议！请查看[贡献指南](CONTRIBUTING.md)了解更多。
+
+
+## 🙏 致谢
+
+感谢以下优秀工具对项目的支持：
+
+- [Cursor](https://www.cursor.com/) - 强大的AI代码编辑器
+- [Cline](https://github.com/cline/cline/) - AI开发助手
+- [uTools](https://u.tools/) - 高效的效率工具平台
+
 
 ## 📜 许可证
 
