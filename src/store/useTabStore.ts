@@ -59,7 +59,7 @@ export const useTabStore = create<TabStore>()(
     devtools(
       (set, get) => ({
         tabs: [],
-        activeTabKey: "2",
+        activeTabKey: "1",
         nextKey: 2,
         activeTab: () => {
           const activeTab = get().tabs.find(

@@ -81,13 +81,13 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
 
   // 更新 editor 的内容和模式
   const updateEditorContentAndMode = (mode: Mode, content: Content) => {
-    if (editorRef.current) {
+    if (editorRef) {
       const options: JSONEditorPropsOptional = {
         mode: mode,
       };
 
-      editorRef.current.set(content);
-      editorRef.current.updateProps(options);
+      editorRef.set(content);
+      editorRef.updateProps(options);
     }
   };
 

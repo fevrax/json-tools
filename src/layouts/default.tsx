@@ -38,6 +38,19 @@ export default function RootLayout({
   const handleSidebarSelect = (
     key: string | React.SyntheticEvent<HTMLUListElement>,
   ) => {
+    let isContinue = false;
+
+    items.forEach((item) => {
+      if (key == item.key && item.route) {
+        isContinue = true;
+        navigate(item.route);
+      }
+    });
+
+    if (isContinue) {
+      return;
+    }
+
     if (location.pathname !== "/") {
       navigate("/");
     }
@@ -47,21 +60,6 @@ export default function RootLayout({
   const onToggle = React.useCallback(() => {
     setIsCollapsed((prev) => !prev);
   }, []);
-
-  // 同步菜单状态
-  useEffect(() => {
-    if (location.pathname === "/toolbox") {
-      sidebarStore.updateClickSwitchKey(SidebarKeys.toolbox);
-      sidebarStore.updateActiveKey(SidebarKeys.toolbox);
-    } else {
-      if (
-        sidebarStore.clickSwitchKey === SidebarKeys.toolbox &&
-        location.pathname === "/"
-      ) {
-        navigate("./toolbox");
-      }
-    }
-  }, [location.pathname, sidebarStore.clickSwitchKey]);
 
   useEffect(() => {
     const init = async () => {

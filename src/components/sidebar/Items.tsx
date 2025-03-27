@@ -36,6 +36,7 @@ export const items: SidebarItem[] = [
   {
     key: SidebarKeys.toolbox,
     icon: "solar:box-outline",
+    route: "./toolbox",
     title: "工具箱",
   },
 ];
