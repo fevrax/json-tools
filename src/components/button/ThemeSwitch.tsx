@@ -59,11 +59,29 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
               },
             )}
             isIconOnly={isCollapsed}
-            startContent={isCollapsed ? null : <SunFilledIcon size={24} />}
+            startContent={
+              isCollapsed ? null : (
+                <SunFilledIcon
+                  size={24}
+                  onClick={(e) => {
+                    e.preventDefault();
+                  }}
+                />
+              )
+            }
             variant="light"
             onPress={toggleTheme}
           >
-            {isCollapsed ? <SunFilledIcon size={24} /> : "日间模式"}
+            {isCollapsed ? (
+              <SunFilledIcon
+                size={24}
+                onClick={(e) => {
+                  e.preventDefault();
+                }}
+              />
+            ) : (
+              "日间模式"
+            )}
           </Button>
         ) : (
           <Button
@@ -75,11 +93,29 @@ export const ThemeSwitch: FC<ThemeSwitchProps> = ({
               },
             )}
             isIconOnly={isCollapsed}
-            startContent={isCollapsed ? null : <MoonFilledIcon size={24} />}
+            startContent={
+              isCollapsed ? null : (
+                <MoonFilledIcon
+                  size={24}
+                  onClick={(e) => {
+                    e.preventDefault();
+                  }}
+                />
+              )
+            }
             variant="light"
             onPress={toggleTheme}
           >
-            {isCollapsed ? <MoonFilledIcon size={24} /> : "夜间模式"}
+            {isCollapsed ? (
+              <MoonFilledIcon
+                size={24}
+                onClick={(e) => {
+                  e.preventDefault();
+                }}
+              />
+            ) : (
+              "夜间模式"
+            )}
           </Button>
         )}
       </div>

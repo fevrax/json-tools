@@ -194,6 +194,7 @@ export default function RootLayout({
                       className="flex-none rotate-180 text-default-500"
                       icon="solar:settings-outline"
                       width={24}
+                      onClick={(e) =>  e.preventDefault()}
                     />
                   )
                 }
