@@ -220,7 +220,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
 
       return (
         <button
-          className="flex items-center cursor-pointer hover:text-primary bg-transparent border-0 p-0"
+          className="flex items-center cursor-pointer hover:text-primary bg-transparent border-0 p-0 pt-1"
           id={`json-path-${path}`}
           onClick={(e) => {
             onToggleExpand(path);
@@ -330,7 +330,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
     const entries = Object.entries(data);
 
     return (
-      <div className="mb-2 overflow-x-auto inline-block">
+      <div className="mb-1 overflow-x-auto inline-block">
         <table className="border-collapse w-auto">
           <tbody>
             {entries.map(([key, value]) => {
@@ -350,20 +350,20 @@ const JsonTable: React.FC<JsonTableProps> = ({
                   className={`${isSelected ? "!bg-default-200/60" : ""} hover:bg-default-50`}
                 >
                   <td
-                    className="px-4 py-1 text-sm font-medium border border-default-300 cursor-pointer"
+                    className="px-2 text-sm font-medium border border-default-300 cursor-pointer"
                     onClick={(e) => handleElementClick(valuePath, e)}
                   >
                     {key}
                   </td>
                   <td
-                    className="px-4 py-1 text-sm border border-default-300 cursor-pointer"
-                    style={{ minWidth: "200px" }}
+                    className="px-2 text-sm border border-default-300 cursor-pointer"
+                    style={{ minWidth: "30px" }}
                     onClick={(e) => handleElementClick(valuePath, e)}
                   >
                     {renderCell(value, valuePath)}
                     {isExpandable(value) && (
                       <div
-                        className="mt-1 pl-4"
+                        className="mt-1"
                         style={{
                           ...animationStyles.expandable,
                           ...(isExpanded ? animationStyles.expanded : {}),
@@ -394,7 +394,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
   ) => {
     return (
       <div
-        className={`${isNested ? "border-0" : "border border-default-300 rounded"} mb-2 overflow-x-auto inline-block`}
+        className={`${isNested ? "border-0" : "border border-default-300 rounded"} mb-1 overflow-x-auto inline-block`}
       >
         <table className="border-collapse w-auto">
           <tbody>
@@ -415,20 +415,20 @@ const JsonTable: React.FC<JsonTableProps> = ({
                   className={`${isSelected ? "!bg-default-200/60" : ""} hover:bg-default-50`}
                 >
                   <td
-                    className="px-4 py-1 text-sm border border-default-300 cursor-pointer"
+                    className="px-2 text-sm border border-default-300 cursor-pointer"
                     onClick={(e) => handleElementClick(itemPath, e)}
                   >
                     {index}
                   </td>
                   <td
-                    className="px-4 py-1 text-sm border border-default-300 cursor-pointer"
-                    style={{ minWidth: "200px" }}
+                    className="px-2 text-sm border border-default-300 cursor-pointer"
+                    style={{ minWidth: "30px" }}
                     onClick={(e) => handleElementClick(itemPath, e)}
                   >
                     {renderCell(item, itemPath)}
                     {isExpandable(item) && (
                       <div
-                        className="mt-1 pl-4"
+                        className="mt-1"
                         style={{
                           ...animationStyles.expandable,
                           ...(isExpanded ? animationStyles.expanded : {}),
@@ -465,13 +465,13 @@ const JsonTable: React.FC<JsonTableProps> = ({
 
     return (
       <div
-        className={`${isNested ? "border-0" : "border border-gray-400 rounded"} mb-2 overflow-x-auto inline-block`}
+        className={`${isNested ? "border-0" : "border border-gray-400 rounded"} mb-1 overflow-x-auto inline-block`}
       >
         <table className="border-collapse w-auto">
           <thead>
             <tr className="bg-default-50">
               <th
-                className={`${isPathSelected(path) ? "!bg-default-200/60" : ""} w-16 px-4 py-1 text-left text-sm font-medium text-default-600 border border-default-300 cursor-pointer`}
+                className={`${isPathSelected(path) ? "!bg-default-200/60" : ""} px-2 text-left text-sm font-medium text-default-600 border border-default-300 cursor-pointer`}
                 onClick={(e) => handleElementClick(path, e)}
               >
                 #
@@ -484,7 +484,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
                 return (
                   <th
                     key={key}
-                    className={`${isHeaderSelected ? "!bg-default-200/60" : ""} px-4 py-1 text-left text-sm font-medium text-default-600 border border-default-300 cursor-pointer`}
+                    className={`${isHeaderSelected ? "!bg-default-200/60" : ""} px-2 text-left text-sm font-medium text-default-600 border border-default-300 cursor-pointer`}
                     onClick={(e) => handleElementClick(headerPath, e)}
                   >
                     {key}
@@ -508,7 +508,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
                   className={`${isSelected ? "!bg-default-200/60" : ""} hover:bg-default-50`}
                 >
                   <td
-                    className="px-4 py-1 text-sm border border-default-300 cursor-pointer"
+                    className="px-2 text-sm border border-default-300 cursor-pointer"
                     onClick={(e) => handleElementClick(itemPath, e)}
                   >
                     {index}
@@ -528,8 +528,8 @@ const JsonTable: React.FC<JsonTableProps> = ({
                       return (
                         <td
                           key={key}
-                          className={`${isPathSelected(cellPath) ? "!bg-default-200/60" : ""} px-4 py-1 text-sm border border-default-300 cursor-pointer`}
-                          style={{ minWidth: "200px" }}
+                          className={`${isPathSelected(cellPath) ? "!bg-default-200/60" : ""} px-2 text-sm border border-default-300 cursor-pointer`}
+                          style={{ minWidth: "30px" }}
                           onClick={(e) => handleElementClick(cellPath, e)}
                         >
                           -
@@ -540,14 +540,14 @@ const JsonTable: React.FC<JsonTableProps> = ({
                     return (
                       <td
                         key={key}
-                        className={`${isCellSelected ? "!bg-default-200/60" : ""} px-4 py-1 text-sm border border-default-300 cursor-pointer`}
-                        style={{ minWidth: "200px" }}
+                        className={`${isCellSelected ? "!bg-default-200/60" : ""} px-2 text-sm border border-default-300 cursor-pointer`}
+                        style={{ minWidth: "30px" }}
                         onClick={(e) => handleElementClick(cellPath, e)}
                       >
                         {renderCell(value, cellPath)}
                         {isExpandable(value) && (
                           <div
-                            className="mt-1 pl-4"
+                            className="mt-1"
                             style={{
                               ...animationStyles.expandable,
                               ...(isExpanded ? animationStyles.expanded : {}),
