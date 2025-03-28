@@ -1,8 +1,8 @@
 
 .vanilla-json-editor {
     /* define a custom theme color */
-    --jse-theme-color: #9a38fc;
-    --jse-theme-color-highlight: #b160fb;
+    --jse-theme-color: #615FFF;
+    --jse-theme-color-highlight: #7C86FF;
 
     //  var(--jse-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif)
     --jse-font-family: "JetBrains Mono", sans-serif ;
@@ -46,7 +46,7 @@
         }
 
         .jse-selected {
-            @apply text-purple-500 font-bold !important;
+            @apply text-indigo-500 font-bold !important;
         }
 
         .jse-group-button {
@@ -61,7 +61,7 @@
         }
         .jse-button:hover,
         .jse-button:active {
-            @apply bg-default-200 text-purple-500 !important;
+            @apply bg-default-200 text-indigo-500 !important;
             outline: none !important;
             box-shadow: none !important;
         }
@@ -78,7 +78,7 @@
             margin-top: 0 !important;
             padding: 14px 2px !important;
             @apply rounded-lg duration-300 border-none bg-default-100 !important;
-            @apply hover:bg-default-200 hover:text-purple-500 dark:hover:text-purple-600 !important;
+            @apply hover:bg-default-200/50 hover:text-indigo-500 dark:hover:text-indigo-600 !important;
         }
 
         // 自定义文本按钮
