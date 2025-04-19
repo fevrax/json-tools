@@ -56,8 +56,9 @@ JSON Tools Next 是一个多功能的JSON工具集，提供了直观的界面和
 
 ## 🖼️ 界面预览
 
-![JSON Tools Next预览](https://via.placeholder.com/800x450?text=JSON+Tools+Next+Preview)
-
+![250419132143711.png](https://minio.kl.do/default/250419132143711-20250419132143726.png)
+![250419132241894.png](https://minio.kl.do/default/250419132241894-20250419132242640.png)
+![250419132405927.png](https://minio.kl.do/default/250419132405927-20250419132406260.png)
 ## 🔥 核心功能
 
 ### 多视图JSON编辑器
