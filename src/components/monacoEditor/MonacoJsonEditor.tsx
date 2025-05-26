@@ -271,7 +271,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   // 使用自定义快捷指令或默认快捷指令
   const finalQuickPrompts = customQuickPrompts || jsonQuickPrompts;
 
-  // 计算编辑器实际高度，当有错误时减去错误信息栏的高度
+  // 计算编辑器实际高度，当有错误时减少错误信息栏的高度
   const getEditorHeight = () => {
     // 如果height是数字，直接使用；如果是字符串(如100%)，保持原样
     let baseHeight =
@@ -482,6 +482,368 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     };
   }, []); // 空依赖数组确保只在挂载时执行
 
+  // 更新折叠装饰器
+  const updateFoldingDecorations = () => {
+    if (!editorRef.current) return;
+
+    // 强制应用自定义样式到折叠元素
+    setTimeout(() => {
+      const foldedElements = document.querySelectorAll(
+        ".monaco-editor .inline-folded",
+      );
+
+      foldedElements.forEach((el) => {
+        // 确保自定义样式被应用
+        el.classList.add("inline-folded");
+
+        // 获取折叠元素的长度信息
+        const elementCount = getElementCountFromPosition(el);
+
+        if (elementCount !== null) {
+          // 设置自定义属性，用于CSS中显示元素长度
+          el.setAttribute("data-element-count", elementCount.toString());
+        }
+      });
+    }, 50);
+  };
+
+  // 获取折叠对象或数组的元素数量
+  const getElementCountFromPosition = (element: Element): number | null => {
+    if (!editorRef.current) return null;
+
+    try {
+      // 获取折叠元素所在的行号
+      const lineNumber = getLineNumberFromElement(element);
+
+      if (!lineNumber) return null;
+
+      const model = editorRef.current.getModel();
+
+      if (!model) return null;
+
+      // 获取当前行的内容
+      const lineContent = model.getLineContent(lineNumber);
+      const trimmedLine = lineContent.trim();
+
+      // 确定是否为对象或数组的开始行
+      const isObject = trimmedLine.endsWith("{");
+      const isArray = trimmedLine.endsWith("[");
+
+      if (!isObject && !isArray) return null;
+
+      // 获取完整文本，用于结构化分析
+      const fullText = model.getValue();
+
+      // 确定开始和结束的位置
+      let startPos = model.getOffsetAt({ lineNumber, column: 1 });
+      let openBrackets = 0;
+      let closeBrackets = 0;
+      let endPos = startPos;
+
+      // 查找匹配的闭合括号来确定块的范围
+      const openChar = isObject ? "{" : "[";
+      const closeChar = isObject ? "}" : "]";
+
+      for (let i = startPos; i < fullText.length; i++) {
+        const char = fullText[i];
+
+        if (char === openChar) openBrackets++;
+        if (char === closeChar) closeBrackets++;
+
+        // 当闭合括号数量与开放括号相等时，找到块结束位置
+        if (openBrackets > 0 && openBrackets === closeBrackets) {
+          endPos = i + 1;
+          break;
+        }
+      }
+
+      // 提取块内容
+      const blockContent = fullText.substring(startPos, endPos);
+
+      // 先尝试用JSON.parse直接解析，这是最准确的方式
+      try {
+        const parsed = JSON.parse(blockContent);
+
+        if (isObject) {
+          return Object.keys(parsed).length;
+        } else {
+          return Array.isArray(parsed) ? parsed.length : 0;
+        }
+      } catch (e) {
+        // JSON解析失败，使用字符级别的解析
+        if (isObject) {
+          return countObjectProperties(blockContent);
+        } else {
+          return countArrayElements(blockContent);
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.warn("Error calculating element count:", error);
+
+      return null;
+    }
+  };
+
+  // 计算对象中的属性数量
+  const countObjectProperties = (blockContent: string): number => {
+    // 移除首尾的花括号和空白
+    const content = blockContent.trim().replace(/^{|}$/g, "").trim();
+
+    if (!content) return 0;
+
+    // 处理只有一个属性的特殊情况
+    if (!content.includes(",")) {
+      // 检查是否有键值对模式（比如 "key": value）
+      if (content.match(/"[^"]*"\s*:|'[^']*'\s*:|\w+\s*:/)) {
+        return 1;
+      }
+    }
+
+    // 计算顶级属性（考虑嵌套对象和数组）
+    let count = 0;
+    let inString = false;
+    let stringChar = "";
+    let bracketDepth = 0;
+    let braceDepth = 0;
+    let hasContent = false; // 标记是否有实际内容
+
+    for (let i = 0; i < content.length; i++) {
+      const char = content[i];
+
+      // 处理字符串
+      if (
+        (char === '"' || char === "'") &&
+        (i === 0 || content[i - 1] !== "\\")
+      ) {
+        if (!inString) {
+          inString = true;
+          stringChar = char;
+          hasContent = true;
+        } else if (stringChar === char) {
+          inString = false;
+        }
+        continue;
+      }
+
+      if (inString) continue;
+
+      // 跳过空白字符
+      if (/\s/.test(char)) continue;
+
+      // 非空白字符表示有内容
+      if (!/[,{}[\]]/.test(char)) {
+        hasContent = true;
+      }
+
+      // 处理嵌套
+      if (char === "{") {
+        braceDepth++;
+        hasContent = true;
+      }
+      if (char === "}") braceDepth--;
+      if (char === "[") {
+        bracketDepth++;
+        hasContent = true;
+      }
+      if (char === "]") bracketDepth--;
+
+      // 在顶级找到逗号或结束
+      if (
+        (char === "," || i === content.length - 1) &&
+        braceDepth === 0 &&
+        bracketDepth === 0
+      ) {
+        // 确保前面有内容才计数
+        if (
+          hasContent ||
+          (i === content.length - 1 && count === 0 && content.trim())
+        ) {
+          count++;
+        }
+        hasContent = false;
+      }
+    }
+
+    return count;
+  };
+
+  // 计算数组中的元素数量
+  const countArrayElements = (blockContent: string): number => {
+    // 首先尝试再次用JSON.parse解析，这是最可靠的方法
+    try {
+      const content = blockContent.trim();
+
+      if (!content) return 0;
+
+      const parsed = JSON.parse(content);
+
+      if (Array.isArray(parsed)) {
+        return parsed.length;
+      }
+    } catch (e) {
+      // 解析失败，继续使用字符级解析
+    }
+
+    // 准备用字符级解析处理
+    // 移除首尾的方括号
+    const trimmedContent = blockContent.trim();
+
+    if (trimmedContent === "[]") return 0;
+
+    // 提取数组内容，去除首尾的方括号
+    let content = "";
+    let bracketDepth = 0;
+    let foundStart = false;
+
+    for (let i = 0; i < trimmedContent.length; i++) {
+      const char = trimmedContent[i];
+
+      if (char === "[") {
+        bracketDepth++;
+        if (!foundStart) {
+          foundStart = true;
+          continue; // 跳过第一个左方括号
+        }
+      } else if (char === "]") {
+        bracketDepth--;
+        if (bracketDepth === 0 && foundStart) {
+          break; // 结束于最后一个右方括号
+        }
+      }
+
+      if (foundStart) {
+        content += char;
+      }
+    }
+
+    // 如果是空数组或无法提取内容
+    if (!content.trim()) return 0;
+
+    // 在顶层扫描并计数
+    let elementCount = 0;
+    let pos = 0;
+    let inString = false;
+    let stringChar = "";
+    let objectDepth = 0;
+    let arrayDepth = 0;
+
+    // 使用扫描状态机
+    while (pos < content.length) {
+      const char = content[pos];
+
+      // 处理字符串
+      if (
+        (char === '"' || char === "'") &&
+        (pos === 0 || content[pos - 1] !== "\\")
+      ) {
+        if (!inString) {
+          inString = true;
+          stringChar = char;
+        } else if (char === stringChar) {
+          inString = false;
+        }
+        pos++;
+        continue;
+      }
+
+      // 在字符串内部的字符直接跳过
+      if (inString) {
+        pos++;
+        continue;
+      }
+
+      // 处理对象和数组嵌套
+      if (char === "{") {
+        objectDepth++;
+      } else if (char === "}") {
+        objectDepth--;
+      } else if (char === "[") {
+        arrayDepth++;
+      } else if (char === "]") {
+        arrayDepth--;
+      }
+      // 只有在顶层(不在任何对象或数组内)时才计算逗号
+      else if (char === "," && objectDepth === 0 && arrayDepth === 0) {
+        elementCount++;
+      }
+
+      pos++;
+    }
+
+    // 加上最后一个元素(因为最后一个元素后面没有逗号)
+    elementCount++;
+
+    return elementCount;
+  };
+
+  // 获取折叠元素所在的行号
+  const getLineNumberFromElement = (element: Element): number | null => {
+    if (!editorRef.current) return null;
+
+    // 查找包含行号信息的父元素
+    let currentElement: Element | null = element;
+
+    while (currentElement) {
+      // 尝试获取Monaco编辑器在DOM元素上设置的行号属性
+      const lineNumberAttribute =
+        currentElement.getAttribute("data-line-index") ||
+        currentElement.getAttribute("data-line-number") ||
+        currentElement.getAttribute("data-line");
+
+      if (lineNumberAttribute) {
+        // Monaco编辑器中行号是从0开始的，所以需要+1
+        return parseInt(lineNumberAttribute, 10) + 1;
+      }
+
+      // 尝试从class中提取行号（某些版本的Monaco可能使用这种方式）
+      const classNames = currentElement.className.split(" ");
+
+      for (const className of classNames) {
+        if (className.startsWith("line-")) {
+          const lineMatch = className.match(/line-(\d+)/);
+
+          if (lineMatch && lineMatch[1]) {
+            return parseInt(lineMatch[1], 10);
+          }
+        }
+      }
+
+      currentElement = currentElement.parentElement;
+    }
+
+    try {
+      // 通过DOM位置确定行号 - 查找元素在视图中的位置并映射到编辑器行
+      const editorDomNode = editorRef.current.getDomNode();
+
+      if (editorDomNode && editorDomNode.contains(element)) {
+        const elementRect = element.getBoundingClientRect();
+        const editorRect = editorDomNode.getBoundingClientRect();
+        const relativeY = elementRect.top - editorRect.top;
+        const lineHeight = editorRef.current.getOption(
+          monaco.editor.EditorOption.lineHeight,
+        );
+        const visibleRanges = editorRef.current.getVisibleRanges();
+
+        if (visibleRanges.length > 0) {
+          const firstLineInView = visibleRanges[0].startLineNumber;
+          const approximateLine =
+            firstLineInView + Math.floor(relativeY / lineHeight);
+
+          return approximateLine;
+        }
+      }
+    } catch (error) {
+      console.warn("Error calculating line number from position:", error);
+    }
+
+    // 获取当前光标位置行号作为后备
+    const position = editorRef.current.getPosition();
+
+    return position ? position.lineNumber : null;
+  };
+
   // 初始化编辑器的函数
   const initializeEditor = async () => {
     console.log("initializeEditor", tabKey);
@@ -600,11 +962,34 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         cursorSurroundingLines: 0, // 光标环绕行数 当文字输入超过屏幕时 可以看见右侧滚动条中光标所处位置是在滚动条中间还是顶部还是底部 即光标环绕行数 环绕行数越大 光标在滚动条中位置越居中
         cursorSurroundingLinesStyle: "all", // "default" | "all" 光标环绕样式
         links: true, // 是否点击链接
+        folding: true, // 确保启用代码折叠
       });
 
       onMount && onMount();
 
       editor.focus();
+
+      // 监听折叠事件
+      editor.onDidChangeModelContent(() => {
+        // 在内容变化时更新折叠装饰器
+        setTimeout(() => {
+          updateFoldingDecorations();
+        }, 100);
+      });
+
+      // 添加鼠标点击事件来捕获折叠操作
+      editor.onMouseDown((e) => {
+        // 用户点击后检查是否有折叠相关操作
+        // 点击装订线(gutter)区域后更新折叠
+        if (
+          e.target.type ===
+          monaco.editor.MouseTargetType.GUTTER_LINE_DECORATIONS
+        ) {
+          setTimeout(() => {
+            updateFoldingDecorations();
+          }, 100);
+        }
+      });
 
       // 监听内容变化
       editor.onDidChangeModelContent(async () => {
@@ -1007,6 +1392,66 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       }
     },
   }));
+
+  useEffect(() => {
+    // 使用 setTimeout 确保在 React 严格模式下只执行一次
+    const timeoutId = setTimeout(() => {
+      initializeEditor();
+    }, 0);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, []); // 空依赖数组确保只在挂载时执行
+
+  // 在模型或主题变化时更新装饰器
+  useEffect(() => {
+    if (editorRef.current) {
+      updateFoldingDecorations();
+    }
+  }, [language, theme]);
+
+  // 在组件卸载时清除定时器
+  useEffect(() => {
+    // 定义一个用于定期检查和更新折叠状态的定时器
+    const foldingInterval = setInterval(() => {
+      if (editorRef.current) {
+        updateFoldingDecorations();
+      }
+    }, 2000); // 每2秒检查一次折叠状态
+
+    return () => {
+      if (foldingInterval) {
+        clearInterval(foldingInterval);
+      }
+    };
+  }, [editorRef.current]);
+
+  // 添加自定义样式
+  useEffect(() => {
+    const styleElement = document.createElement("style");
+
+    styleElement.textContent = `
+      .inline-folded::after {
+        content: attr(data-element-count) !important;
+        background-color: #4CAF50 !important;
+        color: white !important;
+        border-radius: 3px;
+        padding: 0 3px;
+        margin-left: 4px;
+      }
+      
+      /* 当没有元素计数数据时的备用显示 */
+      .inline-folded:not([data-element-count])::after {
+        content: "..." !important;
+      }
+    `;
+    document.head.appendChild(styleElement);
+
+    return () => {
+      document.head.removeChild(styleElement);
+    };
+  }, []);
 
   return (
     <div
