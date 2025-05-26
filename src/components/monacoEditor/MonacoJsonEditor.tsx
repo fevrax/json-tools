@@ -94,6 +94,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const editorLayoutTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const errorDecorationsRef =
     useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+  const foldingDecorationsRef =
+    useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
 
   // AI相关状态
   const [showAiPrompt, setShowAiPrompt] = useState(false);
@@ -600,12 +602,162 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         cursorSurroundingLines: 0, // 光标环绕行数 当文字输入超过屏幕时 可以看见右侧滚动条中光标所处位置是在滚动条中间还是顶部还是底部 即光标环绕行数 环绕行数越大 光标在滚动条中位置越居中
         cursorSurroundingLinesStyle: "all", // "default" | "all" 光标环绕样式
         links: true, // 是否点击链接
+        folding: true, // 启用代码折叠功能
       });
 
       onMount && onMount();
 
       editor.focus();
 
+      // 添加自定义CSS样式
+      const addCustomStyles = (className: string) => {
+        // 检查是否已经添加过样式
+        if (document.getElementById(className)) {
+          return;
+        }
+
+        const style = document.createElement("style");
+
+        style.id = className;
+        style.textContent = `
+    .${className} {
+      background-color: rgba(255, 0, 0, 0.2)!important;
+      font-size: 18px !important;
+      color: #6b7280 !important;
+      font-style: italic !important;
+      opacity: 0.8 !important;
+      margin-left: 4px !important;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+    }
+    .${className}::after {
+  content: "你的文本";
+  position: absolute;
+  left: 100%;
+  margin-left: 8px;
+  color: #6b7280;
+}
+  `;
+        document.head.appendChild(style);
+      };
+
+
+
+      // 添加折叠状态变化监听器
+      const updateFoldingDecorations = () => {
+        const model = editor.getModel();
+
+        if (!model) return;
+
+        // 获取折叠模型
+        const foldingController = editor.getContribution(
+          "editor.contrib.folding",
+        ) as any;
+
+        if (!foldingController) return;
+
+        try {
+          // 获取当前所有折叠区域
+          const foldingModel = foldingController.hiddenRangeModel;
+
+          if (!foldingModel) return;
+
+          const regions = foldingModel._hiddenRanges;
+
+          if (!regions || !regions.length) return;
+
+          // 获取当前折叠的区域
+          const decorations: monaco.editor.IModelDeltaDecoration[] = [];
+          const modelLines = model.getLinesContent();
+
+          // 遍历所有折叠区域
+          for (let i = 0; i < regions.length; i++) {
+            const region = regions[i];
+
+            const startLineNumber = region.startLineNumber;
+            const endLineNumber = region.endLineNumber;
+
+            // 计算折叠区域包含的元素数量
+            let elementCount = 0;
+
+            // 对于JSON/JSON5内容，我们计算对象或数组中的元素数量
+            const regionText = modelLines
+              .slice(startLineNumber - 1, endLineNumber)
+              .join("\n");
+
+            try {
+              // 尝试解析JSON片段
+              const startBracket = modelLines[startLineNumber - 1]
+                .trim()
+                .slice(-1);
+
+              if (startBracket === "{") {
+                // 对象 - 计算键值对数量
+                elementCount = (regionText.match(/["'][^"']+["']\s*:/g) || [])
+                  .length;
+              } else if (startBracket === "[") {
+                // 数组 - 计算逗号数量+1（或直接计算元素）
+                elementCount = (regionText.match(/,/g) || []).length + 1;
+                // 处理空数组的情况
+                if (regionText.trim().match(/\[\s*\]/)) {
+                  elementCount = 0;
+                }
+              }
+            } catch (e) {
+              // 如果解析失败，退回到计算行数
+              elementCount = endLineNumber - startLineNumber;
+            }
+
+            addCustomStyles("tttt")
+
+            // 创建装饰器，显示元素数量
+            decorations.push({
+              range: new monaco.Range(
+                startLineNumber - 1,
+                10,
+                startLineNumber - 1,
+                10,
+              ),
+              options: {
+                zIndex: 99999,
+                after: {
+                  content: `${elementCount}项`,
+                  inlineClassName: "monaco-folding-count-after",
+                },
+                lineNumberClassName: "666666666666",
+                linesDecorationsTooltip: `${elementCount}项`,
+                glyphMarginHoverMessage: {
+                  value: `${elementCount}项`,
+                },
+                isWholeLine: true,
+                className: "tttt",
+                glyphMarginClassName: "",
+              },
+            });
+          }
+
+          // 应用装饰器 - 使用createDecorationsCollection而不是deltaDecorations
+          if (decorations.length > 0) {
+            // 清除旧的装饰器
+            if (foldingDecorationsRef.current) {
+              foldingDecorationsRef.current.clear();
+            }
+            // 创建新的装饰器集合
+            foldingDecorationsRef.current =
+              editor.createDecorationsCollection(decorations);
+          }
+        } catch (e) {
+          console.error("更新折叠装饰器失败", e);
+        }
+      };
+
+      // 监听折叠状态变化
+      editor.onDidChangeHiddenAreas(() => {
+        // 使用requestAnimationFrame优化性能，避免频繁更新
+        requestAnimationFrame(updateFoldingDecorations);
+      });
+
+      // 添加样式
+      // addCustomStyles();
       // 监听内容变化
       editor.onDidChangeModelContent(async () => {
         const val = editor.getValue();

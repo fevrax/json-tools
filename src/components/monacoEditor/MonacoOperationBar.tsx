@@ -47,8 +47,8 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
   );
 
   // 防止下拉菜单打开时，鼠标移开后立即关闭
-  var sortDropdownOpenTimeoutRef :NodeJS.Timeout
-  var moreDropdownOpenTimeoutRef :NodeJS.Timeout
+  var sortDropdownOpenTimeoutRef: NodeJS.Timeout;
+  var moreDropdownOpenTimeoutRef: NodeJS.Timeout;
 
   const dropdownTimeout = 300;
 

@@ -35,7 +35,7 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
   onMount,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  var editorRef : JsonEditor
+  var editorRef: JsonEditor;
   //
   // const clearButtonItem = {
   //   type: 'button',

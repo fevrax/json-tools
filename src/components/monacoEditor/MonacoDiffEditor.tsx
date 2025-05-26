@@ -689,11 +689,14 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     showAiPrompt: () => {
       const originalVal = originalEditorRef.current?.getValue() || "";
       const modifiedVal = modifiedEditorRef.current?.getValue() || "";
+
       if (originalVal.trim() === "" && modifiedVal.trim() === "") {
         toast.error("编辑器内容为空，请先输入内容");
+
         return false;
       }
       setShowAiPrompt(true);
+
       return true;
     },
     copy: (type) => {
