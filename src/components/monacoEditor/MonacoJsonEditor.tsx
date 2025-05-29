@@ -609,8 +609,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
       editor.focus();
 
-      // 添加自定义CSS样式
-      const addCustomStyles = (className: string) => {
+      // 添加折叠样式
+      const addFoldingStyles = (className: string, content: string) => {
         // 检查是否已经添加过样式
         if (document.getElementById(className)) {
           return;
@@ -620,27 +620,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
         style.id = className;
         style.textContent = `
-    .${className} {
-      background-color: rgba(255, 0, 0, 0.2)!important;
-      font-size: 18px !important;
-      color: #6b7280 !important;
-      font-style: italic !important;
-      opacity: 0.8 !important;
-      margin-left: 4px !important;
-      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
-    }
-    .${className}::after {
-  content: "你的文本";
-  position: absolute;
-  left: 100%;
-  margin-left: 8px;
-  color: #6b7280;
-}
+        .${className} {}
+        .${className} ~ .inline-folded::after {
+          width: 100px !important;
+          content: "${content}" !important;
+        }
   `;
         document.head.appendChild(style);
       };
-
-
 
       // 添加折叠状态变化监听器
       const updateFoldingDecorations = () => {
@@ -676,38 +663,64 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
             const startLineNumber = region.startLineNumber;
             const endLineNumber = region.endLineNumber;
 
-            // 计算折叠区域包含的元素数量
+            // 请帮我完善计算对象数组元素的长度
+            // 计算折叠区域内的元素数量
             let elementCount = 0;
 
-            // 对于JSON/JSON5内容，我们计算对象或数组中的元素数量
-            const regionText = modelLines
-              .slice(startLineNumber - 1, endLineNumber)
-              .join("\n");
+            // 获取折叠区域的所有行内容
+            let foldedLines = modelLines.slice(
+              startLineNumber - 2,
+              endLineNumber,
+            );
 
-            try {
-              // 尝试解析JSON片段
-              const startBracket = modelLines[startLineNumber - 1]
-                .trim()
-                .slice(-1);
+            // 判断是对象还是数组
+            const firstLine = foldedLines[0] || "";
+            const isObject = firstLine.trim().includes("{");
+            const isArray = firstLine.trim().includes("[");
 
-              if (startBracket === "{") {
-                // 对象 - 计算键值对数量
-                elementCount = (regionText.match(/["'][^"']+["']\s*:/g) || [])
-                  .length;
-              } else if (startBracket === "[") {
-                // 数组 - 计算逗号数量+1（或直接计算元素）
-                elementCount = (regionText.match(/,/g) || []).length + 1;
-                // 处理空数组的情况
-                if (regionText.trim().match(/\[\s*\]/)) {
-                  elementCount = 0;
-                }
-              }
-            } catch (e) {
-              // 如果解析失败，退回到计算行数
-              elementCount = endLineNumber - startLineNumber;
+            foldedLines = foldedLines.slice(1, foldedLines.length)
+            if (isObject) {
+              // 计算对象中的键值对数量（查找冒号的数量）
+              elementCount = foldedLines.reduce((count, line) => {
+                // 查找每行中的冒号，跳过注释行
+                if (
+                  line.trim().startsWith("//") ||
+                  line.trim().startsWith("/*")
+                )
+                  return count;
+
+                return count + (line.includes(":") ? 1 : 0);
+              }, 0);
+              console.log('isObject', elementCount, foldedLines);
+            } else if (isArray) {
+              // 计算数组中的元素数量（查找逗号的数量 + 1）
+              // 统计所有非注释、非空白行中的逗号数量
+              const commaCount = foldedLines.reduce((count, line) => {
+                // 跳过注释行
+                if (
+                  line.trim().startsWith("//") ||
+                  line.trim().startsWith("/*")
+                )
+                  return count;
+                // 计算每行中的逗号数量
+                const matches = line.match(/,/g);
+
+                return count + (matches ? matches.length : 0);
+              }, 0);
+
+              // 元素数量 = 逗号数量 + 1（最后一个元素后没有逗号）
+              // 但要注意空数组的情况
+              elementCount =
+                foldedLines.join("").trim().replace(/\s/g, "") === "[]"
+                  ? 0
+                  : commaCount + 1;
             }
 
-            addCustomStyles("tttt")
+            console.log("元素个数" + elementCount);
+
+            let className = `folding${startLineNumber - 1}`;
+
+            addFoldingStyles(className, "\\22EF 元素个数" + elementCount);
 
             // 创建装饰器，显示元素数量
             decorations.push({
@@ -719,18 +732,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               ),
               options: {
                 zIndex: 99999,
-                after: {
-                  content: `${elementCount}项`,
-                  inlineClassName: "monaco-folding-count-after",
-                },
-                lineNumberClassName: "666666666666",
-                linesDecorationsTooltip: `${elementCount}项`,
-                glyphMarginHoverMessage: {
-                  value: `${elementCount}项`,
-                },
-                isWholeLine: true,
-                className: "tttt",
-                glyphMarginClassName: "",
+                isWholeLine: false,
+                beforeContentClassName: className, //
               },
             });
           }
