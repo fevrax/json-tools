@@ -96,7 +96,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
           >
             {isCollapsed ? <ChevronRightIcon /> : <ChevronDownIcon />}
           </Button>
-          <span className="font-mono font-medium">{language || "text"}</span>
+          <span className="font-mono font-medium text-base">{language || "text"}</span>
         </div>
         <div className="flex items-center space-x-1">
           {/* 差异编辑器模式下显示两个应用按钮 */}
@@ -158,7 +158,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
       <div
         ref={contentRef}
         className={cn(
-          "w-full transition-all duration-300 ease-in-out overflow-hidden",
+          "w-full transition-all duration-300 ease-in-out overflow-hidden text-base",
           isCollapsed ? "opacity-0 max-h-0" : "opacity-100",
         )}
         style={{ display: !isVisible && isCollapsed ? "none" : "block" }}
