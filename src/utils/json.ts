@@ -294,3 +294,4 @@ export function removeJsonComments(jsonText: string): string {
 
   return jsonText;
 }
+
