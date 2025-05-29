@@ -165,7 +165,7 @@ export function calculateFoldingElementCount(
     try {
       const jsonObj = JSON.parse(`[${cleanContent}]`);
 
-      result.type = 1;
+      result.type = 2;
       result.count = jsonObj.length;
 
       return result;
