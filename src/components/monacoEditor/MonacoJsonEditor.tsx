@@ -35,6 +35,8 @@ import AIPromptOverlay, { QuickPrompt } from "@/components/ai/AIPromptOverlay";
 import PromptContainer, {
   PromptContainerRef,
 } from "@/components/ai/PromptContainer";
+import { jsonQuickPrompts } from "@/components/ai/JsonQuickPrompts.tsx";
+import { Json5LanguageDef } from "@/components/monacoEditor/MonacoLanguageDef.tsx";
 
 export interface MonacoJsonEditorProps {
   tabTitle?: string;
@@ -176,8 +178,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
             lowerBound,
             upperBound,
           });
-          // 作为回退，如果边界无效则居中
-          // setAiPanelWidth(0); // 或者不做任何操作保留上一个值
         }
 
         // 更新编辑器布局
@@ -232,44 +232,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     onOpen: openJsonErrorDetailsModel,
     onClose: closeJsonErrorDetailsModel,
   } = useDisclosure();
-
-  const jsonQuickPrompts: QuickPrompt[] = [
-    {
-      id: "fix_json",
-      label: "修复JSON",
-      icon: "mdi:wrench",
-      prompt: "这个JSON有错误，请帮我修复",
-      color: "success",
-    },
-    {
-      id: "convert_to_go",
-      label: "生成 Go 结构体",
-      icon: "simple-icons:go",
-      prompt: "请根据这个JSON生成 Go 结构体定义",
-      color: "primary",
-    },
-    {
-      id: "convert_to_typescript",
-      label: "生成 TS 类型",
-      icon: "simple-icons:typescript",
-      prompt: "请根据这个JSON 生成 TypeScript 接口定义",
-      color: "default",
-    },
-    {
-      id: "generate_sample",
-      label: "生成示例数据",
-      icon: "mdi:database-outline",
-      prompt: "根据这个JSON结构生成10条示例数据",
-      color: "warning",
-    },
-    {
-      id: "validate_json",
-      label: "校验数据",
-      icon: "mdi:check-circle-outline",
-      prompt: "请检查这个JSON是否有逻辑错误或格式问题",
-      color: "danger",
-    },
-  ];
 
   // 使用自定义快捷指令或默认快捷指令
   const finalQuickPrompts = customQuickPrompts || jsonQuickPrompts;
@@ -483,7 +445,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     return () => {
       clearTimeout(timeoutId);
     };
-  }, []); // 空依赖数组确保只在挂载时执行
+  }, []);
 
   // 初始化编辑器的函数
   const initializeEditor = async () => {
@@ -512,66 +474,10 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         .some((lang) => lang.id === "json5")
     ) {
       monacoInstance.languages.register({ id: "json5" });
-
-      // 设置 JSON5 语法高亮规则，基于 JSON 规则但添加了 JSON5 特性支持
-      monacoInstance.languages.setMonarchTokensProvider("json5", {
-        defaultToken: "invalid",
-        tokenPostfix: ".json5",
-
-        // 转义字符
-        escapes: /\\(?:[bfnrtv\\"\/]|u[0-9A-Fa-f]{4})/,
-
-        // JSON5 支持的标记符号
-        tokenizer: {
-          root: [
-            // 支持单行注释
-            [/\/\/.*$/, "comment"],
-            // 支持多行注释
-            [/\/\*/, "comment", "@comment"],
-            // 字符串
-            [/"([^"\\]|\\.)*$/, "string.invalid"],
-            [/'([^'\\]|\\.)*$/, "string.invalid"], // JSON5 支持单引号
-            [/"/, "string", "@string_double"],
-            [/'/, "string", "@string_single"], // JSON5 支持单引号
-            // 数字
-            [/[+-]?\d+\.\d+([eE][+-]?\d+)?/, "number.float"],
-            [/[+-]?\d+[eE][+-]?\d+/, "number.float"],
-            [/[+-]?\d+/, "number"],
-            [/[+-]?Infinity/, "number"], // JSON5 支持 Infinity
-            [/NaN/, "number"], // JSON5 支持 NaN
-            // 布尔值
-            [/true|false/, "keyword"],
-            [/null/, "keyword"],
-            [/undefined/, "keyword"], // JSON5 支持 undefined
-            // 对象
-            [/[{}]/, "delimiter.bracket"],
-            [/[[\]]/, "delimiter.square"],
-            [/,/, "delimiter.comma"],
-            [/:/, "delimiter.colon"],
-            // JSON5 支持标识符作为键名
-            [/[a-zA-Z_$][\w$]*/, "identifier"],
-            // 空白
-            [/\s+/, "white"],
-          ],
-          string_double: [
-            [/[^\\"]+/, "string"],
-            [/@escapes/, "string.escape"],
-            [/\\./, "string.escape.invalid"],
-            [/"/, "string", "@pop"],
-          ],
-          string_single: [
-            [/[^\\']+/, "string"],
-            [/@escapes/, "string.escape"],
-            [/\\./, "string.escape.invalid"],
-            [/'/, "string", "@pop"],
-          ],
-          comment: [
-            [/[^/*]+/, "comment"],
-            [/\*\//, "comment", "@pop"],
-            [/[/*]/, "comment"],
-          ],
-        },
-      });
+      monacoInstance.languages.setMonarchTokensProvider(
+        "json5",
+        Json5LanguageDef,
+      );
     }
 
     if (containerRef.current) {

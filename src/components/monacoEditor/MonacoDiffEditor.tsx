@@ -23,6 +23,8 @@ import PromptContainer, {
 } from "@/components/ai/PromptContainer";
 
 import "@/styles/monaco.css";
+import { diffJsonQuickPrompts } from "@/components/ai/JsonQuickPrompts.tsx";
+import { Json5LanguageDef } from "@/components/monacoEditor/MonacoLanguageDef.tsx";
 
 export interface MonacoDiffEditorProps {
   tabKey: string;
@@ -108,55 +110,6 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     editorSettings.language,
   );
   const [fontSize, setFontSize] = useState(editorSettings.fontSize);
-
-  // 定义适合JSON差异比较的快捷指令
-  const diffJsonQuickPrompts: QuickPrompt[] = [
-    {
-      id: "analyze_diff",
-      label: "分析差异",
-      icon: "mdi:file-compare",
-      prompt: "请帮我分析这两个 JSON 之间的主要差异",
-      color: "primary",
-    },
-    {
-      id: "suggest_merge",
-      label: "合并建议",
-      icon: "fluent:arrow-merge-20-filled",
-      prompt:
-        "请帮我智能合并这两个 JSON 文本，保留双方的有效内容并解决所有冲突",
-      color: "success",
-    },
-    {
-      id: "generate_patch",
-      label: "生成补丁",
-      icon: "material-symbols:add-notes",
-      prompt: "根据这两个 JSON 之间的差异，生成一个补丁文件",
-      color: "secondary",
-    },
-    {
-      id: "find_conflicts",
-      label: "查找冲突",
-      icon: "ooui:error",
-      prompt:
-        "请详细检查这两个 JSON 文本之间是否存在冲突或不兼容的部分，指出具体的冲突点和解决建议",
-      color: "danger",
-    },
-    {
-      id: "convert_to_ts_diff",
-      label: "生成 TS 类型差异",
-      icon: "simple-icons:typescript",
-      prompt: "请根据这两个版本的 JSON 生成 TypeScript 接口定义的差异",
-      color: "default",
-    },
-    {
-      id: "explain_changes",
-      label: "解释变更",
-      icon: "solar:document-text-linear",
-      prompt:
-        "请用详细的表格形式解释右侧 JSON 相比左侧发生了哪些变更，包括新增、修改和删除的字段，以及这些变更可能的目的",
-      color: "warning",
-    },
-  ];
 
   // 使用自定义快捷指令或默认快捷指令
   const finalQuickPrompts = customQuickPrompts || diffJsonQuickPrompts;
@@ -327,6 +280,19 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     loader.config({ monaco });
 
     loader.init().then((monacoInstance) => {
+      // 注册 JSON5 语言支持
+      if (
+        !monacoInstance.languages
+          .getLanguages()
+          .some((lang) => lang.id === "json5")
+      ) {
+        monacoInstance.languages.register({ id: "json5" });
+        monacoInstance.languages.setMonarchTokensProvider(
+          "json5",
+          Json5LanguageDef,
+        );
+      }
+
       if (editorContainerRef.current) {
         // 创建差异编辑器
         editorRef.current = monacoInstance.editor.createDiffEditor(
