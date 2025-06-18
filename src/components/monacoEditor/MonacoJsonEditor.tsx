@@ -1,14 +1,14 @@
 import React, {
+  useCallback,
   useEffect,
   useImperativeHandle,
   useRef,
   useState,
-  useCallback,
 } from "react";
 import { loader, Monaco } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
-import { Button, cn, useDisclosure } from "@heroui/react";
 import { editor } from "monaco-editor";
+import { Button, cn, useDisclosure } from "@heroui/react";
 import { jsonrepair } from "jsonrepair";
 import { Icon } from "@iconify/react";
 import JSON5 from "json5";
@@ -20,13 +20,21 @@ import { useTabStore } from "@/store/useTabStore";
 import {
   escapeJson,
   isArrayOrObject,
+  json5ParseError,
   JsonErrorInfo,
   jsonParseError,
-  json5ParseError,
   removeJsonComments,
   sortJson,
 } from "@/utils/json";
-import { updateFoldingDecorations } from "@/utils/monaco";
+import { updateFoldingDecorations } from "@/components/monacoEditor/decorations/foldingDecoration.ts";
+import {
+  TimestampDecoratorState,
+  addTimestampDecorationStyles,
+  clearTimestampCache,
+  removeTimestampDecorationStyles,
+  toggleTimestampDecorators,
+  updateTimestampDecorations,
+} from "@/components/monacoEditor/decorations/timestampDecoration.ts";
 
 import "@/styles/monaco.css";
 import ErrorModal from "@/components/monacoEditor/ErrorModal.tsx";
@@ -37,9 +45,6 @@ import PromptContainer, {
 } from "@/components/ai/PromptContainer";
 import { jsonQuickPrompts } from "@/components/ai/JsonQuickPrompts.tsx";
 import { Json5LanguageDef } from "@/components/monacoEditor/MonacoLanguageDef.tsx";
-
-// 定义时间戳转换黑名单关键字
-const TIMESTAMP_BLACKLIST = ["id", "url", "size", "count", "length"];
 
 export interface MonacoJsonEditorProps {
   tabTitle?: string;
@@ -105,9 +110,26 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
   const foldingDecorationsRef =
     useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+
+  // 时间戳装饰器相关引用
   const timestampDecorationsRef =
     useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+  const timestampDecorationIdsRef = useRef<Record<string, string[]>>({});
   const timestampUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const timestampCacheRef = useRef<Record<string, boolean>>({});
+  const [timestampDecoratorsEnabled, setTimestampDecoratorsEnabled] = useState(
+    showTimestampDecorators,
+  );
+
+  // 时间戳装饰器状态
+  const timestampDecoratorState: TimestampDecoratorState = {
+    editorRef: editorRef,
+    decorationsRef: timestampDecorationsRef,
+    decorationIdsRef: timestampDecorationIdsRef,
+    updateTimeoutRef: timestampUpdateTimeoutRef,
+    cacheRef: timestampCacheRef,
+    enabled: timestampDecoratorsEnabled,
+  };
 
   // AI相关状态
   const [showAiPrompt, setShowAiPrompt] = useState(false);
@@ -127,106 +149,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const dragStartX = useRef<number>(0);
   const dragStartWidth = useRef<number>(0);
-
-  // 添加状态来控制时间戳装饰器
-  const [timestampDecoratorsEnabled, setTimestampDecoratorsEnabled] = useState(
-    showTimestampDecorators,
-  );
-
-  // 开始拖动处理
-  const handleDragStart = useCallback(
-    (e: React.MouseEvent) => {
-      e.preventDefault();
-      dragStartX.current = e.clientX;
-      dragStartWidth.current = aiPanelWidth;
-      setIsDragging(true);
-    },
-    [aiPanelWidth],
-  );
-
-  // 拖动AI面板
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isDragging || !rootContainerRef.current) return;
-
-      // 使用requestAnimationFrame优化性能
-      requestAnimationFrame(() => {
-        if (!rootContainerRef.current) return;
-
-        const totalWidth = rootContainerRef.current.offsetWidth;
-
-        if (totalWidth <= 0) return; // 如果宽度无效则避免计算
-
-        const minPanelWidthPx = 200; // 两个面板的最小宽度（像素）
-
-        // 确保最小面板宽度不超过总宽度的一半（减去缓冲区）
-        const effectiveMinWidth = Math.min(
-          minPanelWidthPx,
-          totalWidth / 2 - 10,
-        );
-
-        // 基于有效最小宽度计算aiPanelWidth的边界
-        // 下限：确保AI面板至少为effectiveMinWidth
-        const lowerBound = effectiveMinWidth - 0.4 * totalWidth;
-        // 上限：确保编辑器面板至少为effectiveMinWidth
-        const upperBound = 0.6 * totalWidth - effectiveMinWidth;
-
-        // 根据拖动偏移量计算潜在的aiPanelWidth
-        const deltaX = e.clientX - dragStartX.current;
-        // 向左拖动时aiPanelWidth增加（deltaX为负）
-        let potentialAiPanelWidth = dragStartWidth.current - deltaX;
-
-        // 将潜在宽度限制在计算的边界内，确保lowerBound <= upperBound
-        if (lowerBound <= upperBound) {
-          const clampedAiPanelWidth = Math.max(
-            lowerBound,
-            Math.min(potentialAiPanelWidth, upperBound),
-          );
-
-          setAiPanelWidth(clampedAiPanelWidth);
-        } else {
-          // 处理边界无效的边缘情况（例如，totalWidth太小）
-          // 可选：设置为默认值或中间状态，或者不更新
-          console.warn("Invalid resize bounds", {
-            totalWidth,
-            lowerBound,
-            upperBound,
-          });
-        }
-
-        // 更新编辑器布局
-        editorRef.current?.layout();
-      });
-    },
-    [isDragging],
-  );
-
-  // 鼠标抬起处理
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-  }, []);
-
-  // 添加/移除鼠标事件监听
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
-      document.body.style.userSelect = "none";
-      document.body.style.cursor = "ew-resize";
-    } else {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.body.style.userSelect = "";
-      document.body.style.cursor = "";
-    }
-
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
-      document.body.style.userSelect = "";
-      document.body.style.cursor = "";
-    };
-  }, [isDragging, handleMouseMove, handleMouseUp]);
 
   // 从 store 获取当前 tab 的设置
   const currentTab = getTabByKey(tabKey);
@@ -469,110 +391,30 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     ]);
   };
 
-  const timestampToHumanReadable = (timestamp: string): string => {
-    try {
-      const ts = parseInt(timestamp);
-      // 处理10位(秒)和13位(毫秒)时间戳
-      const date = new Date(ts.toString().length === 10 ? ts * 1000 : ts);
+  // 监听时间戳装饰器状态变化
+  useEffect(() => {
+    // 更新状态对象中的启用状态
+    timestampDecoratorState.enabled = timestampDecoratorsEnabled;
 
-      // 检查日期是否有效
-      if (isNaN(date.getTime())) {
-        return "";
-      }
-
-      // 检查日期是否在1970年到2199年之间
-      const year = date.getFullYear();
-
-      if (year < 1970 || year > 2199) {
-        return "";
-      }
-
-      return date.toLocaleString();
-    } catch (e) {
-      return "";
-    }
-  };
-
-  // 更新时间戳装饰器
-  const updateTimestampDecorations = () => {
-    if (!editorRef.current || !timestampDecoratorsEnabled) {
-      return;
-    }
-
-    // 获取可见范围内的文本
-    const visibleRanges = editorRef.current.getVisibleRanges();
-
-    if (!visibleRanges.length) return;
-
-    const model = editorRef.current.getModel();
-
-    if (!model) return;
-
-    const decorations: monaco.editor.IModelDeltaDecoration[] = [];
-
-    // 遍历可见范围内的每一行
-    for (const range of visibleRanges) {
-      for (
-        let lineNumber = range.startLineNumber;
-        lineNumber <= range.endLineNumber;
-        lineNumber++
-      ) {
-        const lineContent = model.getLineContent(lineNumber);
-
-        // 检查该行是否包含黑名单中的字段
-        const hasBlacklistedField = TIMESTAMP_BLACKLIST.some((keyword) => {
-          const pattern = new RegExp(`"\\s*\\w*${keyword}\\w*\\s*"\\s*:`, "i");
-
-          return pattern.test(lineContent);
-        });
-
-        // 如果包含黑名单中的字段，则跳过时间戳转换
-        if (hasBlacklistedField) {
-          continue;
+    if (timestampDecoratorsEnabled) {
+      // 清空缓存并更新装饰器
+      clearTimestampCache(timestampDecoratorState);
+      setTimeout(() => {
+        if (editorRef.current) {
+          updateTimestampDecorations(
+            editorRef.current,
+            timestampDecoratorState,
+          );
         }
-
-        // 使用正则表达式查找可能的时间戳
-        const regex =
-          /(?:"(\d{10}|\d{13})"|(?<!\d)(\d{10}|\d{13})(?!\d))(?=,|\s|$|:|]|})/g;
-        let match;
-
-        while ((match = regex.exec(lineContent)) !== null) {
-          const timestamp = match[1] || match[2];
-          console.log('timestamp',timestamp);
-
-          const humanReadableTime = timestampToHumanReadable(timestamp);
-
-          if (humanReadableTime) {
-            const startColumn = match.index + match[0].indexOf(timestamp) + 1;
-            const endColumn = startColumn + timestamp.length;
-
-            decorations.push({
-              range: new monaco.Range(
-                lineNumber,
-                startColumn,
-                lineNumber,
-                endColumn + 1,
-              ),
-              options: {
-                after: {
-                  content: `(${humanReadableTime}) `,
-                  inlineClassName: "timestamp-decoration",
-                },
-              },
-            });
-          }
-        }
+      }, 0);
+    } else {
+      // 禁用时清理缓存和装饰器
+      if (timestampDecorationsRef.current) {
+        timestampDecorationsRef.current.clear();
       }
+      clearTimestampCache(timestampDecoratorState);
     }
-
-    // 更新装饰器
-    if (timestampDecorationsRef.current) {
-      timestampDecorationsRef.current.clear();
-    }
-
-    timestampDecorationsRef.current =
-      editorRef.current.createDecorationsCollection(decorations);
-  };
+  }, [timestampDecoratorsEnabled]);
 
   // 初始化编辑器的函数
   const initializeEditor = async () => {
@@ -654,14 +496,24 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         }
       });
 
+      // 监听滚动事件
       editor.onDidScrollChange(() => {
+        if (timestampUpdateTimeoutRef.current) {
+          clearTimeout(timestampUpdateTimeoutRef.current);
+        }
+
         timestampUpdateTimeoutRef.current = setTimeout(() => {
-          updateTimestampDecorations();
+          if (editorRef.current) {
+            updateTimestampDecorations(
+              editorRef.current,
+              timestampDecoratorState,
+            );
+          }
         }, 200); // 添加防抖
       });
 
       // 监听内容变化
-      editor.onDidChangeModelContent(async () => {
+      editor.onDidChangeModelContent(async (e) => {
         const val = editor.getValue();
 
         const languageId = editorRef.current?.getModel()?.getLanguageId();
@@ -681,8 +533,50 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               clearTimeout(timestampUpdateTimeoutRef.current);
             }
             timestampUpdateTimeoutRef.current = setTimeout(() => {
-              updateTimestampDecorations();
-            }, 300); // 添加适当的延迟，提高性能
+              // 内容发生变化则时间戳需要重新计算
+              if (e.changes && e.changes.length > 0) {
+                for (let i = 0; i < e.changes.length; i++) {
+                  let startLineNumber = e.changes[i].range.startLineNumber;
+                  let endLineNumber = e.changes[i].range.endLineNumber;
+
+                  // 当只有变化一行时，判断一下更新的内容是否有 \n
+                  if (endLineNumber - startLineNumber == 0) {
+                    const regex = new RegExp(e.eol, "g");
+                    const matches = e.changes[i].text.match(regex);
+
+                    if (matches) {
+                      endLineNumber = endLineNumber + matches?.length;
+                      console.log("matches endLineNumber", endLineNumber);
+                    }
+                  }
+                  console.log("endLineNumber", endLineNumber, e);
+
+                  for (
+                    let sLine = startLineNumber;
+                    sLine <= endLineNumber;
+                    sLine++
+                  ) {
+                    // 设置行需要检测时间
+                    timestampCacheRef.current[sLine] = false;
+
+                    // 清除之前的装饰器
+                    const ids = timestampDecorationIdsRef.current[sLine];
+                    console.log('sline', sLine, ids,timestampDecorationIdsRef);
+
+                    if (ids && ids.length > 0) {
+                      editorRef.current?.removeDecorations(ids);
+                      delete timestampDecorationIdsRef.current[sLine];
+                    }
+                  }
+                }
+              }
+              if (editorRef.current) {
+                updateTimestampDecorations(
+                  editorRef.current,
+                  timestampDecoratorState,
+                );
+              }
+            }, 200); // 添加适当的延迟，提高性能
           }
         }
         onUpdateValue(val);
@@ -696,7 +590,12 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       // 初始化完成后更新时间戳装饰器
       if (timestampDecoratorsEnabled) {
         setTimeout(() => {
-          updateTimestampDecorations();
+          if (editorRef.current) {
+            updateTimestampDecorations(
+              editorRef.current,
+              timestampDecoratorState,
+            );
+          }
         }, 300);
       }
     }
@@ -890,6 +789,101 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     return "";
   };
 
+  // 开始拖动处理
+  const handleDragStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      dragStartX.current = e.clientX;
+      dragStartWidth.current = aiPanelWidth;
+      setIsDragging(true);
+    },
+    [aiPanelWidth],
+  );
+
+  // 拖动AI面板
+  const handleMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isDragging || !rootContainerRef.current) return;
+
+      // 使用requestAnimationFrame优化性能
+      requestAnimationFrame(() => {
+        if (!rootContainerRef.current) return;
+
+        const totalWidth = rootContainerRef.current.offsetWidth;
+
+        if (totalWidth <= 0) return; // 如果宽度无效则避免计算
+
+        const minPanelWidthPx = 200; // 两个面板的最小宽度（像素）
+
+        // 确保最小面板宽度不超过总宽度的一半（减去缓冲区）
+        const effectiveMinWidth = Math.min(
+          minPanelWidthPx,
+          totalWidth / 2 - 10,
+        );
+
+        // 基于有效最小宽度计算aiPanelWidth的边界
+        // 下限：确保AI面板至少为effectiveMinWidth
+        const lowerBound = effectiveMinWidth - 0.4 * totalWidth;
+        // 上限：确保编辑器面板至少为effectiveMinWidth
+        const upperBound = 0.6 * totalWidth - effectiveMinWidth;
+
+        // 根据拖动偏移量计算潜在的aiPanelWidth
+        const deltaX = e.clientX - dragStartX.current;
+        // 向左拖动时aiPanelWidth增加（deltaX为负）
+        let potentialAiPanelWidth = dragStartWidth.current - deltaX;
+
+        // 将潜在宽度限制在计算的边界内，确保lowerBound <= upperBound
+        if (lowerBound <= upperBound) {
+          const clampedAiPanelWidth = Math.max(
+            lowerBound,
+            Math.min(potentialAiPanelWidth, upperBound),
+          );
+
+          setAiPanelWidth(clampedAiPanelWidth);
+        } else {
+          // 处理边界无效的边缘情况（例如，totalWidth太小）
+          // 可选：设置为默认值或中间状态，或者不更新
+          console.warn("Invalid resize bounds", {
+            totalWidth,
+            lowerBound,
+            upperBound,
+          });
+        }
+
+        // 更新编辑器布局
+        editorRef.current?.layout();
+      });
+    },
+    [isDragging],
+  );
+
+  // 鼠标抬起处理
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // 添加/移除鼠标事件监听
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "none";
+      document.body.style.cursor = "ew-resize";
+    } else {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    };
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+
   // 暴露给父组件的方法
   useImperativeHandle(ref, () => ({
     updateValue: (value: string) => {
@@ -1059,27 +1053,18 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       }
     },
     toggleTimestampDecorators: (enabled?: boolean) => {
-      // 如果没有提供参数，则切换状态
+      // 更新状态
       const newState =
         enabled !== undefined ? enabled : !timestampDecoratorsEnabled;
 
-      // 更新状态
       setTimestampDecoratorsEnabled(newState);
 
-      // 立即应用更改
-      if (newState) {
-        // 启用装饰器时，立即更新
-        setTimeout(() => {
-          updateTimestampDecorations();
-        }, 0);
-      } else {
-        // 禁用装饰器时，清除现有装饰
-        if (timestampDecorationsRef.current) {
-          timestampDecorationsRef.current.clear();
-        }
-      }
-
-      return true;
+      // 使用抽离出的函数处理装饰器
+      return toggleTimestampDecorators(
+        editorRef.current,
+        timestampDecoratorState,
+        newState,
+      );
     },
   }));
 
@@ -1090,36 +1075,15 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       initializeEditor();
 
       // 添加装饰器样式
-      const styleElement = document.createElement("style");
-
-      styleElement.className = "timestamp-decoration-style";
-      styleElement.textContent = `
-        .timestamp-decoration {
-          font-size: 0.85em;
-          margin-left: 4px;
-          opacity: 0.7;
-          color: #0a84ff;
-        }
-        .monaco-editor.vs-dark .timestamp-decoration,
-        .monaco-editor.hc-black .timestamp-decoration {
-          color: #7eb9ff;
-        }
-      `;
-      document.head.appendChild(styleElement);
+      addTimestampDecorationStyles();
     }, 0);
 
     return () => {
       clearTimeout(timeoutId);
-      // 移除可能添加的样式元素
-      const styleElement = document.querySelector(
-        "style.timestamp-decoration-style",
-      );
-
-      if (styleElement) {
-        document.head.removeChild(styleElement);
-      }
+      // 移除添加的样式元素
+      removeTimestampDecorationStyles();
     };
-  }, []);
+  }, []); // 空依赖数组表示这个效果只在组件挂载和卸载时运行
 
   return (
     <div

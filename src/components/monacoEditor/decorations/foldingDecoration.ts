@@ -1,7 +1,7 @@
 import * as monaco from "monaco-editor";
 import { editor } from "monaco-editor";
 
-import { removeJsonComments } from "@/utils/json";
+import { removeJsonComments } from "@/utils/json.ts";
 
 /**
  * 更新代码折叠区域的装饰器，显示折叠区域内包含的元素数量
