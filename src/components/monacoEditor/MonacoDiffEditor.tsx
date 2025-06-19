@@ -21,6 +21,15 @@ import AIPromptOverlay, { QuickPrompt } from "@/components/ai/AIPromptOverlay";
 import PromptContainer, {
   PromptContainerRef,
 } from "@/components/ai/PromptContainer";
+import {
+  TimestampDecoratorState,
+  addTimestampDecorationStyles,
+  clearTimestampCache,
+  removeTimestampDecorationStyles,
+  toggleTimestampDecorators,
+  updateTimestampDecorations,
+  handleContentChange,
+} from "@/components/monacoEditor/decorations/timestampDecoration.ts";
 
 import "@/styles/monaco.css";
 import { diffJsonQuickPrompts } from "@/components/ai/JsonQuickPrompts.tsx";
@@ -35,6 +44,7 @@ export interface MonacoDiffEditorProps {
   language?: string;
   theme?: string;
   customQuickPrompts?: QuickPrompt[];
+  showTimestampDecorators?: boolean;
   onUpdateOriginalValue: (value: string) => void;
   onUpdateModifiedValue?: (value: string) => void;
   onMount?: () => void;
@@ -55,6 +65,7 @@ export interface MonacoDiffEditorRef {
   showAiPrompt: () => void;
   updateModifiedValue: (value: string) => void;
   updateOriginalValue: (value: string) => void;
+  toggleTimestampDecorators: (enabled?: boolean) => boolean;
 }
 
 const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
@@ -65,6 +76,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   height,
   tabKey,
   customQuickPrompts,
+  showTimestampDecorators = true,
   onUpdateOriginalValue,
   onUpdateModifiedValue,
   onMount,
@@ -111,8 +123,87 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   );
   const [fontSize, setFontSize] = useState(editorSettings.fontSize);
 
+  // 时间戳装饰器相关引用
+  // 为原始编辑器和修改后编辑器分别创建装饰器状态
+  const originalTimestampDecorationsRef =
+    useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+  const originalTimestampDecorationIdsRef = useRef<Record<string, string[]>>(
+    {},
+  );
+  const originalTimestampUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const originalTimestampCacheRef = useRef<Record<string, boolean>>({});
+
+  const modifiedTimestampDecorationsRef =
+    useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+  const modifiedTimestampDecorationIdsRef = useRef<Record<string, string[]>>(
+    {},
+  );
+  const modifiedTimestampUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const modifiedTimestampCacheRef = useRef<Record<string, boolean>>({});
+
+  // 时间戳装饰器启用状态
+  const [timestampDecoratorsEnabled, setTimestampDecoratorsEnabled] = useState(
+    showTimestampDecorators,
+  );
+
+  // 时间戳装饰器状态
+  const originalTimestampDecoratorState: TimestampDecoratorState = {
+    editorRef: originalEditorRef,
+    decorationsRef: originalTimestampDecorationsRef,
+    decorationIdsRef: originalTimestampDecorationIdsRef,
+    updateTimeoutRef: originalTimestampUpdateTimeoutRef,
+    cacheRef: originalTimestampCacheRef,
+    enabled: timestampDecoratorsEnabled,
+  };
+
+  const modifiedTimestampDecoratorState: TimestampDecoratorState = {
+    editorRef: modifiedEditorRef,
+    decorationsRef: modifiedTimestampDecorationsRef,
+    decorationIdsRef: modifiedTimestampDecorationIdsRef,
+    updateTimeoutRef: modifiedTimestampUpdateTimeoutRef,
+    cacheRef: modifiedTimestampCacheRef,
+    enabled: timestampDecoratorsEnabled,
+  };
+
   // 使用自定义快捷指令或默认快捷指令
   const finalQuickPrompts = customQuickPrompts || diffJsonQuickPrompts;
+
+  // 监听时间戳装饰器状态变化
+  useEffect(() => {
+    // 更新状态对象中的启用状态
+    originalTimestampDecoratorState.enabled = timestampDecoratorsEnabled;
+    modifiedTimestampDecoratorState.enabled = timestampDecoratorsEnabled;
+
+    if (timestampDecoratorsEnabled) {
+      // 清空缓存并更新装饰器
+      clearTimestampCache(originalTimestampDecoratorState);
+      clearTimestampCache(modifiedTimestampDecoratorState);
+      setTimeout(() => {
+        if (originalEditorRef.current) {
+          updateTimestampDecorations(
+            originalEditorRef.current,
+            originalTimestampDecoratorState,
+          );
+        }
+        if (modifiedEditorRef.current) {
+          updateTimestampDecorations(
+            modifiedEditorRef.current,
+            modifiedTimestampDecoratorState,
+          );
+        }
+      }, 0);
+    } else {
+      // 禁用时清理缓存和装饰器
+      if (originalTimestampDecorationsRef.current) {
+        originalTimestampDecorationsRef.current.clear();
+      }
+      if (modifiedTimestampDecorationsRef.current) {
+        modifiedTimestampDecorationsRef.current.clear();
+      }
+      clearTimestampCache(originalTimestampDecoratorState);
+      clearTimestampCache(modifiedTimestampDecoratorState);
+    }
+  }, [timestampDecoratorsEnabled]);
 
   useEffect(() => {
     if (editorRef.current) {
@@ -350,7 +441,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
         modifiedEditorRef.current = editorRef.current.getModifiedEditor();
 
         // 监听原始编辑器内容变化
-        originalEditorRef.current.onDidChangeModelContent(() => {
+        originalEditorRef.current.onDidChangeModelContent((e) => {
           const originalText = originalEditorRef.current!.getValue();
 
           onUpdateOriginalValue(originalText);
@@ -363,10 +454,15 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
               `原始内容:\n${originalText}\n\n修改后内容:\n${modifiedText}`,
             );
           }
+
+          // 更新时间戳装饰器
+          if (timestampDecoratorsEnabled) {
+            handleContentChange(e, originalTimestampDecoratorState);
+          }
         });
 
         // 监听修改编辑器内容变化
-        modifiedEditorRef.current.onDidChangeModelContent(() => {
+        modifiedEditorRef.current.onDidChangeModelContent((e) => {
           const modifiedText = modifiedEditorRef.current!.getValue();
 
           onUpdateModifiedValue && onUpdateModifiedValue(modifiedText);
@@ -379,7 +475,61 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
               `原始内容:\n${originalText}\n\n修改后内容:\n${modifiedText}`,
             );
           }
+
+          // 更新时间戳装饰器
+          if (timestampDecoratorsEnabled) {
+            handleContentChange(e, modifiedTimestampDecoratorState);
+          }
         });
+
+        // 监听滚动事件
+        originalEditorRef.current.onDidScrollChange(() => {
+          if (originalTimestampUpdateTimeoutRef.current) {
+            clearTimeout(originalTimestampUpdateTimeoutRef.current);
+          }
+
+          originalTimestampUpdateTimeoutRef.current = setTimeout(() => {
+            if (originalEditorRef.current && timestampDecoratorsEnabled) {
+              updateTimestampDecorations(
+                originalEditorRef.current,
+                originalTimestampDecoratorState,
+              );
+            }
+          }, 200); // 添加防抖
+        });
+
+        modifiedEditorRef.current.onDidScrollChange(() => {
+          if (modifiedTimestampUpdateTimeoutRef.current) {
+            clearTimeout(modifiedTimestampUpdateTimeoutRef.current);
+          }
+
+          modifiedTimestampUpdateTimeoutRef.current = setTimeout(() => {
+            if (modifiedEditorRef.current && timestampDecoratorsEnabled) {
+              updateTimestampDecorations(
+                modifiedEditorRef.current,
+                modifiedTimestampDecoratorState,
+              );
+            }
+          }, 200); // 添加防抖
+        });
+
+        // 初始化完成后更新时间戳装饰器
+        if (timestampDecoratorsEnabled) {
+          setTimeout(() => {
+            if (originalEditorRef.current) {
+              updateTimestampDecorations(
+                originalEditorRef.current,
+                originalTimestampDecoratorState,
+              );
+            }
+            if (modifiedEditorRef.current) {
+              updateTimestampDecorations(
+                modifiedEditorRef.current,
+                modifiedTimestampDecoratorState,
+              );
+            }
+          }, 300);
+        }
       }
     });
   }
@@ -389,6 +539,9 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     // 使用 setTimeout 确保在 React 严格模式下只执行一次
     const timeoutId = setTimeout(() => {
       createDiffEditor();
+
+      // 添加装饰器样式
+      addTimestampDecorationStyles();
     }, 0);
 
     return () => {
@@ -397,6 +550,8 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       if (editorRef.current) {
         // editorRef.current?.dispose();
       }
+      // 移除添加的样式元素
+      removeTimestampDecorationStyles();
     };
   }, []); // 空依赖数组确保只在挂载时执行
 
@@ -751,6 +906,36 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       toast.success("排序成功");
 
       return true;
+    },
+    toggleTimestampDecorators: (enabled?: boolean) => {
+      // 更新状态
+      const newState =
+        enabled !== undefined ? enabled : !timestampDecoratorsEnabled;
+
+      setTimestampDecoratorsEnabled(newState);
+
+      // 处理原始编辑器装饰器
+      let result1 = true;
+      let result2 = true;
+
+      if (originalEditorRef.current) {
+        result1 = toggleTimestampDecorators(
+          originalEditorRef.current,
+          originalTimestampDecoratorState,
+          newState,
+        );
+      }
+
+      // 处理修改后编辑器装饰器
+      if (modifiedEditorRef.current) {
+        result2 = toggleTimestampDecorators(
+          modifiedEditorRef.current,
+          modifiedTimestampDecoratorState,
+          newState,
+        );
+      }
+
+      return result1 && result2;
     },
   }));
 
