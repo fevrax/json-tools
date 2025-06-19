@@ -16,6 +16,62 @@ export interface TimestampDecoratorState {
 }
 
 /**
+ * 处理编辑器内容变化时更新时间戳装饰器
+ * @param e 编辑器内容变化事件
+ * @param state 时间戳装饰器状态
+ */
+export const handleContentChange = (
+  e: editor.IModelContentChangedEvent,
+  state: TimestampDecoratorState,
+): void => {
+  if (!state.enabled) {
+    return;
+  }
+
+  if (state.updateTimeoutRef.current) {
+    clearTimeout(state.updateTimeoutRef.current);
+  }
+
+  state.updateTimeoutRef.current = setTimeout(() => {
+    // 内容发生变化则时间戳需要重新计算
+    if (e.changes && e.changes.length > 0) {
+      const regex = new RegExp(e.eol, "g");
+
+      for (let i = 0; i < e.changes.length; i++) {
+        let startLineNumber = e.changes[i].range.startLineNumber;
+        let endLineNumber = e.changes[i].range.endLineNumber;
+
+        // 当只有变化一行时，判断一下更新的内容是否有 \n
+        if (endLineNumber - startLineNumber == 0) {
+          const matches = e.changes[i].text.match(regex);
+
+          if (matches) {
+            endLineNumber = endLineNumber + matches?.length;
+          }
+        }
+
+        for (let sLine = startLineNumber; sLine <= endLineNumber; sLine++) {
+          // 设置行需要检测时间
+          state.cacheRef.current[sLine] = false;
+
+          // 清除之前的装饰器
+          const ids = state.decorationIdsRef.current[sLine];
+
+          if (ids && ids.length > 0) {
+            state.editorRef.current?.removeDecorations(ids);
+            delete state.decorationIdsRef.current[sLine];
+          }
+        }
+      }
+    }
+
+    if (state.editorRef.current) {
+      updateTimestampDecorations(state.editorRef.current, state);
+    }
+  }, 200); // 添加适当的延迟，提高性能
+};
+
+/**
  * 更新时间戳装饰器
  * @param editor 编辑器实例
  * @param state 时间戳装饰器状态

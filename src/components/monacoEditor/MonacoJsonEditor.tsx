@@ -34,7 +34,14 @@ import {
   removeTimestampDecorationStyles,
   toggleTimestampDecorators,
   updateTimestampDecorations,
+  handleContentChange,
 } from "@/components/monacoEditor/decorations/timestampDecoration.ts";
+import {
+  ErrorDecoratorState,
+  addErrorLineHighlightStyles,
+  highlightErrorLine,
+  removeErrorLineHighlightStyles,
+} from "@/components/monacoEditor/decorations/errorDecoration.ts";
 
 import "@/styles/monaco.css";
 import ErrorModal from "@/components/monacoEditor/ErrorModal.tsx";
@@ -129,6 +136,12 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     updateTimeoutRef: timestampUpdateTimeoutRef,
     cacheRef: timestampCacheRef,
     enabled: timestampDecoratorsEnabled,
+  };
+
+  // 错误高亮装饰器状态
+  const errorDecoratorState: ErrorDecoratorState = {
+    editorRef: editorRef,
+    decorationsRef: errorDecorationsRef,
   };
 
   // AI相关状态
@@ -514,9 +527,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
       // 监听内容变化
       editor.onDidChangeModelContent(async (e) => {
-        console.log("onDidChangeModelContent", e);
         const val = editor.getValue();
-        const regex = new RegExp(e.eol, "g");
         const languageId = editorRef.current?.getModel()?.getLanguageId();
 
         if (languageId === "json" || languageId === "json5") {
@@ -530,53 +541,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
           // 更新时间戳装饰器
           if (timestampDecoratorsEnabled) {
-            if (timestampUpdateTimeoutRef.current) {
-              clearTimeout(timestampUpdateTimeoutRef.current);
-            }
-            timestampUpdateTimeoutRef.current = setTimeout(() => {
-              // 内容发生变化则时间戳需要重新计算
-              if (e.changes && e.changes.length > 0) {
-                for (let i = 0; i < e.changes.length; i++) {
-                  let startLineNumber = e.changes[i].range.startLineNumber;
-                  let endLineNumber = e.changes[i].range.endLineNumber;
-
-                  // 当只有变化一行时，判断一下更新的内容是否有 \n
-                  if (endLineNumber - startLineNumber == 0) {
-                    const matches = e.changes[i].text.match(regex);
-
-                    if (matches) {
-                      endLineNumber = endLineNumber + matches?.length;
-                      console.log("matches endLineNumber", endLineNumber);
-                    }
-                  }
-                  console.log("计算后 endLineNumber", endLineNumber);
-
-                  for (
-                    let sLine = startLineNumber;
-                    sLine <= endLineNumber;
-                    sLine++
-                  ) {
-                    // 设置行需要检测时间
-                    timestampCacheRef.current[sLine] = false;
-
-                    // 清除之前的装饰器
-                    const ids = timestampDecorationIdsRef.current[sLine];
-                    console.log('sline', sLine, ids,timestampDecorationIdsRef);
-
-                    if (ids && ids.length > 0) {
-                      editorRef.current?.removeDecorations(ids);
-                      delete timestampDecorationIdsRef.current[sLine];
-                    }
-                  }
-                }
-              }
-              if (editorRef.current) {
-                updateTimestampDecorations(
-                  editorRef.current,
-                  timestampDecoratorState,
-                );
-              }
-            }, 200); // 添加适当的延迟，提高性能
+            handleContentChange(e, timestampDecoratorState);
           }
         }
         onUpdateValue(val);
@@ -679,41 +644,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     return true;
   };
 
-  // 高亮错误行
-  const highlightErrorLine = (lineNumber: number): boolean => {
-    if (!editorRef.current) {
-      return false;
-    }
-    // 滚动到错误行
-    editorRef.current.revealLineInCenter(lineNumber);
-    // 如果存在旧的装饰，先清除
-    if (errorDecorationsRef.current) {
-      errorDecorationsRef.current.clear();
-    }
-
-    // 创建新的装饰集合
-    errorDecorationsRef.current = editorRef.current.createDecorationsCollection(
-      [
-        {
-          range: new monaco.Range(lineNumber, 1, lineNumber, 1),
-          options: {
-            isWholeLine: true,
-            className: "errorLineHighlight",
-            glyphMarginClassName: "",
-          },
-        },
-      ],
-    );
-    // 5秒后移除高亮
-    setTimeout(() => {
-      if (errorDecorationsRef.current) {
-        errorDecorationsRef.current.clear();
-      }
-    }, 5000);
-
-    return true;
-  };
-
   // 一键定位到错误行
   const goToErrorLine = () => {
     if (!parseJsonError || parseJsonError.line <= 0) {
@@ -723,8 +653,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
     closeJsonErrorDetailsModel();
 
-    highlightErrorLine(parseJsonError.line);
-    toast.success("一键定位成功");
+    if (editorRef.current) {
+      highlightErrorLine(
+        editorRef.current,
+        errorDecoratorState,
+        parseJsonError.line,
+      );
+    }
   };
 
   const autoFix = (): boolean => {
@@ -1076,12 +1011,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
       // 添加装饰器样式
       addTimestampDecorationStyles();
+      addErrorLineHighlightStyles();
     }, 0);
 
     return () => {
       clearTimeout(timeoutId);
       // 移除添加的样式元素
       removeTimestampDecorationStyles();
+      removeErrorLineHighlightStyles();
     };
   }, []); // 空依赖数组表示这个效果只在组件挂载和卸载时运行
 
