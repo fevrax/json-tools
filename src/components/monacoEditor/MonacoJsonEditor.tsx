@@ -514,8 +514,9 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
       // 监听内容变化
       editor.onDidChangeModelContent(async (e) => {
+        console.log("onDidChangeModelContent", e);
         const val = editor.getValue();
-
+        const regex = new RegExp(e.eol, "g");
         const languageId = editorRef.current?.getModel()?.getLanguageId();
 
         if (languageId === "json" || languageId === "json5") {
@@ -541,7 +542,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
                   // 当只有变化一行时，判断一下更新的内容是否有 \n
                   if (endLineNumber - startLineNumber == 0) {
-                    const regex = new RegExp(e.eol, "g");
                     const matches = e.changes[i].text.match(regex);
 
                     if (matches) {
@@ -549,7 +549,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
                       console.log("matches endLineNumber", endLineNumber);
                     }
                   }
-                  console.log("endLineNumber", endLineNumber, e);
+                  console.log("计算后 endLineNumber", endLineNumber);
 
                   for (
                     let sLine = startLineNumber;

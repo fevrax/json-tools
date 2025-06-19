@@ -99,6 +99,7 @@ export const updateTimestampDecorations = (
                 endColumn + 1,
               ),
               options: {
+                zIndex: 2998,
                 after: {
                   content: `(${humanReadableTime}) `,
                   inlineClassName: "timestamp-decoration",
@@ -106,7 +107,28 @@ export const updateTimestampDecorations = (
               },
             },
           ];
-          const ids = state.decorationIdsRef.current[lineNumber];
+
+          let lineDecorations =
+            state.editorRef.current?.getLineDecorations(lineNumber);
+          let exits = false;
+
+          if (lineDecorations) {
+            for (let i = lineDecorations.length - 1; i >= 0; i--) {
+              let lineDecoration = lineDecorations[i];
+
+              if (lineDecoration.options.zIndex === 2998) {
+                exits = true;
+                break;
+              }
+            }
+          }
+          // 如果已经存在装饰器则不用重复添加，兼容 undo 时
+          if (exits) {
+            continue;
+          }
+
+          let ids = state.decorationIdsRef.current[lineNumber];
+
           if (ids && ids.length > 0) {
             state.editorRef.current?.removeDecorations(ids);
           }
