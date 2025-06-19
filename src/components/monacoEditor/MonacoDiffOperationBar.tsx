@@ -630,7 +630,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
       {/* 分隔线 - 只在有主要按钮可见时显示 */}
       {actionGroups[0].buttons.some((button) =>
         visibleButtons.includes(button.key),
-      ) && <div className="h-6 w-px bg-default-200 mx-1" />}
+      ) && <div className="h-6 w-px bg-default-200" />}
 
       {/* 编辑按钮组 */}
       <div className="flex items-center gap-2">

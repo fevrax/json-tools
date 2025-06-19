@@ -155,14 +155,14 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
     switch (action) {
       case "unescape":
         if (onMore("unescape")) {
-          toast.success("去除转义成功");
+          toast.success("删除转义成功");
         }
         break;
       case "del_comment":
         if (onMore("del_comment")) {
-          toast.success("移除注释成功");
+          toast.success("删除注释成功");
         } else {
-          toast.error("移除注释失败");
+          toast.error("删除注释失败");
         }
         break;
       case "save_file":
@@ -287,8 +287,8 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
         {
           key: "unescape",
           icon: "iconoir:remove-link",
-          text: "去除转义",
-          tooltip: "去除JSON中的转义字符",
+          text: "删除转义",
+          tooltip: "删除JSON中的转义字符",
           onClick: () => handleAction("unescape"),
           priority: 60,
           width: 120,
@@ -296,8 +296,8 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
         {
           key: "del_comment",
           icon: "tabler:notes-off",
-          text: "移除注释",
-          tooltip: "移除JSON中的注释",
+          text: "删除注释",
+          tooltip: "删除JSON中的注释",
           onClick: () => handleAction("del_comment"),
           priority: 70,
           width: 120,
@@ -629,7 +629,7 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
       {/* 分隔线 - 只在有主要按钮可见时显示 */}
       {actionGroups[0].buttons.some((button) =>
         visibleButtons.includes(button.key),
-      ) && <div className="h-6 w-px bg-default-200 mx-1" />}
+      ) && <div className="h-6 w-px bg-default-200" />}
 
       {/* 编辑按钮组 */}
       <div className="flex items-center gap-2">
@@ -642,7 +642,7 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
       ) &&
         actionGroups[2].buttons.some((button) =>
           visibleButtons.includes(button.key),
-        ) && <div className="h-6 w-px bg-default-200 mx-1" />}
+        ) && <div className="h-6 w-px bg-default-200" />}
 
       {/* 高级按钮组 */}
       <div className="flex items-center gap-2">
