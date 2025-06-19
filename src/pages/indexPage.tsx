@@ -22,8 +22,8 @@ import MonacoDiffEditor, {
 } from "@/components/monacoEditor/MonacoDiffEditor.tsx";
 import MonacoDiffOperationBar, {
   MonacoDiffOperationBarRef,
-} from "@/components/monacoEditor/MonacoDiffOperationBar";
-import MonacoOperationBar from "@/components/monacoEditor/MonacoOperationBar.tsx";
+} from "@/components/monacoEditor/operationBar/MonacoDiffOperationBar.tsx";
+import MonacoOperationBar from "@/components/monacoEditor/operationBar/MonacoOperationBar.tsx";
 import { SettingsState } from "@/store/useSettingsStore";
 import { storage } from "@/lib/indexedDBStore";
 

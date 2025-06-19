@@ -1,8 +1,6 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useState, useRef } from "react";
 import {
   Button,
-  ButtonGroup,
-  cn,
   Dropdown,
   DropdownItem,
   DropdownMenu,
@@ -11,8 +9,20 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
-import StatusButton, { IconStatus } from "@/components/button/StatusButton.tsx";
-import toast from "@/utils/toast";
+import {
+  ButtonConfig,
+  ButtonGroup as BarButtonGroup,
+  DEFAULT_DROPDOWN_TIMEOUT,
+  IconStatus,
+  renderDropdownButton,
+  renderMoreMenu,
+  renderStandardButton,
+  useAdaptiveButtons,
+  useDropdownTimeout,
+} from "@/components/monacoEditor/operationBar/OperationBarBase.tsx";
+
+import StatusButton from "@/components/button/StatusButton.tsx";
+import toast from "@/utils/toast.tsx";
 
 interface MonacoOperationBarProps {
   onCopy: (type?: "default" | "compress" | "escape") => boolean;
@@ -26,45 +36,6 @@ interface MonacoOperationBarProps {
 }
 
 export interface MonacoOperationBarRef {}
-
-// 定义按钮接口
-interface BaseButtonConfig {
-  key: string;
-  icon: string;
-  text: string;
-  tooltip: string;
-  onClick: () => void;
-  iconColor?: string;
-  className?: string;
-  priority?: number; // 按钮显示优先级，数字越小优先级越高
-  width?: number; // 按钮的预估宽度，用于自适应计算
-}
-
-interface StatusButtonConfig extends BaseButtonConfig {
-  isStatusButton: true;
-  status: IconStatus;
-  successText?: string;
-}
-
-interface DropdownButtonConfig extends BaseButtonConfig {
-  hasDropdown: true;
-  dropdownItems: {
-    key: string;
-    icon: string;
-    text: string;
-    onClick: () => void;
-  }[];
-}
-
-type ButtonConfig =
-  | BaseButtonConfig
-  | StatusButtonConfig
-  | DropdownButtonConfig;
-
-interface ButtonGroup {
-  key: string;
-  buttons: ButtonConfig[];
-}
 
 const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
   onCopy,
@@ -86,17 +57,11 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
     IconStatus.Default,
   );
 
-  // 容器参考和宽度状态
+  // 容器参考
   const containerRef = useRef<HTMLDivElement>(null);
-  const [visibleButtons, setVisibleButtons] = useState<string[]>([]);
-  const [hiddenButtons, setHiddenButtons] = useState<ButtonConfig[]>([]);
 
-  // 防止下拉菜单打开时，鼠标移开后立即关闭
-  let sortDropdownOpenTimeoutRef: NodeJS.Timeout;
-  let moreDropdownOpenTimeoutRef: NodeJS.Timeout;
-  let copyDropdownOpenTimeoutRef: NodeJS.Timeout;
-
-  const dropdownTimeout = 300;
+  // 使用通用的下拉菜单超时管理hook
+  const { createTimeout } = useDropdownTimeout();
 
   const handleCopy = (type?: "compress" | "escape") => {
     onCopy(type);
@@ -105,50 +70,38 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
 
   // 复制下拉菜单
   const showCopyDropdown = () => {
-    if (copyDropdownOpenTimeoutRef) {
-      clearTimeout(copyDropdownOpenTimeoutRef);
-    }
     setIsCopyDropdownOpen(true);
   };
   const unShowCopyDropdown = () => {
-    if (copyDropdownOpenTimeoutRef) {
-      clearTimeout(copyDropdownOpenTimeoutRef);
-    }
-    copyDropdownOpenTimeoutRef = setTimeout(() => {
-      setIsCopyDropdownOpen(false);
-    }, dropdownTimeout);
+    createTimeout(
+      "copy",
+      () => setIsCopyDropdownOpen(false),
+      DEFAULT_DROPDOWN_TIMEOUT,
+    );
   };
 
   // 字段排序下拉菜单
   const showSortDropdown = () => {
-    if (sortDropdownOpenTimeoutRef) {
-      clearTimeout(sortDropdownOpenTimeoutRef);
-    }
     setSortDropdownOpen(true);
   };
   const unShowSortDropdown = () => {
-    if (sortDropdownOpenTimeoutRef) {
-      clearTimeout(sortDropdownOpenTimeoutRef);
-    }
-    sortDropdownOpenTimeoutRef = setTimeout(() => {
-      setSortDropdownOpen(false);
-    }, dropdownTimeout);
+    createTimeout(
+      "sort",
+      () => setSortDropdownOpen(false),
+      DEFAULT_DROPDOWN_TIMEOUT,
+    );
   };
 
   // 更多下拉菜单
   const showMoreDropdown = () => {
-    if (moreDropdownOpenTimeoutRef) {
-      clearTimeout(moreDropdownOpenTimeoutRef);
-    }
     setMoreDropdownOpen(true);
   };
   const unShowMoreDropdown = () => {
-    if (moreDropdownOpenTimeoutRef) {
-      clearTimeout(moreDropdownOpenTimeoutRef);
-    }
-    moreDropdownOpenTimeoutRef = setTimeout(() => {
-      setMoreDropdownOpen(false);
-    }, dropdownTimeout);
+    createTimeout(
+      "more",
+      () => setMoreDropdownOpen(false),
+      DEFAULT_DROPDOWN_TIMEOUT,
+    );
   };
 
   const handleAction = (action: "unescape" | "del_comment" | "save_file") => {
@@ -176,7 +129,7 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
   };
 
   // 按钮组配置
-  const actionGroups: ButtonGroup[] = [
+  const actionGroups: BarButtonGroup[] = [
     {
       key: "main",
       buttons: [
@@ -315,82 +268,11 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
     },
   ];
 
-  // 更多按钮本身的宽度
-  const MORE_BUTTON_WIDTH = 90;
-  // 分隔线宽度
-  const SEPARATOR_WIDTH = 25;
-  // 最小左右间距
-  const MIN_PADDING = 16;
-
-  // 监听容器宽度变化，并计算哪些按钮可见
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    const calculateVisibleButtons = () => {
-      if (!containerRef.current) return;
-
-      const width = containerRef.current.clientWidth;
-
-      // 提取所有按钮
-      const allButtons = actionGroups.flatMap((group) => group.buttons);
-      // 按优先级排序按钮
-      const sortedButtons = [...allButtons].sort(
-        (a, b) => (a.priority || 999) - (b.priority || 999),
-      );
-
-      // 计算可用宽度 (考虑左右边距和两个分隔线)
-      let availableWidth = width - 2 * MIN_PADDING - 2 * SEPARATOR_WIDTH;
-      const visible: string[] = [];
-      const hidden: ButtonConfig[] = [];
-
-      // 第一次遍历，检查是否所有按钮都能显示
-      let totalButtonsWidth = 0;
-
-      for (const button of sortedButtons) {
-        totalButtonsWidth += button.width || 100; // 默认宽度100
-      }
-
-      // 如果所有按钮的总宽度超过可用宽度，则需要"更多"按钮
-      if (totalButtonsWidth > availableWidth) {
-        availableWidth -= MORE_BUTTON_WIDTH;
-      }
-
-      // 第二次遍历，决定哪些按钮可见
-      let usedWidth = 0;
-
-      for (const button of sortedButtons) {
-        const buttonWidth = button.width || 100; // 默认宽度100
-
-        if (usedWidth + buttonWidth <= availableWidth) {
-          visible.push(button.key);
-          usedWidth += buttonWidth;
-        } else {
-          hidden.push(button);
-        }
-      }
-
-      setVisibleButtons(visible);
-      setHiddenButtons(hidden);
-    };
-
-    // 初始计算
-    calculateVisibleButtons();
-
-    // 创建ResizeObserver来监听容器大小变化
-    const resizeObserver = new ResizeObserver(calculateVisibleButtons);
-
-    resizeObserver.observe(containerRef.current);
-
-    // 同时监听窗口大小变化作为后备
-    window.addEventListener("resize", calculateVisibleButtons);
-
-    return () => {
-      if (containerRef.current) {
-        resizeObserver.unobserve(containerRef.current);
-      }
-      window.removeEventListener("resize", calculateVisibleButtons);
-    };
-  }, []);
+  // 使用通用的自适应按钮hook
+  const { visibleButtons, hiddenButtons } = useAdaptiveButtons(
+    containerRef,
+    actionGroups,
+  );
 
   // 渲染按钮
   const renderButton = (button: ButtonConfig) => {
@@ -469,151 +351,19 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
 
     // 带下拉菜单的按钮
     if ("hasDropdown" in button && button.hasDropdown) {
-      const isDropdownOpen = button.key === "sort" ? isSortDropdownOpen : false;
-      const setDropdownOpen =
-        button.key === "sort" ? setSortDropdownOpen : undefined;
-
-      const showDropdown = button.key === "sort" ? showSortDropdown : undefined;
-      const unShowDropdown =
-        button.key === "sort" ? unShowSortDropdown : undefined;
-
-      return (
-        <Dropdown
-          key={button.key}
-          classNames={{
-            base: "before:bg-default-200",
-            content: "min-w-[140px] p-1",
-          }}
-          isOpen={isDropdownOpen}
-          radius="sm"
-          onOpenChange={setDropdownOpen}
-        >
-          <Tooltip content={button.tooltip} delay={300}>
-            <DropdownTrigger
-              onMouseEnter={showDropdown}
-              onMouseLeave={unShowDropdown}
-            >
-              <Button
-                className={cn(
-                  "pl-2 pr-2 h-8 gap-1 text-default-600 transition-colors text-sm",
-                  button.className,
-                  "hover:bg-default-200/50",
-                )}
-                size="sm"
-                startContent={
-                  <Icon
-                    className={button.iconColor || ""}
-                    icon={button.icon}
-                    width={18}
-                  />
-                }
-                variant="light"
-              >
-                {button.text}
-              </Button>
-            </DropdownTrigger>
-          </Tooltip>
-          <DropdownMenu
-            aria-label={`${button.text} options`}
-            onMouseEnter={showDropdown}
-            onMouseLeave={unShowDropdown}
-          >
-            {button.dropdownItems.map((item) => (
-              <DropdownItem
-                key={item.key}
-                className="py-2 px-3 hover:bg-default-100 rounded-md"
-                textValue={item.text}
-                onPress={item.onClick}
-              >
-                <div className="flex items-center space-x-2">
-                  <Icon icon={item.icon} width={16} />
-                  <span>{item.text}</span>
-                </div>
-              </DropdownItem>
-            ))}
-          </DropdownMenu>
-        </Dropdown>
-      );
+      if (button.key === "sort") {
+        return renderDropdownButton(
+          button,
+          isSortDropdownOpen,
+          setSortDropdownOpen,
+          showSortDropdown,
+          unShowSortDropdown,
+        );
+      }
     }
 
     // 普通按钮
-    return (
-      <Tooltip key={button.key} content={button.tooltip} delay={300}>
-        <Button
-          className={cn(
-            "pl-2 pr-2 h-8 gap-1 text-default-600 transition-colors",
-            button.className,
-            "hover:bg-default-200/50",
-          )}
-          size="sm"
-          startContent={
-            <Icon
-              className={button.iconColor || ""}
-              icon={button.icon}
-              width={18}
-            />
-          }
-          variant="light"
-          onPress={button.onClick}
-        >
-          {button.text}
-        </Button>
-      </Tooltip>
-    );
-  };
-
-  // 更多菜单渲染
-  const renderMoreMenu = () => {
-    // 如果没有隐藏的按钮，不显示更多菜单
-    if (hiddenButtons.length === 0) return null;
-
-    return (
-      <Dropdown
-        classNames={{
-          base: "before:bg-default-200",
-          content: "min-w-[140px] p-1",
-        }}
-        isOpen={isMoreDropdownOpen}
-        radius="sm"
-      >
-        <Tooltip content="更多操作" delay={300}>
-          <DropdownTrigger
-            onMouseEnter={showMoreDropdown}
-            onMouseLeave={unShowMoreDropdown}
-          >
-            <Button
-              className="pl-2 pr-2 h-8 gap-1 text-default-600 !min-w-16 hover:bg-default-200/50 transition-colors"
-              startContent={<Icon icon="mingcute:more-2-fill" width={20} />}
-              variant="light"
-            >
-              更多
-            </Button>
-          </DropdownTrigger>
-        </Tooltip>
-        <DropdownMenu
-          aria-label="更多操作"
-          onMouseEnter={showMoreDropdown}
-          onMouseLeave={unShowMoreDropdown}
-        >
-          {hiddenButtons.map((item) => (
-            <DropdownItem
-              key={item.key}
-              className="py-2 px-3 hover:bg-default-100 rounded-md"
-              textValue={item.text}
-              onPress={item.onClick}
-            >
-              <div className="flex items-center space-x-2">
-                <Icon
-                  icon={"isStatusButton" in item ? item.icon : item.icon}
-                  width={16}
-                />
-                <span>{"text" in item ? item.text : ""}</span>
-              </div>
-            </DropdownItem>
-          ))}
-        </DropdownMenu>
-      </Dropdown>
-    );
+    return renderStandardButton(button);
   };
 
   return (
@@ -649,7 +399,13 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
         {actionGroups[2].buttons.map(renderButton)}
 
         {/* 更多菜单 */}
-        {renderMoreMenu()}
+        {renderMoreMenu(
+          hiddenButtons,
+          isMoreDropdownOpen,
+          setMoreDropdownOpen,
+          showMoreDropdown,
+          unShowMoreDropdown,
+        )}
       </div>
     </div>
   );

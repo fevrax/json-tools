@@ -10,7 +10,7 @@ import MonacoDiffEditor, {
 } from "@/components/monacoEditor/MonacoDiffEditor.tsx";
 import MonacoDiffOperationBar, {
   MonacoDiffOperationBarRef,
-} from "@/components/monacoEditor/MonacoDiffOperationBar";
+} from "@/components/monacoEditor/operationBar/MonacoDiffOperationBar.tsx";
 import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEntity.ts";
 import { useOpenAIConfigStore } from "@/store/useOpenAIConfigStore";
 import ToolboxPageTemplate from "@/layouts/toolboxPageTemplate";
