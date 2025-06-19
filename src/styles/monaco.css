@@ -57,7 +57,26 @@
   animation: pulse-gentle 2s ease-in-out infinite;
 }
 
+/* 错误高粱 */
 .errorLineHighlight {
-  background-color: rgba(255, 0, 0, 0.2);
+    background-color: rgba(255, 0, 0, 0.2);
+    border-left: 3px solid #ff0000;
+}
+.monaco-editor.vs-dark .errorLineHighlight,
+.monaco-editor.hc-black .errorLineHighlight {
+    background-color: rgba(255, 0, 0, 0.3);
+    border-left: 3px solid #ff3333;
 }
 
+/* 时间格式化 */
+.timestamp-decoration {
+    font-size: 0.85em;
+    margin-left: 4px;
+    opacity: 0.7;
+    color: #0a84ff !important;
+    cursor: default;
+}
+.monaco-editor.vs-dark .timestamp-decoration,
+.monaco-editor.hc-black .timestamp-decoration {
+    color: #7eb9ff !important;
+}

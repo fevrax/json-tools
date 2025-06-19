@@ -20,6 +20,7 @@ export interface TabItem {
   editorSettings: {
     fontSize: number;
     language: string;
+    timestampDecoratorsEnabled?: boolean; // 添加时间戳装饰器设置
   };
 }
 
@@ -83,6 +84,7 @@ export const useTabStore = create<TabStore>()(
               editorSettings: {
                 fontSize: 14,
                 language: "json",
+                timestampDecoratorsEnabled: true,
               },
             };
 
@@ -106,6 +108,7 @@ export const useTabStore = create<TabStore>()(
                 editorSettings: {
                   fontSize: 14,
                   language: "json",
+                  timestampDecoratorsEnabled: true,
                 },
               },
             ];
@@ -150,6 +153,7 @@ export const useTabStore = create<TabStore>()(
               editorSettings: {
                 fontSize: 14,
                 language: "json",
+                timestampDecoratorsEnabled: true,
               },
             };
 
@@ -370,6 +374,7 @@ export const useTabStore = create<TabStore>()(
                 editorSettings: {
                   fontSize: 14,
                   language: "json",
+                  timestampDecoratorsEnabled: true,
                 },
               },
             ];

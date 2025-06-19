@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Button, cn, Select, SelectItem, Slider } from "@heroui/react";
+import { Button, cn, Select, SelectItem, Slider, Switch } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
 import { useTabStore } from "@/store/useTabStore";
@@ -50,6 +50,8 @@ interface DraggableMenuProps {
   currentLanguage: string;
   currentFontSize: number;
   tabKey: string;
+  timestampDecoratorsEnabled?: boolean; // 添加时间戳装饰器状态
+  onTimestampDecoratorsChange?: (enabled: boolean) => void; // 添加时间戳装饰器状态变更函数
 }
 
 const DraggableMenu: React.FC<DraggableMenuProps> = ({
@@ -60,8 +62,10 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   currentLanguage,
   currentFontSize,
   tabKey,
+  timestampDecoratorsEnabled = true, // 默认启用
+  onTimestampDecoratorsChange,
 }) => {
-  const { updateEditorSettings } = useTabStore();
+  const { updateEditorSettings, activeTab } = useTabStore();
   const [menuPosition, setMenuPosition] = useState<MenuPosition>({
     x: 0,
     y: 300,
@@ -494,7 +498,11 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
       className={cn(
         "absolute z-50",
         "transition-all duration-500 ease-in-out",
-        isDragging ? "cursor-grabbing" : "cursor-grab",
+        isDragging
+          ? "cursor-grabbing"
+          : isMenuOpen
+            ? "cursor-default"
+            : "cursor-grab",
       )}
       style={{
         left: `${menuPosition.x}px`,
@@ -519,7 +527,11 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
       {/* 拖动手柄区域 */}
       <div
         aria-label="拖动设置菜单"
-        className={cn("absolute -top-3 -left-3 -right-3 -bottom-3 cursor-grab")}
+        className={cn(
+          "absolute -top-3 -left-3 -right-3 -bottom-3",
+          isMenuOpen ? "cursor-default" : "cursor-grab",
+          isMenuOpen && "pointer-events-none", // 菜单打开时禁用拖动手柄
+        )}
         role="button"
         style={{
           touchAction: "none",
@@ -532,6 +544,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
           }
         }}
         onMouseDown={(e) => {
+          if (isMenuOpen) return; // 菜单打开时不允许拖动
           e.preventDefault();
           e.stopPropagation();
           startDrag(e.clientX, e.clientY);
@@ -544,10 +557,11 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
         aria-expanded={isMenuOpen}
         aria-label="打开设置菜单"
         className={cn(
-          "w-9 h-9 flex items-center justify-center rounded-full shadow-lg cursor-pointer",
-          "bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 border-none",
-          "transform transition-all duration-300 hover:scale-110",
-          "ring-2 ring-white/50 hover:ring-white/80 dark:ring-blue-400/50 dark:hover:ring-blue-400/80",
+          "w-10 h-10 flex items-center justify-center rounded-full shadow-lg cursor-pointer",
+          "bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700",
+          "transform transition-all duration-300 hover:scale-110 active:scale-95",
+          "ring-2 ring-white/50 hover:ring-white/80 dark:ring-blue-400/30 dark:hover:ring-blue-400/60",
+          "backdrop-blur-md",
           isMenuOpen ? "rotate-180" : "",
         )}
         role="button"
@@ -565,7 +579,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
           className="text-white w-5 h-5"
           icon="heroicons:cog-6-tooth"
           style={{
-            filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))",
+            filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.2))",
           }}
         />
       </div>
@@ -574,24 +588,40 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
       <div
         aria-label="编辑器设置菜单"
         className={cn(
-          "absolute bg-white dark:bg-default-100/80 rounded-lg shadow-xl p-6 w-72 transition-all duration-300",
+          "absolute rounded-xl overflow-hidden transition-all duration-300",
+          "bg-white/90 dark:bg-gray-800/90 backdrop-blur-md",
+          "shadow-lg dark:shadow-gray-900/30 border border-gray-200/50 dark:border-gray-700/50",
           isMenuOpen
             ? "opacity-100 scale-100 translate-y-0"
-            : "opacity-0 scale-95 translate-y-2 pointer-events-none",
+            : "opacity-0 scale-95 translate-y-2",
         )}
         role="dialog"
         style={{
-          bottom: "calc(100% + 8px)",
+          bottom: "calc(100% + 10px)",
           right: 0,
           transformOrigin: "bottom right",
+          width: "450px",
         }}
         onMouseEnter={clearCloseTimer}
         onMouseLeave={setCloseTimer}
       >
-        <div className="flex flex-col space-y-4">
-          <div>
+        {/* 菜单头部 */}
+        <div className="bg-gradient-to-r from-blue-500/90 to-indigo-600/90 dark:from-blue-600/90 dark:to-indigo-700/90 p-4 text-white">
+          <h3 className="text-sm font-medium flex items-center">
+            <Icon
+              className="mr-2"
+              icon="heroicons:adjustments-horizontal"
+              width={20}
+            />
+            {activeTab().title} 的编辑器设置
+          </h3>
+        </div>
+
+        <div className="p-5 space-y-5">
+          {/* 语言选择器 */}
+          <div className="space-y-2">
             <label
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              className="block text-xs uppercase tracking-wide font-semibold text-gray-600 dark:text-gray-300"
               htmlFor="language-select"
             >
               编辑器语言
@@ -601,6 +631,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
               className="w-full"
               color="primary"
               id="language-select"
+              radius="sm"
               selectedKeys={[currentLanguage]}
               size="sm"
               startContent={
@@ -614,7 +645,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
                   width={18}
                 />
               }
-              variant="faded"
+              variant="bordered"
               onChange={(e) => onLanguageChange(e.target.value)}
             >
               {SUPPORTED_LANGUAGES.map((lang) => (
@@ -631,16 +662,56 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
             </Select>
           </div>
 
-          <div>
-            <label
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-              htmlFor="font-size-slider"
-            >
-              字体大小: {currentFontSize}px
-            </label>
+          {/* 分隔线 */}
+          <div className="h-px bg-gray-200 dark:bg-gray-700/40" />
+
+          {/* 时间戳格式化开关 */}
+          {onTimestampDecoratorsChange && (
+            <div className="flex items-center justify-between px-1">
+              <div className="space-y-1">
+                <label
+                  className="text-xs uppercase tracking-wide font-semibold text-gray-600 dark:text-gray-300"
+                  htmlFor="timestamp-switch"
+                >
+                  时间戳格式化
+                </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  自动识别并格式化Unix时间戳
+                </p>
+              </div>
+              <Switch
+                aria-label="时间戳格式化开关"
+                color="primary"
+                id="timestamp-switch"
+                isSelected={timestampDecoratorsEnabled}
+                size="sm"
+                onChange={() =>
+                  onTimestampDecoratorsChange(!timestampDecoratorsEnabled)
+                }
+              />
+            </div>
+          )}
+
+          {/* 分隔线 */}
+          <div className="h-px bg-gray-200 dark:bg-gray-700/40" />
+
+          {/* 字体大小滑块 */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label
+                className="text-xs uppercase tracking-wide font-semibold text-gray-600 dark:text-gray-300"
+                htmlFor="font-size-slider"
+              >
+                字体大小
+              </label>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50 px-2 py-0.5 rounded">
+                {currentFontSize}px
+              </span>
+            </div>
             <Slider
               aria-label="调整字体大小"
               className="w-full"
+              color="primary"
               id="font-size-slider"
               maxValue={24}
               minValue={12}
@@ -649,18 +720,25 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
               value={currentFontSize}
               onChange={(value) => onFontSizeChange(value as number)}
             />
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>小</span>
+              <span>大</span>
+            </div>
           </div>
 
+          {/* 重置按钮 */}
           <Button
             aria-label="重置设置"
+            className="w-full mt-2"
             color="primary"
-            size="sm"
+            radius="sm"
             startContent={
               <Icon aria-hidden="true" icon="heroicons:arrow-path" width={16} />
             }
+            variant="flat"
             onPress={onReset}
           >
-            重置设置
+            恢复默认设置
           </Button>
         </div>
       </div>

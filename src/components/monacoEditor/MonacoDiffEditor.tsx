@@ -23,9 +23,7 @@ import PromptContainer, {
 } from "@/components/ai/PromptContainer";
 import {
   TimestampDecoratorState,
-  addTimestampDecorationStyles,
   clearTimestampCache,
-  removeTimestampDecorationStyles,
   toggleTimestampDecorators,
   updateTimestampDecorations,
   handleContentChange,
@@ -82,11 +80,25 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   onMount,
   ref,
 }) => {
-  const { getTabByKey } = useTabStore();
+  const { getTabByKey, updateEditorSettings } = useTabStore();
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<editor.IStandaloneDiffEditor | null>(null);
   const originalEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const modifiedEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+
+  // 从 store 获取当前 tab 的设置
+  const currentTab = getTabByKey(tabKey);
+  const editorSettings = currentTab?.editorSettings || {
+    fontSize: 14,
+    language: language || "json",
+    timestampDecoratorsEnabled: showTimestampDecorators, // 默认值来自props
+  };
+
+  // 菜单状态
+  const [currentLanguage, setCurrentLanguage] = useState(
+    editorSettings.language,
+  );
+  const [fontSize, setFontSize] = useState(editorSettings.fontSize);
 
   // AI相关状态
   const [showAiPrompt, setShowAiPrompt] = useState(false);
@@ -110,19 +122,6 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   const dragStartY = useRef<number>(0);
   const dragStartHeight = useRef<number>(0);
 
-  // 从 store 获取当前 tab 的设置
-  const currentTab = getTabByKey(tabKey);
-  const editorSettings = currentTab?.editorSettings || {
-    fontSize: 14,
-    language: language || "json",
-  };
-
-  // 菜单状态
-  const [currentLanguage, setCurrentLanguage] = useState(
-    editorSettings.language,
-  );
-  const [fontSize, setFontSize] = useState(editorSettings.fontSize);
-
   // 时间戳装饰器相关引用
   // 为原始编辑器和修改后编辑器分别创建装饰器状态
   const originalTimestampDecorationsRef =
@@ -141,9 +140,11 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   const modifiedTimestampUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const modifiedTimestampCacheRef = useRef<Record<string, boolean>>({});
 
-  // 时间戳装饰器启用状态
+  // 时间戳装饰器启用状态，优先从编辑器设置中读取
   const [timestampDecoratorsEnabled, setTimestampDecoratorsEnabled] = useState(
-    showTimestampDecorators,
+    editorSettings.timestampDecoratorsEnabled !== undefined 
+      ? editorSettings.timestampDecoratorsEnabled 
+      : showTimestampDecorators
   );
 
   // 时间戳装饰器状态
@@ -539,9 +540,6 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     // 使用 setTimeout 确保在 React 严格模式下只执行一次
     const timeoutId = setTimeout(() => {
       createDiffEditor();
-
-      // 添加装饰器样式
-      addTimestampDecorationStyles();
     }, 0);
 
     return () => {
@@ -550,10 +548,17 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       if (editorRef.current) {
         // editorRef.current?.dispose();
       }
-      // 移除添加的样式元素
-      removeTimestampDecorationStyles();
     };
   }, []); // 空依赖数组确保只在挂载时执行
+
+  // 同步设置到store
+  useEffect(() => {
+    updateEditorSettings(tabKey, {
+      fontSize: fontSize,
+      language: currentLanguage,
+      timestampDecoratorsEnabled: timestampDecoratorsEnabled,
+    });
+  }, [fontSize, currentLanguage, timestampDecoratorsEnabled, tabKey, updateEditorSettings]);
 
   // 处理AI提交
   const handleAiSubmit = async () => {
@@ -975,11 +980,24 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
           currentFontSize={fontSize}
           currentLanguage={currentLanguage}
           tabKey={tabKey}
+          timestampDecoratorsEnabled={timestampDecoratorsEnabled}
           onFontSizeChange={setFontSize}
           onLanguageChange={setCurrentLanguage}
+          onTimestampDecoratorsChange={(enabled) => {
+            setTimestampDecoratorsEnabled(enabled);
+            // 调用ref方法来切换时间戳装饰器
+            if (ref && typeof ref !== 'function' && ref.current) {
+              ref.current.toggleTimestampDecorators(enabled);
+            }
+          }}
           onReset={() => {
             setFontSize(14);
             setCurrentLanguage("json");
+            // 重置时也启用时间戳装饰器
+            setTimestampDecoratorsEnabled(true);
+            if (ref && typeof ref !== 'function' && ref.current) {
+              ref.current.toggleTimestampDecorators(true);
+            }
           }}
         />
       </div>

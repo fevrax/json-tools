@@ -29,18 +29,14 @@ import {
 import { updateFoldingDecorations } from "@/components/monacoEditor/decorations/foldingDecoration.ts";
 import {
   TimestampDecoratorState,
-  addTimestampDecorationStyles,
   clearTimestampCache,
-  removeTimestampDecorationStyles,
   toggleTimestampDecorators,
   updateTimestampDecorations,
   handleContentChange,
 } from "@/components/monacoEditor/decorations/timestampDecoration.ts";
 import {
   ErrorDecoratorState,
-  addErrorLineHighlightStyles,
   highlightErrorLine,
-  removeErrorLineHighlightStyles,
 } from "@/components/monacoEditor/decorations/errorDecoration.ts";
 
 import "@/styles/monaco.css";
@@ -102,7 +98,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   onMount,
   ref,
 }) => {
-  const { getTabByKey } = useTabStore();
+  const { getTabByKey, updateEditorSettings } = useTabStore();
   const errorBottomHeight = 45; // 底部错误详情弹窗的高度
   const containerRef = useRef<HTMLDivElement>(null);
   const rootContainerRef = useRef<HTMLDivElement>(null); // 新增：根容器引用
@@ -118,14 +114,31 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const foldingDecorationsRef =
     useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
 
+  // 从 store 获取当前 tab 的设置
+  const currentTab = getTabByKey(tabKey);
+  const editorSettings = currentTab?.editorSettings || {
+    fontSize: 14,
+    language: language || "json",
+    timestampDecoratorsEnabled: showTimestampDecorators, // 默认值来自props
+  };
+
+  // 菜单状态
+  const [currentLanguage, setCurrentLanguage] = useState(
+    editorSettings.language,
+  );
+  const [fontSize, setFontSize] = useState(editorSettings.fontSize);
+
   // 时间戳装饰器相关引用
   const timestampDecorationsRef =
     useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
   const timestampDecorationIdsRef = useRef<Record<string, string[]>>({});
   const timestampUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const timestampCacheRef = useRef<Record<string, boolean>>({});
+  // 时间戳装饰器启用状态，优先从编辑器设置中读取
   const [timestampDecoratorsEnabled, setTimestampDecoratorsEnabled] = useState(
-    showTimestampDecorators,
+    editorSettings.timestampDecoratorsEnabled !== undefined
+      ? editorSettings.timestampDecoratorsEnabled
+      : showTimestampDecorators,
   );
 
   // 时间戳装饰器状态
@@ -162,19 +175,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const dragStartX = useRef<number>(0);
   const dragStartWidth = useRef<number>(0);
-
-  // 从 store 获取当前 tab 的设置
-  const currentTab = getTabByKey(tabKey);
-  const editorSettings = currentTab?.editorSettings || {
-    fontSize: 14,
-    language: language || "json",
-  };
-
-  // 菜单状态
-  const [currentLanguage, setCurrentLanguage] = useState(
-    editorSettings.language,
-  );
-  const [fontSize, setFontSize] = useState(editorSettings.fontSize);
 
   const {
     isOpen: jsonErrorDetailsModel,
@@ -341,6 +341,18 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const handleReset = () => {
     setFontSize(14); // 重置字体大小
     handleLanguageChange("json"); // 重置语言
+
+    // 重置时启用时间戳装饰器
+    if (!timestampDecoratorsEnabled) {
+      setTimestampDecoratorsEnabled(true);
+      if (editorRef.current) {
+        toggleTimestampDecorators(
+          editorRef.current,
+          timestampDecoratorState,
+          true,
+        );
+      }
+    }
 
     toast.success("已重置编辑器设置");
   };
@@ -1009,18 +1021,27 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     const timeoutId = setTimeout(() => {
       initializeEditor();
 
-      // 添加装饰器样式
-      addTimestampDecorationStyles();
-      addErrorLineHighlightStyles();
     }, 0);
 
     return () => {
       clearTimeout(timeoutId);
-      // 移除添加的样式元素
-      removeTimestampDecorationStyles();
-      removeErrorLineHighlightStyles();
     };
   }, []); // 空依赖数组表示这个效果只在组件挂载和卸载时运行
+
+  // 同步设置到store
+  useEffect(() => {
+    updateEditorSettings(tabKey, {
+      fontSize: fontSize,
+      language: currentLanguage,
+      timestampDecoratorsEnabled: timestampDecoratorsEnabled,
+    });
+  }, [
+    fontSize,
+    currentLanguage,
+    timestampDecoratorsEnabled,
+    tabKey,
+    updateEditorSettings,
+  ]);
 
   return (
     <div
@@ -1100,9 +1121,21 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           currentFontSize={fontSize}
           currentLanguage={currentLanguage}
           tabKey={tabKey}
+          timestampDecoratorsEnabled={timestampDecoratorsEnabled}
           onFontSizeChange={setFontSize}
           onLanguageChange={handleLanguageChange}
           onReset={handleReset}
+          onTimestampDecoratorsChange={(enabled) => {
+            setTimestampDecoratorsEnabled(enabled);
+            // 调用内部方法切换时间戳装饰器
+            if (editorRef.current) {
+              toggleTimestampDecorators(
+                editorRef.current,
+                timestampDecoratorState,
+                enabled,
+              );
+            }
+          }}
         />
       )}
 

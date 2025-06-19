@@ -92,9 +92,9 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
   const [hiddenButtons, setHiddenButtons] = useState<ButtonConfig[]>([]);
 
   // 防止下拉菜单打开时，鼠标移开后立即关闭
-  var sortDropdownOpenTimeoutRef: NodeJS.Timeout;
-  var moreDropdownOpenTimeoutRef: NodeJS.Timeout;
-  var copyDropdownOpenTimeoutRef: NodeJS.Timeout;
+  let sortDropdownOpenTimeoutRef: NodeJS.Timeout;
+  let moreDropdownOpenTimeoutRef: NodeJS.Timeout;
+  let copyDropdownOpenTimeoutRef: NodeJS.Timeout;
 
   const dropdownTimeout = 300;
 
@@ -188,7 +188,7 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
           onClick: onAiClick || (() => {}),
           iconColor: "text-indigo-500",
           className:
-            "text-sm text-default-600 px-3 rounded-xl bg-indigo-50/50 hover:bg-indigo-100/70",
+            "text-sm text-default-600 px-3 rounded-xl bg-indigo-50/50 dark:bg-indigo-50/10 hover:bg-indigo-100/70",
           priority: 10,
           width: 110,
         },

@@ -176,7 +176,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           onClick: onAiClick || (() => {}),
           iconColor: "text-indigo-500",
           className:
-            "text-sm text-default-600 px-3 rounded-xl bg-indigo-50/50 hover:bg-indigo-100/70",
+            "text-sm text-default-600 px-3 rounded-xl bg-indigo-50/50 dark:bg-indigo-50/10 hover:bg-indigo-100/70",
           priority: 10,
           width: 110,
         },
