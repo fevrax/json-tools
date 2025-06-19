@@ -479,7 +479,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
             >
               <Button
                 className={cn(
-                  "pl-2 pr-2 h-8 gap-1 text-default-600 transition-colors",
+                  "pl-2 pr-2 h-8 gap-1 text-default-600 transition-colors text-sm",
                   button.className,
                   "hover:bg-default-200/50",
                 )}
