@@ -22,7 +22,7 @@ const defaultOpenAIConfig: OpenAIConfig = {
   apiKey: "sk-BGoyyv5XIT0geSDjNvih31S89GxezQry9MbNs6MXW9axVKLz",
   model: "json-tools",
   useProxy: true,
-  proxyUrl: "https://api.kl.do/v1",
+  proxyUrl: "https://api.ssooai.com/v1",
   temperature: 0.7,
 };
 
@@ -46,7 +46,8 @@ export const useOpenAIConfigStore = create<OpenAIConfigStore>()(
             const savedConfig = await storage.getItem(BD_OPENAI_CONFIG_KEY);
 
             if (savedConfig) {
-              set(savedConfig);
+              // 确保只更新有效字段，而不是完全覆盖
+              set((state) => ({ ...state, ...savedConfig as Partial<OpenAIConfig> }));
             }
           } catch (error) {
             console.error("Failed to sync OpenAI config:", error);

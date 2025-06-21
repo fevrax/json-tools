@@ -75,7 +75,7 @@ export const useTabStore = create<TabStore>()(
             const newTabKey = `${state.nextKey}`;
             const newTab: TabItem = {
               key: `${state.nextKey}`,
-              title: `New Tab ${title ? title : newTabKey}`,
+              title: title ? title : `New Tab ${newTabKey}`,
               content: content ? content : ``,
               vanillaMode: Mode.tree,
               closable: true,

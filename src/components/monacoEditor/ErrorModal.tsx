@@ -11,7 +11,7 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
-import Divider from "@/components/divider/Divider.tsx";
+import Divider from "@/components/Divider/Divider.tsx";
 import { JsonErrorInfo } from "@/utils/json";
 
 import "@/styles/monaco.css";

@@ -4,19 +4,12 @@ import React, { useRef, useEffect, useState, useImperativeHandle } from "react";
 import { Tabs, Tab, Tooltip, cn } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import axios from "axios";
-import {
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  DropdownSection,
-  Input,
-  Button,
-  Card,
-} from "@heroui/react";
+import { Input, Button, Card } from "@heroui/react";
 
+import toast from "@/utils/toast";
 import { useTabStore, TabItem } from "@/store/useTabStore";
 import { IcRoundClose } from "@/components/Icons.tsx";
+import { JsonSample } from "@/utils/jsonSample.ts";
 
 export interface DynamicTabsRef {
   getPositionTop: () => number;
@@ -51,7 +44,10 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
   const tabRenameInputRef = useRef<HTMLInputElement>(null);
   const [editingTab, setEditingTab] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState<string>("");
-  const [contextMenuPosition, setContextMenuPosition] = useState<number>(0);
+  const [contextMenuPosition, setContextMenuPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const [contextMenuTabKey, setContextMenuTabKey] = useState<string>("");
   const [tabDisableKeys, setTabDisableKeys] = useState<string[]>([]);
 
@@ -67,6 +63,8 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     top: number;
     width: number;
   }>({ left: 0, top: 0, width: 0 });
+
+  const addButtonRef = useRef<HTMLDivElement>(null);
 
   // 精确计算标签页滚动位置
   const scrollToActiveTab = () => {
@@ -163,11 +161,10 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     event: React.MouseEvent<HTMLDivElement>,
   ) => {
     event.preventDefault();
-    const targetElement = event.currentTarget;
-    const rect = targetElement.getBoundingClientRect();
-
-    // 设置输入框位置和宽度
-    setContextMenuPosition(rect.left);
+    setContextMenuPosition({
+      x: event.clientX,
+      y: event.clientY,
+    });
     setContextMenuTabKey(tab.key);
   };
 
@@ -249,8 +246,6 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
 
   // 处理添加菜单选项
   const handleAddMenuAction = (action: string) => {
-    setShowAddMenu(false);
-
     switch (action) {
       case "upload":
         // 触发文件上传
@@ -266,52 +261,34 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
             const reader = new FileReader();
 
             reader.onload = (event) => {
-              const content = event.target?.result as string;
+              try {
+                const content = event.target?.result as string;
 
-              // 创建新标签并设置内容
-              addTab(file.name, content);
+                // 创建新标签并设置内容
+                addTab(file.name, content);
+
+                // 上传成功后关闭菜单
+                setShowAddMenu(false);
+                toast.success("文件上传成功");
+              } catch (error) {
+                toast.error(
+                  "文件处理失败",
+                  error instanceof Error ? error.message : "请确保文件格式正确",
+                );
+              }
             };
+
+            reader.onerror = () => {
+              toast.error("文件读取失败", "请确保文件可访问且格式正确");
+            };
+
             reader.readAsText(file);
           }
         };
         fileInput.click();
         break;
       case "sample":
-        // 添加示例JSON标签页
-        addTab(
-          "示例JSON",
-          JSON.stringify(
-            {
-              name: "示例JSON",
-              description: "这是一个JSON示例",
-              type: "object",
-              properties: {
-                id: {
-                  type: "integer",
-                  description: "唯一标识符",
-                },
-                name: {
-                  type: "string",
-                  description: "名称",
-                },
-                timestamp: {
-                  type: "integer",
-                  description: "时间戳",
-                  example: 1625097600000,
-                },
-                tags: {
-                  type: "array",
-                  description: "标签列表",
-                  items: {
-                    type: "string",
-                  },
-                },
-              },
-            },
-            null,
-            2,
-          ),
-        );
+        addTab("Sample JSON", JsonSample);
         break;
     }
   };
@@ -356,7 +333,10 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
       }
     } catch (error) {
       console.error("获取JSON失败:", error);
-      // 这里可以添加错误提示，如使用toast组件
+      toast.error(
+        "获取JSON失败",
+        error instanceof Error ? error.message : "请检查URL是否正确",
+      );
     }
   };
 
@@ -416,150 +396,282 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     );
   };
 
-  // 渲染标签页右键菜单
-  const renderTabContextMenu = () => {
-    if (!contextMenuTabKey) return null;
+  // 添加外部点击关闭菜单的处理
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if ((event.target as Element).closest('[aria-label="添加新标签页"]')) {
+        return;
+      }
 
+      if (
+        contextMenuPosition &&
+        !(event.target as Element).closest(".tab-context-menu")
+      ) {
+        setContextMenuPosition(null);
+        setContextMenuTabKey("");
+      }
+
+      if (showAddMenu && !(event.target as Element).closest(".add-menu")) {
+        setShowAddMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [contextMenuPosition, showAddMenu]);
+
+  // 修改右键菜单样式
+  const renderTabContextMenu = () => {
+    // 即使没有contextMenuPosition，也要渲染菜单但使其不可见，以支持动画
     return (
-      <Dropdown
-        isOpen={true}
-        placement="bottom-start"
-        onClose={() => setContextMenuTabKey("")}
+      <div
+        className={cn(
+          "tab-context-menu fixed bg-background border border-divider rounded-lg shadow-xl z-50",
+          "transition-all duration-200 ease-in-out",
+          contextMenuPosition
+            ? "opacity-100 scale-100"
+            : "opacity-0 scale-95 pointer-events-none",
+        )}
+        style={{
+          left: contextMenuPosition?.x || 0,
+          top: contextMenuPosition?.y || 0,
+          minWidth: "220px",
+          transformOrigin: "top left",
+        }}
       >
-        <DropdownTrigger
-          style={{
-            position: "fixed",
-            left: contextMenuPosition,
-            top: 36, // 如果有bug 就采用动态获取
-          }}
-        >
-          <span />
-        </DropdownTrigger>
-        <DropdownMenu
-          aria-label="Tab Context Menu"
-          onAction={(key) => handleMenuAction(key as string)}
-        >
-          <DropdownItem
-            key="close"
-            startContent={<Icon icon="gg:close" width={18} />}
-            textValue="关闭"
+        <div className="py-1.5">
+          <button
+            className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-default-100 text-sm transition-colors"
+            onClick={() => handleMenuAction("close")}
           >
-            关闭
-          </DropdownItem>
-          <DropdownItem
-            key="rename"
-            startContent={<Icon icon="solar:pen-linear" width={18} />}
-            textValue="重命名"
+            <div className="w-5 h-5 flex items-center justify-center text-default-600">
+              <Icon icon="gg:close" width={18} />
+            </div>
+            <span>关闭</span>
+          </button>
+          <button
+            className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-default-100 text-sm transition-colors"
+            onClick={() => handleMenuAction("rename")}
           >
-            重命名
-          </DropdownItem>
-          <DropdownItem
-            key="close-left"
-            startContent={<Icon icon="ph:arrow-left" width={18} />}
-            textValue="关闭左侧"
+            <div className="w-5 h-5 flex items-center justify-center text-default-600">
+              <Icon icon="solar:pen-linear" width={18} />
+            </div>
+            <span>重命名</span>
+          </button>
+          <hr className="my-1 border-divider opacity-60" />
+          <button
+            className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-default-100 text-sm transition-colors"
+            onClick={() => handleMenuAction("close-left")}
           >
-            关闭左侧
-          </DropdownItem>
-          <DropdownItem
-            key="close-right"
-            startContent={<Icon icon="ph:arrow-right" width={18} />}
-            textValue="关闭右侧"
+            <div className="w-5 h-5 flex items-center justify-center text-default-600">
+              <Icon icon="ph:arrow-left" width={18} />
+            </div>
+            <span>关闭左侧</span>
+          </button>
+          <button
+            className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-default-100 text-sm transition-colors"
+            onClick={() => handleMenuAction("close-right")}
           >
-            关闭右侧
-          </DropdownItem>
-          <DropdownItem
-            key="close-others"
-            startContent={
+            <div className="w-5 h-5 flex items-center justify-center text-default-600">
+              <Icon icon="ph:arrow-right" width={18} />
+            </div>
+            <span>关闭右侧</span>
+          </button>
+          <button
+            className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-default-100 text-sm transition-colors"
+            onClick={() => handleMenuAction("close-others")}
+          >
+            <div className="w-5 h-5 flex items-center justify-center text-default-600">
               <Icon
                 icon="material-symbols:tab-close-inactive-outline"
                 width={18}
               />
-            }
-            textValue="关闭其他"
+            </div>
+            <span>关闭其他</span>
+          </button>
+          <hr className="my-1 border-divider opacity-60" />
+          <button
+            className="w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-danger/10 text-sm text-danger transition-colors"
+            onClick={() => handleMenuAction("close-all")}
           >
-            关闭其他
-          </DropdownItem>
-          <DropdownItem
-            key="close-all"
-            color="danger"
-            startContent={<Icon icon="gg:close" width={18} />}
-            textValue="关闭所有"
-          >
-            关闭所有
-          </DropdownItem>
-        </DropdownMenu>
-      </Dropdown>
+            <div className="w-5 h-5 flex items-center justify-center text-danger">
+              <Icon icon="gg:close" width={18} />
+            </div>
+            <span>关闭所有</span>
+          </button>
+        </div>
+      </div>
     );
   };
 
-  // 渲染添加按钮右键菜单
-  const renderAddMenu = () => {
-    if (!showAddMenu) return null;
+  // 修改添加菜单显示逻辑
+  const toggleAddMenu = () => {
+    if (addButtonRef.current) {
+      const buttonRect = addButtonRef.current.getBoundingClientRect();
+      const newPosition = {
+        x: buttonRect.left,
+        y: buttonRect.bottom + 5,
+      };
 
+      setAddMenuPosition(newPosition);
+
+      // 延迟setState以确保事件处理顺序正确
+      setTimeout(() => {
+        setShowAddMenu((prevState) => !prevState);
+      }, 0);
+    }
+  };
+
+  // 确保在组件挂载后和窗口大小变化时更新菜单位置
+  useEffect(() => {
+    const updateAddMenuPosition = () => {
+      if (addButtonRef.current) {
+        const buttonRect = addButtonRef.current.getBoundingClientRect();
+
+        setAddMenuPosition({
+          x: buttonRect.left,
+          y: buttonRect.bottom + 5,
+        });
+      }
+    };
+
+    // 初始化位置
+    updateAddMenuPosition();
+
+    // 监听窗口大小变化，更新位置
+    window.addEventListener("resize", updateAddMenuPosition);
+
+    return () => {
+      window.removeEventListener("resize", updateAddMenuPosition);
+    };
+  }, []);
+
+  // 右键菜单显示时更新位置
+  useEffect(() => {
+    if (showAddMenu && addButtonRef.current) {
+      const buttonRect = addButtonRef.current.getBoundingClientRect();
+
+      setAddMenuPosition({
+        x: buttonRect.left - 10,
+        y: buttonRect.bottom + 8,
+      });
+    }
+  }, [showAddMenu]);
+
+  // 优化添加菜单设计
+  const renderAddMenu = () => {
     return (
-      <Dropdown
-        showArrow
-        classNames={{
-          base: "before:bg-default-200",
-          content: "p-0 border-small border-divider bg-background",
+      <div
+        className={cn(
+          "add-menu fixed bg-background border border-divider rounded-xl shadow-xl z-50",
+          "transition-all duration-300 ease-in-out",
+          "before:absolute before:w-3 before:h-3 before:bg-background before:rotate-45 before:-top-1.5 before:left-5 before:border-t before:border-l before:border-divider",
+          showAddMenu
+            ? "opacity-100 scale-100 translate-y-0"
+            : "opacity-0 scale-95 translate-y-2 pointer-events-none",
+        )}
+        style={{
+          left: addMenuPosition.x,
+          top: addMenuPosition.y,
+          minWidth: "480px",
+          transformOrigin: "top left",
         }}
-        isOpen={true}
-        placement="bottom-start"
-        onClose={() => setShowAddMenu(false)}
       >
-        <DropdownTrigger
-          style={{
-            position: "fixed",
-            left: addMenuPosition.x,
-            top: addMenuPosition.y,
-          }}
-        >
-          <span />
-        </DropdownTrigger>
-        <DropdownMenu
-          aria-label="新建JSON"
-          className="p-4 min-w-[460px]"
-          itemClasses={{
-            base: [
-              "rounded-md",
-              "text-default-500",
-              "transition-opacity",
-              "data-[hover=true]:text-foreground",
-              "data-[hover=true]:bg-default-100",
-              "dark:data-[hover=true]:bg-default-50",
-              "data-[selectable=true]:focus:bg-default-50",
-              "data-[pressed=true]:opacity-70",
-              "data-[focus-visible=true]:ring-default-500",
-            ],
-          }}
-        >
-          <DropdownSection showDivider title="从URL获取JSON">
-            <DropdownItem
-              key="url-input"
-              isReadOnly
-              className="h-auto gap-2 opacity-100 cursor-default"
-              textValue="从URL获取JSON"
-            >
+        <div className="p-5">
+          <div className="mb-5">
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-default-700">
+              <Icon className="text-primary" icon="solar:magic-stick-linear" />
+              快速创建
+            </h3>
+            <div className="border-b border-divider pb-5">
+              <div className="flex gap-3 w-full">
+                <Button
+                  className="flex-1 h-28 flex-col px-3 py-2 transition-all hover:scale-[1.02] bg-gradient-to-br from-background to-default-50 hover:bg-gradient-to-br hover:from-primary-50/30 hover:to-default-100 hover:shadow-sm hover:border-primary-100 justify-center items-center"
+                  startContent={
+                    <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center">
+                      <Icon
+                        className="text-xl text-primary"
+                        icon="carbon:document-blank"
+                      />
+                    </div>
+                  }
+                  variant="flat"
+                  onPress={() => {
+                    addTab("", "");
+                    setShowAddMenu(false);
+                  }}
+                >
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="font-medium">新建 Tab</span>
+                    <span className="text-xs text-default-500">
+                      创建空白 Tab 标签页
+                    </span>
+                  </div>
+                </Button>
+                <Button
+                  className="flex-1 h-28 flex-col px-3 py-2 transition-all hover:scale-[1.02] bg-gradient-to-br from-background to-default-50 hover:bg-gradient-to-br hover:from-primary-50/30 hover:to-default-100 hover:shadow-sm hover:border-primary-100 justify-center items-center"
+                  startContent={
+                    <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center">
+                      <Icon
+                        className="text-xl text-primary"
+                        icon="ri:file-code-line"
+                      />
+                    </div>
+                  }
+                  variant="flat"
+                  onPress={() => {
+                    handleAddMenuAction("sample");
+                    setShowAddMenu(false);
+                  }}
+                >
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="font-medium">JSON 示例</span>
+                    <span className="text-xs text-default-500">
+                      包含常用字段
+                    </span>
+                  </div>
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div className="mb-5">
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-default-700">
+              <Icon className="text-primary" icon="solar:link-circle-linear" />
+              从 URL 获取 JSON
+            </h3>
+            <div className="border-b border-divider pb-5">
               <div className="w-full flex flex-col gap-2">
                 <Input
                   classNames={{
-                    inputWrapper: "no-animation",
+                    inputWrapper: "shadow-sm bg-default-50 border-divider",
                     input: "focus:ring-0",
                   }}
                   endContent={
                     <Button
+                      className="bg-primary border-0"
                       color="primary"
                       isDisabled={!jsonUrl.trim()}
+                      radius="sm"
                       size="sm"
                       onPress={handleUrlSubmit}
                     >
-                      获取
+                      <span className="px-1">获取</span>
                     </Button>
                   }
-                  label="JSON URL"
-                  placeholder="输入JSON链接地址"
+                  placeholder="输入 JSON 链接地址"
+                  startContent={
+                    <Icon
+                      className="text-default-400"
+                      icon="solar:link-linear"
+                      width={18}
+                    />
+                  }
                   value={jsonUrl}
-                  variant="bordered"
+                  variant="flat"
                   onChange={(e) => setJsonUrl(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -567,20 +679,22 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                     }
                   }}
                 />
+                <p className="text-xs text-default-400 px-1">
+                  支持任何公开的 JSON 资源 URL，系统将自动解析并加载
+                </p>
               </div>
-            </DropdownItem>
-          </DropdownSection>
+            </div>
+          </div>
 
-          <DropdownSection showDivider title="文件操作">
-            <DropdownItem
-              key="file-upload"
-              isReadOnly
-              className="h-auto gap-2 opacity-100 cursor-default"
-              textValue="文件上传"
-            >
+          <div>
+            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-default-700">
+              <Icon className="text-primary" icon="solar:upload-linear" />
+              文件操作
+            </h3>
+            <div>
               <Card
                 isPressable
-                className="border-2 border-dashed rounded-lg hover:border-primary hover:bg-primary-50/10 transition-colors w-full py-4 cursor-pointer"
+                className="border-2 border-dashed rounded-xl hover:border-primary dark:hover:border-primary-400 hover:bg-primary-50/10 dark:hover:bg-primary-900/20 transition-all duration-300 w-full py-5 cursor-pointer dark:border-default-600"
                 onPress={() => {
                   const fileInput = document.createElement("input");
 
@@ -594,79 +708,51 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                       const reader = new FileReader();
 
                       reader.onload = (event) => {
-                        const content = event.target?.result as string;
+                        try {
+                          const content = event.target?.result as string;
 
-                        addTab(file.name, content);
+                          addTab(file.name, content);
+                          setShowAddMenu(false);
+                          toast.success("文件上传成功");
+                        } catch (error) {
+                          toast.error(
+                            "文件处理失败",
+                            error instanceof Error
+                              ? error.message
+                              : "请确保文件格式正确",
+                          );
+                        }
                       };
+
+                      reader.onerror = () => {
+                        toast.error(
+                          "文件读取失败",
+                          "请确保文件可访问且格式正确",
+                        );
+                      };
+
                       reader.readAsText(file);
                     }
                   };
                   fileInput.click();
-                  setShowAddMenu(false);
                 }}
               >
-                <div className="flex flex-col items-center justify-center gap-2 px-4">
-                  <div className="p-3 rounded-full bg-primary-50 text-primary">
-                    <Icon icon="heroicons:document-arrow-up" width={24} />
+                <div className="flex flex-col items-center justify-center gap-3 px-4">
+                  <div className="p-3.5 rounded-full bg-primary-50 text-primary">
+                    <Icon icon="heroicons:document-arrow-up" width={26} />
                   </div>
-                  <div className="space-y-1 text-center">
-                    <p className="text-sm font-medium">点击上传JSON文件</p>
+                  <div className="space-y-2 text-center">
+                    <p className="text-sm font-medium">上传 JSON 文件</p>
                     <p className="text-xs text-default-500">
-                      或拖拽文件到此区域
+                      或将JSON文件拖放到任意区域
                     </p>
                   </div>
                 </div>
               </Card>
-            </DropdownItem>
-          </DropdownSection>
-
-          <DropdownSection title="快速创建">
-            <DropdownItem
-              key="template-buttons"
-              isReadOnly
-              className="h-auto gap-2 opacity-100 cursor-default"
-              textValue="快速创建"
-            >
-              <div className="flex gap-3 w-full">
-                <Button
-                  className="flex-1 h-20 flex-col px-3"
-                  startContent={
-                    <Icon className="text-xl" icon="ri:file-code-line" />
-                  }
-                  variant="flat"
-                  onPress={() => {
-                    handleAddMenuAction("sample");
-                    setShowAddMenu(false);
-                  }}
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="font-medium">示例JSON</span>
-                    <span className="text-xs text-default-500">
-                      包含常用字段
-                    </span>
-                  </div>
-                </Button>
-                <Button
-                  className="flex-1 h-20 flex-col px-3"
-                  startContent={
-                    <Icon className="text-xl" icon="carbon:document-blank" />
-                  }
-                  variant="flat"
-                  onPress={() => {
-                    addTab("新建JSON", "{}");
-                    setShowAddMenu(false);
-                  }}
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="font-medium">空白JSON</span>
-                    <span className="text-xs text-default-500">创建空文档</span>
-                  </div>
-                </Button>
-              </div>
-            </DropdownItem>
-          </DropdownSection>
-        </DropdownMenu>
-      </Dropdown>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   };
 
@@ -686,7 +772,8 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
       );
 
       if (files.length === 0) {
-        // 可以添加提示，未找到有效的JSON文件
+        toast.warning("未找到有效的JSON文件", "请确保拖放的是JSON文件");
+
         return;
       }
 
@@ -695,11 +782,24 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
         const reader = new FileReader();
 
         reader.onload = (event) => {
-          const content = event.target?.result as string;
+          try {
+            const content = event.target?.result as string;
 
-          // 创建新标签并设置内容
-          addTab(file.name, content);
+            // 创建新标签并设置内容
+            addTab(file.name, content);
+            toast.success("文件上传成功");
+          } catch (error) {
+            toast.error(
+              "文件处理失败",
+              error instanceof Error ? error.message : "请确保文件格式正确",
+            );
+          }
         };
+
+        reader.onerror = () => {
+          toast.error("文件读取失败", "请确保文件可访问且格式正确");
+        };
+
         reader.readAsText(file);
       });
     }
@@ -728,10 +828,10 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
   return (
     <div
       className={cn(
-        "flex flex-col overflow-hidden border-b border-default-200 pb-0.5",
+        "flex flex-col overflow-hidden border-b border-default-200 pb-0.5 relative",
         {
           "bg-default-100": !isDragging,
-          "bg-primary-50 dark:bg-primary-900/20": isDragging,
+          "bg-primary-50/40 dark:bg-primary-900/20": isDragging,
         },
       )}
       onDragEnter={handleDragEnter}
@@ -740,34 +840,30 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
       onDrop={handleFileDrop}
     >
       <div className="flex items-center relative">
-        <div
-          style={
-            {
-              // boxShadow: "4px 0 6px -1px rgba(0, 0, 0, 0.1)",
-            }
-          }
-        >
+        <div className="sticky left-0 z-10 h-full flex items-center pr-1 shadow-[4px_0_8px_-1px_rgba(0,0,0,0.05)] dark:shadow-[4px_0_8px_-1px_rgba(0,0,0,0.2)]">
           <div
+            ref={addButtonRef}
             aria-label="添加新标签页"
-            className="sticky left-0 z-50 cursor-pointer p-0.5 ml-2 flex-shrink-0 bg-default-100 hover:bg-default-200 rounded text-default-600"
+            className="sticky left-0 z-50 cursor-pointer p-1.5 ml-1.5 flex-shrink-0 bg-default-100 hover:bg-default-200 rounded-lg text-default-600 transition-colors"
             role="button"
             tabIndex={0}
             onClick={(e) => {
-              addTab(undefined, undefined);
+              e.preventDefault();
               e.stopPropagation();
+              toggleAddMenu();
             }}
             onContextMenu={(e) => {
-              setAddMenuPosition({ x: e.clientX, y: e.clientY });
-              setShowAddMenu(true);
               e.preventDefault();
+              e.stopPropagation();
+              toggleAddMenu();
             }}
             onKeyDown={(e) =>
               handleKeyDown(e, () => {
-                addTab(undefined, undefined);
+                toggleAddMenu();
               })
             }
           >
-            <Icon icon="mi:add" width={22} />
+            <Icon icon="solar:add-square-linear" width={22} />
           </div>
         </div>
 
@@ -781,8 +877,8 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
             aria-label="标签页"
             classNames={{
               tabList:
-                "gap-6 w-full h-10 relative rounded-none p-0 pr-4 ml-4 overflow-x-visible flex-shrink-0",
-              tab: "max-w-fit px-0 h-10 flex-shrink-0",
+                "gap-1 w-full h-10 relative rounded-none p-0 pr-4 ml-2 overflow-x-visible flex-shrink-0",
+              tab: "max-w-fit px-1.5 h-10 flex-shrink-0 data-[hover=true]:bg-default-100 rounded-t-md transition-colors",
               cursor: "w-full",
               panel:
                 "flex-grow overflow-auto border-t border-divider px-0 pb-0 pt-1",
@@ -807,11 +903,11 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                     onDoubleClick={(e) => handleDoubleClick(tab, e)}
                   >
                     <>
-                      <span className="select-none">{tab.title}</span>
+                      <span className="select-none text-sm">{tab.title}</span>
                       {tab.closable && (
                         <div
                           aria-label="关闭标签页"
-                          className=" rounded-full cursor-pointer flex items-center justify-center z-10 h-10 px-1 !ml-0.5 text-default-500"
+                          className="rounded-full cursor-pointer flex items-center justify-center z-10 h-6 px-1 !ml-1 text-default-400 hover:text-default-600 hover:bg-default-200 transition-colors"
                           role="button"
                           tabIndex={0}
                           onClick={(e) => {
@@ -831,7 +927,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                           onMouseEnter={() => setTabDisableKeys([tab.key])}
                           onMouseLeave={() => setTabDisableKeys([])}
                         >
-                          <IcRoundClose width={18} />
+                          <IcRoundClose width={16} />
                         </div>
                       )}
                     </>
@@ -842,6 +938,17 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
           </Tabs>
         </div>
       </div>
+
+      {/* 拖放区域指示器 */}
+      {isDragging && (
+        <div className="absolute inset-0 bg-primary-50/40 dark:bg-primary-800/30 border-2 border-dashed border-primary/50 dark:border-primary-400/70 rounded-lg flex items-center justify-center z-50 pointer-events-none">
+          <div className="bg-background/90 dark:bg-background/80 px-6 py-3 rounded-lg shadow-lg flex items-center gap-3">
+            <Icon className="text-primary text-xl" icon="solar:upload-linear" />
+            <span className="text-sm font-medium">释放鼠标上传JSON文件</span>
+          </div>
+        </div>
+      )}
+
       {/* 渲染重命名输入框 */}
       {renderRenameInput()}
       {renderTabContextMenu()}
