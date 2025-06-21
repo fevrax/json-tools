@@ -1,13 +1,18 @@
 "use client";
 
 import React, { useRef, useEffect, useState, useImperativeHandle } from "react";
-import { Tabs, Tab, Tooltip, Input, cn } from "@heroui/react";
+import { Tabs, Tab, Tooltip, cn } from "@heroui/react";
 import { Icon } from "@iconify/react";
+import axios from "axios";
 import {
   Dropdown,
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
+  DropdownSection,
+  Input,
+  Button,
+  Card,
 } from "@heroui/react";
 
 import { useTabStore, TabItem } from "@/store/useTabStore";
@@ -32,7 +37,6 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     tabs,
     activeTabKey,
     addTab,
-    addTabSimple,
     closeTab,
     setActiveTab,
     renameTab,
@@ -50,6 +54,13 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
   const [contextMenuPosition, setContextMenuPosition] = useState<number>(0);
   const [contextMenuTabKey, setContextMenuTabKey] = useState<string>("");
   const [tabDisableKeys, setTabDisableKeys] = useState<string[]>([]);
+
+  // 添加菜单相关状态
+  const [showAddMenu, setShowAddMenu] = useState<boolean>(false);
+  const [addMenuPosition, setAddMenuPosition] = useState<{
+    x: number;
+    y: number;
+  }>({ x: 0, y: 0 });
 
   const [inputPosition, setInputPosition] = useState<{
     left: number;
@@ -233,6 +244,122 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     }
   };
 
+  // 添加菜单相关状态
+  const [jsonUrl, setJsonUrl] = useState<string>("");
+
+  // 处理添加菜单选项
+  const handleAddMenuAction = (action: string) => {
+    setShowAddMenu(false);
+
+    switch (action) {
+      case "upload":
+        // 触发文件上传
+        const fileInput = document.createElement("input");
+
+        fileInput.type = "file";
+        fileInput.accept = "application/json";
+        fileInput.onchange = (e) => {
+          const target = e.target as HTMLInputElement;
+
+          if (target.files && target.files.length > 0) {
+            const file = target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = (event) => {
+              const content = event.target?.result as string;
+
+              // 创建新标签并设置内容
+              addTab(file.name, content);
+            };
+            reader.readAsText(file);
+          }
+        };
+        fileInput.click();
+        break;
+      case "sample":
+        // 添加示例JSON标签页
+        addTab(
+          "示例JSON",
+          JSON.stringify(
+            {
+              name: "示例JSON",
+              description: "这是一个JSON示例",
+              type: "object",
+              properties: {
+                id: {
+                  type: "integer",
+                  description: "唯一标识符",
+                },
+                name: {
+                  type: "string",
+                  description: "名称",
+                },
+                timestamp: {
+                  type: "integer",
+                  description: "时间戳",
+                  example: 1625097600000,
+                },
+                tags: {
+                  type: "array",
+                  description: "标签列表",
+                  items: {
+                    type: "string",
+                  },
+                },
+              },
+            },
+            null,
+            2,
+          ),
+        );
+        break;
+    }
+  };
+
+  // 处理URL输入
+  const handleUrlSubmit = async () => {
+    if (!jsonUrl.trim()) {
+      return;
+    }
+
+    try {
+      const response = await axios.get(jsonUrl, {
+        headers: {
+          Accept: "application/json",
+        },
+        responseType: "text",
+      });
+
+      // 检查响应类型
+      const contentType = response.headers["content-type"];
+
+      if (contentType && contentType.includes("application/json")) {
+        const jsonText = response.data;
+
+        // 创建URL的文件名
+        const urlObj = new URL(jsonUrl);
+        const pathParts = urlObj.pathname.split("/");
+        let fileName = pathParts[pathParts.length - 1] || urlObj.hostname;
+
+        if (!fileName.toLowerCase().endsWith(".json")) {
+          fileName += ".json";
+        }
+
+        // 创建新标签并设置内容
+        addTab(fileName, jsonText);
+
+        // 关闭菜单并清空URL
+        setShowAddMenu(false);
+        setJsonUrl("");
+      } else {
+        throw new Error("响应不是JSON格式");
+      }
+    } catch (error) {
+      console.error("获取JSON失败:", error);
+      // 这里可以添加错误提示，如使用toast组件
+    }
+  };
+
   // 使用 useImperativeHandle 暴露方法
   useImperativeHandle(ref, () => ({
     getPositionTop: () => {
@@ -288,7 +415,8 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
       </div>
     );
   };
-  // 渲染重命名输入框
+
+  // 渲染标签页右键菜单
   const renderTabContextMenu = () => {
     if (!contextMenuTabKey) return null;
 
@@ -314,24 +442,28 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
           <DropdownItem
             key="close"
             startContent={<Icon icon="gg:close" width={18} />}
+            textValue="关闭"
           >
             关闭
           </DropdownItem>
           <DropdownItem
             key="rename"
             startContent={<Icon icon="solar:pen-linear" width={18} />}
+            textValue="重命名"
           >
             重命名
           </DropdownItem>
           <DropdownItem
             key="close-left"
             startContent={<Icon icon="ph:arrow-left" width={18} />}
+            textValue="关闭左侧"
           >
             关闭左侧
           </DropdownItem>
           <DropdownItem
             key="close-right"
             startContent={<Icon icon="ph:arrow-right" width={18} />}
+            textValue="关闭右侧"
           >
             关闭右侧
           </DropdownItem>
@@ -343,6 +475,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                 width={18}
               />
             }
+            textValue="关闭其他"
           >
             关闭其他
           </DropdownItem>
@@ -350,6 +483,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
             key="close-all"
             color="danger"
             startContent={<Icon icon="gg:close" width={18} />}
+            textValue="关闭所有"
           >
             关闭所有
           </DropdownItem>
@@ -358,8 +492,253 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     );
   };
 
+  // 渲染添加按钮右键菜单
+  const renderAddMenu = () => {
+    if (!showAddMenu) return null;
+
+    return (
+      <Dropdown
+        showArrow
+        classNames={{
+          base: "before:bg-default-200",
+          content: "p-0 border-small border-divider bg-background",
+        }}
+        isOpen={true}
+        placement="bottom-start"
+        onClose={() => setShowAddMenu(false)}
+      >
+        <DropdownTrigger
+          style={{
+            position: "fixed",
+            left: addMenuPosition.x,
+            top: addMenuPosition.y,
+          }}
+        >
+          <span />
+        </DropdownTrigger>
+        <DropdownMenu
+          aria-label="新建JSON"
+          className="p-4 min-w-[460px]"
+          itemClasses={{
+            base: [
+              "rounded-md",
+              "text-default-500",
+              "transition-opacity",
+              "data-[hover=true]:text-foreground",
+              "data-[hover=true]:bg-default-100",
+              "dark:data-[hover=true]:bg-default-50",
+              "data-[selectable=true]:focus:bg-default-50",
+              "data-[pressed=true]:opacity-70",
+              "data-[focus-visible=true]:ring-default-500",
+            ],
+          }}
+        >
+          <DropdownSection showDivider title="从URL获取JSON">
+            <DropdownItem
+              key="url-input"
+              isReadOnly
+              className="h-auto gap-2 opacity-100 cursor-default"
+              textValue="从URL获取JSON"
+            >
+              <div className="w-full flex flex-col gap-2">
+                <Input
+                  classNames={{
+                    inputWrapper: "no-animation",
+                    input: "focus:ring-0",
+                  }}
+                  endContent={
+                    <Button
+                      color="primary"
+                      isDisabled={!jsonUrl.trim()}
+                      size="sm"
+                      onPress={handleUrlSubmit}
+                    >
+                      获取
+                    </Button>
+                  }
+                  label="JSON URL"
+                  placeholder="输入JSON链接地址"
+                  value={jsonUrl}
+                  variant="bordered"
+                  onChange={(e) => setJsonUrl(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleUrlSubmit();
+                    }
+                  }}
+                />
+              </div>
+            </DropdownItem>
+          </DropdownSection>
+
+          <DropdownSection showDivider title="文件操作">
+            <DropdownItem
+              key="file-upload"
+              isReadOnly
+              className="h-auto gap-2 opacity-100 cursor-default"
+              textValue="文件上传"
+            >
+              <Card
+                isPressable
+                className="border-2 border-dashed rounded-lg hover:border-primary hover:bg-primary-50/10 transition-colors w-full py-4 cursor-pointer"
+                onPress={() => {
+                  const fileInput = document.createElement("input");
+
+                  fileInput.type = "file";
+                  fileInput.accept = "application/json";
+                  fileInput.onchange = (e) => {
+                    const target = e.target as HTMLInputElement;
+
+                    if (target.files && target.files.length > 0) {
+                      const file = target.files[0];
+                      const reader = new FileReader();
+
+                      reader.onload = (event) => {
+                        const content = event.target?.result as string;
+
+                        addTab(file.name, content);
+                      };
+                      reader.readAsText(file);
+                    }
+                  };
+                  fileInput.click();
+                  setShowAddMenu(false);
+                }}
+              >
+                <div className="flex flex-col items-center justify-center gap-2 px-4">
+                  <div className="p-3 rounded-full bg-primary-50 text-primary">
+                    <Icon icon="heroicons:document-arrow-up" width={24} />
+                  </div>
+                  <div className="space-y-1 text-center">
+                    <p className="text-sm font-medium">点击上传JSON文件</p>
+                    <p className="text-xs text-default-500">
+                      或拖拽文件到此区域
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </DropdownItem>
+          </DropdownSection>
+
+          <DropdownSection title="快速创建">
+            <DropdownItem
+              key="template-buttons"
+              isReadOnly
+              className="h-auto gap-2 opacity-100 cursor-default"
+              textValue="快速创建"
+            >
+              <div className="flex gap-3 w-full">
+                <Button
+                  className="flex-1 h-20 flex-col px-3"
+                  startContent={
+                    <Icon className="text-xl" icon="ri:file-code-line" />
+                  }
+                  variant="flat"
+                  onPress={() => {
+                    handleAddMenuAction("sample");
+                    setShowAddMenu(false);
+                  }}
+                >
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="font-medium">示例JSON</span>
+                    <span className="text-xs text-default-500">
+                      包含常用字段
+                    </span>
+                  </div>
+                </Button>
+                <Button
+                  className="flex-1 h-20 flex-col px-3"
+                  startContent={
+                    <Icon className="text-xl" icon="carbon:document-blank" />
+                  }
+                  variant="flat"
+                  onPress={() => {
+                    addTab("新建JSON", "{}");
+                    setShowAddMenu(false);
+                  }}
+                >
+                  <div className="flex flex-col items-center gap-1">
+                    <span className="font-medium">空白JSON</span>
+                    <span className="text-xs text-default-500">创建空文档</span>
+                  </div>
+                </Button>
+              </div>
+            </DropdownItem>
+          </DropdownSection>
+        </DropdownMenu>
+      </Dropdown>
+    );
+  };
+
+  // 拖拽状态
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+
+  // 处理文件拖放
+  const handleFileDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const files = Array.from(e.dataTransfer.files).filter(
+        (file) =>
+          file.type === "application/json" || file.name.endsWith(".json"),
+      );
+
+      if (files.length === 0) {
+        // 可以添加提示，未找到有效的JSON文件
+        return;
+      }
+
+      // 处理每个文件
+      files.forEach((file) => {
+        const reader = new FileReader();
+
+        reader.onload = (event) => {
+          const content = event.target?.result as string;
+
+          // 创建新标签并设置内容
+          addTab(file.name, content);
+        };
+        reader.readAsText(file);
+      });
+    }
+  };
+
+  // 处理拖拽进入
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  // 处理拖拽离开
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  // 处理拖拽经过
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   return (
-    <div className="flex flex-col overflow-hidden bg-default-100 border-b border-default-200 pb-0.5">
+    <div
+      className={cn(
+        "flex flex-col overflow-hidden border-b border-default-200 pb-0.5",
+        {
+          "bg-default-100": !isDragging,
+          "bg-primary-50 dark:bg-primary-900/20": isDragging,
+        },
+      )}
+      onDragEnter={handleDragEnter}
+      onDragLeave={handleDragLeave}
+      onDragOver={handleDragOver}
+      onDrop={handleFileDrop}
+    >
       <div className="flex items-center relative">
         <div
           style={
@@ -378,7 +757,8 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
               e.stopPropagation();
             }}
             onContextMenu={(e) => {
-              addTabSimple();
+              setAddMenuPosition({ x: e.clientX, y: e.clientY });
+              setShowAddMenu(true);
               e.preventDefault();
             }}
             onKeyDown={(e) =>
@@ -465,6 +845,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
       {/* 渲染重命名输入框 */}
       {renderRenameInput()}
       {renderTabContextMenu()}
+      {renderAddMenu()}
     </div>
   );
 };
