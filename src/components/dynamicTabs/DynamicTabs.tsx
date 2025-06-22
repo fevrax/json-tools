@@ -266,8 +266,6 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
 
                 // 创建新标签并设置内容
                 addTab(file.name, content);
-
-                // 上传成功后关闭菜单
                 setShowAddMenu(false);
                 toast.success("文件上传成功");
               } catch (error) {
@@ -427,9 +425,9 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
   const renderTabContextMenu = () => {
     // 即使没有contextMenuPosition，也要渲染菜单但使其不可见，以支持动画
     return (
-      <div
+              <div
         className={cn(
-          "tab-context-menu fixed bg-background border border-divider rounded-lg shadow-xl z-50",
+          "tab-context-menu fixed bg-default-50 border border-divider rounded-lg shadow-xl z-50",
           "transition-all duration-200 ease-in-out",
           contextMenuPosition
             ? "opacity-100 scale-100"
@@ -561,14 +559,14 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     }
   }, [showAddMenu]);
 
-  // 优化添加菜单设计
+  // 渲染菜单
   const renderAddMenu = () => {
     return (
       <div
         className={cn(
-          "add-menu fixed bg-background border border-divider rounded-xl shadow-xl z-50",
+          "add-menu fixed bg-default-50 border border-divider rounded-xl shadow-xl z-50",
           "transition-all duration-300 ease-in-out",
-          "before:absolute before:w-3 before:h-3 before:bg-background before:rotate-45 before:-top-1.5 before:left-5 before:border-t before:border-l before:border-divider",
+          "before:absolute before:w-3 before:h-3 before:bg-default-50 before:rotate-45 before:-top-1.5 before:left-5 before:border-t before:border-l before:border-divider",
           showAddMenu
             ? "opacity-100 scale-100 translate-y-0"
             : "opacity-0 scale-95 translate-y-2 pointer-events-none",
@@ -583,17 +581,17 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
         <div className="p-5">
           <div className="mb-5">
             <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-default-700">
-              <Icon className="text-primary" icon="solar:magic-stick-linear" />
+              <Icon className="text-indigo-500" icon="solar:magic-stick-linear" />
               快速创建
             </h3>
             <div className="border-b border-divider pb-5">
               <div className="flex gap-3 w-full">
                 <Button
-                  className="flex-1 h-28 flex-col px-3 py-2 transition-all hover:scale-[1.02] bg-gradient-to-br from-background to-default-50 hover:bg-gradient-to-br hover:from-primary-50/30 hover:to-default-100 hover:shadow-sm hover:border-primary-100 justify-center items-center"
+                  className="flex-1 h-28 flex-col px-3 py-2 transition-all hover:scale-[1.02] bg-gradient-to-br from-default-50 to-default-100 hover:bg-gradient-to-br hover:from-primary-50/30 hover:to-default-100 hover:shadow-sm hover:border-primary-100 justify-center items-center"
                   startContent={
                     <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center">
                       <Icon
-                        className="text-xl text-primary"
+                        className="text-xl text-indigo-500"
                         icon="carbon:document-blank"
                       />
                     </div>
@@ -612,11 +610,11 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                   </div>
                 </Button>
                 <Button
-                  className="flex-1 h-28 flex-col px-3 py-2 transition-all hover:scale-[1.02] bg-gradient-to-br from-background to-default-50 hover:bg-gradient-to-br hover:from-primary-50/30 hover:to-default-100 hover:shadow-sm hover:border-primary-100 justify-center items-center"
+                  className="flex-1 h-28 flex-col px-3 py-2 transition-all hover:scale-[1.02] bg-gradient-to-br from-default-50 to-default-100 hover:bg-gradient-to-br hover:from-primary-50/30 hover:to-default-100 hover:shadow-sm hover:border-primary-100 justify-center items-center"
                   startContent={
                     <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center">
                       <Icon
-                        className="text-xl text-primary"
+                        className="text-xl text-indigo-500"
                         icon="ri:file-code-line"
                       />
                     </div>
@@ -640,19 +638,19 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
 
           <div className="mb-5">
             <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-default-700">
-              <Icon className="text-primary" icon="solar:link-circle-linear" />
+              <Icon className="text-indigo-500" icon="solar:link-circle-linear" />
               从 URL 获取 JSON
             </h3>
             <div className="border-b border-divider pb-5">
               <div className="w-full flex flex-col gap-2">
                 <Input
                   classNames={{
-                    inputWrapper: "shadow-sm bg-default-50 border-divider",
+                    inputWrapper: "shadow-sm bg-default-100 border-divider",
                     input: "focus:ring-0",
                   }}
                   endContent={
                     <Button
-                      className="bg-primary border-0"
+                      className="bg-indigo-500 border-0"
                       color="primary"
                       isDisabled={!jsonUrl.trim()}
                       radius="sm"
@@ -688,13 +686,13 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
 
           <div>
             <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-default-700">
-              <Icon className="text-primary" icon="solar:upload-linear" />
+              <Icon className="text-indigo-500" icon="solar:upload-linear" />
               文件操作
             </h3>
-            <div>
+            <div className="flex justify-center">
               <Card
                 isPressable
-                className="border-2 border-dashed rounded-xl hover:border-primary dark:hover:border-primary-400 hover:bg-primary-50/10 dark:hover:bg-primary-900/20 transition-all duration-300 w-full py-5 cursor-pointer dark:border-default-600"
+                className="border-2 border-dashed border-default-200 rounded-xl hover:border-indigo-500  hover:bg-primary-50/10 dark:hover:bg-primary-900/20 transition-all duration-300 w-full py-5 cursor-pointer"
                 onPress={() => {
                   const fileInput = document.createElement("input");
 
@@ -737,9 +735,9 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                   fileInput.click();
                 }}
               >
-                <div className="flex flex-col items-center justify-center gap-3 px-4">
-                  <div className="p-3.5 rounded-full bg-primary-50 text-primary">
-                    <Icon icon="heroicons:document-arrow-up" width={26} />
+                <div className="flex flex-col items-center justify-center gap-3 w-full">
+                  <div className="p-3.5 rounded-full bg-primary-50 text-indigo-500">
+                    <Icon icon="heroicons:document-arrow-up" width={20} />
                   </div>
                   <div className="space-y-2 text-center">
                     <p className="text-sm font-medium">上传 JSON 文件</p>
@@ -787,6 +785,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
 
             // 创建新标签并设置内容
             addTab(file.name, content);
+            setShowAddMenu(false);
             toast.success("文件上传成功");
           } catch (error) {
             toast.error(

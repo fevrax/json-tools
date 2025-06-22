@@ -132,7 +132,6 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
 
   // 添加新的useEffect，监听content和mode的变化
   useEffect(() => {
-    console.log("useEffect content change", content, mode);
     if (editorRef.current && content) {
       updateEditorContentAndMode(mode || Mode.tree, content)
         .then(() => {
@@ -141,7 +140,6 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
         .catch((error) => {
           console.error("编辑器内容和模式更新失败", error);
         });
-      console.log("useEffect content change editorRef", 111111);
     }
   }, [content, mode]);
 
