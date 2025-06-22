@@ -133,6 +133,36 @@ pnpm build
 pnpm preview
 ```
 
+## 🐳 Docker 部署
+
+### 使用 Docker Compose（推荐）
+
+```bash
+# 构建并启动容器
+docker-compose up -d
+
+# 访问 http://localhost:3300 即可使用
+```
+
+### 使用 Docker 命令
+
+```bash
+# 构建镜像
+docker build -t json-tools-next .
+
+# 运行容器
+docker run -d -p 3300:80 --name json-tools json-tools-next
+
+# 访问 http://localhost:3300 即可使用
+```
+
+### Docker 环境说明
+
+- 构建环境：Node.js 20 Alpine + pnpm 9.12.2
+- 运行环境：Nginx Alpine
+- 默认端口映射：3300:80
+- 重启策略：unless-stopped（容器停止后自动重启，除非手动停止）
+
 ## 📈 Star 历史
 
 [![Star History Chart](https://api.star-history.com/svg?repos=dalefengs/json-tools&type=Date)](https://star-history.com/#dalefengs/json-tools&Date)
