@@ -35,7 +35,7 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
   onMount,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  var editorRef: JsonEditor;
+  const editorRef = useRef<JsonEditor | null>(null);
   //
   // const clearButtonItem = {
   //   type: 'button',
@@ -81,19 +81,36 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
 
   // 更新 editor 的内容和模式
   const updateEditorContentAndMode = (mode: Mode, content: Content) => {
-    if (editorRef) {
-      const options: JSONEditorPropsOptional = {
-        mode: mode,
+    return new Promise<void>((resolve, reject) => {
+      const maxWaitTime = 5000; // 最大等待时间5秒
+      const startTime = Date.now();
+
+      const checkEditor = () => {
+        if (editorRef.current) {
+          const options: JSONEditorPropsOptional = {
+            mode: mode,
+          };
+
+          editorRef.current.set(content);
+          editorRef.current.updateProps(options);
+          resolve();
+        } else if (Date.now() - startTime < maxWaitTime) {
+          // 继续等待
+          setTimeout(checkEditor, 100);
+        } else {
+          // 超时
+          console.warn("编辑器初始化超时");
+          reject(new Error("编辑器初始化超时"));
+        }
       };
 
-      editorRef.set(content);
-      editorRef.updateProps(options);
-    }
+      checkEditor();
+    });
   };
 
   const initEditor = () => {
     if (containerRef.current) {
-      editorRef = createJSONEditor({
+      editorRef.current = createJSONEditor({
         target: containerRef.current,
         props: options,
       });
@@ -103,15 +120,30 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
 
   useImperativeHandle(ref, () => ({
     updateEditorContentAndMode: (mode: Mode, content: Content) => {
-      updateEditorContentAndMode(mode, content);
+      return updateEditorContentAndMode(mode, content);
     },
   }));
 
   useEffect(() => {
-    if (!editorRef) {
+    if (!editorRef.current) {
       initEditor();
     }
   }, []);
+
+  // 添加新的useEffect，监听content和mode的变化
+  useEffect(() => {
+    console.log("useEffect content change", content, mode);
+    if (editorRef.current && content) {
+      updateEditorContentAndMode(mode || Mode.tree, content)
+        .then(() => {
+          console.log("编辑器内容和模式更新成功");
+        })
+        .catch((error) => {
+          console.error("编辑器内容和模式更新失败", error);
+        });
+      console.log("useEffect content change editorRef", 111111);
+    }
+  }, [content, mode]);
 
   return (
     <div

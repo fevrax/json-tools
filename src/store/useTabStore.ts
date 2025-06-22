@@ -32,7 +32,6 @@ interface TabStore {
   getTabByKey: (key: string) => TabItem | undefined;
   initTab: () => void;
   addTab: (title: string | undefined, content: string | undefined) => void;
-  addTabSimple: () => void;
   setTabContent: (key: string, content: string) => void;
   setTabModifiedValue: (key: string, content: string) => void;
   setTabVanillaContent: (key: string, content: Content) => void;
@@ -80,7 +79,7 @@ export const useTabStore = create<TabStore>()(
               vanillaMode: Mode.tree,
               closable: true,
               vanillaVersion: 0,
-              monacoVersion: 0,
+              monacoVersion: 1,
               editorSettings: {
                 fontSize: 14,
                 language: "json",
@@ -119,63 +118,6 @@ export const useTabStore = create<TabStore>()(
             };
           });
         },
-        addTabSimple: () =>
-          set((state) => {
-            const newTabKey = `${state.nextKey}`;
-            const newTab: TabItem = {
-              key: `${state.nextKey}`,
-              title: `Simple Tab ${newTabKey}`,
-              content: `{
-    "data": {
-        "name": "Simple Tab ${newTabKey}"
-    },
-    "list": [
-        {
-            "id": "1212092628029698048",
-            "possibly_sensitive": false,
-            "author_id": "2244994945",
-            "lang": "en",
-            "created_at": "2019-12-31T19:26:16.000Z",
-            "source": "Twitter Web App",
-            "in_reply_to_user_id": "2244994945",
-            "attachments": {
-                "media_keys": [
-                    "16_1211797899316740096"
-                ]
-            }
-        }
-    ]
-}`,
-              vanillaMode: Mode.tree,
-              closable: true,
-              monacoVersion: 1,
-              vanillaVersion: 0,
-              editorSettings: {
-                fontSize: 14,
-                language: "json",
-                timestampDecoratorsEnabled: true,
-              },
-            };
-
-            return {
-              tabs: [...state.tabs, newTab],
-              activeTabKey: newTabKey,
-              nextKey: state.nextKey + 1,
-            };
-          }),
-        setMonacoVersion: (key: string, version: number) =>
-          set((state) => {
-            const updatedTabs = state.tabs.map((tab) =>
-              tab.key === key
-                ? {
-                    ...tab,
-                    monacoVersion: version,
-                  }
-                : tab,
-            );
-
-            return { tabs: updatedTabs };
-          }),
         setVanillaVersion: (key: string, version: number) =>
           set((state) => {
             const updatedTabs = state.tabs.map((tab) =>
