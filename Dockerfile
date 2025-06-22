@@ -1,17 +1,12 @@
-FROM node:20-alpine AS builder
-
-# 安装 pnpm
-RUN npm install -g pnpm@9.12.2
+FROM node:20-slim AS builder
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable
 
 WORKDIR /app
-
-COPY package.json ./
-COPY pnpm-lock.yaml* ./
-
-RUN pnpm install
-
 COPY . .
 
+RUN pnpm install
 RUN pnpm build
 
 FROM nginx:alpine
