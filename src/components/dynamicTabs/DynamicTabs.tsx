@@ -298,43 +298,71 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     }
 
     try {
+      // URL validation
+      new URL(jsonUrl); // This will throw an error if URL is invalid
+
       const response = await axios.get(jsonUrl, {
         headers: {
-          Accept: "application/json",
+          Accept: "application/json, text/plain, */*",
         },
         responseType: "text",
       });
 
-      // 检查响应类型
-      const contentType = response.headers["content-type"];
+      // Get response data
+      const responseText = response.data;
 
-      if (contentType && contentType.includes("application/json")) {
-        const jsonText = response.data;
+      try {
+        // Try to parse as JSON regardless of content type
+        // This ensures we can handle valid JSON even if content type is wrong
+        JSON.parse(responseText);
 
-        // 创建URL的文件名
+        // Create filename from URL
         const urlObj = new URL(jsonUrl);
         const pathParts = urlObj.pathname.split("/");
         let fileName = pathParts[pathParts.length - 1] || urlObj.hostname;
+
+        if (!fileName || fileName === "/") {
+          fileName = urlObj.hostname;
+        }
 
         if (!fileName.toLowerCase().endsWith(".json")) {
           fileName += ".json";
         }
 
-        // 创建新标签并设置内容
-        addTab(fileName, jsonText);
+        // Create new tab and set content
+        addTab(fileName, responseText);
 
-        // 关闭菜单并清空URL
+        // Close menu and clear URL
         setShowAddMenu(false);
         setJsonUrl("");
-      } else {
-        throw new Error("响应不是JSON格式");
+      } catch (parseError) {
+        toast.error("内容无效", "响应内容不是有效的JSON格式");
       }
     } catch (error) {
       console.error("获取JSON失败:", error);
-      toast.error(
-        "获取JSON失败",
-        error instanceof Error ? error.message : "请检查URL是否正确",
-      );
+
+      // Provide more specific error messages
+      if (error instanceof TypeError && error.message.includes("URL")) {
+        toast.error("URL格式无效", "请输入完整的URL，包括http://或https://");
+      } else if (axios.isAxiosError(error)) {
+        if (error.code === "ERR_NETWORK") {
+          toast.error("网络错误", "无法连接到指定URL，请检查网络连接");
+        } else if (error.response?.status === 403) {
+          toast.error("访问被拒绝", "该资源不允许跨域访问或需要身份验证");
+        } else if (error.response?.status === 404) {
+          toast.error("资源不存在", "指定URL未找到任何资源");
+        } else {
+          toast.error(
+            "获取JSON失败",
+            `HTTP错误: ${error.response?.status || "未知"} - ${error.message}`,
+          );
+        }
+      } else {
+        toast.error(
+          "获取JSON失败",
+          error instanceof Error ? error.message : "请检查URL是否正确",
+        );
+      }
     }
   };
 
