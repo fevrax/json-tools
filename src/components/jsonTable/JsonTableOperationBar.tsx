@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import {
   Button,
   ButtonGroup,
@@ -83,6 +89,16 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
   const [visibleButtons, setVisibleButtons] = useState<string[]>([]);
   const [hiddenButtons, setHiddenButtons] = useState<ButtonConfig[]>([]);
 
+  // 新增：使用ref来保存当前的visibleButtons和hiddenButtons状态，避免依赖循环
+  const visibleButtonsRef = useRef<string[]>([]);
+  const hiddenButtonsRef = useRef<ButtonConfig[]>([]);
+
+  // 每次visibleButtons或hiddenButtons更新时，同步到ref
+  useEffect(() => {
+    visibleButtonsRef.current = visibleButtons;
+    hiddenButtonsRef.current = hiddenButtons;
+  }, [visibleButtons, hiddenButtons]);
+
   // 防止下拉菜单打开时，鼠标移开后立即关闭
   var copyDropdownOpenTimeoutRef: NodeJS.Timeout;
   var viewDropdownOpenTimeoutRef: NodeJS.Timeout;
@@ -144,127 +160,140 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
     }, dropdownTimeout);
   };
 
-  // 按钮组配置
-  const actionGroups: ButtonGroup[] = [
-    {
-      key: "copy",
-      buttons: [
-        {
-          key: "copy",
-          isStatusButton: true,
-          icon: "si:copy-line",
-          text: "复制",
-          tooltip: "复制内容到剪贴板",
-          status: copyStatus,
-          successText: "已复制",
-          priority: 10,
-          width: 90,
-          onClick: () => {
-            setTimeout(() => {
-              setCopyStatus(IconStatus.Default);
-            }, 1000);
-            setCopyStatus(onCopy() ? IconStatus.Success : IconStatus.Error);
+  // 使用useMemo记忆按钮组配置，防止每次渲染时重新创建
+  const actionGroups = useMemo(() => {
+    const groups: ButtonGroup[] = [
+      {
+        key: "copy",
+        buttons: [
+          {
+            key: "copy",
+            isStatusButton: true,
+            icon: "si:copy-line",
+            text: "复制",
+            tooltip: "复制内容到剪贴板",
+            status: copyStatus,
+            successText: "已复制",
+            priority: 10,
+            width: 90,
+            onClick: () => {
+              setTimeout(() => {
+                setCopyStatus(IconStatus.Default);
+              }, 1000);
+              setCopyStatus(onCopy() ? IconStatus.Success : IconStatus.Error);
+            },
           },
-        },
-      ],
-    },
-    {
-      key: "view",
-      buttons: [
-        {
-          key: "view",
-          icon: "solar:eye-outline",
-          text: "视图",
-          tooltip: "设置视图选项",
-          hasDropdown: true,
-          priority: 20,
-          width: 90,
-          onClick: showViewDropdown,
-          dropdownItems: [
-            {
-              key: "hideEmpty",
-              icon: "solar:eye-closed-outline",
-              text: "隐藏空值",
-              onClick: () => {
-                onCustomView("hideEmpty");
-                toast.success("已隐藏空值");
-                setViewDropdownOpen(false);
+        ],
+      },
+      {
+        key: "view",
+        buttons: [
+          {
+            key: "view",
+            icon: "solar:eye-outline",
+            text: "视图",
+            tooltip: "设置视图选项",
+            hasDropdown: true,
+            priority: 20,
+            width: 90,
+            onClick: showViewDropdown,
+            dropdownItems: [
+              {
+                key: "hideEmpty",
+                icon: "solar:eye-closed-outline",
+                text: "隐藏空值",
+                onClick: () => {
+                  onCustomView("hideEmpty");
+                  toast.success("已隐藏空值");
+                  setViewDropdownOpen(false);
+                },
               },
-            },
-            {
-              key: "hideNull",
-              icon: "solar:eye-closed-outline",
-              text: "隐藏null值",
-              onClick: () => {
-                onCustomView("hideNull");
-                toast.success("已隐藏null值");
-                setViewDropdownOpen(false);
+              {
+                key: "hideNull",
+                icon: "solar:eye-closed-outline",
+                text: "隐藏null值",
+                onClick: () => {
+                  onCustomView("hideNull");
+                  toast.success("已隐藏null值");
+                  setViewDropdownOpen(false);
+                },
               },
-            },
-            {
-              key: "showAll",
-              icon: "solar:eye-outline",
-              text: "显示所有值",
-              onClick: () => {
-                onCustomView("showAll");
-                toast.success("显示所有值");
-                setViewDropdownOpen(false);
+              {
+                key: "showAll",
+                icon: "solar:eye-outline",
+                text: "显示所有值",
+                onClick: () => {
+                  onCustomView("showAll");
+                  toast.success("显示所有值");
+                  setViewDropdownOpen(false);
+                },
               },
-            },
-          ],
-        },
-      ],
-    },
-    {
-      key: "expand",
-      buttons: [
-        {
-          key: "expand",
-          icon: "tabler:fold-down",
-          text: "展开",
-          tooltip: "展开所有节点",
-          priority: 30,
-          width: 90,
-          onClick: onExpand,
-        },
-        {
-          key: "collapse",
-          icon: "tabler:fold-up",
-          text: "折叠",
-          tooltip: "折叠所有节点",
-          priority: 40,
-          width: 90,
-          onClick: onCollapse,
-        },
-      ],
-    },
-  ];
+            ],
+          },
+        ],
+      },
+      {
+        key: "expand",
+        buttons: [
+          {
+            key: "expand",
+            icon: "tabler:fold-down",
+            text: "展开",
+            tooltip: "展开所有节点",
+            priority: 30,
+            width: 90,
+            onClick: onExpand,
+          },
+          {
+            key: "collapse",
+            icon: "tabler:fold-up",
+            text: "折叠",
+            tooltip: "折叠所有节点",
+            priority: 40,
+            width: 90,
+            onClick: onCollapse,
+          },
+        ],
+      },
+    ];
 
-  // 添加清空按钮（如果提供了）
-  if (onClear) {
-    actionGroups.push({
-      key: "clear",
-      buttons: [
-        {
-          key: "clear",
-          isStatusButton: true,
-          icon: "mynaui:trash",
-          text: "清空",
-          tooltip: "清空内容",
-          status: clearStatus,
-          successText: "已清空",
-          priority: 50,
-          width: 90,
-          onClick: () => {
-            setTimeout(() => {
-              setClearStatus(IconStatus.Default);
-            }, 1000);
-            setClearStatus(onClear() ? IconStatus.Success : IconStatus.Error);
+    // 添加清空按钮（如果提供了）
+    if (onClear) {
+      groups.push({
+        key: "clear",
+        buttons: [
+          {
+            key: "clear",
+            isStatusButton: true,
+            icon: "mynaui:trash",
+            text: "清空",
+            tooltip: "清空内容",
+            status: clearStatus,
+            successText: "已清空",
+            priority: 50,
+            width: 90,
+            onClick: () => {
+              setTimeout(() => {
+                setClearStatus(IconStatus.Default);
+              }, 1000);
+              setClearStatus(onClear() ? IconStatus.Success : IconStatus.Error);
+            },
           },
-        },
-      ],
-    });
-  }
+        ],
+      });
+    }
+
+    return groups;
+  }, [
+    copyStatus,
+    clearStatus,
+    onCopy,
+    onExpand,
+    onCollapse,
+    onCustomView,
+    onClear,
+    showViewDropdown,
+  ]);
 
   // 更多按钮本身的宽度
   const MORE_BUTTON_WIDTH = 90;
@@ -273,75 +302,95 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
   // 最小左右间距
   const MIN_PADDING = 16;
 
+  // 使用useCallback记忆calculateVisibleButtons函数，并移除对visibleButtons和hiddenButtons的依赖
+  const calculateVisibleButtons = useCallback(() => {
+    if (!containerRef.current) return;
+
+    const width = containerRef.current.clientWidth;
+
+    // 提取所有按钮
+    const allButtons = actionGroups.flatMap((group) => group.buttons);
+    // 按优先级排序按钮
+    const sortedButtons = [...allButtons].sort(
+      (a, b) => (a.priority || 999) - (b.priority || 999),
+    );
+
+    // 计算可用宽度 (考虑左右边距和分隔线)
+    let availableWidth =
+      width - 2 * MIN_PADDING - (actionGroups.length - 1) * SEPARATOR_WIDTH;
+    const visible: string[] = [];
+    const hidden: ButtonConfig[] = [];
+
+    // 第一次遍历，检查是否所有按钮都能显示
+    let totalButtonsWidth = 0;
+
+    for (const button of sortedButtons) {
+      totalButtonsWidth += button.width || 100; // 默认宽度100
+    }
+
+    // 如果所有按钮的总宽度超过可用宽度，则需要"更多"按钮
+    if (totalButtonsWidth > availableWidth) {
+      availableWidth -= MORE_BUTTON_WIDTH;
+    }
+
+    // 第二次遍历，决定哪些按钮可见
+    let usedWidth = 0;
+
+    for (const button of sortedButtons) {
+      const buttonWidth = button.width || 100; // 默认宽度100
+
+      if (usedWidth + buttonWidth <= availableWidth) {
+        visible.push(button.key);
+        usedWidth += buttonWidth;
+      } else {
+        hidden.push(button);
+      }
+    }
+
+    // 只有在数据真正发生变化时才更新状态 - 使用ref替代直接依赖
+    const visibleKeysString = JSON.stringify(visible.sort());
+    const currentKeysString = JSON.stringify(
+      [...visibleButtonsRef.current].sort(),
+    );
+
+    if (
+      visibleKeysString !== currentKeysString ||
+      hiddenButtonsRef.current.length !== hidden.length
+    ) {
+      setVisibleButtons(visible);
+      setHiddenButtons(hidden);
+    }
+  }, [actionGroups]);
+
   // 监听容器宽度变化，并计算哪些按钮可见
   useEffect(() => {
     if (!containerRef.current) return;
-
-    const calculateVisibleButtons = () => {
-      if (!containerRef.current) return;
-
-      const width = containerRef.current.clientWidth;
-
-      // 提取所有按钮
-      const allButtons = actionGroups.flatMap((group) => group.buttons);
-      // 按优先级排序按钮
-      const sortedButtons = [...allButtons].sort(
-        (a, b) => (a.priority || 999) - (b.priority || 999),
-      );
-
-      // 计算可用宽度 (考虑左右边距和分隔线)
-      let availableWidth = width - 2 * MIN_PADDING - (actionGroups.length - 1) * SEPARATOR_WIDTH;
-      const visible: string[] = [];
-      const hidden: ButtonConfig[] = [];
-
-      // 第一次遍历，检查是否所有按钮都能显示
-      let totalButtonsWidth = 0;
-
-      for (const button of sortedButtons) {
-        totalButtonsWidth += button.width || 100; // 默认宽度100
-      }
-
-      // 如果所有按钮的总宽度超过可用宽度，则需要"更多"按钮
-      if (totalButtonsWidth > availableWidth) {
-        availableWidth -= MORE_BUTTON_WIDTH;
-      }
-
-      // 第二次遍历，决定哪些按钮可见
-      let usedWidth = 0;
-
-      for (const button of sortedButtons) {
-        const buttonWidth = button.width || 100; // 默认宽度100
-
-        if (usedWidth + buttonWidth <= availableWidth) {
-          visible.push(button.key);
-          usedWidth += buttonWidth;
-        } else {
-          hidden.push(button);
-        }
-      }
-
-      setVisibleButtons(visible);
-      setHiddenButtons(hidden);
-    };
 
     // 初始计算
     calculateVisibleButtons();
 
     // 创建ResizeObserver来监听容器大小变化
-    const resizeObserver = new ResizeObserver(calculateVisibleButtons);
+    const resizeObserver = new ResizeObserver(() => {
+      // 使用RAF来减少频繁更新
+      requestAnimationFrame(calculateVisibleButtons);
+    });
 
     resizeObserver.observe(containerRef.current);
 
     // 同时监听窗口大小变化作为后备
-    window.addEventListener("resize", calculateVisibleButtons);
+    const handleResize = () => {
+      requestAnimationFrame(calculateVisibleButtons);
+    };
+
+    window.addEventListener("resize", handleResize);
 
     return () => {
       if (containerRef.current) {
         resizeObserver.unobserve(containerRef.current);
       }
-      window.removeEventListener("resize", calculateVisibleButtons);
+      window.removeEventListener("resize", handleResize);
     };
-  }, [actionGroups]);
+  }, [calculateVisibleButtons]);
 
   // 渲染按钮
   const renderButton = (button: ButtonConfig) => {
@@ -590,9 +639,10 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
       {/* 分隔线 */}
       {actionGroups[1].buttons.some((button) =>
         visibleButtons.includes(button.key),
-      ) && actionGroups[2].buttons.some((button) =>
-        visibleButtons.includes(button.key),
-      ) && <div className="h-6 w-px bg-default-200 mx-1" />}
+      ) &&
+        actionGroups[2].buttons.some((button) =>
+          visibleButtons.includes(button.key),
+        ) && <div className="h-6 w-px bg-default-200 mx-1" />}
 
       {/* 展开/折叠按钮组 */}
       <div className="flex items-center gap-2">
@@ -602,9 +652,11 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
       {/* 分隔线 - 只在有清空按钮时显示 */}
       {actionGroups[2].buttons.some((button) =>
         visibleButtons.includes(button.key),
-      ) && onClear && actionGroups[3]?.buttons.some((button) =>
-        visibleButtons.includes(button.key),
-      ) && <div className="h-6 w-px bg-default-200 mx-1" />}
+      ) &&
+        onClear &&
+        actionGroups[3]?.buttons.some((button) =>
+          visibleButtons.includes(button.key),
+        ) && <div className="h-6 w-px bg-default-200 mx-1" />}
 
       {/* 清空按钮组 */}
       {onClear && (
