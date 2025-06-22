@@ -1,9 +1,7 @@
-
 services:
   json-tools:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: fevrax/json-tools
+    container_name: json-tools
+    restart: always
     ports:
       - "3300:80"
-    restart: unless-stopped 
