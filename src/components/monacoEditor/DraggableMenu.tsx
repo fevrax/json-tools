@@ -593,7 +593,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
           "shadow-lg dark:shadow-gray-900/30 border border-gray-200/50 dark:border-gray-700/50",
           isMenuOpen
             ? "opacity-100 scale-100 translate-y-0"
-            : "opacity-0 scale-95 translate-y-2",
+            : "opacity-0 scale-95 translate-y-2 pointer-events-none",
         )}
         role="dialog"
         style={{
