@@ -425,7 +425,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
   const renderTabContextMenu = () => {
     // 即使没有contextMenuPosition，也要渲染菜单但使其不可见，以支持动画
     return (
-              <div
+      <div
         className={cn(
           "tab-context-menu fixed bg-default-50 border border-divider rounded-lg shadow-xl z-50",
           "transition-all duration-200 ease-in-out",
@@ -581,7 +581,10 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
         <div className="p-5">
           <div className="mb-5">
             <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-default-700">
-              <Icon className="text-indigo-500" icon="solar:magic-stick-linear" />
+              <Icon
+                className="text-indigo-500"
+                icon="solar:magic-stick-linear"
+              />
               快速创建
             </h3>
             <div className="border-b border-divider pb-5">
@@ -638,7 +641,10 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
 
           <div className="mb-5">
             <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-default-700">
-              <Icon className="text-indigo-500" icon="solar:link-circle-linear" />
+              <Icon
+                className="text-indigo-500"
+                icon="solar:link-circle-linear"
+              />
               从 URL 获取 JSON
             </h3>
             <div className="border-b border-divider pb-5">

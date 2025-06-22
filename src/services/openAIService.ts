@@ -15,7 +15,7 @@ export class OpenAIService {
   private useProxy: boolean = false;
   private proxyUrl: string = "";
   private temperature: number = 0.7;
-  maxTokens: number = 5000;
+  maxTokens: number = 10000;
 
   /**
    * 初始化OpenAI服务
