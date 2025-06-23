@@ -1,6 +1,18 @@
-import React, { useRef, useEffect } from "react";
-import { Button, Chip } from "@heroui/react";
+import React, { useRef, useEffect, useMemo, useState } from "react";
+import { Button, Chip, Select, SelectItem } from "@heroui/react";
 import { Icon } from "@iconify/react";
+
+import {
+  AIRouteType,
+  useOpenAIConfigStore,
+  AI_MODELS,
+} from "@/store/useOpenAIConfigStore";
+
+// 定义模型选项类型
+interface ModelOption {
+  value: string;
+  label: string;
+}
 
 // 快捷指令类型定义
 export interface QuickPrompt {
@@ -45,6 +57,102 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
+  const [isUtoolsAvailable] = useState(
+    () => typeof window !== "undefined" && "utools" in window,
+  );
+
+  // 从 store 中选择性地只获取需要的状态，避免不必要的重新渲染
+  const routeType = useOpenAIConfigStore((state) => state.routeType);
+  const defaultModel = useOpenAIConfigStore(
+    (state) => state.defaultRoute.model,
+  );
+  const utoolsModel = useOpenAIConfigStore((state) => state.utoolsRoute.model);
+  const customModel = useOpenAIConfigStore((state) => state.customRoute.model);
+  const utoolsModels = useOpenAIConfigStore((state) => state.utoolsModels);
+
+  // 单独获取更新函数，避免重新渲染
+  const updateConfig = useOpenAIConfigStore((state) => state.updateConfig);
+  const updateDefaultRouteConfig = useOpenAIConfigStore(
+    (state) => state.updateDefaultRouteConfig,
+  );
+  const updateUtoolsRouteConfig = useOpenAIConfigStore(
+    (state) => state.updateUtoolsRouteConfig,
+  );
+  const updateCustomRouteConfig = useOpenAIConfigStore(
+    (state) => state.updateCustomRouteConfig,
+  );
+  const fetchUtoolsModels = useOpenAIConfigStore(
+    (state) => state.fetchUtoolsModels,
+  );
+
+  // 在组件挂载时获取uTools模型
+  useEffect(() => {
+    if (isUtoolsAvailable && routeType === "utools") {
+      fetchUtoolsModels();
+    }
+  }, [fetchUtoolsModels, isUtoolsAvailable, routeType]);
+
+  // 使用 useMemo 缓存计算结果
+  const modelOptions = useMemo((): ModelOption[] => {
+    switch (routeType) {
+      case "default":
+        return AI_MODELS;
+      case "utools":
+        return utoolsModels.length > 0
+          ? utoolsModels
+          : [{ value: "deepseek-v3", label: "DeepSeek-V3" }];
+      case "custom":
+        return [
+          { value: "claude-sonnet-4-20250514", label: "Claude Sonnet" },
+          { value: "gpt-4o", label: "GPT-4o" },
+          { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
+        ];
+      default:
+        return AI_MODELS;
+    }
+  }, [routeType, utoolsModels]);
+
+  // 使用 useMemo 缓存当前选择的模型
+  const currentModel = useMemo(() => {
+    switch (routeType) {
+      case "default":
+        return defaultModel;
+      case "utools":
+        return utoolsModel;
+      case "custom":
+        return customModel;
+      default:
+        return defaultModel;
+    }
+  }, [routeType, defaultModel, utoolsModel, customModel]);
+
+  // 处理线路变更
+  const handleRouteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newRouteType = e.target.value as AIRouteType;
+
+    // 如果切换到uTools线路，先获取模型列表
+    if (newRouteType === "utools" && isUtoolsAvailable) {
+      fetchUtoolsModels();
+    }
+    updateConfig({ routeType: newRouteType });
+  };
+
+  // 处理模型变更
+  const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newModel = e.target.value;
+
+    switch (routeType) {
+      case "default":
+        updateDefaultRouteConfig({ model: newModel });
+        break;
+      case "utools":
+        updateUtoolsRouteConfig({ model: newModel });
+        break;
+      case "custom":
+        updateCustomRouteConfig({ model: newModel });
+        break;
+    }
+  };
 
   // 当组件显示时自动聚焦到输入框
   useEffect(() => {
@@ -124,6 +232,7 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
       role="dialog"
     >
       <div className="flex flex-col rounded-lg shadow-xl bg-gradient-to-r from-blue-200/30 to-indigo-50 dark:from-neutral-800/80 border border-blue-200 dark:border-neutral-700 overflow-hidden backdrop-blur-sm">
+        {/* 输入框区域 */}
         <div className="flex items-center p-4 gap-2">
           <div className="flex items-center flex-1 bg-white dark:bg-neutral-800 rounded-md border border-blue-200 dark:border-neutral-700 pl-2 pr-1 py-1 shadow-inner">
             <Icon
@@ -170,6 +279,52 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
           >
             <Icon icon="tabler:send" width={16} />
           </Button>
+        </div>
+
+        {/* AI 配置选择器 - 移到输入框下方 */}
+        <div className="flex items-center justify-between px-4 pb-3 gap-2 border-t border-blue-100 dark:border-neutral-700/50 bg-white/30 dark:bg-neutral-800/30">
+          <div className="flex items-center gap-2">
+            <div className="text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
+              线路:
+            </div>
+            <Select
+              aria-label="选择 AI 线路"
+              className="min-w-[120px]"
+              selectedKeys={new Set([routeType])}
+              size="sm"
+              onChange={handleRouteChange}
+            >
+              <SelectItem key="default">默认线路</SelectItem>
+              <SelectItem
+                key="utools"
+                description={!isUtoolsAvailable ? "未安装uTools" : undefined}
+                isDisabled={!isUtoolsAvailable}
+              >
+                uTools
+              </SelectItem>
+              <SelectItem key="custom">私有线路</SelectItem>
+            </Select>
+          </div>
+
+          {/* 只有在非默认线路下才显示模型选择 */}
+          {routeType !== "default" && (
+            <div className="flex items-center gap-2">
+              <div className="text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
+                模型:
+              </div>
+              <Select
+                aria-label="选择 AI 模型"
+                className="min-w-[140px]"
+                selectedKeys={new Set([currentModel])}
+                size="sm"
+                onChange={handleModelChange}
+              >
+                {modelOptions.map((model) => (
+                  <SelectItem key={model.value}>{model.label}</SelectItem>
+                ))}
+              </Select>
+            </div>
+          )}
         </div>
 
         {/* 快捷指令区域 */}

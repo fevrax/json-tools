@@ -51,13 +51,13 @@ const defaultOpenAIConfig: OpenAIConfig = {
     temperature: 0.7,
   },
   utoolsRoute: {
-    model: "deepseek-v3",  // 使用默认模型
+    model: "deepseek-v3", // 使用默认模型
     temperature: 0.7,
   },
   customRoute: {
     apiKey: "",
-    model: "gpt-4-turbo",
-    proxyUrl: "https://api.openai.com/v1",
+    model: "claude-sonnet-4-20250514",
+    proxyUrl: "https://api.ssooai.com/v1",
     temperature: 0.7,
   },
   utoolsModels: [],
@@ -144,25 +144,31 @@ export const useOpenAIConfigStore = create<OpenAIConfigStore>()(
             // 检查 uTools 是否可用
             if (!isUtoolsAvailable) {
               console.error("uTools is not available");
+
               return;
             }
 
             // 使用 utools.allAiModels API 获取模型列表
             const models = await (window as any).utools.allAiModels();
-            
+
             if (Array.isArray(models) && models.length > 0) {
               // 将 utools 模型数据转换为应用需要的格式
-              const formattedModels = models.map(model => ({
+              const formattedModels = models.map((model) => ({
                 value: model.id,
-                label: `${model.label}${model.cost > 0 ? ` (${model.cost}积分)` : ''}`,
+                label: `${model.label}${model.cost > 0 ? ` (${model.cost}积分)` : ""}`,
               }));
-              
+
               set((state) => ({ ...state, utoolsModels: formattedModels }));
-              
+
               // 如果当前没有选择模型或选择的模型不在列表中，自动选择第一个模型
               const currentModel = get().utoolsRoute.model;
-              if (!currentModel || !formattedModels.find(m => m.value === currentModel)) {
+
+              if (
+                !currentModel ||
+                !formattedModels.find((m) => m.value === currentModel)
+              ) {
                 const defaultModel = formattedModels[0]?.value || "deepseek-v3";
+
                 get().updateUtoolsRouteConfig({ model: defaultModel });
               }
             } else {
@@ -172,19 +178,19 @@ export const useOpenAIConfigStore = create<OpenAIConfigStore>()(
                 { value: "gpt-4o", label: "GPT-4o" },
                 { value: "claude-3-5-sonnet", label: "Claude 3.5 Sonnet" },
               ];
-              
+
               set((state) => ({ ...state, utoolsModels: fallbackModels }));
             }
           } catch (error) {
             console.error("Failed to fetch Utools models:", error);
-            
+
             // 出错时使用备用模型列表
             const fallbackModels = [
               { value: "deepseek-v3", label: "DeepSeek-V3" },
               { value: "gpt-4o", label: "GPT-4o" },
               { value: "claude-3-5-sonnet", label: "Claude 3.5 Sonnet" },
             ];
-            
+
             set((state) => ({ ...state, utoolsModels: fallbackModels }));
           }
         },
@@ -192,6 +198,7 @@ export const useOpenAIConfigStore = create<OpenAIConfigStore>()(
         // 获取当前线路的配置
         getCurrentRouteConfig: () => {
           const state = get();
+
           switch (state.routeType) {
             case "default":
               return state.defaultRoute;
@@ -207,6 +214,7 @@ export const useOpenAIConfigStore = create<OpenAIConfigStore>()(
         // 获取当前线路的 API Key
         getCurrentApiKey: () => {
           const state = get();
+
           switch (state.routeType) {
             case "default":
               return DEFAULT_ROUTE_API_KEY;
@@ -222,6 +230,7 @@ export const useOpenAIConfigStore = create<OpenAIConfigStore>()(
         // 获取当前线路的 API 地址
         getCurrentProxyUrl: () => {
           const state = get();
+
           switch (state.routeType) {
             case "default":
               return DEFAULT_ROUTE_PROXY_URL;
@@ -237,6 +246,7 @@ export const useOpenAIConfigStore = create<OpenAIConfigStore>()(
         // 获取当前线路的模型
         getCurrentModel: () => {
           const config = get().getCurrentRouteConfig();
+
           return config.model;
         },
       }),

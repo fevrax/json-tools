@@ -170,11 +170,21 @@ export default function SettingsPage() {
   };
 
   const removeStore = () => {
-    storage.removeItem("sidebar");
-    storage.removeItem("tabs");
-    storage.removeItem("tabs_active_key");
-    storage.removeItem("tabs_next_key");
-    toast.success("本地存储已清除, 请重新加载或刷新页面");
+    // 清除所有本地存储
+    storage.clear();
+    
+    // 重置 Zustand stores 到默认状态
+    useSettingsStore.setState({
+      editDataSaveLocal: false,
+      expandSidebar: false,
+      monacoEditorCDN: "local",
+      chatStyle: "bubble"
+    });
+    
+    // 重置 OpenAI 配置
+    useOpenAIConfigStore.getState().resetConfig();
+    
+    toast.success("所有设置已重置，请重新加载或刷新页面");
   };
 
   const reloadApp = () => {
@@ -345,6 +355,35 @@ export default function SettingsPage() {
         </p>
       </div>
 
+      <div className="mb-4 p-4 rounded-lg bg-primary/10 border border-primary/20">
+        <div className="flex items-center gap-2 mb-2">
+          <Icon className="text-primary" icon="solar:star-bold" />
+          <span className="font-medium">推荐使用 SSOOAI API</span>
+        </div>
+        <p className="text-sm">
+          <a
+            className="text-primary hover:underline"
+            href="https://api.ssooai.com"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            SSOOAI
+          </a>{" "}
+          提供稳定、高效且价格实惠的 API 服务，支持多种先进模型，包括
+          ChatGPT、DeepSeek、Claude 4 等。 访问{" "}
+          <a
+            className="text-primary hover:underline"
+            href="https://api.ssooai.com"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            https://api.ssooai.com
+          </a>{" "}
+          获取 API 密钥，
+          体验更快的响应速度和更高的稳定性。新用户可享受充值优惠！
+        </p>
+      </div>
+
       <RadioGroup
         className="space-y-4"
         color="primary"
@@ -353,14 +392,32 @@ export default function SettingsPage() {
       >
         {/* 默认线路 */}
         <div className="p-5 rounded-xl bg-background/60 backdrop-blur-sm border border-default-200 hover:bg-default-100/30 transition-colors">
-          <Radio description="免费的 GPT 4.1 模型，上下文限制" value="default">
+          <Radio
+            description="由 SSOOAI 免费提供的GPT 4.1模型，上下文限制"
+            value="default"
+          >
             <span className="text-lg font-medium">默认线路</span>
+            <span className="ml-2 text-xs px-2 py-0.5 bg-success/20 text-success rounded-full">
+              免费
+            </span>
           </Radio>
 
           {routeType === "default" && (
             <div className="ml-7 mt-4 p-4 bg-default-100/50 rounded-xl">
               <div className="mb-2 text-sm text-default-600">
-                默认模型: <span className="font-medium">GPT 4.1</span>
+                默认模型: <span className="font-medium">GPT 4.1</span>{" "}
+                <span className="text-xs text-primary">
+                  (由{" "}
+                  <a
+                    className="text-primary hover:underline"
+                    href="https://api.ssooai.com"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    SSOOAI
+                  </a>{" "}
+                  提供)
+                </span>
               </div>
               <div className="mb-2">
                 <label
@@ -387,7 +444,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="text-xs text-default-500">
-                默认线路使用免费的 gpt-4o-mini
+                默认线路使用免费的 gpt-4.1
                 模型，具有一定的上下文限制，但可以满足基本的 JSON 处理需求。
               </div>
             </div>
@@ -397,11 +454,14 @@ export default function SettingsPage() {
         {/* Utools 官方 */}
         <div className="p-5 rounded-xl bg-background/60 backdrop-blur-sm border border-default-200 hover:bg-default-100/30 transition-colors">
           <Radio
-            description="连接UtoolsAl，由utools官方收费"
+            description="连接 uToolsAI，由 uTools 官方AI能量结算"
             isDisabled={!isUtoolsAvailable}
             value="utools"
           >
-            <span className="text-lg font-medium">Utools 官方</span>
+            <span className="text-lg font-medium">uTools 官方</span>
+            <span className="ml-2 text-xs px-2 py-0.5 bg-warning/20 text-warning rounded-full">
+              uTools AI能量
+            </span>
           </Radio>
 
           {routeType === "utools" && (
@@ -416,7 +476,7 @@ export default function SettingsPage() {
                 <Select
                   className="w-full"
                   id="utools-model"
-                  placeholder="选择 Utools 模型"
+                  placeholder="选择 uTools 模型"
                   selectedKeys={[utoolsRoute.model]}
                   size="sm"
                   variant="bordered"
@@ -467,6 +527,9 @@ export default function SettingsPage() {
         <div className="p-5 rounded-xl bg-background/60 backdrop-blur-sm border border-default-200 hover:bg-default-100/30 transition-colors">
           <Radio description="自定义 API 地址和密钥" value="custom">
             <span className="text-lg font-medium">私有线路</span>
+            <span className="ml-2 text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-full">
+              私有
+            </span>
           </Radio>
 
           {routeType === "custom" && (
@@ -566,6 +629,23 @@ export default function SettingsPage() {
               <div className="text-xs text-default-500">
                 私有线路允许您使用自己的 API 密钥和自定义端点，支持 OpenAI
                 兼容的任何服务。
+              </div>
+
+              <div className="mt-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+                <div className="flex items-center gap-2">
+                  <Icon
+                    className="text-primary"
+                    icon="solar:bookmark-square-bold"
+                  />
+                  <span className="font-medium text-sm">SSOOAI API 推荐</span>
+                </div>
+                <p className="text-xs mt-1">
+                  推荐使用 SSOOAI API 作为私有线路，填入 API 地址：
+                  <code className="bg-default-100 px-1 py-0.5 rounded">
+                    https://api.ssooai.com/v1
+                  </code>
+                  ， 注册即可获得免费额度。高稳定性、低延迟、更实惠的价格！
+                </p>
               </div>
             </div>
           )}
