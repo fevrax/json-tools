@@ -1,11 +1,31 @@
-import { Button, Card, CardBody, Switch, Tooltip } from "@heroui/react";
+import {
+  Button,
+  Card,
+  CardBody,
+  Input,
+  Radio,
+  RadioGroup,
+  Select,
+  SelectItem,
+  Switch,
+  Tooltip,
+} from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 
 import toast from "@/utils/toast";
 import { useSettingsStore, ChatStyle } from "@/store/useSettingsStore.ts";
 import { storage } from "@/lib/indexedDBStore.ts";
+import {
+  useOpenAIConfigStore,
+  AIRouteType,
+} from "@/store/useOpenAIConfigStore.ts";
+import { openAIService } from "@/services/openAIService.ts";
+
+// 检查 utools 是否可用
+const isUtoolsAvailable = typeof window !== "undefined" && "utools" in window;
 
 export default function SettingsPage() {
   const {
@@ -19,7 +39,39 @@ export default function SettingsPage() {
     setMonacoEditorCDN,
   } = useSettingsStore();
 
+  const {
+    routeType,
+    defaultRoute,
+    utoolsRoute,
+    customRoute,
+    utoolsModels,
+    updateConfig,
+    updateDefaultRouteConfig,
+    updateUtoolsRouteConfig,
+    updateCustomRouteConfig,
+    fetchUtoolsModels,
+    syncConfig,
+  } = useOpenAIConfigStore();
+
   const { theme, setTheme } = useTheme();
+
+  // 初始化时同步配置
+  useEffect(() => {
+    // 从存储加载配置
+    syncConfig();
+  }, [syncConfig]);
+
+  // 初始化时获取 Utools 模型列表
+  useEffect(() => {
+    if (routeType === "utools") {
+      fetchUtoolsModels();
+    }
+  }, [routeType, fetchUtoolsModels]);
+
+  // 当配置更改时，同步到 openAIService
+  useEffect(() => {
+    openAIService.syncConfig();
+  }, [routeType]);
 
   // const editorLoadOptions = [
   //   { label: "本地嵌入", value: "local" },
@@ -46,6 +98,79 @@ export default function SettingsPage() {
         toast.success("编辑器加载方式已更改，请重新加载或刷新后生效");
         reloadApp();
         break;
+    }
+  };
+
+  // 更新 AI 线路类型
+  const handleRouteTypeChange = (routeType: AIRouteType) => {
+    updateConfig({ routeType });
+
+    // 显示提示
+    const routeMessages = {
+      default: "已切换到默认线路，使用 json-tools 模型",
+      utools: "已切换到 Utools 官方线路",
+      custom: "已切换到私有线路，请确保填写正确的 API 信息",
+    };
+
+    toast.success(routeMessages[routeType]);
+
+    // 如果切换到 utools 线路，尝试获取模型列表
+    if (routeType === "utools") {
+      if (!isUtoolsAvailable) {
+        toast.error("uTools API 不可用，请确保在 uTools 环境中运行");
+      } else {
+        fetchUtoolsModels();
+      }
+    }
+
+    // 同步到 openAIService
+    openAIService.syncConfig();
+  };
+
+  // 更新默认线路配置
+  const handleDefaultRouteConfigChange = (
+    config: Partial<{
+      model: string;
+      temperature: number;
+    }>,
+  ) => {
+    updateDefaultRouteConfig(config);
+    toast.success("默认线路配置已更新");
+
+    if (routeType === "default") {
+      openAIService.syncConfig();
+    }
+  };
+
+  // 更新 Utools 线路配置
+  const handleUtoolsRouteConfigChange = (
+    config: Partial<{
+      model: string;
+      temperature: number;
+    }>,
+  ) => {
+    updateUtoolsRouteConfig(config);
+    toast.success("Utools 线路配置已更新");
+
+    if (routeType === "utools") {
+      openAIService.syncConfig();
+    }
+  };
+
+  // 更新自定义线路配置
+  const handleCustomRouteConfigChange = (
+    config: Partial<{
+      apiKey: string;
+      model: string;
+      proxyUrl: string;
+      temperature: number;
+    }>,
+  ) => {
+    updateCustomRouteConfig(config);
+    toast.success("自定义线路配置已更新");
+
+    if (routeType === "custom") {
+      openAIService.syncConfig();
     }
   };
 
@@ -171,6 +296,254 @@ export default function SettingsPage() {
                   />
                 </div>
               ))}
+
+              {/* AI 线路设置 */}
+              <div className="p-6 hover:bg-default-50/40 transition-colors">
+                <div className="flex items-start gap-4">
+                  <div className="p-2.5 rounded-full bg-default/20">
+                    <Icon icon="solar:robot-bold" width={22} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-default-900 font-medium">AI 线路设置</p>
+                    <p className="text-sm text-default-500 mt-1 mb-4">
+                      选择您使用的 AI 服务线路和模型
+                    </p>
+
+                    <RadioGroup
+                      className="mt-4"
+                      color="primary"
+                      value={routeType}
+                      onValueChange={(value) =>
+                        handleRouteTypeChange(value as AIRouteType)
+                      }
+                    >
+                      {/* 默认线路 */}
+                      <Radio
+                        description="免费的gpt-4o-mini，上下文限制"
+                        value="default"
+                      >
+                        默认线路
+                      </Radio>
+
+                      {routeType === "default" && (
+                        <div className="ml-7 mt-2 mb-4 p-4 bg-default-100/50 rounded-lg">
+                          <div className="mb-2 text-sm text-default-600">
+                            默认模型:{" "}
+                            <span className="font-medium">
+                              {defaultRoute.model}
+                            </span>
+                          </div>
+                          <div className="mb-2">
+                            <label
+                              className="block mb-2 text-sm font-medium"
+                              htmlFor="default-temperature"
+                            >
+                              温度
+                            </label>
+                            <Input
+                              className="w-full"
+                              id="default-temperature"
+                              max={1}
+                              min={0}
+                              placeholder="设置模型温度，范围 0-1"
+                              step={0.1}
+                              type="number"
+                              value={defaultRoute.temperature.toString()}
+                              variant="bordered"
+                              onChange={(e) =>
+                                handleDefaultRouteConfigChange({
+                                  temperature: parseFloat(e.target.value),
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="text-xs text-default-500">
+                            默认线路使用免费的 gpt-4o-mini
+                            模型，具有一定的上下文限制，但可以满足基本的 JSON
+                            处理需求。
+                            <br />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Utools 官方 */}
+                      <Radio
+                        description="连接UtoolsAl，由utools官方收费"
+                        isDisabled={!isUtoolsAvailable}
+                        value="utools"
+                      >
+                        Utools 官方
+                      </Radio>
+
+                      {routeType === "utools" && (
+                        <div className="ml-7 mt-2 mb-4 p-4 bg-default-100/50 rounded-lg">
+                          <div className="mb-3">
+                            <label
+                              className="block mb-2 text-sm font-medium"
+                              htmlFor="utools-model"
+                            >
+                              选择模型
+                            </label>
+                            <Select
+                              className="w-full"
+                              id="utools-model"
+                              placeholder="选择 Utools 模型"
+                              selectedKeys={[utoolsRoute.model]}
+                              size="sm"
+                              variant="bordered"
+                              onChange={(e) =>
+                                handleUtoolsRouteConfigChange({
+                                  model: e.target.value,
+                                })
+                              }
+                            >
+                              {utoolsModels.map((item) => (
+                                <SelectItem key={item.value} >
+                                  {item.label}
+                                </SelectItem>
+                              ))}
+                            </Select>
+                          </div>
+                          <div className="mb-2">
+                            <label
+                              className="block mb-2 text-sm font-medium"
+                              htmlFor="utools-temperature"
+                            >
+                              温度
+                            </label>
+                            <Input
+                              className="w-full"
+                              id="utools-temperature"
+                              max={1}
+                              min={0}
+                              placeholder="设置模型温度，范围 0-1"
+                              step={0.1}
+                              type="number"
+                              value={utoolsRoute.temperature.toString()}
+                              variant="bordered"
+                              onChange={(e) =>
+                                handleUtoolsRouteConfigChange({
+                                  temperature: parseFloat(e.target.value),
+                                })
+                              }
+                            />
+                          </div>
+                          <div className="text-xs text-default-500">
+                            Utools 官方线路由 Utools
+                            团队维护，提供更稳定的服务和更多模型选择，但需要付费使用。
+                          </div>
+                        </div>
+                      )}
+
+                      {/* 私有线路 */}
+                      <Radio description="自定义 API 地址和密钥" value="custom">
+                        私有线路
+                      </Radio>
+
+                      {routeType === "custom" && (
+                        <div className="ml-7 mt-2 mb-4 p-4 bg-default-100/50 rounded-lg">
+                          <div className="mb-3">
+                            <label
+                              className="block mb-2 text-sm font-medium"
+                              htmlFor="api-url"
+                            >
+                              API 地址
+                            </label>
+                            <Input
+                              className="w-full"
+                              id="api-url"
+                              placeholder="输入 API 地址，例如: https://api.openai.com/v1"
+                              size="sm"
+                              value={customRoute.proxyUrl}
+                              variant="bordered"
+                              onChange={(e) =>
+                                handleCustomRouteConfigChange({
+                                  proxyUrl: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+
+                          <div className="mb-3">
+                            <label
+                              className="block mb-2 text-sm font-medium"
+                              htmlFor="api-key"
+                            >
+                              API 密钥
+                            </label>
+                            <Input
+                              className="w-full"
+                              id="api-key"
+                              placeholder="输入您的 API 密钥"
+                              size="sm"
+                              type="password"
+                              value={customRoute.apiKey}
+                              variant="bordered"
+                              onChange={(e) =>
+                                handleCustomRouteConfigChange({
+                                  apiKey: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+
+                          <div className="mb-3">
+                            <label
+                              className="block mb-2 text-sm font-medium"
+                              htmlFor="model-name"
+                            >
+                              模型名称
+                            </label>
+                            <Input
+                              className="w-full"
+                              id="model-name"
+                              placeholder="输入模型名称，例如: gpt-4-turbo"
+                              size="sm"
+                              value={customRoute.model}
+                              variant="bordered"
+                              onChange={(e) =>
+                                handleCustomRouteConfigChange({
+                                  model: e.target.value,
+                                })
+                              }
+                            />
+                          </div>
+
+                          <div className="mb-3">
+                            <label
+                              className="block mb-2 text-sm font-medium"
+                              htmlFor="custom-temperature"
+                            >
+                              温度
+                            </label>
+                            <Input
+                              className="w-full"
+                              id="custom-temperature"
+                              max={1}
+                              min={0}
+                              placeholder="设置模型温度，范围 0-1"
+                              step={0.1}
+                              type="number"
+                              value={customRoute.temperature.toString()}
+                              variant="bordered"
+                              onChange={(e) =>
+                                handleCustomRouteConfigChange({
+                                  temperature: parseFloat(e.target.value),
+                                })
+                              }
+                            />
+                          </div>
+
+                          <div className="text-xs text-default-500">
+                            私有线路允许您使用自己的 API 密钥和自定义端点，支持
+                            OpenAI 兼容的任何服务。
+                          </div>
+                        </div>
+                      )}
+                    </RadioGroup>
+                  </div>
+                </div>
+              </div>
 
               {/* 聊天窗口样式设置 */}
               <div className="p-6 hover:bg-default-50/40 transition-colors">

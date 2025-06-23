@@ -1,8 +1,16 @@
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources";
 
-import { useOpenAIConfigStore } from "@/store/useOpenAIConfigStore.ts";
+import {
+  useOpenAIConfigStore,
+  AIRouteType,
+  DEFAULT_ROUTE_API_KEY,
+  DEFAULT_ROUTE_PROXY_URL,
+} from "@/store/useOpenAIConfigStore.ts";
 import toast from "@/utils/toast.tsx";
+
+// 检查 utools 是否可用
+const isUtoolsAvailable = typeof window !== "undefined" && "utools" in window;
 
 /**
  * OpenAI 服务
@@ -10,72 +18,126 @@ import toast from "@/utils/toast.tsx";
  */
 export class OpenAIService {
   private openai: OpenAI | null = null;
-  private apiKey: string = "";
-  private model: string = "";
-  private useProxy: boolean = false;
-  private proxyUrl: string = "";
-  private temperature: number = 0.7;
+  private routeType: AIRouteType = "default";
   maxTokens: number = 10000;
 
   /**
    * 初始化OpenAI服务
-   * @param config 配置信息，如果不提供则从store获取
    */
-  constructor(config?: {
-    apiKey: string;
-    model: string;
-    useProxy: boolean;
-    proxyUrl: string;
-    temperature: number;
-  }) {
-    if (config) {
-      this.apiKey = config.apiKey;
-      this.model = config.model;
-      this.useProxy = config.useProxy;
-      this.proxyUrl = config.proxyUrl;
-      this.temperature = config.temperature;
-      this.initOpenAI();
-    }
+  constructor() {
+    // 空构造函数，通过 syncConfig 初始化
   }
 
   /**
    * 从store同步配置
    */
   public syncConfig(): void {
-    const openaiConfig = useOpenAIConfigStore.getState();
+    const openaiStore = useOpenAIConfigStore.getState();
 
-    this.apiKey = openaiConfig.apiKey;
-    this.model = openaiConfig.model;
-    this.useProxy = openaiConfig.useProxy;
-    this.proxyUrl = openaiConfig.proxyUrl;
-    this.temperature = openaiConfig.temperature;
+    this.routeType = openaiStore.routeType;
     this.initOpenAI();
+  }
+
+  /**
+   * 获取当前线路的 API Key
+   */
+  private getCurrentApiKey(): string {
+    return useOpenAIConfigStore.getState().getCurrentApiKey();
+  }
+
+  /**
+   * 获取当前线路的 API 地址
+   */
+  private getCurrentProxyUrl(): string {
+    return useOpenAIConfigStore.getState().getCurrentProxyUrl();
+  }
+
+  /**
+   * 获取当前线路的模型
+   */
+  private getCurrentModel(): string {
+    return useOpenAIConfigStore.getState().getCurrentModel();
+  }
+
+  /**
+   * 获取当前线路的温度参数
+   */
+  private getCurrentTemperature(): number {
+    const config = useOpenAIConfigStore.getState().getCurrentRouteConfig();
+
+    return config.temperature;
   }
 
   /**
    * 初始化OpenAI客户端
    */
   private initOpenAI(): void {
-    if (!this.apiKey) {
+    // 如果是 utools 线路，不需要初始化 OpenAI 客户端
+    if (this.routeType === "utools") {
+      if (!isUtoolsAvailable) {
+        toast.error("uTools API 不可用，请确保在 uTools 环境中运行");
+        this.openai = null;
+      }
+
+      return;
+    }
+
+    const apiKey = this.getCurrentApiKey();
+    const proxyUrl = this.getCurrentProxyUrl();
+
+    if (!apiKey) {
       this.openai = null;
 
       return;
     }
 
-    this.openai = new OpenAI({
-      apiKey: this.apiKey,
-      baseURL: this.useProxy && this.proxyUrl ? this.proxyUrl : undefined,
-      dangerouslyAllowBrowser: true,
-    });
+    // 根据不同的线路类型进行初始化
+    switch (this.routeType) {
+      case "default":
+        // 默认线路使用内置的代理
+        this.openai = new OpenAI({
+          apiKey: DEFAULT_ROUTE_API_KEY,
+          baseURL: DEFAULT_ROUTE_PROXY_URL,
+          dangerouslyAllowBrowser: true,
+        });
+        break;
+
+      case "custom":
+        // 自定义线路，使用用户提供的API地址
+        this.openai = new OpenAI({
+          apiKey,
+          baseURL: proxyUrl,
+          dangerouslyAllowBrowser: true,
+        });
+        break;
+    }
   }
 
   /**
    * 验证服务是否已准备好
    */
   private validateService(): boolean {
+    // 如果是 utools 线路，检查 utools 是否可用
+    if (this.routeType === "utools") {
+      if (!isUtoolsAvailable) {
+        toast.error("uTools API 不可用，请确保在 uTools 环境中运行");
+
+        return false;
+      }
+
+      return true;
+    }
+
     if (!this.openai) {
-      if (!this.apiKey) {
-        toast.error("请在设置中输入您的 OpenAI API 密钥");
+      const apiKey = this.getCurrentApiKey();
+
+      if (!apiKey) {
+        if (this.routeType === "custom") {
+          toast.error("请在设置中输入您的 API 密钥");
+        } else {
+          // 默认线路应该总是有 API Key
+          toast.error("API 密钥配置错误");
+        }
       } else {
         this.initOpenAI();
         if (!this.openai) {
@@ -92,7 +154,93 @@ export class OpenAIService {
   }
 
   /**
-   * 发送流式请求到 OpenAI
+   * 使用 utools.ai API 发送请求
+   */
+  private async createUtoolsChatCompletion(
+    messages: any[],
+    callbacks: {
+      onStart?: () => void;
+      onProcessing?: (step: string) => void;
+      onChunk?: (chunk: string, accumulated: string) => void;
+      onComplete?: (final: string) => void;
+      onError?: (error: Error) => void;
+    },
+  ): Promise<boolean> {
+    if (!isUtoolsAvailable) {
+      callbacks.onError?.(new Error("uTools API 不可用"));
+
+      return false;
+    }
+
+    try {
+      callbacks.onStart?.();
+      callbacks.onProcessing?.("连接到 uTools AI...");
+
+      let accumulated = "";
+
+      // 获取模型和温度参数
+      const modelToUse = this.getCurrentModel();
+
+      // 转换消息格式
+      const utoolsMessages = messages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }));
+
+      // 准备 utools.ai 选项参数
+      const options = {
+        model: modelToUse,
+        messages: utoolsMessages,
+        // 可以在这里添加其他 utools.ai 支持的参数
+      };
+
+      callbacks.onProcessing?.(`AI 正在使用 ${modelToUse} 模型处理数据...`);
+
+      // 创建取消标记
+      let isCancelled = false;
+
+      // 创建一个 Promise 来处理 utools.ai 的调用
+      const promise = (window as any).utools.ai(
+        options,
+        (chunk: { content?: string; reasoning_content?: string }) => {
+          if (isCancelled) return;
+
+          if (chunk.content) {
+            accumulated += chunk.content;
+            callbacks.onChunk?.(chunk.content, accumulated);
+          }
+
+          // 如果存在推理内容，也可以选择处理
+          if (chunk.reasoning_content) {
+            callbacks.onProcessing?.("AI 正在推理中...");
+          }
+        },
+      );
+
+      // 添加取消方法
+      const cancelablePromise = promise as Promise<any> & {
+        abort?: () => void;
+      };
+
+      // 处理调用结果
+      await cancelablePromise;
+
+      if (!isCancelled) {
+        callbacks.onComplete?.(accumulated);
+        callbacks.onProcessing?.("处理完成");
+      }
+
+      return true;
+    } catch (error) {
+      console.error("uTools AI 调用出错:", error);
+      callbacks.onError?.(error as Error);
+
+      return false;
+    }
+  }
+
+  /**
+   * 发送流式请求到 AI 服务
    * @param messages 消息数组
    * @param callbacks 回调函数，用于处理流式响应
    * @returns 是否成功开始请求
@@ -112,15 +260,24 @@ export class OpenAIService {
       return false;
     }
 
+    // 如果是 utools 线路，使用 utools.ai API
+    if (this.routeType === "utools") {
+      return this.createUtoolsChatCompletion(messages, callbacks);
+    }
+
     // 开始处理
     callbacks.onStart?.();
     callbacks.onProcessing?.("Connecting to OpenAI...");
 
+    // 根据线路类型获取模型和温度
+    const modelToUse = this.getCurrentModel();
+    const temperature = this.getCurrentTemperature();
+
     // 使用流式请求
     const stream = await this.openai!.chat.completions.create({
-      model: this.model,
+      model: modelToUse,
       messages: messages,
-      temperature: this.temperature,
+      temperature: temperature,
       stream: true,
     });
 
