@@ -68,6 +68,7 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
   );
   const utoolsModel = useOpenAIConfigStore((state) => state.utoolsRoute.model);
   const customModel = useOpenAIConfigStore((state) => state.customRoute.model);
+  const customApiKey = useOpenAIConfigStore((state) => state.customRoute.apiKey);
   const utoolsModels = useOpenAIConfigStore((state) => state.utoolsModels);
 
   // 单独获取更新函数，避免重新渲染
@@ -84,6 +85,9 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
   const fetchUtoolsModels = useOpenAIConfigStore(
     (state) => state.fetchUtoolsModels,
   );
+
+  // 检查私有线路是否可用（API Key是否已填写）
+  const isCustomRouteAvailable = !!customApiKey;
 
   // 在组件挂载时获取uTools模型
   useEffect(() => {
@@ -281,10 +285,10 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
           </Button>
         </div>
 
-        {/* AI 配置选择器 - 移到输入框下方 */}
-        <div className="flex items-center justify-between px-4 pb-3 gap-2 border-t border-blue-100 dark:border-neutral-700/50 bg-white/30 dark:bg-neutral-800/30">
+        {/* AI 配置选择器 */}
+        <div className="flex items-center justify-between px-4 py-3 gap-2 border-t border-blue-100 dark:border-neutral-700/50 bg-white/30 dark:bg-neutral-800/30">
           <div className="flex items-center gap-2">
-            <div className="text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
+            <div className="text-xs flex items-center text-gray-600 dark:text-gray-300 whitespace-nowrap">
               线路:
             </div>
             <Select
@@ -306,15 +310,24 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
             </Select>
           </div>
 
-          {/* 只有在非默认线路下才显示模型选择 */}
-          {routeType !== "default" && (
-            <div className="flex items-center gap-2">
-              <div className="text-xs text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                模型:
+          {/* 模型显示与选择 */}
+          <div className="flex items-center gap-2">
+            <div className="text-xs flex items-center text-gray-600 dark:text-gray-300 whitespace-nowrap">
+              模型:
+            </div>
+            {routeType === "default" ? (
+              <div className="text-xs bg-blue-100/50 dark:bg-blue-900/30 px-3 py-1 rounded-md text-blue-700 dark:text-blue-400">
+                GPT 4.1
               </div>
+            ) : routeType === "custom" && !isCustomRouteAvailable ? (
+              <div className="text-xs text-red-500">
+                未填写API密钥，请在设置中配置
+              </div>
+            ) : (
               <Select
                 aria-label="选择 AI 模型"
                 className="min-w-[140px]"
+                isDisabled={routeType === "custom" && !isCustomRouteAvailable}
                 selectedKeys={new Set([currentModel])}
                 size="sm"
                 onChange={handleModelChange}
@@ -323,8 +336,8 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
                   <SelectItem key={model.value}>{model.label}</SelectItem>
                 ))}
               </Select>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* 快捷指令区域 */}
