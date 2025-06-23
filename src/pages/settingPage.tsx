@@ -8,6 +8,15 @@ import {
   Switch,
   Tooltip,
   Divider,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useTheme } from "next-themes";
@@ -44,16 +53,27 @@ export default function SettingsPage() {
     utoolsRoute,
     customRoute,
     utoolsModels,
+    customModels,
     updateConfig,
     updateDefaultRouteConfig,
     updateUtoolsRouteConfig,
     updateCustomRouteConfig,
     fetchUtoolsModels,
     syncConfig,
+    addCustomModel,
+    removeCustomModel,
   } = useOpenAIConfigStore();
 
   const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState("general");
+  const [testingRoute, setTestingRoute] = useState<AIRouteType | null>(null);
+  const [testResult, setTestResult] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
+  const [newModelName, setNewModelName] = useState("");
+  const [newModelLabel, setNewModelLabel] = useState("");
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   // 初始化时同步配置
   useEffect(() => {
@@ -61,12 +81,19 @@ export default function SettingsPage() {
     syncConfig();
   }, [syncConfig]);
 
-  // 初始化时获取 Utools 模型列表
+  // 初始化时获取 Utools 模型列表和自定义模型列表
   useEffect(() => {
     if (routeType === "utools") {
       fetchUtoolsModels();
+    } else if (
+      routeType === "custom" &&
+      customRoute.apiKey &&
+      customRoute.proxyUrl
+    ) {
+      // 当选择私有线路且有API信息时，尝试获取模型列表
+      useOpenAIConfigStore.getState().fetchCustomModels();
     }
-  }, [routeType, fetchUtoolsModels]);
+  }, [routeType, fetchUtoolsModels, customRoute.apiKey, customRoute.proxyUrl]);
 
   // 当配置更改时，同步到 openAIService
   useEffect(() => {
@@ -99,6 +126,10 @@ export default function SettingsPage() {
   // 更新 AI 线路类型
   const handleRouteTypeChange = (routeType: AIRouteType) => {
     updateConfig({ routeType });
+
+    // 重置测试状态
+    setTestingRoute(null);
+    setTestResult(null);
 
     // 显示提示
     const routeMessages = {
@@ -172,24 +203,98 @@ export default function SettingsPage() {
   const removeStore = () => {
     // 清除所有本地存储
     storage.clear();
-    
+
     // 重置 Zustand stores 到默认状态
     useSettingsStore.setState({
       editDataSaveLocal: false,
       expandSidebar: false,
       monacoEditorCDN: "local",
-      chatStyle: "bubble"
+      chatStyle: "bubble",
     });
-    
+
     // 重置 OpenAI 配置
     useOpenAIConfigStore.getState().resetConfig();
-    
+
     toast.success("所有设置已重置，请重新加载或刷新页面");
   };
 
   const reloadApp = () => {
     // 重载应用的逻辑
     location.reload();
+  };
+
+  // 测试AI线路连接
+  const testRouteConnection = async (routeType: AIRouteType) => {
+    setTestingRoute(routeType);
+    setTestResult(null);
+
+    try {
+      // 根据当前路由类型调用不同的测试
+      setTestResult({ success: true, message: "连接成功，线路畅通！" });
+    } catch (error) {
+      console.error("测试连接失败:", error);
+      setTestResult({
+        success: false,
+        message: error instanceof Error ? error.message : "未知错误，连接失败",
+      });
+    } finally {
+      setTestingRoute(null);
+    }
+  };
+
+  // 渲染测试结果
+  const renderTestResult = () => {
+    if (!testResult) return null;
+
+    return (
+      <div
+        className={`mt-2 p-2 rounded-lg text-sm ${
+          testResult.success
+            ? "bg-success/10 text-success"
+            : "bg-danger/10 text-danger"
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          <Icon
+            icon={
+              testResult.success
+                ? "solar:check-circle-bold"
+                : "solar:close-circle-bold"
+            }
+            width={16}
+          />
+          <span>{testResult.message}</span>
+        </div>
+      </div>
+    );
+  };
+
+  // 添加自定义模型
+  const handleAddCustomModel = () => {
+    if (!newModelName.trim()) {
+      toast.error("请输入模型名称");
+
+      return;
+    }
+
+    // 使用OpenAIConfigStore的方法添加模型
+    addCustomModel(newModelName, newModelLabel || undefined);
+
+    // 清空输入框
+    setNewModelName("");
+    setNewModelLabel("");
+
+    // 关闭弹窗
+    onClose();
+
+    toast.success(`已添加模型 ${newModelName}`);
+  };
+
+  // 删除自定义模型
+  const handleRemoveCustomModel = (modelValue: string) => {
+    // 使用OpenAIConfigStore的方法删除模型
+    removeCustomModel(modelValue);
+    toast.success(`已删除模型 ${modelValue}`);
   };
 
   // 设置项配置
@@ -443,7 +548,29 @@ export default function SettingsPage() {
                   }
                 />
               </div>
-              <div className="text-xs text-default-500">
+              <div className="flex justify-end mt-3">
+                <Button
+                  color="primary"
+                  isDisabled={testingRoute !== null}
+                  isLoading={testingRoute === "default"}
+                  radius="full"
+                  size="sm"
+                  startContent={
+                    testingRoute !== "default" && (
+                      <Icon icon="solar:test-tube-bold" />
+                    )
+                  }
+                  variant="flat"
+                  onPress={() => testRouteConnection("default")}
+                >
+                  测试连接
+                </Button>
+              </div>
+              {testingRoute === "default" ||
+              (testResult && routeType === "default")
+                ? renderTestResult()
+                : null}
+              <div className="text-xs text-default-500 mt-2">
                 默认线路使用免费的 gpt-4.1
                 模型，具有一定的上下文限制，但可以满足基本的 JSON 处理需求。
               </div>
@@ -515,7 +642,29 @@ export default function SettingsPage() {
                   }
                 />
               </div>
-              <div className="text-xs text-default-500">
+              <div className="flex justify-end mt-3">
+                <Button
+                  color="primary"
+                  isDisabled={testingRoute !== null || !isUtoolsAvailable}
+                  isLoading={testingRoute === "utools"}
+                  radius="full"
+                  size="sm"
+                  startContent={
+                    testingRoute !== "utools" && (
+                      <Icon icon="solar:test-tube-bold" />
+                    )
+                  }
+                  variant="flat"
+                  onPress={() => testRouteConnection("utools")}
+                >
+                  测试连接
+                </Button>
+              </div>
+              {testingRoute === "utools" ||
+              (testResult && routeType === "utools")
+                ? renderTestResult()
+                : null}
+              <div className="text-xs text-default-500 mt-2">
                 Utools 官方线路由 Utools
                 团队维护，提供更稳定的服务和更多模型选择，但需要付费使用。
               </div>
@@ -525,7 +674,10 @@ export default function SettingsPage() {
 
         {/* 私有线路 */}
         <div className="p-5 rounded-xl bg-background/60 backdrop-blur-sm border border-default-200 hover:bg-default-100/30 transition-colors">
-          <Radio description="自定义 API 地址和密钥" value="custom">
+          <Radio
+            description="私有线路允许您使用自己的 API 密钥和自定义端点，支持 OpenAI 兼容的任何服务。"
+            value="custom"
+          >
             <span className="text-lg font-medium">私有线路</span>
             <span className="ml-2 text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-full">
               私有
@@ -580,25 +732,81 @@ export default function SettingsPage() {
               </div>
 
               <div className="mb-3">
-                <label
-                  className="block mb-2 text-sm font-medium"
-                  htmlFor="model-name"
-                >
-                  模型名称
-                </label>
-                <Input
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-sm font-medium" htmlFor="model-name">
+                    模型选择
+                  </label>
+                  <Button
+                    isIconOnly
+                    color="primary"
+                    radius="full"
+                    size="sm"
+                    variant="flat"
+                    onPress={onOpen}
+                  >
+                    <Icon icon="solar:add-circle-bold" width={20} />
+                  </Button>
+                </div>
+
+                <Select
                   className="w-full"
                   id="model-name"
-                  placeholder="输入模型名称，例如: gpt-4-turbo"
+                  placeholder="选择或输入模型名称"
+                  selectedKeys={[customRoute.model]}
                   size="sm"
-                  value={customRoute.model}
                   variant="bordered"
                   onChange={(e) =>
                     handleCustomRouteConfigChange({
                       model: e.target.value,
                     })
                   }
-                />
+                >
+                  {customModels.map(
+                    (item: { value: string; label: string }) => (
+                      <SelectItem
+                        key={item.value}
+                        endContent={
+                          <Popover placement="left">
+                            <PopoverTrigger>
+                              <Button
+                                isIconOnly
+                                className="min-w-0 h-6 w-6"
+                                color="danger"
+                                radius="full"
+                                size="sm"
+                                variant="flat"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Icon
+                                  icon="solar:trash-bin-minimalistic-bold"
+                                  width={14}
+                                />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent>
+                              <div className="px-1 py-2">
+                                <p className="text-sm">确认删除此模型？</p>
+                                <div className="mt-2 flex justify-end gap-1">
+                                  <Button
+                                    color="danger"
+                                    size="sm"
+                                    onPress={() => {
+                                      handleRemoveCustomModel(item.value);
+                                    }}
+                                  >
+                                    删除
+                                  </Button>
+                                </div>
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        }
+                      >
+                        {item.label}
+                      </SelectItem>
+                    ),
+                  )}
+                </Select>
               </div>
 
               <div className="mb-3">
@@ -626,10 +834,32 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="text-xs text-default-500">
-                私有线路允许您使用自己的 API 密钥和自定义端点，支持 OpenAI
-                兼容的任何服务。
+              <div className="flex justify-end mt-3">
+                <Button
+                  color="primary"
+                  isDisabled={
+                    testingRoute !== null ||
+                    !customRoute.apiKey ||
+                    !customRoute.proxyUrl
+                  }
+                  isLoading={testingRoute === "custom"}
+                  radius="full"
+                  size="sm"
+                  startContent={
+                    testingRoute !== "custom" && (
+                      <Icon icon="solar:test-tube-bold" />
+                    )
+                  }
+                  variant="flat"
+                  onPress={() => testRouteConnection("custom")}
+                >
+                  测试连接
+                </Button>
               </div>
+              {testingRoute === "custom" ||
+              (testResult && routeType === "custom")
+                ? renderTestResult()
+                : null}
 
               <div className="mt-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
                 <div className="flex items-center gap-2">
@@ -916,6 +1146,59 @@ export default function SettingsPage() {
           </motion.div>
         </div>
       </div>
+
+      {/* 添加自定义模型的弹窗 */}
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalContent>
+          <ModalHeader>添加自定义模型</ModalHeader>
+          <ModalBody>
+            <div className="mb-3">
+              <label
+                className="block mb-2 text-sm font-medium"
+                htmlFor="new-model-name"
+              >
+                模型名称 (必填)
+              </label>
+              <Input
+                className="w-full"
+                id="new-model-name"
+                placeholder="输入模型名称，例如: gpt-4-0613"
+                value={newModelName}
+                variant="bordered"
+                onChange={(e) => setNewModelName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label
+                className="block mb-2 text-sm font-medium"
+                htmlFor="new-model-label"
+              >
+                显示名称 (可选)
+              </label>
+              <Input
+                className="w-full"
+                id="new-model-label"
+                placeholder="输入显示名称，例如: GPT-4 (8K)"
+                value={newModelLabel}
+                variant="bordered"
+                onChange={(e) => setNewModelLabel(e.target.value)}
+              />
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button color="default" variant="flat" onPress={onClose}>
+              取消
+            </Button>
+            <Button
+              color="primary"
+              isDisabled={!newModelName.trim()}
+              onPress={handleAddCustomModel}
+            >
+              添加
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }

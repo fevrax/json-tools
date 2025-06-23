@@ -314,6 +314,96 @@ export class OpenAIService {
   }
 
   /**
+   * 测试AI线路连接
+   * @param routeType 要测试的线路类型
+   * @returns 返回一个Promise，成功则resolve，失败则reject
+   */
+  public async testConnection(routeType: AIRouteType): Promise<boolean> {
+    // 保存当前线路类型
+    const currentRouteType = this.routeType;
+    
+    try {
+      // 临时切换到要测试的线路
+      this.routeType = routeType;
+      this.initOpenAI();
+      
+      // 根据不同线路类型进行测试
+      switch (routeType) {
+        case "default":
+          // 测试默认线路
+          if (!this.openai) {
+            throw new Error("默认线路初始化失败");
+          }
+          
+          // 简单测试API可用性
+          if (this.openai) {
+            await this.openai.models.list();
+          } else {
+            throw new Error("API客户端初始化失败");
+          }
+          return true;
+          
+        case "utools":
+          // 测试utools线路
+          if (!isUtoolsAvailable) {
+            throw new Error("uTools API 不可用，请确保在 uTools 环境中运行");
+          }
+          
+          // 检查是否有可用模型
+          const utoolsModels = useOpenAIConfigStore.getState().utoolsModels;
+          if (!utoolsModels || utoolsModels.length === 0) {
+            throw new Error("未找到可用的 uTools 模型");
+          }
+          
+          // 简单测试一下 utools.ai API 是否可用
+          if (!(window as any).utools || !(window as any).utools.ai) {
+            throw new Error("uTools AI 功能不可用");
+          }
+          
+          return true;
+          
+        case "custom":
+          // 测试自定义线路
+          if (!this.openai) {
+            const apiKey = useOpenAIConfigStore.getState().customRoute.apiKey;
+            const proxyUrl = useOpenAIConfigStore.getState().customRoute.proxyUrl;
+            
+            if (!apiKey) {
+              throw new Error("请提供API密钥");
+            }
+            
+            if (!proxyUrl) {
+              throw new Error("请提供API地址");
+            }
+            
+            throw new Error("自定义线路初始化失败");
+          }
+          
+          // 简单测试API可用性
+          if (this.openai) {
+            await this.openai.models.list();
+            
+            // 测试成功后，获取模型列表
+            await useOpenAIConfigStore.getState().fetchCustomModels();
+          } else {
+            throw new Error("API客户端初始化失败");
+          }
+          return true;
+          
+        default:
+          throw new Error("未知的线路类型");
+      }
+    } catch (error) {
+      console.error("测试线路失败:", error);
+      throw error;
+    } finally {
+      // 恢复之前的线路类型
+      this.routeType = currentRouteType;
+      this.initOpenAI();
+    }
+  }
+
+  /**
    * 创建一个预设的OpenAI服务实例
    * @returns OpenAIService实例
    */

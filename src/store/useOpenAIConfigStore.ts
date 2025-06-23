@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { devtools, subscribeWithSelector } from "zustand/middleware";
 
 import { storage } from "@/lib/indexedDBStore";
+import { OpenAI } from "openai";
 
 // 检查 utools 是否可用
 const isUtoolsAvailable = typeof window !== "undefined" && "utools" in window;
@@ -36,6 +37,7 @@ export interface OpenAIConfig {
   utoolsRoute: UtoolsRouteConfig;
   customRoute: CustomRouteConfig;
   utoolsModels: Array<{ value: string; label: string }>;
+  customModels: Array<{ value: string; label: string }>;
 }
 
 export const AI_MODELS = [
@@ -61,6 +63,12 @@ const defaultOpenAIConfig: OpenAIConfig = {
     temperature: 0.7,
   },
   utoolsModels: [],
+  customModels: [
+    { value: "gpt-4o", label: "GPT-4o" },
+    { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
+    { value: "claude-sonnet-4-20250514", label: "Claude 4 Sonnet" },
+    { value: "claude-3-5-sonnet", label: "Claude 3.5 Sonnet" },
+  ],
 };
 
 // 默认线路的固定 API Key
@@ -78,6 +86,9 @@ interface OpenAIConfigStore extends OpenAIConfig {
   resetConfig: () => void;
   syncConfig: () => Promise<void>;
   fetchUtoolsModels: () => Promise<void>;
+  fetchCustomModels: () => Promise<void>;
+  addCustomModel: (model: string, label?: string) => void;
+  removeCustomModel: (model: string) => void;
 
   // 获取当前线路的配置
   getCurrentRouteConfig: () =>
@@ -101,25 +112,46 @@ export const useOpenAIConfigStore = create<OpenAIConfigStore>()(
       (set, get) => ({
         ...defaultOpenAIConfig,
 
-        updateConfig: (config) => set((state) => ({ ...state, ...config })),
+        updateConfig: (config) => {
+          set((state) => ({ ...state, ...config }));
+          // 保存到存储
+          storage.setItem(BD_OPENAI_CONFIG_KEY, get()).catch(err => 
+            console.error("Failed to save config:", err)
+          );
+        },
 
-        updateDefaultRouteConfig: (config) =>
+        updateDefaultRouteConfig: (config) => {
           set((state) => ({
             ...state,
             defaultRoute: { ...state.defaultRoute, ...config },
-          })),
+          }));
+          // 保存到存储
+          storage.setItem(BD_OPENAI_CONFIG_KEY, get()).catch(err => 
+            console.error("Failed to save default route config:", err)
+          );
+        },
 
-        updateUtoolsRouteConfig: (config) =>
+        updateUtoolsRouteConfig: (config) => {
           set((state) => ({
             ...state,
             utoolsRoute: { ...state.utoolsRoute, ...config },
-          })),
+          }));
+          // 保存到存储
+          storage.setItem(BD_OPENAI_CONFIG_KEY, get()).catch(err => 
+            console.error("Failed to save utools route config:", err)
+          );
+        },
 
-        updateCustomRouteConfig: (config) =>
+        updateCustomRouteConfig: (config) => {
           set((state) => ({
             ...state,
             customRoute: { ...state.customRoute, ...config },
-          })),
+          }));
+          // 保存到存储
+          storage.setItem(BD_OPENAI_CONFIG_KEY, get()).catch(err => 
+            console.error("Failed to save custom route config:", err)
+          );
+        },
 
         resetConfig: () => set(defaultOpenAIConfig),
 
@@ -195,6 +227,96 @@ export const useOpenAIConfigStore = create<OpenAIConfigStore>()(
           }
         },
 
+        fetchCustomModels: async () => {
+          try {
+            const state = get();
+            
+            // 只有在有API密钥和代理URL时才尝试获取模型列表
+            if (!state.customRoute.apiKey || !state.customRoute.proxyUrl) {
+              return;
+            }
+            
+            // 创建临时OpenAI实例用于获取模型
+            const openai = new OpenAI({
+              apiKey: state.customRoute.apiKey,
+              baseURL: state.customRoute.proxyUrl,
+              dangerouslyAllowBrowser: true,
+            });
+            
+            // 获取模型列表
+            const response = await openai.models.list();
+            
+            if (response.data && Array.isArray(response.data)) {
+              // 提取模型信息
+              let apiModels = response.data.map(model => ({
+                value: model.id,
+                label: model.id
+              }));
+              
+              // 获取当前存储的自定义模型
+              const currentCustomModels = state.customModels.filter(model => 
+                !apiModels.some(apiModel => apiModel.value === model.value)
+              );
+              
+              // 合并自定义模型和API模型
+              const mergedModels = [...currentCustomModels, ...apiModels];
+              
+              set({ customModels: mergedModels });
+            }
+          } catch (error) {
+            console.error("Failed to fetch custom models:", error);
+          }
+        },
+
+        addCustomModel: (model: string, label?: string) => {
+          // 如果model为空，不添加
+          if (!model.trim()) return;
+          
+          set((state) => {
+            // 检查模型是否已存在
+            const modelExists = state.customModels.some(m => m.value === model);
+            
+            if (modelExists) {
+              // 如果模型已存在，不需要添加
+              return state;
+            }
+            
+            // 创建新的模型对象
+            const newModel = {
+              value: model,
+              label: label || model // 如果没有提供标签，就使用模型名称作为标签
+            };
+            
+            // 添加到列表前面
+            return {
+              ...state,
+              customModels: [newModel, ...state.customModels]
+            };
+          });
+          
+          // 保存到存储
+          storage.setItem(BD_OPENAI_CONFIG_KEY, get()).catch(err => 
+            console.error("Failed to save custom model:", err)
+          );
+        },
+
+        removeCustomModel: (model: string) => {
+          set((state) => {
+            // 过滤掉要删除的模型
+            const filteredModels = state.customModels.filter(m => m.value !== model);
+            
+            return {
+              ...state,
+              customModels: filteredModels
+            };
+          });
+          
+          // 保存到存储
+          storage.setItem(BD_OPENAI_CONFIG_KEY, get()).catch(err => 
+            console.error("Failed to save after removing custom model:", err)
+          );
+        },
+
         // 获取当前线路的配置
         getCurrentRouteConfig: () => {
           const state = get();
@@ -266,6 +388,7 @@ useOpenAIConfigStore.subscribe(
     utoolsRoute: state.utoolsRoute,
     customRoute: state.customRoute,
     utoolsModels: state.utoolsModels,
+    customModels: state.customModels,
   }),
   (config) => {
     storage.setItem(BD_OPENAI_CONFIG_KEY, config);
