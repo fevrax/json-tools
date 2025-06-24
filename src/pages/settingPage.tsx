@@ -1,8 +1,6 @@
 import {
   Button,
   Input,
-  Radio,
-  RadioGroup,
   Switch,
   Tooltip,
   Divider,
@@ -79,12 +77,19 @@ export default function SettingsPage() {
   const { isOpen, onOpen, onClose } = useDisclosure();
 
   // 添加模型模式，用于区分是在SSOOAI线路还是自定义线路添加模型
-  const [addModelMode, setAddModelMode] = useState<"ssooai" | "custom">("custom");
+  const [addModelMode, setAddModelMode] = useState<"ssooai" | "custom">(
+    "custom",
+  );
 
   // 增加状态来保存要测试的模型
   const [testModelUtools, setTestModelUtools] = useState<string>("");
   const [testModelSsooai, setTestModelSsooai] = useState<string>("gpt-4.1");
   const [testModelCustom, setTestModelCustom] = useState<string>("gpt-4.1");
+
+  // 添加状态跟踪当前正在配置的线路类型
+  const [configuringRoute, setConfiguringRoute] = useState<AIRouteType | null>(
+    null,
+  );
 
   // 初始化时同步配置
   useEffect(() => {
@@ -168,7 +173,8 @@ export default function SettingsPage() {
     updateConfig({ routeType });
 
     // 当切换到某个线路时，自动启用该线路
-    if (routeType !== "default") { // 免费线路始终启用
+    if (routeType !== "default") {
+      // 免费线路始终启用
       updateRouteEnabled(routeType, true);
     }
 
@@ -185,8 +191,18 @@ export default function SettingsPage() {
       }
     }
 
-    // 同步到 openAIService
     openAIService.syncConfig();
+  };
+
+  // 配置线路的处理函数
+  const handleConfigureRoute = (routeType: AIRouteType) => {
+    setConfiguringRoute(routeType);
+    handleRouteTypeChange(routeType);
+  };
+
+  // 关闭配置的处理函数
+  const handleCloseConfig = () => {
+    setConfiguringRoute(null);
   };
 
   // 更新 Utools 线路配置
@@ -334,22 +350,22 @@ export default function SettingsPage() {
 
     return (
       <div
-        className={`mt-2 p-2 rounded-lg text-sm ${
+        className={`mt-3 p-3 rounded-xl text-sm ${
           testResult.success
-            ? "bg-success/10 text-success"
-            : "bg-danger/10 text-danger"
-        }`}
+            ? "bg-success/15 text-success border border-success/20"
+            : "bg-danger/15 text-danger border border-danger/20"
+        } shadow-sm`}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
           <Icon
             icon={
               testResult.success
                 ? "solar:check-circle-bold"
                 : "solar:close-circle-bold"
             }
-            width={16}
+            width={18}
           />
-          <span>{testResult.message}</span>
+          <span className="font-medium">{testResult.message}</span>
         </div>
       </div>
     );
@@ -482,10 +498,10 @@ export default function SettingsPage() {
 
   // 渲染侧边栏菜单
   const renderSidebar = () => (
-    <div className="w-40 sm:w-40 md:w-48 h-full bg-default-50 dark:bg-default-100/50 border-r border-default-200 shadow-sm flex-shrink-0">
+    <div className="w-40 sm:w-40 md:w-48 h-full bg-background/80 dark:bg-default-100/30 border-r border-default-200 shadow-md flex-shrink-0 backdrop-blur-sm">
       <div className="p-4 md:p-5">
         <h2 className="text-lg md:text-xl font-bold text-default-900 flex items-center gap-2">
-          <div className="p-2 bg-primary/10 rounded-lg">
+          <div className="p-2.5 bg-primary/15 rounded-xl shadow-sm">
             <Icon
               className="text-primary"
               icon="solar:settings-bold"
@@ -494,23 +510,23 @@ export default function SettingsPage() {
           </div>
           <span>设置</span>
         </h2>
-        <p className="text-xs md:text-sm text-default-500 mt-1 ml-1">
+        <p className="text-xs md:text-sm text-default-500 mt-2 ml-1">
           自定义您的应用体验
         </p>
       </div>
-      <Divider className="my-1" />
+      <Divider className="my-1 opacity-50" />
       <div className="p-2">
         {menuItems.map((item) => (
           <button
             key={item.key}
-            className={`w-full flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2.5 md:py-3 my-1 rounded-lg cursor-pointer transition-all text-left ${
+            className={`w-full flex items-center gap-2 md:gap-3 px-4 md:px-5 py-3 md:py-3.5 my-1 rounded-xl cursor-pointer transition-all text-left ${
               activeTab === item.key
-                ? "bg-primary/10 text-primary font-medium"
+                ? "bg-primary/15 text-primary font-medium shadow-sm"
                 : "hover:bg-default-100/70 text-default-700"
             }`}
             onClick={() => setActiveTab(item.key)}
           >
-            <Icon className="flex-shrink-0" icon={item.icon} width={18} />
+            <Icon className="flex-shrink-0" icon={item.icon} width={19} />
             <span className="truncate">{item.label}</span>
           </button>
         ))}
@@ -521,25 +537,31 @@ export default function SettingsPage() {
   // 渲染通用设置内容
   const renderGeneralSettings = () => (
     <div className="h-full">
-      <div className="mb-4 md:mb-6">
-        <h2 className="text-xl md:text-2xl font-bold text-default-900 flex items-center gap-2">
-          <Icon className="text-primary" icon="solar:settings-bold" />
+      <div className="mb-6 md:mb-8">
+        <h2 className="text-xl md:text-2xl font-bold text-default-900 flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-primary/15 shadow-sm">
+            <Icon
+              className="text-primary"
+              icon="solar:settings-bold"
+              width={22}
+            />
+          </div>
           通用设置
         </h2>
-        <p className="text-sm md:text-base text-default-500 mt-1">
+        <p className="text-sm md:text-base text-default-500 mt-2 ml-1">
           管理应用的基本设置和偏好
         </p>
       </div>
 
-      <div className="bg-background/60 backdrop-blur-sm rounded-xl overflow-hidden border border-default-200">
+      <div className="bg-background/80 backdrop-blur-sm rounded-2xl overflow-hidden border border-default-200 shadow-sm">
         <div className="divide-y divide-default-200">
           {settingItems.map((item) => (
             <div
               key={item.id}
-              className="flex items-center justify-between p-5 hover:bg-default-100/30 transition-colors"
+              className="flex items-center justify-between p-5 hover:bg-default-100/40 transition-colors"
             >
               <div className="flex items-start gap-4">
-                <div className="p-2.5 rounded-lg bg-primary/10 text-primary">
+                <div className="p-3 rounded-xl bg-primary/15 text-primary shadow-sm">
                   <Icon icon={item.icon} width={22} />
                 </div>
                 <div>
@@ -563,7 +585,7 @@ export default function SettingsPage() {
           <div className="p-5">
             <div className="flex items-start justify-between">
               <div className="flex items-start gap-4">
-                <div className="p-2.5 rounded-lg bg-danger/10 text-danger">
+                <div className="p-3 rounded-xl bg-danger/15 text-danger shadow-sm">
                   <Icon icon="solar:restart-bold" width={22} />
                 </div>
                 <div>
@@ -596,24 +618,181 @@ export default function SettingsPage() {
   // 渲染 AI 设置内容
   const renderAISettings = () => (
     <div className="h-full">
-      <div className="mb-4 md:mb-6">
-        <h2 className="text-xl md:text-2xl font-bold text-default-900 flex items-center gap-2">
-          <Icon className="text-primary" icon="solar:robot-bold" />
+      <div className="mb-4">
+        <h2 className="text-xl md:text-2xl font-bold text-default-900 flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-primary/15 shadow-sm">
+            <Icon className="text-primary" icon="solar:robot-bold" width={22} />
+          </div>
           AI 设置
         </h2>
-        <p className="text-sm md:text-base text-default-500 mt-1">
-          配置 AI 服务和模型选项
-        </p>
       </div>
 
-      <div className="mb-4 p-4 rounded-lg bg-primary/10 border border-primary/20">
-        <div className="flex items-center gap-2 mb-2">
-          <Icon className="text-primary" icon="solar:star-bold" />
-          <span className="font-medium">推荐使用 SSOOAI API</span>
+      <div className="mb-6 p-5 rounded-2xl bg-background/80 border border-default-200 shadow-sm backdrop-blur-sm">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-medium flex items-center gap-2.5">
+            <div className="p-1.5 rounded-lg bg-primary/15">
+              <Icon icon="solar:square-switch-bold" width={18} />
+            </div>
+            线路管理
+          </h3>
         </div>
-        <p className="text-sm">
+        <p className="text-sm mb-5 text-default-600">
+          启用或禁用不同的AI线路，点击配置按钮设置线路参数。免费线路始终开启，无法关闭。
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* 免费线路 - 始终启用 */}
+          <div className="flex items-center justify-between p-5 rounded-2xl bg-gradient-to-br from-[#00C9A7]/20 to-[#00B597]/5 backdrop-blur-sm border border-[#00C9A7]/20 dark:border-[#00C9A7]/15 transition-all hover:bg-gradient-to-br hover:from-[#00C9A7]/25 hover:to-[#00B597]/10 hover:border-[#00C9A7]/30">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-[#00C9A7]/10 text-[#00C9A7]">
+                <Icon icon="solar:chat-round-dots-bold-duotone" width={22} />
+              </div>
+              <div>
+                <div className="font-semibold text-[#333] dark:text-white">
+                  免费线路
+                </div>
+                <div className="text-xs text-[#666] dark:text-gray-300 mt-1">
+                  由{" "}
+                  <a
+                    className="text-primary hover:underline"
+                    href="https://api.ssooai.com"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    SSOOAI
+                  </a>{" "}
+                  提供基础AI问答服务，无需配置
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Switch
+                classNames={{
+                  wrapper: "group-data-[selected=true]:bg-[#00C9A7]",
+                }}
+                isDisabled={true}
+                isSelected={true}
+                size="sm"
+              />
+            </div>
+          </div>
+
+          {/* SSOOAI线路 */}
+          <div className="flex items-center justify-between p-5 rounded-2xl bg-gradient-to-br from-[#3D5AFE]/20 to-[#304FFE]/5 backdrop-blur-sm border border-[#3D5AFE]/20 dark:border-[#3D5AFE]/15 transition-all hover:bg-gradient-to-br hover:from-[#3D5AFE]/25 hover:to-[#304FFE]/10 hover:border-[#3D5AFE]/30">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-[#3D5AFE]/10 text-[#3D5AFE]">
+                <Icon icon="solar:magic-stick-3-bold-duotone" width={22} />
+              </div>
+              <div>
+                <div className="font-semibold text-[#333] dark:text-white">
+                  SSOOAI
+                </div>
+                <div className="text-xs text-[#666] dark:text-gray-300 mt-1">
+                  高性能AI服务，支持多种高级模型
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                className="bg-[#3D5AFE] text-white hover:bg-[#304FFE]"
+                radius="full"
+                size="sm"
+                variant="solid"
+                onPress={() => handleConfigureRoute("ssooai")}
+              >
+                配置
+              </Button>
+              <Switch
+                classNames={{
+                  wrapper: "group-data-[selected=true]:bg-[#3D5AFE]",
+                }}
+                isSelected={routeEnabled.ssooai}
+                size="sm"
+                onValueChange={(enabled) =>
+                  updateRouteEnabled("ssooai", enabled)
+                }
+              />
+            </div>
+          </div>
+
+          {/* uTools线路 */}
+          <div className="flex items-center justify-between p-5 rounded-2xl bg-gradient-to-br from-[#FFAB00]/20 to-[#FF9100]/5 backdrop-blur-sm border border-[#FFAB00]/20 dark:border-[#FFAB00]/15 transition-all hover:bg-gradient-to-br hover:from-[#FFAB00]/25 hover:to-[#FF9100]/10 hover:border-[#FFAB00]/30">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-[#FFAB00]/10 text-[#FFAB00]">
+                <Icon icon="solar:atom-bold-duotone" width={22} />
+              </div>
+              <div>
+                <div className="font-semibold text-[#333] dark:text-white">
+                  uTools AI
+                </div>
+                <div className="text-xs text-[#666] dark:text-gray-300 mt-1">
+                  uTools 官方的 AI 智能助手
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Switch
+                classNames={{
+                  wrapper: "group-data-[selected=true]:bg-[#FFAB00]",
+                }}
+                isDisabled={!isUtoolsAvailable}
+                isSelected={isUtoolsAvailable && routeEnabled.utools}
+                size="sm"
+                onValueChange={(enabled) =>
+                  updateRouteEnabled("utools", enabled)
+                }
+              />
+            </div>
+          </div>
+
+          {/* 私有线路 */}
+          <div className="flex items-center justify-between p-5 rounded-2xl bg-gradient-to-br from-[#E91E63]/20 to-[#D81B60]/5 backdrop-blur-sm border border-[#E91E63]/20 dark:border-[#E91E63]/15 transition-all hover:bg-gradient-to-br hover:from-[#E91E63]/25 hover:to-[#D81B60]/10 hover:border-[#E91E63]/30">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-xl bg-[#E91E63]/10 text-[#E91E63]">
+                <Icon icon="solar:key-bold-duotone" width={22} />
+              </div>
+              <div>
+                <div className="font-semibold text-[#333] dark:text-white">
+                  私有线路
+                </div>
+                <div className="text-xs text-[#666] dark:text-gray-300 mt-1">
+                  自定义API连接，支持各类模型
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                className="bg-[#E91E63] text-white hover:bg-[#D81B60]"
+                radius="full"
+                size="sm"
+                variant="solid"
+                onPress={() => handleConfigureRoute("custom")}
+              >
+                配置
+              </Button>
+              <Switch
+                classNames={{
+                  wrapper: "group-data-[selected=true]:bg-[#E91E63]",
+                }}
+                isSelected={routeEnabled.custom}
+                size="sm"
+                onValueChange={(enabled) =>
+                  updateRouteEnabled("custom", enabled)
+                }
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-6 p-5 rounded-2xl bg-primary/10 border border-primary/20 shadow-sm backdrop-blur-sm">
+        <div className="flex items-center gap-2.5 mb-2">
+          <Icon className="text-primary" icon="solar:star-bold" width={22} />
+          <span className="font-medium text-primary">推荐使用 SSOOAI API</span>
+        </div>
+        <p className="text-sm text-default-700">
           <a
-            className="text-primary hover:underline"
+            className="text-primary hover:underline font-medium"
             href="https://api.ssooai.com"
             rel="noopener noreferrer"
             target="_blank"
@@ -623,7 +802,7 @@ export default function SettingsPage() {
           提供稳定、高效且价格实惠的 API 服务，支持多种先进模型，包括
           ChatGPT、DeepSeek、Claude 4 等。 访问{" "}
           <a
-            className="text-primary hover:underline"
+            className="text-primary hover:underline font-medium"
             href="https://api.ssooai.com"
             rel="noopener noreferrer"
             target="_blank"
@@ -635,34 +814,45 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      <RadioGroup
-        className="space-y-4"
-        color="primary"
-        value={routeType}
-        onValueChange={(value) => handleRouteTypeChange(value as AIRouteType)}
-      >
-        {/* 免费线路 */}
-        <div className="p-5 rounded-xl bg-background/60 backdrop-blur-sm border border-default-200 hover:bg-default-100/30 transition-colors">
-          <div className="flex justify-between items-center">
-            <Radio
-              description="由 SSOOAI 免费提供的 GPT 4.1 模型，具有一定的上下文限制，但可以满足基本的 JSON 处理需求。"
-              value="default"
-            >
-              <span className="text-lg font-medium">免费线路</span>
-              <span className="ml-2 text-xs px-2 py-0.5 bg-success/20 text-success rounded-full">
-                免费
-              </span>
-            </Radio>
-            <Switch
-              isDisabled={true} // 免费线路强制启用，不可关闭
-              isSelected={true}
+      {/* 线路配置区域 */}
+      {configuringRoute && (
+        <div className="space-y-5">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-medium flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-primary/15">
+                <Icon icon="solar:settings-bold" width={18} />
+              </div>
+              {configuringRoute === "default"
+                ? "免费线路"
+                : configuringRoute === "ssooai"
+                  ? "SSOOAI"
+                  : configuringRoute === "utools"
+                    ? "uTools AI"
+                    : "私有线路"}
+              配置
+            </h3>
+            <Button
+              isIconOnly
+              className="min-w-8 h-8"
+              color="default"
+              radius="full"
               size="sm"
-            />
+              variant="flat"
+              onPress={handleCloseConfig}
+            >
+              <Icon icon="solar:close-circle-bold" width={16} />
+            </Button>
           </div>
 
-          {routeType === "default" && (
-            <div className="ml-7 mt-4 p-4 bg-default-100/50 rounded-xl">
-              <div className="mb-2 text-sm text-default-600">
+          {/* 免费线路配置 */}
+          {configuringRoute === "default" && (
+            <div className="p-5 bg-background rounded-2xl border border-default-200 shadow-sm backdrop-blur-sm">
+              <div className="mb-3 text-sm text-default-600 flex items-center gap-2">
+                <Icon
+                  className="text-primary"
+                  icon="solar:star-bold"
+                  width={18}
+                />
                 默认模型: <span className="font-medium">GPT 4.1</span>{" "}
                 <span className="text-xs text-primary">
                   (由{" "}
@@ -677,7 +867,7 @@ export default function SettingsPage() {
                   提供)
                 </span>
               </div>
-              <div className="flex items-center justify-end gap-2 mt-3">
+              <div className="flex items-center justify-end gap-2 mt-4">
                 <Button
                   color="primary"
                   isDisabled={testingRoute !== null}
@@ -692,50 +882,32 @@ export default function SettingsPage() {
                   variant="flat"
                   onPress={() => testRouteConnection("default")}
                 >
-                  测试
+                  测试连接
                 </Button>
               </div>
               {testingRoute === "default" ||
-              (testResult && routeType === "default")
+              (testResult && configuringRoute === "default")
                 ? renderTestResult()
                 : null}
             </div>
           )}
-        </div>
 
-        {/* SSOOAI 线路 */}
-        <div className="p-5 rounded-xl bg-background/60 backdrop-blur-sm border border-primary/30 hover:bg-default-100/30 transition-colors">
-          <div className="flex justify-between items-center">
-            <Radio
-              description="SSOOAI 提供稳定高效的 API 服务，支持 ChatGPT、Claude 等多种先进模型"
-              value="ssooai"
-            >
-              <span className="text-lg font-medium">SSOOAI 线路</span>
-              <span className="ml-2 text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-full">
-                推荐
-              </span>
-              <span className="text-xs ml-2 px-2 py-0.5 bg-warning/20 text-warning rounded-full">
-                付费
-              </span>
-            </Radio>
-            <Switch
-              isSelected={routeEnabled.ssooai}
-              size="sm"
-              onValueChange={(enabled) => updateRouteEnabled("ssooai", enabled)}
-            />
-          </div>
-
-          {routeType === "ssooai" && (
-            <div className="ml-7 mt-4 p-4 bg-default-100/50 rounded-xl">
-              <div className="p-3 mb-3 rounded-lg bg-primary/10 border border-primary/20">
-                <div className="flex items-center gap-2">
-                  <Icon className="text-primary" icon="solar:star-bold" />
+          {/* SSOOAI线路配置 */}
+          {configuringRoute === "ssooai" && (
+            <div className="p-5 bg-background rounded-2xl border border-default-200 shadow-sm backdrop-blur-sm">
+              <div className="p-4 mb-5 rounded-xl bg-primary/10 border border-primary/20 shadow-inner">
+                <div className="flex items-center gap-2.5">
+                  <Icon
+                    className="text-primary"
+                    icon="solar:star-bold"
+                    width={20}
+                  />
                   <span className="font-medium">SSOOAI API 服务</span>
                 </div>
-                <p className="text-xs mt-1">
+                <p className="text-xs mt-2 text-default-700">
                   SSOOAI 提供更稳定的 API 服务和多种先进模型。 访问{" "}
                   <a
-                    className="text-primary hover:underline"
+                    className="text-primary hover:underline font-medium"
                     href="https://api.ssooai.com"
                     rel="noopener noreferrer"
                     target="_blank"
@@ -746,7 +918,7 @@ export default function SettingsPage() {
                 </p>
               </div>
 
-              <div className="mb-3">
+              <div className="mb-4">
                 <label
                   className="block mb-2 text-sm font-medium"
                   htmlFor="ssooai-api-key"
@@ -769,7 +941,7 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 mt-3">
+              <div className="flex items-center justify-end gap-3 mt-4">
                 <SearchableSelect
                   className="w-60"
                   items={ssooaiModels}
@@ -779,7 +951,7 @@ export default function SettingsPage() {
                 />
                 <Button
                   color="primary"
-                  isDisabled={testingRoute !== null || !ssooaiRoute.apiKey}
+                  isDisabled={testingRoute !== null || !ssooaiRoute.apiKey || !testModelSsooai}
                   isLoading={testingRoute === "ssooai"}
                   radius="full"
                   size="sm"
@@ -789,22 +961,27 @@ export default function SettingsPage() {
                     )
                   }
                   variant="flat"
-                  onPress={() =>
-                    testRouteConnection("ssooai", testModelSsooai)
-                  }
+                  onPress={() => testRouteConnection("ssooai", testModelSsooai)}
                 >
                   测试连接
                 </Button>
               </div>
               {testingRoute === "ssooai" ||
-              (testResult && routeType === "ssooai")
+              (testResult && configuringRoute === "ssooai")
                 ? renderTestResult()
                 : null}
 
               {/* 模型列表管理 */}
-              <div className="mt-4 border-t border-default-200 pt-4">
+              <div className="mt-5 border-t border-default-200 pt-4">
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-sm font-medium">模型列表</h4>
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <Icon
+                      className="text-primary"
+                      icon="solar:layers-bold"
+                      width={16}
+                    />
+                    模型列表
+                  </h4>
                   <div className="flex gap-2">
                     <Button
                       color="primary"
@@ -839,9 +1016,9 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="max-h-96 overflow-y-auto rounded-lg border border-default-200">
+                <div className="max-h-96 overflow-y-auto rounded-xl border border-default-200 shadow-inner">
                   {ssooaiModels.length === 0 ? (
-                    <div className="p-3 text-sm text-default-500 text-center">
+                    <div className="p-4 text-sm text-default-500 text-center">
                       暂无模型，请刷新或检查API密钥
                     </div>
                   ) : (
@@ -849,32 +1026,32 @@ export default function SettingsPage() {
                       <table className="w-full">
                         <thead className="bg-default-100 sticky top-0 z-10 shadow-sm">
                           <tr className="text-xs text-default-500">
-                            <th className="p-2 text-left">名称</th>
-                            <th className="p-2 text-left">显示名称</th>
-                            <th className="p-2 text-center">操作</th>
+                            <th className="p-3 text-left">名称</th>
+                            <th className="p-3 text-left">显示名称</th>
+                            <th className="p-3 text-center">操作</th>
                           </tr>
                         </thead>
                         <tbody>
                           {ssooaiModels.map((item, index) => (
                             <tr
                               key={item.value}
-                              className={`text-sm ${
+                              className={`text-sm hover:bg-default-100/50 transition-colors ${
                                 index % 2 === 0
-                                  ? "bg-default-50/50"
-                                  : "bg-default-100/30"
+                                  ? "bg-default-50/80"
+                                  : "bg-default-100/20"
                               }`}
                             >
-                              <td className="p-2">{item.value}</td>
-                              <td className="p-2">{item.label}</td>
-                              <td className="p-2 text-center">
+                              <td className="p-3">{item.value}</td>
+                              <td className="p-3">{item.label}</td>
+                              <td className="p-3 text-center">
                                 <Button
                                   isIconOnly
-                                  className="min-w-0 h-6 w-6"
+                                  className="min-w-0 h-7 w-7"
                                   color="danger"
                                   radius="full"
                                   size="sm"
                                   variant="light"
-                                  onClick={() =>
+                                  onPress={() =>
                                     handleRemoveSsooaiModel(item.value)
                                   }
                                 >
@@ -894,36 +1071,20 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
-        </div>
 
-        {/* Utools 官方 */}
-        <div className="p-5 rounded-xl bg-background/60 backdrop-blur-sm border border-default-200 hover:bg-default-100/30 transition-colors">
-          <div className="flex justify-between items-center">
-            <Radio
-              description="连接 uToolsAI，由 uTools 官方AI能量结算"
-              isDisabled={!isUtoolsAvailable}
-              value="utools"
-            >
-              <span className="text-lg font-medium">uTools 官方</span>
-              <span className="ml-2 text-xs px-2 py-0.5 bg-warning/20 text-warning rounded-full">
-                uTools AI能量
-              </span>
-            </Radio>
-            <Switch
-              isDisabled={!isUtoolsAvailable}
-              isSelected={routeEnabled.utools}
-              size="sm"
-              onValueChange={(enabled) => updateRouteEnabled("utools", enabled)}
-            />
-          </div>
-
-          {routeType === "utools" && (
-            <div className="ml-7 mt-4 p-4 bg-default-100/50 rounded-xl">
-              <div className="mb-3">
+          {/* Utools线路配置 */}
+          {configuringRoute === "utools" && isUtoolsAvailable && (
+            <div className="p-5 bg-background rounded-2xl border border-default-200 shadow-sm backdrop-blur-sm">
+              <div className="mb-4">
                 <label
-                  className="block mb-2 text-sm font-medium"
+                  className="block mb-2 text-sm font-medium flex items-center gap-2"
                   htmlFor="utools-model"
                 >
+                  <Icon
+                    className="text-primary"
+                    icon="solar:layers-bold"
+                    width={16}
+                  />
                   选择模型
                 </label>
                 <SearchableSelect
@@ -939,7 +1100,7 @@ export default function SettingsPage() {
                   }
                 />
               </div>
-              <div className="flex items-center justify-end gap-2 mt-3">
+              <div className="flex items-center justify-end gap-3 mt-4">
                 <SearchableSelect
                   className="w-64"
                   items={utoolsModels}
@@ -965,65 +1126,62 @@ export default function SettingsPage() {
                   variant="flat"
                   onPress={() => testRouteConnection("utools", testModelUtools)}
                 >
-                  测试
+                  测试连接
                 </Button>
               </div>
               {testingRoute === "utools" ||
-              (testResult && routeType === "utools")
+              (testResult && configuringRoute === "utools")
                 ? renderTestResult()
                 : null}
-              <div className="text-xs text-default-500 mt-2">
-                Utools 官方线路由 Utools
-                团队维护，提供更稳定的服务和更多模型选择，但需要付费使用。
+              <div className="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-xl text-xs text-default-700">
+                <div className="flex items-center gap-2">
+                  <Icon
+                    className="text-warning"
+                    icon="solar:info-circle-bold"
+                    width={16}
+                  />
+                  <span className="font-medium">提示</span>
+                </div>
+                <p className="mt-1 ml-6">
+                  Utools 官方线路由 Utools
+                  团队维护，提供更稳定的服务和更多模型选择，但需要付费使用。
+                </p>
               </div>
             </div>
           )}
-        </div>
 
-        {/* 私有线路 */}
-        <div className="p-5 rounded-xl bg-background/60 backdrop-blur-sm border border-default-200 hover:bg-default-100/30 transition-colors z-0">
-          <div className="flex justify-between items-center">
-            <Radio
-              description="私有线路允许您使用自己的 API 密钥和自定义端点，支持 OpenAI 兼容的任何服务。"
-              value="custom"
-            >
-              <span className="text-lg font-medium">私有线路</span>
-              <span className="ml-2 text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-full">
-                私有
-              </span>
-            </Radio>
-            <Switch
-              isSelected={routeEnabled.custom}
-              size="sm"
-              onValueChange={(enabled) => updateRouteEnabled("custom", enabled)}
-            />
-          </div>
+          {/* 私有线路配置 */}
+          {configuringRoute === "custom" && (
+            <div className="p-5 bg-background rounded-2xl border border-default-200 shadow-sm backdrop-blur-sm">
+              {/* SSOOAI API*/}
+              <div className="p-4 mb-5 rounded-xl bg-primary/10 border border-primary/20 shadow-inner">
+                <div className="flex items-center gap-2.5">
+                  <Icon
+                    className="text-primary"
+                    icon="solar:bookmark-square-bold"
+                    width={20}
+                  />
+                  <span className="font-medium">SSOOAI API</span>
+                </div>
+                <p className="text-xs mt-2 text-default-700">
+                  推荐使用 SSOOAI API 作为私有线路，填入 API 地址：
+                  <code className="bg-default-100 px-2 py-1 rounded-md ml-1 font-mono">
+                    https://api.ssooai.com/v1
+                  </code>
+                  ， 注册即可获得免费额度。高稳定性、低延迟、更实惠的价格！
+                </p>
+              </div>
 
-          {/* SSOOAI API*/}
-          <div className="ml-7 mt-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
-            <div className="flex items-center gap-2">
-              <Icon
-                className="text-primary"
-                icon="solar:bookmark-square-bold"
-              />
-              <span className="font-medium text-sm">SSOOAI API</span>
-            </div>
-            <p className="text-xs mt-1">
-              推荐使用 SSOOAI API 作为私有线路，填入 API 地址：
-              <code className="bg-default-100 px-1 py-0.5 rounded">
-                https://api.ssooai.com/v1
-              </code>
-              ， 注册即可获得免费额度。高稳定性、低延迟、更实惠的价格！
-            </p>
-          </div>
-
-          {routeType === "custom" && (
-            <div className="ml-7 mt-4 p-4 bg-default-100/50 rounded-xl">
-              <div className="mb-3">
+              <div className="mb-4">
                 <label
-                  className="block mb-2 text-sm font-medium"
+                  className="block mb-2 text-sm font-medium flex items-center gap-2"
                   htmlFor="api-url"
                 >
+                  <Icon
+                    className="text-primary"
+                    icon="solar:link-bold"
+                    width={16}
+                  />
                   API 地址
                 </label>
                 <Input
@@ -1041,11 +1199,16 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="mb-3">
+              <div className="mb-4">
                 <label
-                  className="block mb-2 text-sm font-medium"
+                  className="block mb-2 text-sm font-medium flex items-center gap-2"
                   htmlFor="api-key"
                 >
+                  <Icon
+                    className="text-primary"
+                    icon="solar:key-bold"
+                    width={16}
+                  />
                   API 密钥
                 </label>
                 <Input
@@ -1064,7 +1227,7 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 mt-3">
+              <div className="flex items-center justify-end gap-3 mt-4">
                 <SearchableSelect
                   className="w-60"
                   items={customModels}
@@ -1091,18 +1254,25 @@ export default function SettingsPage() {
                   variant="flat"
                   onPress={() => testRouteConnection("custom", testModelCustom)}
                 >
-                  测试
+                  测试连接
                 </Button>
               </div>
               {testingRoute === "custom" ||
-              (testResult && routeType === "custom")
+              (testResult && configuringRoute === "custom")
                 ? renderTestResult()
                 : null}
 
               {/* 模型列表管理 */}
-              <div className="mt-4 border-t border-default-200 pt-4">
+              <div className="mt-5 border-t border-default-200 pt-4">
                 <div className="flex justify-between items-center mb-3">
-                  <h4 className="text-sm font-medium">模型列表</h4>
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <Icon
+                      className="text-primary"
+                      icon="solar:layers-bold"
+                      width={16}
+                    />
+                    模型列表
+                  </h4>
                   <div className="flex gap-2">
                     <Button
                       color="primary"
@@ -1137,37 +1307,37 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="max-h-96 overflow-y-auto rounded-lg border border-default-200">
+                <div className="max-h-96 overflow-y-auto rounded-xl border border-default-200 shadow-inner">
                   {customModels.length === 0 ? (
-                    <div className="p-3 text-sm text-default-500 text-center">
-                      暂无模型，请添加或刷新
+                    <div className="p-4 text-sm text-default-500 text-center">
+                      暂无模型，请刷新或检查API密钥
                     </div>
                   ) : (
                     <div className="relative">
                       <table className="w-full">
                         <thead className="bg-default-100 sticky top-0 z-10 shadow-sm">
                           <tr className="text-xs text-default-500">
-                            <th className="p-2 text-left">名称</th>
-                            <th className="p-2 text-left">显示名称</th>
-                            <th className="p-2 text-center">操作</th>
+                            <th className="p-3 text-left">名称</th>
+                            <th className="p-3 text-left">显示名称</th>
+                            <th className="p-3 text-center">操作</th>
                           </tr>
                         </thead>
                         <tbody>
                           {customModels.map((item, index) => (
                             <tr
                               key={item.value}
-                              className={`text-sm ${
+                              className={`text-sm hover:bg-default-100/50 transition-colors ${
                                 index % 2 === 0
-                                  ? "bg-default-50/50"
-                                  : "bg-default-100/30"
+                                  ? "bg-default-50/80"
+                                  : "bg-default-100/20"
                               }`}
                             >
-                              <td className="p-2">{item.value}</td>
-                              <td className="p-2">{item.label}</td>
-                              <td className="p-2 text-center">
+                              <td className="p-3">{item.value}</td>
+                              <td className="p-3">{item.label}</td>
+                              <td className="p-3 text-center">
                                 <Button
                                   isIconOnly
-                                  className="min-w-0 h-6 w-6"
+                                  className="min-w-0 h-7 w-7"
                                   color="danger"
                                   radius="full"
                                   size="sm"
@@ -1193,48 +1363,52 @@ export default function SettingsPage() {
             </div>
           )}
         </div>
-      </RadioGroup>
+      )}
     </div>
   );
 
   // 渲染外观设置内容
   const renderAppearanceSettings = () => (
     <div className="h-full">
-      <div className="mb-4 md:mb-6">
-        <h2 className="text-xl md:text-2xl font-bold text-default-900 flex items-center gap-2">
-          <Icon className="text-primary" icon="solar:brush-bold" />
+      <div className="mb-6 md:mb-8">
+        <h2 className="text-xl md:text-2xl font-bold text-default-900 flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-primary/15 shadow-sm">
+            <Icon className="text-primary" icon="solar:brush-bold" width={22} />
+          </div>
           外观设置
         </h2>
-        <p className="text-sm md:text-base text-default-500 mt-1">
+        <p className="text-sm md:text-base text-default-500 mt-2 ml-1">
           自定义应用的外观和显示方式
         </p>
       </div>
 
       {/* 聊天窗口样式设置 */}
-      <div className="p-5 rounded-xl bg-background/60 backdrop-blur-sm border border-default-200">
-        <div className="mb-4">
-          <div className="flex items-center gap-2">
-            <Icon
-              className="text-primary"
-              icon="solar:chat-round-dots-bold"
-              width={20}
-            />
+      <div className="p-6 rounded-2xl bg-background/80 backdrop-blur-sm border border-default-200 shadow-sm">
+        <div className="mb-5">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-lg bg-primary/15 shadow-sm">
+              <Icon
+                className="text-primary"
+                icon="solar:chat-round-dots-bold"
+                width={20}
+              />
+            </div>
             <h3 className="text-lg font-medium text-default-900">
               聊天窗口样式
             </h3>
           </div>
-          <p className="text-sm text-default-500 mt-1 ml-7">
+          <p className="text-sm text-default-500 mt-2 ml-8">
             选择您喜欢的聊天界面显示风格
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 mt-4 md:mt-5 ml-4 md:ml-7">
+        <div className="flex flex-col sm:flex-row gap-5 sm:gap-8 mt-4 md:mt-6 ml-4 md:ml-8">
           <div
             aria-label="选择对话模式聊天样式"
-            className={`flex flex-col items-center gap-2 sm:gap-3 cursor-pointer transition-all duration-200 ${
+            className={`flex flex-col items-center gap-3 cursor-pointer transition-all duration-300 ${
               chatStyle === "bubble"
                 ? "scale-105 opacity-100"
-                : "opacity-70 hover:opacity-90"
+                : "opacity-70 hover:opacity-90 hover:scale-102"
             }`}
             role="button"
             tabIndex={0}
@@ -1247,16 +1421,16 @@ export default function SettingsPage() {
             }
           >
             <div
-              className={`border p-2 sm:p-3 rounded-lg w-28 sm:w-36 h-24 sm:h-28 flex items-center justify-center transition-colors duration-200 ${
+              className={`border p-3 sm:p-4 rounded-xl w-32 sm:w-40 h-28 sm:h-32 flex items-center justify-center transition-all duration-300 ${
                 chatStyle === "bubble"
-                  ? "border-primary/50 bg-primary/5 shadow-sm"
-                  : "border-default-200 border-default-200"
+                  ? "border-primary/50 bg-primary/10 shadow-md"
+                  : "border-default-200 bg-default-50/50 hover:border-default-300"
               }`}
             >
-              <div className="flex flex-col gap-2 w-full">
-                <div className="w-full h-4 rounded-full bg-primary/20" />
+              <div className="flex flex-col gap-3 w-full">
+                <div className="w-full h-4 rounded-full bg-primary/30" />
                 <div className="w-3/4 h-4 ml-auto rounded-full bg-default-200" />
-                <div className="w-full h-4 rounded-full bg-primary/20" />
+                <div className="w-full h-4 rounded-full bg-primary/30" />
               </div>
             </div>
             <p
@@ -1270,10 +1444,10 @@ export default function SettingsPage() {
 
           <div
             aria-label="选择文档模式聊天样式"
-            className={`flex flex-col items-center gap-2 sm:gap-3 cursor-pointer transition-all duration-200 ${
+            className={`flex flex-col items-center gap-3 cursor-pointer transition-all duration-300 ${
               chatStyle === "document"
                 ? "scale-105 opacity-100"
-                : "opacity-70 hover:opacity-90"
+                : "opacity-70 hover:opacity-90 hover:scale-102"
             }`}
             role="button"
             tabIndex={0}
@@ -1286,16 +1460,16 @@ export default function SettingsPage() {
             }
           >
             <div
-              className={`border p-2 sm:p-3 rounded-lg w-28 sm:w-36 h-24 sm:h-28 flex items-center justify-center transition-colors duration-200 ${
+              className={`border p-3 sm:p-4 rounded-xl w-32 sm:w-40 h-28 sm:h-32 flex items-center justify-center transition-all duration-300 ${
                 chatStyle === "document"
-                  ? "border-primary/50 bg-primary/5 shadow-sm"
-                  : "border-default-200 border-default-200"
+                  ? "border-primary/50 bg-primary/10 shadow-md"
+                  : "border-default-200 bg-default-50/50 hover:border-default-300"
               }`}
             >
-              <div className="flex flex-col gap-2 w-full">
-                <div className="w-full h-3 rounded-sm bg-primary/20" />
+              <div className="flex flex-col gap-3 w-full">
+                <div className="w-full h-3 rounded-sm bg-primary/30" />
                 <div className="w-full h-3 rounded-sm bg-default-200" />
-                <div className="w-3/4 h-3 rounded-sm bg-primary/20" />
+                <div className="w-3/4 h-3 rounded-sm bg-primary/30" />
                 <div className="w-full h-3 rounded-sm bg-default-200" />
               </div>
             </div>
@@ -1315,108 +1489,140 @@ export default function SettingsPage() {
   // 渲染关于内容
   const renderAboutContent = () => (
     <div className="h-full">
-      <div className="mb-4 md:mb-6">
-        <h2 className="text-xl md:text-2xl font-bold text-default-900 flex items-center gap-2">
-          <Icon className="text-primary" icon="solar:info-circle-bold" />
+      <div className="mb-6 md:mb-8">
+        <h2 className="text-xl md:text-2xl font-bold text-default-900 flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-primary/15 shadow-sm">
+            <Icon
+              className="text-primary"
+              icon="solar:info-circle-bold"
+              width={22}
+            />
+          </div>
           关于 JSON Tools
         </h2>
-        <p className="text-sm md:text-base text-default-500 mt-1">
+        <p className="text-sm md:text-base text-default-500 mt-2 ml-1">
           了解更多关于应用的信息
         </p>
       </div>
 
-      <div className="rounded-xl bg-background/60 backdrop-blur-sm border border-default-200 overflow-hidden">
-        <div className="flex flex-col items-center text-center p-8 bg-gradient-to-b from-primary/5 to-background">
-          <img
-            alt="JSON Tools Logo"
-            className="w-24 h-24 mb-4 drop-shadow-md"
-            src="./logo.png"
-          />
+      <div className="rounded-2xl bg-background/80 backdrop-blur-sm border border-default-200 overflow-hidden shadow-sm">
+        <div className="flex flex-col items-center text-center p-8 bg-gradient-to-b from-primary/10 to-background">
+          <div className="p-3 rounded-full bg-primary/15 shadow-md mb-4">
+            <img
+              alt="JSON Tools Logo"
+              className="w-24 h-24 drop-shadow-lg"
+              src="./logo.png"
+            />
+          </div>
           <h3 className="text-2xl font-bold text-default-900">JSON Tools</h3>
-          <p className="text-default-600 mt-2">强大的 JSON 处理工具集</p>
-          {/*<div className="bg-default-100 px-3 py-1 rounded-full text-sm mt-3 shadow-sm">*/}
-          {/*  版本 1.0.0*/}
-          {/*</div>*/}
+          <p className="text-default-600 mt-3">强大的 JSON 处理工具集</p>
+          <div className="bg-primary/15 px-4 py-1.5 rounded-full text-sm text-primary font-medium mt-4 shadow-sm">
+            专业版
+          </div>
         </div>
 
-        <Divider />
+        <Divider className="opacity-50" />
 
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h4 className="text-lg font-medium text-default-900 mb-4 flex items-center gap-2">
-                <Icon className="text-primary" icon="solar:star-bold" />
-                功能
+              <h4 className="text-lg font-medium text-default-900 mb-4 flex items-center gap-2.5">
+                <div className="p-1.5 rounded-lg bg-primary/15">
+                  <Icon
+                    className="text-primary"
+                    icon="solar:star-bold"
+                    width={18}
+                  />
+                </div>
+                功能特点
               </h4>
               <ul className="space-y-3 text-default-700">
-                <li className="flex items-center gap-2">
-                  <Icon
-                    className="text-success"
-                    icon="solar:check-circle-bold"
-                  />
-                  JSON 格式化与验证
+                <li className="flex items-center gap-2.5 p-2 hover:bg-default-100/50 rounded-lg transition-colors">
+                  <div className="p-1 rounded-full bg-success/15">
+                    <Icon
+                      className="text-success"
+                      icon="solar:check-circle-bold"
+                      width={16}
+                    />
+                  </div>
+                  <span>JSON 格式化与验证</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Icon
-                    className="text-success"
-                    icon="solar:check-circle-bold"
-                  />
-                  智能 AI 辅助修复
+                <li className="flex items-center gap-2.5 p-2 hover:bg-default-100/50 rounded-lg transition-colors">
+                  <div className="p-1 rounded-full bg-success/15">
+                    <Icon
+                      className="text-success"
+                      icon="solar:check-circle-bold"
+                      width={16}
+                    />
+                  </div>
+                  <span>智能 AI 辅助修复</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Icon
-                    className="text-success"
-                    icon="solar:check-circle-bold"
-                  />
-                  数据格式转换
+                <li className="flex items-center gap-2.5 p-2 hover:bg-default-100/50 rounded-lg transition-colors">
+                  <div className="p-1 rounded-full bg-success/15">
+                    <Icon
+                      className="text-success"
+                      icon="solar:check-circle-bold"
+                      width={16}
+                    />
+                  </div>
+                  <span>数据格式转换</span>
                 </li>
               </ul>
             </div>
 
             <div>
-              <h4 className="text-lg font-medium text-default-900 mb-4 flex items-center gap-2">
-                <Icon
-                  className="text-primary"
-                  icon="solar:headphones-round-bold"
-                />
+              <h4 className="text-lg font-medium text-default-900 mb-4 flex items-center gap-2.5">
+                <div className="p-1.5 rounded-lg bg-primary/15">
+                  <Icon
+                    className="text-primary"
+                    icon="solar:headphones-round-bold"
+                    width={18}
+                  />
+                </div>
                 技术支持
               </h4>
               <div className="space-y-3">
                 <a
-                  className="flex items-center gap-2 text-primary hover:underline"
+                  className="flex items-center gap-2.5 p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
                   href="https://github.com/fevrax/json-tools"
                   rel="noopener noreferrer"
                   target="_blank"
                 >
-                  <Icon icon="mdi:github" />
-                  GitHub 仓库
+                  <div className="p-1 rounded-full bg-default-100">
+                    <Icon icon="mdi:github" width={16} />
+                  </div>
+                  <span className="font-medium">GitHub 仓库</span>
                 </a>
                 <a
-                  className="flex items-center gap-2 text-primary hover:underline"
+                  className="flex items-center gap-2.5 p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
                   href="https://github.com/fevrax/json-tools/issues"
                   rel="noopener noreferrer"
                   target="_blank"
                 >
-                  <Icon icon="solar:chat-square-code-bold" />
-                  问题反馈
+                  <div className="p-1 rounded-full bg-default-100">
+                    <Icon icon="solar:chat-square-code-bold" width={16} />
+                  </div>
+                  <span className="font-medium">问题反馈</span>
                 </a>
                 <a
-                  className="flex items-center gap-2 text-primary hover:underline"
+                  className="flex items-center gap-2.5 p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
                   href="https://yourdocs.com"
                   rel="noopener noreferrer"
                   target="_blank"
                 >
-                  <Icon icon="solar:document-bold" />
-                  使用文档
+                  <div className="p-1 rounded-full bg-default-100">
+                    <Icon icon="solar:document-bold" width={16} />
+                  </div>
+                  <span className="font-medium">使用文档</span>
                 </a>
               </div>
             </div>
           </div>
         </div>
 
-        <Divider />
+        <Divider className="opacity-50" />
 
-        <div className="text-center p-5 text-sm text-default-500 bg-default-50/50">
+        <div className="text-center p-5 text-sm text-default-600 bg-default-50/50">
           <p>© {new Date().getFullYear()} JSON Tools. 保留所有权利。</p>
           <p className="mt-1">基于 React、TypeScript 和 HeroUI 构建</p>
         </div>
@@ -1441,13 +1647,13 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="w-full h-full flex-1 bg-default-50 dark:bg-default-50/5">
+    <div className="w-full h-full flex-1 bg-default-50/80 dark:bg-default-50/5 backdrop-blur-sm">
       <div className="flex flex-row h-full overflow-hidden">
         {/* 侧边栏 */}
         {renderSidebar()}
 
         {/* 主内容区域 */}
-        <div className="flex-1 p-3 sm:p-2 md:p-2 overflow-y-auto">
+        <div className="flex-1 p-3 sm:p-4 md:p-5 overflow-y-auto">
           <motion.div
             key={activeTab}
             animate={{ opacity: 1, y: 0 }}
@@ -1461,16 +1667,30 @@ export default function SettingsPage() {
       </div>
 
       {/* 添加自定义模型的弹窗 */}
-      <Modal isOpen={isOpen} onClose={onClose}>
-        <ModalContent>
-          <ModalHeader>添加{addModelMode === "ssooai" ? "SSOOAI" : "自定义"}模型</ModalHeader>
+      <Modal backdrop="blur" isOpen={isOpen} onClose={onClose}>
+        <ModalContent className="p-1">
+          <ModalHeader className="flex items-center gap-2 pb-2">
+            <div className="p-1.5 rounded-lg bg-primary/15">
+              <Icon
+                className="text-primary"
+                icon="solar:add-circle-bold"
+                width={18}
+              />
+            </div>
+            添加{addModelMode === "ssooai" ? "SSOOAI" : "自定义"}模型
+          </ModalHeader>
           <ModalBody>
-            <div className="mb-3">
+            <div className="mb-4">
               <label
-                className="block mb-2 text-sm font-medium"
+                className="block mb-2 text-sm font-medium flex items-center gap-2"
                 htmlFor="new-model-name"
               >
-                模型名称 (必填)
+                <Icon
+                  className="text-primary"
+                  icon="solar:code-bold"
+                  width={16}
+                />
+                模型名称 <span className="text-danger">*</span>
               </label>
               <Input
                 className="w-full"
@@ -1480,13 +1700,21 @@ export default function SettingsPage() {
                 variant="bordered"
                 onChange={(e) => setNewModelName(e.target.value)}
               />
+              <p className="text-xs text-default-500 mt-1 ml-5">
+                该名称用于API请求，必须准确填写
+              </p>
             </div>
             <div>
               <label
-                className="block mb-2 text-sm font-medium"
+                className="block mb-2 text-sm font-medium flex items-center gap-2"
                 htmlFor="new-model-label"
               >
-                显示名称 (可选)
+                <Icon
+                  className="text-primary"
+                  icon="solar:text-bold"
+                  width={16}
+                />
+                显示名称
               </label>
               <Input
                 className="w-full"
@@ -1496,18 +1724,30 @@ export default function SettingsPage() {
                 variant="bordered"
                 onChange={(e) => setNewModelLabel(e.target.value)}
               />
+              <p className="text-xs text-default-500 mt-1 ml-5">
+                显示在界面上的友好名称，可选
+              </p>
             </div>
           </ModalBody>
           <ModalFooter>
-            <Button color="default" variant="flat" onPress={onClose}>
+            <Button
+              className="px-4"
+              color="default"
+              radius="full"
+              variant="flat"
+              onPress={onClose}
+            >
               取消
             </Button>
             <Button
+              className="px-4"
               color="primary"
               isDisabled={!newModelName.trim()}
+              radius="full"
+              startContent={<Icon icon="solar:add-circle-bold" width={18} />}
               onPress={handleAddCustomModel}
             >
-              添加
+              添加模型
             </Button>
           </ModalFooter>
         </ModalContent>
