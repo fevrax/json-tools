@@ -22,6 +22,7 @@ export interface TabItem {
     language: string;
     timestampDecoratorsEnabled?: boolean; // 添加时间戳装饰器设置
   };
+  extraData?: Record<string, any>;
 }
 
 interface TabStore {
@@ -31,8 +32,13 @@ interface TabStore {
   activeTab: () => TabItem;
   getTabByKey: (key: string) => TabItem | undefined;
   initTab: () => void;
-  addTab: (title: string | undefined, content: string | undefined) => void;
+  addTab: (
+    title: string | undefined,
+    content: string | undefined,
+    extraData?: Record<string, any>,
+  ) => void;
   setTabContent: (key: string, content: string) => void;
+  updateTabContent: (key: string, content: string) => void;
   setTabModifiedValue: (key: string, content: string) => void;
   setTabVanillaContent: (key: string, content: Content) => void;
   setTabVanillaMode: (key: string, mode: Mode) => void;
@@ -69,7 +75,11 @@ export const useTabStore = create<TabStore>()(
           return activeTab || get().tabs[0];
         },
         getTabByKey: (key: string) => get().tabs.find((tab) => tab.key === key),
-        addTab: (title: string | undefined, content: string | undefined) =>
+        addTab: (
+          title: string | undefined,
+          content: string | undefined,
+          extraData?: Record<string, any>,
+        ) =>
           set((state) => {
             const newTabKey = `${state.nextKey}`;
             const newTab: TabItem = {
@@ -80,6 +90,7 @@ export const useTabStore = create<TabStore>()(
               closable: true,
               vanillaVersion: 0,
               monacoVersion: 1,
+              extraData: extraData,
               editorSettings: {
                 fontSize: 14,
                 language: "json",
@@ -132,6 +143,16 @@ export const useTabStore = create<TabStore>()(
             return { tabs: updatedTabs };
           }),
         setTabContent: (key, content) =>
+          set((state) => {
+            const updatedTabs = state.tabs.map((tab) =>
+              tab.key === key
+                ? { ...tab, content, monacoVersion: ++tab.monacoVersion }
+                : tab,
+            );
+
+            return { tabs: updatedTabs };
+          }),
+        updateTabContent: (key, content) =>
           set((state) => {
             const updatedTabs = state.tabs.map((tab) =>
               tab.key === key

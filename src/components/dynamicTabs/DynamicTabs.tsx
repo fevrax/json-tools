@@ -4,7 +4,16 @@ import React, { useRef, useEffect, useState, useImperativeHandle } from "react";
 import { Tabs, Tab, Tooltip, cn } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import axios from "axios";
-import { Input, Button, Card } from "@heroui/react";
+import {
+  Input,
+  Button,
+  Card,
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@heroui/react";
 
 import toast from "@/utils/toast";
 import { useTabStore, TabItem } from "@/store/useTabStore";
@@ -32,6 +41,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     addTab,
     closeTab,
     setActiveTab,
+    setTabContent,
     renameTab,
     closeAllTabs,
     closeLeftTabs,
@@ -65,6 +75,13 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
   }>({ left: 0, top: 0, width: 0 });
 
   const addButtonRef = useRef<HTMLDivElement>(null);
+
+  // 添加确认弹窗相关状态
+  const [refreshConfirmOpen, setRefreshConfirmOpen] = useState(false);
+  const [refreshTabInfo, setRefreshTabInfo] = useState<{
+    key: string;
+    url: string;
+  } | null>(null);
 
   // 精确计算标签页滚动位置
   const scrollToActiveTab = () => {
@@ -311,35 +328,46 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
       // Get response data
       const responseText = response.data;
 
+      // Create filename from URL
+      const urlObj = new URL(jsonUrl);
+      const pathParts = urlObj.pathname.split("/");
+      let fileName = pathParts[pathParts.length - 1] || urlObj.hostname;
+
+      if (!fileName || fileName === "/") {
+        fileName = urlObj.hostname;
+      }
+
+      // 检查内容是否为JSON格式
+      let isJson = true;
+
       try {
-        // Try to parse as JSON regardless of content type
-        // This ensures we can handle valid JSON even if content type is wrong
+        // 尝试解析为JSON
         JSON.parse(responseText);
 
-        // Create filename from URL
-        const urlObj = new URL(jsonUrl);
-        const pathParts = urlObj.pathname.split("/");
-        let fileName = pathParts[pathParts.length - 1] || urlObj.hostname;
-
-        if (!fileName || fileName === "/") {
-          fileName = urlObj.hostname;
-        }
-
+        // 确保JSON文件名有正确后缀
         if (!fileName.toLowerCase().endsWith(".json")) {
           fileName += ".json";
         }
-
-        // Create new tab and set content
-        addTab(fileName, responseText);
-
-        // Close menu and clear URL
-        setShowAddMenu(false);
-        setJsonUrl("");
       } catch (parseError) {
-        toast.error("内容无效", "响应内容不是有效的JSON格式");
+        // 不是有效的JSON格式，作为文本处理
+        isJson = false;
+
+        // 如果没有扩展名，添加.txt后缀
+        if (!fileName.includes(".")) {
+          fileName += ".txt";
+        }
       }
+
+      // 创建新标签页，无论是否为JSON格式
+      addTab(fileName, responseText, { url: jsonUrl });
+
+      // 关闭菜单并清除URL
+      setShowAddMenu(false);
+      setJsonUrl("");
+
+      toast.success(isJson ? "JSON文件加载成功" : "文本文件加载成功");
     } catch (error) {
-      console.error("获取JSON失败:", error);
+      console.error("获取数据失败:", error);
 
       // Provide more specific error messages
       if (error instanceof TypeError && error.message.includes("URL")) {
@@ -353,16 +381,76 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
           toast.error("资源不存在", "指定URL未找到任何资源");
         } else {
           toast.error(
-            "获取JSON失败",
+            "获取数据失败",
             `HTTP错误: ${error.response?.status || "未知"} - ${error.message}`,
           );
         }
       } else {
         toast.error(
-          "获取JSON失败",
+          "获取数据失败",
           error instanceof Error ? error.message : "请检查URL是否正确",
         );
       }
+    }
+  };
+
+  // 刷新URL数据
+  const refreshUrlData = async (tabKey: string, url: string) => {
+    try {
+      const response = await axios.get(url, {
+        headers: {
+          Accept: "application/json, text/plain, */*",
+        },
+        responseType: "text",
+      });
+
+      const responseText = response.data;
+      const tab = getTabByKey(tabKey);
+
+      if (!tab) {
+        toast.error("刷新失败", "找不到指定的标签页");
+
+        return;
+      }
+      setTabContent(tabKey, responseText);
+
+      toast.success("刷新成功");
+    } catch (error) {
+      console.error("刷新数据失败:", error);
+
+      if (axios.isAxiosError(error)) {
+        if (error.code === "ERR_NETWORK") {
+          toast.error("网络错误", "无法连接到指定URL，请检查网络连接");
+        } else if (error.response?.status === 403) {
+          toast.error("访问被拒绝", "该资源不允许跨域访问或需要身份验证");
+        } else if (error.response?.status === 404) {
+          toast.error("资源不存在", "指定URL未找到任何资源");
+        } else {
+          toast.error(
+            "刷新失败",
+            `HTTP错误: ${error.response?.status || "未知"} - ${error.message}`,
+          );
+        }
+      } else {
+        toast.error(
+          "刷新失败",
+          error instanceof Error ? error.message : "请检查URL是否可用",
+        );
+      }
+    }
+  };
+
+  // 显示刷新确认弹窗
+  const showRefreshConfirm = (tabKey: string, url: string) => {
+    setRefreshTabInfo({ key: tabKey, url });
+    setRefreshConfirmOpen(true);
+  };
+
+  const handleConfirmRefresh = () => {
+    if (refreshTabInfo) {
+      refreshUrlData(refreshTabInfo.key, refreshTabInfo.url);
+      setRefreshConfirmOpen(false);
+      setRefreshTabInfo(null);
     }
   };
 
@@ -937,6 +1025,34 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                   >
                     <>
                       <span className="select-none text-sm">{tab.title}</span>
+                      {tab.extraData?.url && (
+                        <div
+                          aria-label="刷新数据"
+                          className="rounded-full cursor-pointer flex items-center justify-center z-10 h-6 px-1 !ml-1 text-default-400 hover:text-default-600 hover:bg-default-200 transition-colors"
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            showRefreshConfirm(
+                              tab.key,
+                              tab.extraData?.url as string,
+                            );
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                          onKeyDown={(e) => {
+                            handleKeyDown(e, () => {
+                              showRefreshConfirm(
+                                tab.key,
+                                tab.extraData?.url as string,
+                              );
+                            });
+                            e.stopPropagation();
+                            e.preventDefault();
+                          }}
+                        >
+                          <Icon icon="solar:refresh-linear" width={16} />
+                        </div>
+                      )}
                       {tab.closable && (
                         <div
                           aria-label="关闭标签页"
@@ -986,6 +1102,31 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
       {renderRenameInput()}
       {renderTabContextMenu()}
       {renderAddMenu()}
+
+      {/* 刷新确认弹窗 */}
+      <Modal
+        isOpen={refreshConfirmOpen}
+        placement="center"
+        onClose={() => setRefreshConfirmOpen(false)}
+      >
+        <ModalContent>
+          <ModalHeader className="flex flex-col gap-1">确认刷新</ModalHeader>
+          <ModalBody>
+            <p>确定要从URL获取最新数据吗？当前数据将被覆盖。</p>
+            <p className="text-xs text-default-500 mt-2">
+              URL: {refreshTabInfo?.url}
+            </p>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="flat" onPress={() => setRefreshConfirmOpen(false)}>
+              取消
+            </Button>
+            <Button color="primary" onPress={handleConfirmRefresh}>
+              确认刷新
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </div>
   );
 };

@@ -489,7 +489,7 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
                           </div>
                         }
                       >
-                        SSOO AI
+                        SSOOAI
                       </SelectItem>
                     );
                   case "custom":
