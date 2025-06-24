@@ -45,19 +45,26 @@ export default function SettingsPage() {
 
   const {
     routeType,
-    defaultRoute,
     utoolsRoute,
+    ssooaiRoute,
     customRoute,
     utoolsModels,
+    ssooaiModels,
     customModels,
+    routeEnabled,
     updateConfig,
-    updateDefaultRouteConfig,
     updateUtoolsRouteConfig,
+    updateSsooaiRouteConfig,
     updateCustomRouteConfig,
+    updateRouteEnabled,
     fetchUtoolsModels,
+    fetchSsooaiModels,
+    fetchCustomModels,
     syncConfig,
     addCustomModel,
     removeCustomModel,
+    addSsooaiModel,
+    removeSsooaiModel,
   } = useOpenAIConfigStore();
 
   const { theme, setTheme } = useTheme();
@@ -71,8 +78,12 @@ export default function SettingsPage() {
   const [newModelLabel, setNewModelLabel] = useState("");
   const { isOpen, onOpen, onClose } = useDisclosure();
 
+  // 添加模型模式，用于区分是在SSOOAI线路还是自定义线路添加模型
+  const [addModelMode, setAddModelMode] = useState<"ssooai" | "custom">("custom");
+
   // 增加状态来保存要测试的模型
   const [testModelUtools, setTestModelUtools] = useState<string>("");
+  const [testModelSsooai, setTestModelSsooai] = useState<string>("gpt-4.1");
   const [testModelCustom, setTestModelCustom] = useState<string>("gpt-4.1");
 
   // 初始化时同步配置
@@ -85,6 +96,9 @@ export default function SettingsPage() {
   useEffect(() => {
     if (routeType === "utools") {
       fetchUtoolsModels();
+    } else if (routeType === "ssooai" && ssooaiRoute.apiKey) {
+      // 只有在填写API密钥后才获取SSOOAI模型列表
+      fetchSsooaiModels();
     } else if (
       routeType === "custom" &&
       customRoute.apiKey &&
@@ -93,7 +107,14 @@ export default function SettingsPage() {
       // 当选择私有线路且有API信息时，尝试获取模型列表
       useOpenAIConfigStore.getState().fetchCustomModels();
     }
-  }, [routeType, fetchUtoolsModels, customRoute.apiKey, customRoute.proxyUrl]);
+  }, [
+    routeType,
+    fetchUtoolsModels,
+    fetchSsooaiModels,
+    ssooaiRoute.apiKey,
+    customRoute.apiKey,
+    customRoute.proxyUrl,
+  ]);
 
   // 当配置更改时，同步到 openAIService
   useEffect(() => {
@@ -106,6 +127,12 @@ export default function SettingsPage() {
       setTestModelUtools(utoolsModels[0].value);
     }
   }, [utoolsModels, testModelUtools]);
+
+  useEffect(() => {
+    if (ssooaiModels.length > 0 && !testModelSsooai) {
+      setTestModelSsooai(ssooaiModels[0].value);
+    }
+  }, [ssooaiModels, testModelSsooai]);
 
   useEffect(() => {
     if (customModels.length > 0 && !testModelCustom) {
@@ -140,6 +167,11 @@ export default function SettingsPage() {
   const handleRouteTypeChange = (routeType: AIRouteType) => {
     updateConfig({ routeType });
 
+    // 当切换到某个线路时，自动启用该线路
+    if (routeType !== "default") { // 免费线路始终启用
+      updateRouteEnabled(routeType, true);
+    }
+
     // 重置测试状态
     setTestingRoute(null);
     setTestResult(null);
@@ -157,32 +189,35 @@ export default function SettingsPage() {
     openAIService.syncConfig();
   };
 
-  // 更新默认线路配置
-  const handleDefaultRouteConfigChange = (
-    config: Partial<{
-      model: string;
-      temperature: number;
-    }>,
-  ) => {
-    updateDefaultRouteConfig(config);
-    toast.success("默认线路配置已更新");
-
-    if (routeType === "default") {
-      openAIService.syncConfig();
-    }
-  };
-
   // 更新 Utools 线路配置
   const handleUtoolsRouteConfigChange = (
     config: Partial<{
       model: string;
-      temperature: number;
     }>,
   ) => {
     updateUtoolsRouteConfig(config);
-    toast.success("Utools 线路配置已更新");
 
     if (routeType === "utools") {
+      openAIService.syncConfig();
+    }
+  };
+
+  // 更新 SSOOAI 线路配置
+  const handleSsooaiRouteConfigChange = (
+    config: Partial<{
+      apiKey: string;
+      model: string;
+      proxyUrl: string;
+    }>,
+  ) => {
+    updateSsooaiRouteConfig(config);
+
+    // 如果更新了API密钥，自动获取模型列表
+    if (config.apiKey && routeType === "ssooai") {
+      fetchSsooaiModels();
+    }
+
+    if (routeType === "ssooai") {
       openAIService.syncConfig();
     }
   };
@@ -193,11 +228,9 @@ export default function SettingsPage() {
       apiKey: string;
       model: string;
       proxyUrl: string;
-      temperature: number;
     }>,
   ) => {
     updateCustomRouteConfig(config);
-    toast.success("自定义线路配置已更新");
 
     if (routeType === "custom") {
       openAIService.syncConfig();
@@ -245,6 +278,9 @@ export default function SettingsPage() {
       } else if (routeType === "utools" && testModel) {
         // uTools线路使用选择的模型
         modelToTest = testModel;
+      } else if (routeType === "ssooai" && testModel) {
+        // SSOOAI线路使用选择的模型
+        modelToTest = testModel;
       } else if (routeType === "custom" && testModel) {
         // 私有线路使用选择的模型
         modelToTest = testModel;
@@ -261,13 +297,6 @@ export default function SettingsPage() {
       const testConfig = {
         routeType,
         model: modelToTest,
-        // 仅使用updateConfig方法接受的参数
-        temperature:
-          routeType === "custom"
-            ? customRoute.temperature
-            : routeType === "utools"
-              ? utoolsRoute.temperature
-              : defaultRoute.temperature,
       };
 
       // 更新配置用于测试
@@ -276,7 +305,6 @@ export default function SettingsPage() {
       // 发起简短请求以测试连接
       const response = await openAIService.chat({
         messages: [{ role: "user", content: "say 1" }],
-        temperature: testConfig.temperature,
         model: modelToTest, // 显式指定模型
       });
 
@@ -335,11 +363,19 @@ export default function SettingsPage() {
       return;
     }
 
-    // 使用OpenAIConfigStore的方法添加模型
-    addCustomModel(newModelName, newModelLabel || undefined);
+    if (addModelMode === "custom") {
+      // 使用OpenAIConfigStore的方法添加模型
+      addCustomModel(newModelName, newModelLabel || undefined);
 
-    // 自动保存设置
-    handleCustomRouteConfigChange({ model: customRoute.model });
+      // 自动保存设置
+      handleCustomRouteConfigChange({ model: customRoute.model });
+    } else if (addModelMode === "ssooai") {
+      // 添加SSOOAI模型
+      addSsooaiModel(newModelName, newModelLabel || undefined);
+
+      // 自动保存设置
+      handleSsooaiRouteConfigChange({ model: ssooaiRoute.model });
+    }
 
     // 清空输入框
     setNewModelName("");
@@ -374,6 +410,34 @@ export default function SettingsPage() {
     } else {
       // 自动保存设置
       handleCustomRouteConfigChange({ model: customRoute.model });
+    }
+
+    toast.success(`已删除模型 ${modelValue}`);
+  };
+
+  // 删除SSOOAI模型
+  const handleRemoveSsooaiModel = (modelValue: string) => {
+    // 检查是否删除的是当前选中的模型
+    const isCurrentModel = modelValue === ssooaiRoute.model;
+
+    // 使用OpenAIConfigStore的方法删除模型
+    removeSsooaiModel(modelValue);
+
+    // 如果删除的是当前选中的模型，需要选择其他模型或清空
+    if (isCurrentModel && ssooaiModels.length > 1) {
+      // 选择第一个可用模型
+      const nextModel = ssooaiModels.find(
+        (model) => model.value !== modelValue,
+      );
+
+      if (nextModel) {
+        handleSsooaiRouteConfigChange({ model: nextModel.value });
+      } else {
+        handleSsooaiRouteConfigChange({ model: "" });
+      }
+    } else {
+      // 自动保存设置
+      handleSsooaiRouteConfigChange({ model: ssooaiRoute.model });
     }
 
     toast.success(`已删除模型 ${modelValue}`);
@@ -577,17 +641,24 @@ export default function SettingsPage() {
         value={routeType}
         onValueChange={(value) => handleRouteTypeChange(value as AIRouteType)}
       >
-        {/* 默认线路 */}
+        {/* 免费线路 */}
         <div className="p-5 rounded-xl bg-background/60 backdrop-blur-sm border border-default-200 hover:bg-default-100/30 transition-colors">
-          <Radio
-            description="由 SSOOAI 免费提供的 GPT 4.1 模型，具有一定的上下文限制，但可以满足基本的 JSON 处理需求。"
-            value="default"
-          >
-            <span className="text-lg font-medium">默认线路</span>
-            <span className="ml-2 text-xs px-2 py-0.5 bg-success/20 text-success rounded-full">
-              免费
-            </span>
-          </Radio>
+          <div className="flex justify-between items-center">
+            <Radio
+              description="由 SSOOAI 免费提供的 GPT 4.1 模型，具有一定的上下文限制，但可以满足基本的 JSON 处理需求。"
+              value="default"
+            >
+              <span className="text-lg font-medium">免费线路</span>
+              <span className="ml-2 text-xs px-2 py-0.5 bg-success/20 text-success rounded-full">
+                免费
+              </span>
+            </Radio>
+            <Switch
+              isDisabled={true} // 免费线路强制启用，不可关闭
+              isSelected={true}
+              size="sm"
+            />
+          </div>
 
           {routeType === "default" && (
             <div className="ml-7 mt-4 p-4 bg-default-100/50 rounded-xl">
@@ -605,30 +676,6 @@ export default function SettingsPage() {
                   </a>{" "}
                   提供)
                 </span>
-              </div>
-              <div className="mb-2">
-                <label
-                  className="block mb-2 text-sm font-medium"
-                  htmlFor="default-temperature"
-                >
-                  温度
-                </label>
-                <Input
-                  className="w-full"
-                  id="default-temperature"
-                  max={1}
-                  min={0}
-                  placeholder="设置模型温度，范围 0-1"
-                  step={0.1}
-                  type="number"
-                  value={defaultRoute.temperature.toString()}
-                  variant="bordered"
-                  onChange={(e) =>
-                    handleDefaultRouteConfigChange({
-                      temperature: parseFloat(e.target.value),
-                    })
-                  }
-                />
               </div>
               <div className="flex items-center justify-end gap-2 mt-3">
                 <Button
@@ -656,18 +703,219 @@ export default function SettingsPage() {
           )}
         </div>
 
+        {/* SSOOAI 线路 */}
+        <div className="p-5 rounded-xl bg-background/60 backdrop-blur-sm border border-primary/30 hover:bg-default-100/30 transition-colors">
+          <div className="flex justify-between items-center">
+            <Radio
+              description="SSOOAI 提供稳定高效的 API 服务，支持 ChatGPT、Claude 等多种先进模型"
+              value="ssooai"
+            >
+              <span className="text-lg font-medium">SSOOAI 线路</span>
+              <span className="ml-2 text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-full">
+                推荐
+              </span>
+              <span className="text-xs ml-2 px-2 py-0.5 bg-warning/20 text-warning rounded-full">
+                付费
+              </span>
+            </Radio>
+            <Switch
+              isSelected={routeEnabled.ssooai}
+              size="sm"
+              onValueChange={(enabled) => updateRouteEnabled("ssooai", enabled)}
+            />
+          </div>
+
+          {routeType === "ssooai" && (
+            <div className="ml-7 mt-4 p-4 bg-default-100/50 rounded-xl">
+              <div className="p-3 mb-3 rounded-lg bg-primary/10 border border-primary/20">
+                <div className="flex items-center gap-2">
+                  <Icon className="text-primary" icon="solar:star-bold" />
+                  <span className="font-medium">SSOOAI API 服务</span>
+                </div>
+                <p className="text-xs mt-1">
+                  SSOOAI 提供更稳定的 API 服务和多种先进模型。 访问{" "}
+                  <a
+                    className="text-primary hover:underline"
+                    href="https://api.ssooai.com"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                  >
+                    https://api.ssooai.com
+                  </a>{" "}
+                  注册并获取 API 密钥。
+                </p>
+              </div>
+
+              <div className="mb-3">
+                <label
+                  className="block mb-2 text-sm font-medium"
+                  htmlFor="ssooai-api-key"
+                >
+                  API 密钥
+                </label>
+                <Input
+                  className="w-full"
+                  id="ssooai-api-key"
+                  placeholder="输入您的 SSOOAI API 密钥"
+                  size="sm"
+                  type="password"
+                  value={ssooaiRoute.apiKey}
+                  variant="bordered"
+                  onChange={(e) =>
+                    handleSsooaiRouteConfigChange({
+                      apiKey: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 mt-3">
+                <SearchableSelect
+                  className="w-60"
+                  items={ssooaiModels}
+                  placeholder="选择模型"
+                  selectedValue={testModelSsooai}
+                  onChange={(value) => setTestModelSsooai(value)}
+                />
+                <Button
+                  color="primary"
+                  isDisabled={testingRoute !== null || !ssooaiRoute.apiKey}
+                  isLoading={testingRoute === "ssooai"}
+                  radius="full"
+                  size="sm"
+                  startContent={
+                    testingRoute !== "ssooai" && (
+                      <Icon icon="solar:test-tube-bold" />
+                    )
+                  }
+                  variant="flat"
+                  onPress={() =>
+                    testRouteConnection("ssooai", testModelSsooai)
+                  }
+                >
+                  测试连接
+                </Button>
+              </div>
+              {testingRoute === "ssooai" ||
+              (testResult && routeType === "ssooai")
+                ? renderTestResult()
+                : null}
+
+              {/* 模型列表管理 */}
+              <div className="mt-4 border-t border-default-200 pt-4">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-sm font-medium">模型列表</h4>
+                  <div className="flex gap-2">
+                    <Button
+                      color="primary"
+                      radius="full"
+                      size="sm"
+                      startContent={<Icon icon="solar:add-circle-bold" />}
+                      variant="flat"
+                      onPress={() => {
+                        // 设置模式为SSOOAI并打开添加模型弹窗
+                        setAddModelMode("ssooai");
+                        setNewModelName("");
+                        setNewModelLabel("");
+                        onOpen();
+                      }}
+                    >
+                      添加模型
+                    </Button>
+                    <Button
+                      isIconOnly
+                      color="default"
+                      radius="full"
+                      size="sm"
+                      variant="flat"
+                      onPress={() => {
+                        // 刷新模型列表但不清空
+                        fetchSsooaiModels();
+                        toast.success("正在刷新模型列表");
+                      }}
+                    >
+                      <Icon icon="solar:refresh-bold" width={18} />
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="max-h-96 overflow-y-auto rounded-lg border border-default-200">
+                  {ssooaiModels.length === 0 ? (
+                    <div className="p-3 text-sm text-default-500 text-center">
+                      暂无模型，请刷新或检查API密钥
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <table className="w-full">
+                        <thead className="bg-default-100 sticky top-0 z-10 shadow-sm">
+                          <tr className="text-xs text-default-500">
+                            <th className="p-2 text-left">名称</th>
+                            <th className="p-2 text-left">显示名称</th>
+                            <th className="p-2 text-center">操作</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {ssooaiModels.map((item, index) => (
+                            <tr
+                              key={item.value}
+                              className={`text-sm ${
+                                index % 2 === 0
+                                  ? "bg-default-50/50"
+                                  : "bg-default-100/30"
+                              }`}
+                            >
+                              <td className="p-2">{item.value}</td>
+                              <td className="p-2">{item.label}</td>
+                              <td className="p-2 text-center">
+                                <Button
+                                  isIconOnly
+                                  className="min-w-0 h-6 w-6"
+                                  color="danger"
+                                  radius="full"
+                                  size="sm"
+                                  variant="light"
+                                  onClick={() =>
+                                    handleRemoveSsooaiModel(item.value)
+                                  }
+                                >
+                                  <Icon
+                                    icon="solar:trash-bin-minimalistic-bold"
+                                    width={14}
+                                  />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Utools 官方 */}
         <div className="p-5 rounded-xl bg-background/60 backdrop-blur-sm border border-default-200 hover:bg-default-100/30 transition-colors">
-          <Radio
-            description="连接 uToolsAI，由 uTools 官方AI能量结算"
-            isDisabled={!isUtoolsAvailable}
-            value="utools"
-          >
-            <span className="text-lg font-medium">uTools 官方</span>
-            <span className="ml-2 text-xs px-2 py-0.5 bg-warning/20 text-warning rounded-full">
-              uTools AI能量
-            </span>
-          </Radio>
+          <div className="flex justify-between items-center">
+            <Radio
+              description="连接 uToolsAI，由 uTools 官方AI能量结算"
+              isDisabled={!isUtoolsAvailable}
+              value="utools"
+            >
+              <span className="text-lg font-medium">uTools 官方</span>
+              <span className="ml-2 text-xs px-2 py-0.5 bg-warning/20 text-warning rounded-full">
+                uTools AI能量
+              </span>
+            </Radio>
+            <Switch
+              isDisabled={!isUtoolsAvailable}
+              isSelected={routeEnabled.utools}
+              size="sm"
+              onValueChange={(enabled) => updateRouteEnabled("utools", enabled)}
+            />
+          </div>
 
           {routeType === "utools" && (
             <div className="ml-7 mt-4 p-4 bg-default-100/50 rounded-xl">
@@ -691,33 +939,9 @@ export default function SettingsPage() {
                   }
                 />
               </div>
-              <div className="mb-2">
-                <label
-                  className="block mb-2 text-sm font-medium"
-                  htmlFor="utools-temperature"
-                >
-                  温度
-                </label>
-                <Input
-                  className="w-full"
-                  id="utools-temperature"
-                  max={1}
-                  min={0}
-                  placeholder="设置模型温度，范围 0-1"
-                  step={0.1}
-                  type="number"
-                  value={utoolsRoute.temperature.toString()}
-                  variant="bordered"
-                  onChange={(e) =>
-                    handleUtoolsRouteConfigChange({
-                      temperature: parseFloat(e.target.value),
-                    })
-                  }
-                />
-              </div>
               <div className="flex items-center justify-end gap-2 mt-3">
                 <SearchableSelect
-                  className="w-48"
+                  className="w-64"
                   items={utoolsModels}
                   placeholder="选择模型"
                   selectedValue={testModelUtools}
@@ -758,24 +982,31 @@ export default function SettingsPage() {
 
         {/* 私有线路 */}
         <div className="p-5 rounded-xl bg-background/60 backdrop-blur-sm border border-default-200 hover:bg-default-100/30 transition-colors z-0">
-          <Radio
-            description="私有线路允许您使用自己的 API 密钥和自定义端点，支持 OpenAI 兼容的任何服务。"
-            value="custom"
-          >
-            <span className="text-lg font-medium">私有线路</span>
-            <span className="ml-2 text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-full">
-              私有
-            </span>
-          </Radio>
+          <div className="flex justify-between items-center">
+            <Radio
+              description="私有线路允许您使用自己的 API 密钥和自定义端点，支持 OpenAI 兼容的任何服务。"
+              value="custom"
+            >
+              <span className="text-lg font-medium">私有线路</span>
+              <span className="ml-2 text-xs px-2 py-0.5 bg-primary/20 text-primary rounded-full">
+                私有
+              </span>
+            </Radio>
+            <Switch
+              isSelected={routeEnabled.custom}
+              size="sm"
+              onValueChange={(enabled) => updateRouteEnabled("custom", enabled)}
+            />
+          </div>
 
-          {/* SSOOAI API 推荐 - 移动到这里 */}
+          {/* SSOOAI API*/}
           <div className="ml-7 mt-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
             <div className="flex items-center gap-2">
               <Icon
                 className="text-primary"
                 icon="solar:bookmark-square-bold"
               />
-              <span className="font-medium text-sm">SSOOAI API 推荐</span>
+              <span className="font-medium text-sm">SSOOAI API</span>
             </div>
             <p className="text-xs mt-1">
               推荐使用 SSOOAI API 作为私有线路，填入 API 地址：
@@ -833,31 +1064,6 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="mb-3">
-                <label
-                  className="block mb-2 text-sm font-medium"
-                  htmlFor="custom-temperature"
-                >
-                  温度
-                </label>
-                <Input
-                  className="w-full"
-                  id="custom-temperature"
-                  max={1}
-                  min={0}
-                  placeholder="设置模型温度，范围 0-1"
-                  step={0.1}
-                  type="number"
-                  value={customRoute.temperature.toString()}
-                  variant="bordered"
-                  onChange={(e) =>
-                    handleCustomRouteConfigChange({
-                      temperature: parseFloat(e.target.value),
-                    })
-                  }
-                />
-              </div>
-
               <div className="flex items-center justify-end gap-2 mt-3">
                 <SearchableSelect
                   className="w-60"
@@ -899,32 +1105,34 @@ export default function SettingsPage() {
                   <h4 className="text-sm font-medium">模型列表</h4>
                   <div className="flex gap-2">
                     <Button
+                      color="primary"
+                      radius="full"
+                      size="sm"
+                      startContent={<Icon icon="solar:add-circle-bold" />}
+                      variant="flat"
+                      onPress={() => {
+                        // 设置模式为Custom并打开添加模型弹窗
+                        setAddModelMode("custom");
+                        setNewModelName("");
+                        setNewModelLabel("");
+                        onOpen();
+                      }}
+                    >
+                      添加模型
+                    </Button>
+                    <Button
                       isIconOnly
                       color="default"
                       radius="full"
                       size="sm"
                       variant="flat"
                       onPress={() => {
-                        // 重置模型列表并刷新
-                        useOpenAIConfigStore.setState((state) => ({
-                          ...state,
-                          customModels: [],
-                        }));
-                        useOpenAIConfigStore.getState().fetchCustomModels();
-                        toast.success("已重置并刷新模型列表");
+                        // 刷新模型列表但不清空
+                        fetchCustomModels();
+                        toast.success("正在刷新模型列表");
                       }}
                     >
                       <Icon icon="solar:refresh-bold" width={18} />
-                    </Button>
-                    <Button
-                      isIconOnly
-                      color="primary"
-                      radius="full"
-                      size="sm"
-                      variant="flat"
-                      onPress={onOpen}
-                    >
-                      <Icon icon="solar:add-circle-bold" width={18} />
                     </Button>
                   </div>
                 </div>
@@ -1255,7 +1463,7 @@ export default function SettingsPage() {
       {/* 添加自定义模型的弹窗 */}
       <Modal isOpen={isOpen} onClose={onClose}>
         <ModalContent>
-          <ModalHeader>添加自定义模型</ModalHeader>
+          <ModalHeader>添加{addModelMode === "ssooai" ? "SSOOAI" : "自定义"}模型</ModalHeader>
           <ModalBody>
             <div className="mb-3">
               <label

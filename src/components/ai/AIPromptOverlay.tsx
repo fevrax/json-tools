@@ -66,10 +66,12 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
 
   // 从 store 中选择性地只获取需要的状态，避免不必要的重新渲染
   const routeType = useOpenAIConfigStore((state) => state.routeType);
+  const routeEnabled = useOpenAIConfigStore((state) => state.routeEnabled);
   const defaultModel = useOpenAIConfigStore(
     (state) => state.defaultRoute.model,
   );
   const utoolsModel = useOpenAIConfigStore((state) => state.utoolsRoute.model);
+  const ssooaiModel = useOpenAIConfigStore((state) => state.ssooaiRoute?.model);
   const customModel = useOpenAIConfigStore((state) => state.customRoute.model);
   const customApiKey = useOpenAIConfigStore(
     (state) => state.customRoute.apiKey,
@@ -78,6 +80,7 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
     (state) => state.customRoute.proxyUrl,
   );
   const utoolsModels = useOpenAIConfigStore((state) => state.utoolsModels);
+  const ssooaiModels = useOpenAIConfigStore((state) => state.ssooaiModels || []);
   const customModels = useOpenAIConfigStore((state) => state.customModels);
 
   // 单独获取更新函数，避免重新渲染
@@ -88,11 +91,17 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
   const updateUtoolsRouteConfig = useOpenAIConfigStore(
     (state) => state.updateUtoolsRouteConfig,
   );
+  const updateSsooaiRouteConfig = useOpenAIConfigStore(
+    (state) => state.updateSsooaiRouteConfig,
+  );
   const updateCustomRouteConfig = useOpenAIConfigStore(
     (state) => state.updateCustomRouteConfig,
   );
   const fetchUtoolsModels = useOpenAIConfigStore(
     (state) => state.fetchUtoolsModels,
+  );
+  const fetchSsooaiModels = useOpenAIConfigStore(
+    (state) => state.fetchSsooaiModels,
   );
   const fetchCustomModels = useOpenAIConfigStore(
     (state) => state.fetchCustomModels,
@@ -151,6 +160,22 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
             tag: { text: "能量", type: "energy" },
           },
         ];
+      case "ssooai":
+        // 添加标签到 SSOOAI 模型
+        if (ssooaiModels.length > 0) {
+          return ssooaiModels.map((model) => ({
+            ...model,
+            tag: { text: "付费", type: "paid" },
+          }));
+        }
+
+        return [
+          {
+            value: "gpt-4.1",
+            label: "GPT-4.1",
+            tag: { text: "付费", type: "paid" },
+          },
+        ];
       case "custom":
         // 添加标签到自定义模型
         if (customModels.length > 0) {
@@ -170,7 +195,7 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
       default:
         return [];
     }
-  }, [routeType, utoolsModels, customModels]);
+  }, [routeType, utoolsModels, ssooaiModels, customModels]);
 
   // 使用 useMemo 缓存当前选择的模型
   const currentModel = useMemo(() => {
@@ -179,20 +204,65 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
         return defaultModel;
       case "utools":
         return utoolsModel;
+      case "ssooai":
+        return ssooaiModel;
       case "custom":
         return customModel;
       default:
         return defaultModel;
     }
-  }, [routeType, defaultModel, utoolsModel, customModel]);
+  }, [routeType, defaultModel, utoolsModel, ssooaiModel, customModel]);
+
+  // 获取可用的线路列表
+  const availableRoutes = useMemo(() => {
+    const routes: AIRouteType[] = ["default"]; // 默认线路总是可用的
+    
+    if (routeEnabled.utools && isUtoolsAvailable) {
+      routes.push("utools");
+    }
+    
+    if (routeEnabled.ssooai) {
+      routes.push("ssooai");
+    }
+    
+    if (routeEnabled.custom) {
+      routes.push("custom");
+    }
+    
+    return routes;
+  }, [routeEnabled, isUtoolsAvailable]);
+
+  // 当routeEnabled变化时，确保当前选择的路由是可用的
+  useEffect(() => {
+    // 如果当前选择的路由不在可用路由列表中，自动切换到默认路由
+    if (!availableRoutes.includes(routeType)) {
+      updateConfig({ routeType: "default" });
+    }
+  }, [availableRoutes, routeType, updateConfig]);
 
   // 处理线路变更
   const handleRouteChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newRouteType = e.target.value as AIRouteType;
 
+    // 确保选择的线路是可用的
+    if (!availableRoutes.includes(newRouteType)) {
+      return;
+    }
+
     // 如果切换到uTools线路，先获取模型列表
     if (newRouteType === "utools" && isUtoolsAvailable) {
       fetchUtoolsModels();
+      // 设置默认uTools模型（使用列表中的第一个或fallback）
+      const defaultUtoolsModel = utoolsModels.length > 0 ? utoolsModels[0].value : "deepseek-v3";
+      updateUtoolsRouteConfig({ model: defaultUtoolsModel });
+    }
+
+    // 如果切换到SSOOAI线路，获取模型列表
+    if (newRouteType === "ssooai") {
+      fetchSsooaiModels();
+      // 设置默认SSOOAI模型
+      const defaultSsooaiModel = ssooaiModels.length > 0 ? ssooaiModels[0].value : "gpt-4.1";
+      updateSsooaiRouteConfig({ model: defaultSsooaiModel });
     }
 
     // 如果切换到私有线路，且有API配置，获取模型列表
@@ -202,6 +272,16 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
       customModels.length === 0
     ) {
       fetchCustomModels();
+    }
+
+    // 如果切换到私有线路，设置默认模型为gpt-4.1
+    if (newRouteType === "custom") {
+      updateCustomRouteConfig({ model: "gpt-4.1" });
+    }
+
+    // 如果切换到默认线路，设置默认模型
+    if (newRouteType === "default") {
+      updateDefaultRouteConfig({ model: "gpt-4.1" });
     }
 
     updateConfig({ routeType: newRouteType });
@@ -217,6 +297,9 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
         break;
       case "utools":
         updateUtoolsRouteConfig({ model: newModel });
+        break;
+      case "ssooai":
+        updateSsooaiRouteConfig({ model: newModel });
         break;
       case "custom":
         updateCustomRouteConfig({ model: newModel });
@@ -360,40 +443,70 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
             <Select
               aria-label="选择 AI 线路"
               className="min-w-[180px]"
+              disallowEmptySelection={true}
               selectedKeys={new Set([routeType])}
+              selectionMode="single"
               size="sm"
               onChange={handleRouteChange}
             >
-              <SelectItem
-                key="default"
-                startContent={
-                  <span className="text-xs px-3 py-0.5 bg-success/20 text-success rounded-full">
-                    免 费
-                  </span>
+              {availableRoutes.map(route => {
+                switch(route) {
+                  case "default":
+                    return (
+                      <SelectItem
+                        key="default"
+                        startContent={
+                          <span className="text-xs px-3 py-0.5 bg-success/20 text-success rounded-full">
+                            免 费
+                          </span>
+                        }
+                      >
+                        免费线路
+                      </SelectItem>
+                    );
+                  case "utools":
+                    return (
+                      <SelectItem
+                        key="utools"
+                        startContent={
+                          <span className="text-xs px-1.5 py-0.5 bg-warning/20 text-warning rounded-full">
+                            AI 能量
+                          </span>
+                        }
+                      >
+                        uTools AI
+                      </SelectItem>
+                    );
+                  case "ssooai":
+                    return (
+                      <SelectItem
+                        key="ssooai"
+                        startContent={
+                          <div className="flex gap-1">
+                            <span className="text-xs px-3 py-0.5 bg-warning/20 text-warning rounded-full">
+                              付 费
+                            </span>
+                          </div>
+                        }
+                      >
+                        SSOO AI
+                      </SelectItem>
+                    );
+                  case "custom":
+                    return (
+                      <SelectItem
+                        key="custom"
+                        startContent={
+                          <span className="text-xs px-3 py-0.5 bg-primary/20 text-primary rounded-full">
+                            私 有
+                          </span>
+                        }
+                      >
+                        私有线路
+                      </SelectItem>
+                    );
                 }
-              >
-                默认线路
-              </SelectItem>
-              <SelectItem
-                key="utools"
-                startContent={
-                  <span className="text-xs px-1.5 py-0.5 bg-warning/20 text-warning rounded-full">
-                    AI 能量
-                  </span>
-                }
-              >
-                uTools AI
-              </SelectItem>
-              <SelectItem
-                key="custom"
-                startContent={
-                  <span className="text-xs px-3 py-0.5 bg-primary/20 text-primary rounded-full">
-                    私 有
-                  </span>
-                }
-              >
-                私有线路
-              </SelectItem>
+              })}
             </Select>
           </div>
 
@@ -426,8 +539,10 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
                 <Select
                   aria-label="选择 AI 模型"
                   className="min-w-[200px]"
+                  disallowEmptySelection={true}
                   isDisabled={routeType === "custom" && !isCustomRouteAvailable}
                   selectedKeys={new Set([currentModel])}
+                  selectionMode="single"
                   size="sm"
                   onChange={handleModelChange}
                 >
