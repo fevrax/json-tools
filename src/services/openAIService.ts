@@ -21,6 +21,13 @@ export class OpenAIService {
   private routeType: AIRouteType = "default";
   maxTokens: number = 10000;
 
+  // 添加config公共属性，用于存储和恢复配置
+  public config = {
+    routeType: "default" as AIRouteType,
+    model: "",
+    temperature: 0.7,
+  };
+
   /**
    * 初始化OpenAI服务
    */
@@ -35,6 +42,11 @@ export class OpenAIService {
     const openaiStore = useOpenAIConfigStore.getState();
 
     this.routeType = openaiStore.routeType;
+    this.config = {
+      routeType: openaiStore.routeType,
+      model: openaiStore.getCurrentModel(),
+      temperature: openaiStore.getCurrentRouteConfig().temperature,
+    };
     this.initOpenAI();
   }
 
@@ -413,6 +425,114 @@ export class OpenAIService {
     service.syncConfig();
 
     return service;
+  }
+
+  /**
+   * 更新服务配置（用于测试）
+   * @param newConfig 新配置
+   */
+  public updateConfig(newConfig: {
+    routeType: AIRouteType;
+    model: string;
+    temperature?: number;
+  }): void {
+    this.routeType = newConfig.routeType;
+    this.config = {
+      ...this.config,
+      ...newConfig,
+    };
+    this.initOpenAI();
+  }
+
+  /**
+   * 非流式聊天请求（用于测试）
+   * @param options 聊天参数
+   * @returns 聊天完成结果
+   */
+  public async chat(options: {
+    messages: ChatCompletionMessageParam[];
+    temperature?: number;
+    max_tokens?: number;
+    model?: string;
+  }): Promise<any> {
+    // 验证服务是否已初始化
+    if (!this.validateService()) {
+      throw new Error("AI服务未初始化或配置错误");
+    }
+
+    const modelToUse = options.model || this.getCurrentModel();
+    const temperature = options.temperature || this.getCurrentTemperature();
+
+    try {
+      // 为utools线路提供特殊处理
+      if (this.routeType === "utools") {
+        if (!isUtoolsAvailable) {
+          throw new Error("uTools API 不可用");
+        }
+
+        return new Promise((resolve, reject) => {
+          const utoolsMessages = options.messages.map((msg) => ({
+            role: msg.role,
+            content: msg.content,
+          }));
+          
+          const utoolsOptions = {
+            model: modelToUse,
+            messages: utoolsMessages,
+            temperature: temperature,
+            max_tokens: options.max_tokens || this.maxTokens,
+          };
+
+          try {
+            let responseContent = "";
+            const promise = (window as any).utools.ai(
+              utoolsOptions,
+              (chunk: { content?: string }) => {
+                if (chunk.content) {
+                  responseContent += chunk.content;
+                }
+              }
+            );
+
+            promise
+              .then(() => {
+                resolve({
+                  choices: [
+                    {
+                      message: {
+                        role: "assistant",
+                        content: responseContent,
+                      },
+                    },
+                  ],
+                });
+              })
+              .catch((err: Error) => {
+                reject(err);
+              });
+          } catch (error) {
+            reject(error);
+          }
+        });
+      }
+
+      // 对于其他线路，使用普通的完成请求
+      if (!this.openai) {
+        throw new Error("OpenAI客户端未初始化");
+      }
+
+      const response = await this.openai.chat.completions.create({
+        model: modelToUse,
+        messages: options.messages,
+        temperature: temperature,
+        max_tokens: options.max_tokens || this.maxTokens,
+      });
+
+      return response;
+    } catch (error) {
+      console.error("AI请求失败:", error);
+      throw error;
+    }
   }
 }
 

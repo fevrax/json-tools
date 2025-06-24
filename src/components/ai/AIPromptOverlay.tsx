@@ -5,7 +5,6 @@ import { Icon } from "@iconify/react";
 import {
   AIRouteType,
   useOpenAIConfigStore,
-  AI_MODELS,
 } from "@/store/useOpenAIConfigStore";
 
 // 定义模型选项类型
@@ -100,19 +99,15 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
   const modelOptions = useMemo((): ModelOption[] => {
     switch (routeType) {
       case "default":
-        return AI_MODELS;
+        return [];
       case "utools":
         return utoolsModels.length > 0
           ? utoolsModels
           : [{ value: "deepseek-v3", label: "DeepSeek-V3" }];
       case "custom":
-        return [
-          { value: "claude-sonnet-4-20250514", label: "Claude Sonnet" },
-          { value: "gpt-4o", label: "GPT-4o" },
-          { value: "gpt-4-turbo", label: "GPT-4 Turbo" },
-        ];
+        return [];
       default:
-        return AI_MODELS;
+        return [];
     }
   }, [routeType, utoolsModels]);
 

@@ -3,8 +3,6 @@ import {
   Input,
   Radio,
   RadioGroup,
-  Select,
-  SelectItem,
   Switch,
   Tooltip,
   Divider,
@@ -14,15 +12,13 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useTheme } from "next-themes";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
+import SearchableSelect from "@/components/SearchableSelect/SearchableSelect.tsx";
 import toast from "@/utils/toast";
 import { useSettingsStore, ChatStyle } from "@/store/useSettingsStore.ts";
 import { storage } from "@/lib/indexedDBStore.ts";
@@ -75,6 +71,10 @@ export default function SettingsPage() {
   const [newModelLabel, setNewModelLabel] = useState("");
   const { isOpen, onOpen, onClose } = useDisclosure();
 
+  // 增加状态来保存要测试的模型
+  const [testModelUtools, setTestModelUtools] = useState<string>("");
+  const [testModelCustom, setTestModelCustom] = useState<string>("gpt-4.1");
+
   // 初始化时同步配置
   useEffect(() => {
     // 从存储加载配置
@@ -99,6 +99,19 @@ export default function SettingsPage() {
   useEffect(() => {
     openAIService.syncConfig();
   }, [routeType]);
+
+  // 在useEffect中设置默认测试模型
+  useEffect(() => {
+    if (utoolsModels.length > 0 && !testModelUtools) {
+      setTestModelUtools(utoolsModels[0].value);
+    }
+  }, [utoolsModels, testModelUtools]);
+
+  useEffect(() => {
+    if (customModels.length > 0 && !testModelCustom) {
+      setTestModelCustom(customModels[0].value);
+    }
+  }, [customModels, testModelCustom]);
 
   const handleSettingChange = (key: string, value: any) => {
     switch (key) {
@@ -130,15 +143,6 @@ export default function SettingsPage() {
     // 重置测试状态
     setTestingRoute(null);
     setTestResult(null);
-
-    // 显示提示
-    const routeMessages = {
-      default: "已切换到默认线路，使用 json-tools 模型",
-      utools: "已切换到 Utools 官方线路",
-      custom: "已切换到私有线路，请确保填写正确的 API 信息",
-    };
-
-    toast.success(routeMessages[routeType]);
 
     // 如果切换到 utools 线路，尝试获取模型列表
     if (routeType === "utools") {
@@ -224,13 +228,67 @@ export default function SettingsPage() {
   };
 
   // 测试AI线路连接
-  const testRouteConnection = async (routeType: AIRouteType) => {
+  const testRouteConnection = async (
+    routeType: AIRouteType,
+    testModel?: string,
+  ) => {
     setTestingRoute(routeType);
     setTestResult(null);
 
     try {
-      // 根据当前路由类型调用不同的测试
-      setTestResult({ success: true, message: "连接成功，线路畅通！" });
+      // 根据线路类型使用不同的模型进行测试
+      let modelToTest;
+
+      if (routeType === "default") {
+        // 默认线路使用 json-tools 模型
+        modelToTest = "json-tools";
+      } else if (routeType === "utools" && testModel) {
+        // uTools线路使用选择的模型
+        modelToTest = testModel;
+      } else if (routeType === "custom" && testModel) {
+        // 私有线路使用选择的模型
+        modelToTest = testModel;
+      } else {
+        throw new Error("请选择要测试的模型");
+      }
+
+      console.log(`测试连接 - 路由类型: ${routeType}, 模型: ${modelToTest}`);
+
+      // 保存原始配置
+      const originalConfig = { ...openAIService.config };
+
+      // 创建测试配置
+      const testConfig = {
+        routeType,
+        model: modelToTest,
+        // 仅使用updateConfig方法接受的参数
+        temperature:
+          routeType === "custom"
+            ? customRoute.temperature
+            : routeType === "utools"
+              ? utoolsRoute.temperature
+              : defaultRoute.temperature,
+      };
+
+      // 更新配置用于测试
+      openAIService.updateConfig(testConfig);
+
+      // 发起简短请求以测试连接
+      const response = await openAIService.chat({
+        messages: [{ role: "user", content: "say 1" }],
+        temperature: testConfig.temperature,
+        model: modelToTest, // 显式指定模型
+      });
+
+      // 检查响应
+      if (response && response.choices && response.choices[0]?.message) {
+        setTestResult({ success: true, message: "连接成功，线路畅通！" });
+      } else {
+        throw new Error("API 返回结果异常");
+      }
+
+      // 恢复原始配置
+      openAIService.updateConfig(originalConfig);
     } catch (error) {
       console.error("测试连接失败:", error);
       setTestResult({
@@ -280,6 +338,9 @@ export default function SettingsPage() {
     // 使用OpenAIConfigStore的方法添加模型
     addCustomModel(newModelName, newModelLabel || undefined);
 
+    // 自动保存设置
+    handleCustomRouteConfigChange({ model: customRoute.model });
+
     // 清空输入框
     setNewModelName("");
     setNewModelLabel("");
@@ -292,8 +353,29 @@ export default function SettingsPage() {
 
   // 删除自定义模型
   const handleRemoveCustomModel = (modelValue: string) => {
+    // 检查是否删除的是当前选中的模型
+    const isCurrentModel = modelValue === customRoute.model;
+
     // 使用OpenAIConfigStore的方法删除模型
     removeCustomModel(modelValue);
+
+    // 如果删除的是当前选中的模型，需要选择其他模型或清空
+    if (isCurrentModel && customModels.length > 1) {
+      // 选择第一个可用模型
+      const nextModel = customModels.find(
+        (model) => model.value !== modelValue,
+      );
+
+      if (nextModel) {
+        handleCustomRouteConfigChange({ model: nextModel.value });
+      } else {
+        handleCustomRouteConfigChange({ model: "" });
+      }
+    } else {
+      // 自动保存设置
+      handleCustomRouteConfigChange({ model: customRoute.model });
+    }
+
     toast.success(`已删除模型 ${modelValue}`);
   };
 
@@ -336,7 +418,7 @@ export default function SettingsPage() {
 
   // 渲染侧边栏菜单
   const renderSidebar = () => (
-    <div className="w-52 sm:w-56 md:w-64 h-full bg-default-50 dark:bg-default-100/50 border-r border-default-200 shadow-sm flex-shrink-0">
+    <div className="w-40 sm:w-40 md:w-48 h-full bg-default-50 dark:bg-default-100/50 border-r border-default-200 shadow-sm flex-shrink-0">
       <div className="p-4 md:p-5">
         <h2 className="text-lg md:text-xl font-bold text-default-900 flex items-center gap-2">
           <div className="p-2 bg-primary/10 rounded-lg">
@@ -498,7 +580,7 @@ export default function SettingsPage() {
         {/* 默认线路 */}
         <div className="p-5 rounded-xl bg-background/60 backdrop-blur-sm border border-default-200 hover:bg-default-100/30 transition-colors">
           <Radio
-            description="由 SSOOAI 免费提供的GPT 4.1模型，上下文限制"
+            description="由 SSOOAI 免费提供的 GPT 4.1 模型，具有一定的上下文限制，但可以满足基本的 JSON 处理需求。"
             value="default"
           >
             <span className="text-lg font-medium">默认线路</span>
@@ -548,7 +630,7 @@ export default function SettingsPage() {
                   }
                 />
               </div>
-              <div className="flex justify-end mt-3">
+              <div className="flex items-center justify-end gap-2 mt-3">
                 <Button
                   color="primary"
                   isDisabled={testingRoute !== null}
@@ -563,17 +645,13 @@ export default function SettingsPage() {
                   variant="flat"
                   onPress={() => testRouteConnection("default")}
                 >
-                  测试连接
+                  测试
                 </Button>
               </div>
               {testingRoute === "default" ||
               (testResult && routeType === "default")
                 ? renderTestResult()
                 : null}
-              <div className="text-xs text-default-500 mt-2">
-                默认线路使用免费的 gpt-4.1
-                模型，具有一定的上下文限制，但可以满足基本的 JSON 处理需求。
-              </div>
             </div>
           )}
         </div>
@@ -600,23 +678,18 @@ export default function SettingsPage() {
                 >
                   选择模型
                 </label>
-                <Select
+                <SearchableSelect
                   className="w-full"
                   id="utools-model"
+                  items={utoolsModels}
                   placeholder="选择 uTools 模型"
-                  selectedKeys={[utoolsRoute.model]}
-                  size="sm"
-                  variant="bordered"
-                  onChange={(e) =>
+                  selectedValue={utoolsRoute.model}
+                  onChange={(value) =>
                     handleUtoolsRouteConfigChange({
-                      model: e.target.value,
+                      model: value,
                     })
                   }
-                >
-                  {utoolsModels.map((item) => (
-                    <SelectItem key={item.value}>{item.label}</SelectItem>
-                  ))}
-                </Select>
+                />
               </div>
               <div className="mb-2">
                 <label
@@ -642,10 +715,21 @@ export default function SettingsPage() {
                   }
                 />
               </div>
-              <div className="flex justify-end mt-3">
+              <div className="flex items-center justify-end gap-2 mt-3">
+                <SearchableSelect
+                  className="w-48"
+                  items={utoolsModels}
+                  placeholder="选择模型"
+                  selectedValue={testModelUtools}
+                  onChange={(value) => setTestModelUtools(value)}
+                />
                 <Button
                   color="primary"
-                  isDisabled={testingRoute !== null || !isUtoolsAvailable}
+                  isDisabled={
+                    testingRoute !== null ||
+                    !isUtoolsAvailable ||
+                    !testModelUtools
+                  }
                   isLoading={testingRoute === "utools"}
                   radius="full"
                   size="sm"
@@ -655,9 +739,9 @@ export default function SettingsPage() {
                     )
                   }
                   variant="flat"
-                  onPress={() => testRouteConnection("utools")}
+                  onPress={() => testRouteConnection("utools", testModelUtools)}
                 >
-                  测试连接
+                  测试
                 </Button>
               </div>
               {testingRoute === "utools" ||
@@ -673,7 +757,7 @@ export default function SettingsPage() {
         </div>
 
         {/* 私有线路 */}
-        <div className="p-5 rounded-xl bg-background/60 backdrop-blur-sm border border-default-200 hover:bg-default-100/30 transition-colors">
+        <div className="p-5 rounded-xl bg-background/60 backdrop-blur-sm border border-default-200 hover:bg-default-100/30 transition-colors z-0">
           <Radio
             description="私有线路允许您使用自己的 API 密钥和自定义端点，支持 OpenAI 兼容的任何服务。"
             value="custom"
@@ -683,6 +767,24 @@ export default function SettingsPage() {
               私有
             </span>
           </Radio>
+
+          {/* SSOOAI API 推荐 - 移动到这里 */}
+          <div className="ml-7 mt-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
+            <div className="flex items-center gap-2">
+              <Icon
+                className="text-primary"
+                icon="solar:bookmark-square-bold"
+              />
+              <span className="font-medium text-sm">SSOOAI API 推荐</span>
+            </div>
+            <p className="text-xs mt-1">
+              推荐使用 SSOOAI API 作为私有线路，填入 API 地址：
+              <code className="bg-default-100 px-1 py-0.5 rounded">
+                https://api.ssooai.com/v1
+              </code>
+              ， 注册即可获得免费额度。高稳定性、低延迟、更实惠的价格！
+            </p>
+          </div>
 
           {routeType === "custom" && (
             <div className="ml-7 mt-4 p-4 bg-default-100/50 rounded-xl">
@@ -732,84 +834,6 @@ export default function SettingsPage() {
               </div>
 
               <div className="mb-3">
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-sm font-medium" htmlFor="model-name">
-                    模型选择
-                  </label>
-                  <Button
-                    isIconOnly
-                    color="primary"
-                    radius="full"
-                    size="sm"
-                    variant="flat"
-                    onPress={onOpen}
-                  >
-                    <Icon icon="solar:add-circle-bold" width={20} />
-                  </Button>
-                </div>
-
-                <Select
-                  className="w-full"
-                  id="model-name"
-                  placeholder="选择或输入模型名称"
-                  selectedKeys={[customRoute.model]}
-                  size="sm"
-                  variant="bordered"
-                  onChange={(e) =>
-                    handleCustomRouteConfigChange({
-                      model: e.target.value,
-                    })
-                  }
-                >
-                  {customModels.map(
-                    (item: { value: string; label: string }) => (
-                      <SelectItem
-                        key={item.value}
-                        endContent={
-                          <Popover placement="left">
-                            <PopoverTrigger>
-                              <Button
-                                isIconOnly
-                                className="min-w-0 h-6 w-6"
-                                color="danger"
-                                radius="full"
-                                size="sm"
-                                variant="flat"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Icon
-                                  icon="solar:trash-bin-minimalistic-bold"
-                                  width={14}
-                                />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent>
-                              <div className="px-1 py-2">
-                                <p className="text-sm">确认删除此模型？</p>
-                                <div className="mt-2 flex justify-end gap-1">
-                                  <Button
-                                    color="danger"
-                                    size="sm"
-                                    onPress={() => {
-                                      handleRemoveCustomModel(item.value);
-                                    }}
-                                  >
-                                    删除
-                                  </Button>
-                                </div>
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                        }
-                      >
-                        {item.label}
-                      </SelectItem>
-                    ),
-                  )}
-                </Select>
-              </div>
-
-              <div className="mb-3">
                 <label
                   className="block mb-2 text-sm font-medium"
                   htmlFor="custom-temperature"
@@ -834,13 +858,21 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="flex justify-end mt-3">
+              <div className="flex items-center justify-end gap-2 mt-3">
+                <SearchableSelect
+                  className="w-60"
+                  items={customModels}
+                  placeholder="选择模型"
+                  selectedValue={testModelCustom}
+                  onChange={(value) => setTestModelCustom(value)}
+                />
                 <Button
                   color="primary"
                   isDisabled={
                     testingRoute !== null ||
                     !customRoute.apiKey ||
-                    !customRoute.proxyUrl
+                    !customRoute.proxyUrl ||
+                    !testModelCustom
                   }
                   isLoading={testingRoute === "custom"}
                   radius="full"
@@ -851,9 +883,9 @@ export default function SettingsPage() {
                     )
                   }
                   variant="flat"
-                  onPress={() => testRouteConnection("custom")}
+                  onPress={() => testRouteConnection("custom", testModelCustom)}
                 >
-                  测试连接
+                  测试
                 </Button>
               </div>
               {testingRoute === "custom" ||
@@ -861,21 +893,94 @@ export default function SettingsPage() {
                 ? renderTestResult()
                 : null}
 
-              <div className="mt-3 p-3 rounded-lg bg-primary/10 border border-primary/20">
-                <div className="flex items-center gap-2">
-                  <Icon
-                    className="text-primary"
-                    icon="solar:bookmark-square-bold"
-                  />
-                  <span className="font-medium text-sm">SSOOAI API 推荐</span>
+              {/* 模型列表管理 */}
+              <div className="mt-4 border-t border-default-200 pt-4">
+                <div className="flex justify-between items-center mb-3">
+                  <h4 className="text-sm font-medium">模型列表</h4>
+                  <div className="flex gap-2">
+                    <Button
+                      isIconOnly
+                      color="default"
+                      radius="full"
+                      size="sm"
+                      variant="flat"
+                      onPress={() => {
+                        // 重置模型列表并刷新
+                        useOpenAIConfigStore.setState((state) => ({
+                          ...state,
+                          customModels: [],
+                        }));
+                        useOpenAIConfigStore.getState().fetchCustomModels();
+                        toast.success("已重置并刷新模型列表");
+                      }}
+                    >
+                      <Icon icon="solar:refresh-bold" width={18} />
+                    </Button>
+                    <Button
+                      isIconOnly
+                      color="primary"
+                      radius="full"
+                      size="sm"
+                      variant="flat"
+                      onPress={onOpen}
+                    >
+                      <Icon icon="solar:add-circle-bold" width={18} />
+                    </Button>
+                  </div>
                 </div>
-                <p className="text-xs mt-1">
-                  推荐使用 SSOOAI API 作为私有线路，填入 API 地址：
-                  <code className="bg-default-100 px-1 py-0.5 rounded">
-                    https://api.ssooai.com/v1
-                  </code>
-                  ， 注册即可获得免费额度。高稳定性、低延迟、更实惠的价格！
-                </p>
+
+                <div className="max-h-96 overflow-y-auto rounded-lg border border-default-200">
+                  {customModels.length === 0 ? (
+                    <div className="p-3 text-sm text-default-500 text-center">
+                      暂无模型，请添加或刷新
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <table className="w-full">
+                        <thead className="bg-default-100 sticky top-0 z-10 shadow-sm">
+                          <tr className="text-xs text-default-500">
+                            <th className="p-2 text-left">名称</th>
+                            <th className="p-2 text-left">显示名称</th>
+                            <th className="p-2 text-center">操作</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {customModels.map((item, index) => (
+                            <tr
+                              key={item.value}
+                              className={`text-sm ${
+                                index % 2 === 0
+                                  ? "bg-default-50/50"
+                                  : "bg-default-100/30"
+                              }`}
+                            >
+                              <td className="p-2">{item.value}</td>
+                              <td className="p-2">{item.label}</td>
+                              <td className="p-2 text-center">
+                                <Button
+                                  isIconOnly
+                                  className="min-w-0 h-6 w-6"
+                                  color="danger"
+                                  radius="full"
+                                  size="sm"
+                                  variant="light"
+                                  onClick={() =>
+                                    handleRemoveCustomModel(item.value)
+                                  }
+                                >
+                                  <Icon
+                                    icon="solar:trash-bin-minimalistic-bold"
+                                    width={14}
+                                  />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -1134,7 +1239,7 @@ export default function SettingsPage() {
         {renderSidebar()}
 
         {/* 主内容区域 */}
-        <div className="flex-1 p-3 sm:p-4 md:p-6 overflow-y-auto">
+        <div className="flex-1 p-3 sm:p-2 md:p-2 overflow-y-auto">
           <motion.div
             key={activeTab}
             animate={{ opacity: 1, y: 0 }}
