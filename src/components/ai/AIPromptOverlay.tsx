@@ -11,6 +11,10 @@ import {
 interface ModelOption {
   value: string;
   label: string;
+  tag?: {
+    text: string;
+    type: "free" | "paid" | "energy" | "private";
+  };
 }
 
 // 快捷指令类型定义
@@ -67,8 +71,14 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
   );
   const utoolsModel = useOpenAIConfigStore((state) => state.utoolsRoute.model);
   const customModel = useOpenAIConfigStore((state) => state.customRoute.model);
-  const customApiKey = useOpenAIConfigStore((state) => state.customRoute.apiKey);
+  const customApiKey = useOpenAIConfigStore(
+    (state) => state.customRoute.apiKey,
+  );
+  const customProxyUrl = useOpenAIConfigStore(
+    (state) => state.customRoute.proxyUrl,
+  );
   const utoolsModels = useOpenAIConfigStore((state) => state.utoolsModels);
+  const customModels = useOpenAIConfigStore((state) => state.customModels);
 
   // 单独获取更新函数，避免重新渲染
   const updateConfig = useOpenAIConfigStore((state) => state.updateConfig);
@@ -84,9 +94,12 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
   const fetchUtoolsModels = useOpenAIConfigStore(
     (state) => state.fetchUtoolsModels,
   );
+  const fetchCustomModels = useOpenAIConfigStore(
+    (state) => state.fetchCustomModels,
+  );
 
   // 检查私有线路是否可用（API Key是否已填写）
-  const isCustomRouteAvailable = !!customApiKey;
+  const isCustomRouteAvailable = !!customApiKey && !!customProxyUrl;
 
   // 在组件挂载时获取uTools模型
   useEffect(() => {
@@ -95,21 +108,69 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
     }
   }, [fetchUtoolsModels, isUtoolsAvailable, routeType]);
 
+  // 在组件挂载或配置更改时获取私有线路模型
+  useEffect(() => {
+    if (
+      routeType === "custom" &&
+      isCustomRouteAvailable &&
+      customModels.length === 0
+    ) {
+      fetchCustomModels();
+    }
+  }, [
+    fetchCustomModels,
+    routeType,
+    isCustomRouteAvailable,
+    customModels.length,
+  ]);
+
   // 使用 useMemo 缓存计算结果
   const modelOptions = useMemo((): ModelOption[] => {
     switch (routeType) {
       case "default":
-        return [];
+        return [
+          {
+            value: "gpt-4.1",
+            label: "GPT-4.1",
+            tag: { text: "免费", type: "free" },
+          },
+        ];
       case "utools":
-        return utoolsModels.length > 0
-          ? utoolsModels
-          : [{ value: "deepseek-v3", label: "DeepSeek-V3" }];
+        // 添加标签到 uTools 模型
+        if (utoolsModels.length > 0) {
+          return utoolsModels.map((model) => ({
+            ...model,
+            tag: { text: "能量", type: "energy" },
+          }));
+        }
+
+        return [
+          {
+            value: "deepseek-v3",
+            label: "DeepSeek-V3",
+            tag: { text: "能量", type: "energy" },
+          },
+        ];
       case "custom":
-        return [];
+        // 添加标签到自定义模型
+        if (customModels.length > 0) {
+          return customModels.map((model) => ({
+            ...model,
+            tag: { text: "付费", type: "paid" },
+          }));
+        }
+
+        return [
+          {
+            value: "gpt-4.1",
+            label: "GPT-4.1",
+            tag: { text: "付费", type: "paid" },
+          },
+        ];
       default:
         return [];
     }
-  }, [routeType, utoolsModels]);
+  }, [routeType, utoolsModels, customModels]);
 
   // 使用 useMemo 缓存当前选择的模型
   const currentModel = useMemo(() => {
@@ -133,6 +194,16 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
     if (newRouteType === "utools" && isUtoolsAvailable) {
       fetchUtoolsModels();
     }
+
+    // 如果切换到私有线路，且有API配置，获取模型列表
+    if (
+      newRouteType === "custom" &&
+      isCustomRouteAvailable &&
+      customModels.length === 0
+    ) {
+      fetchCustomModels();
+    }
+
     updateConfig({ routeType: newRouteType });
   };
 
@@ -288,20 +359,41 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
             </div>
             <Select
               aria-label="选择 AI 线路"
-              className="min-w-[120px]"
+              className="min-w-[180px]"
               selectedKeys={new Set([routeType])}
               size="sm"
               onChange={handleRouteChange}
             >
-              <SelectItem key="default">默认线路</SelectItem>
+              <SelectItem
+                key="default"
+                startContent={
+                  <span className="text-xs px-3 py-0.5 bg-success/20 text-success rounded-full">
+                    免 费
+                  </span>
+                }
+              >
+                默认线路
+              </SelectItem>
               <SelectItem
                 key="utools"
-                description={!isUtoolsAvailable ? "未安装uTools" : undefined}
-                isDisabled={!isUtoolsAvailable}
+                startContent={
+                  <span className="text-xs px-1.5 py-0.5 bg-warning/20 text-warning rounded-full">
+                    AI 能量
+                  </span>
+                }
               >
-                uTools
+                uTools AI
               </SelectItem>
-              <SelectItem key="custom">私有线路</SelectItem>
+              <SelectItem
+                key="custom"
+                startContent={
+                  <span className="text-xs px-3 py-0.5 bg-primary/20 text-primary rounded-full">
+                    私 有
+                  </span>
+                }
+              >
+                私有线路
+              </SelectItem>
             </Select>
           </div>
 
@@ -311,26 +403,49 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
               模型:
             </div>
             {routeType === "default" ? (
-              <div className="text-xs bg-blue-100/50 dark:bg-blue-900/30 px-3 py-1 rounded-md text-blue-700 dark:text-blue-400">
-                GPT 4.1
+              <div className="flex items-center gap-2">
+                <div className="text-xs bg-blue-100/50 dark:bg-blue-900/30 px-3 py-1 rounded-md text-blue-700 dark:text-blue-400">
+                  GPT 4.1
+                </div>
+                <span className="text-xs px-1.5 py-0.5 bg-success/20 text-success-700 rounded-full whitespace-nowrap">
+                  <a
+                    href="https://api.ssooai.com"
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    服务提供商：api.ssooai.com
+                  </a>
+                </span>
               </div>
             ) : routeType === "custom" && !isCustomRouteAvailable ? (
               <div className="text-xs text-red-500">
                 未填写API密钥，请在设置中配置
               </div>
             ) : (
-              <Select
-                aria-label="选择 AI 模型"
-                className="min-w-[140px]"
-                isDisabled={routeType === "custom" && !isCustomRouteAvailable}
-                selectedKeys={new Set([currentModel])}
-                size="sm"
-                onChange={handleModelChange}
-              >
-                {modelOptions.map((model) => (
-                  <SelectItem key={model.value}>{model.label}</SelectItem>
-                ))}
-              </Select>
+              <div className="flex items-center gap-2">
+                <Select
+                  aria-label="选择 AI 模型"
+                  className="min-w-[200px]"
+                  isDisabled={routeType === "custom" && !isCustomRouteAvailable}
+                  selectedKeys={new Set([currentModel])}
+                  size="sm"
+                  onChange={handleModelChange}
+                >
+                  {modelOptions.map((model) => (
+                    <SelectItem key={model.value}>{model.label}</SelectItem>
+                  ))}
+                </Select>
+                {routeType === "utools" && (
+                  <span className="text-xs px-1.5 py-0.5 bg-warning/20 text-warning rounded-full whitespace-nowrap">
+                    AI 能量
+                  </span>
+                )}
+                {routeType === "custom" && (
+                  <span className="text-xs px-1.5 py-0.5 bg-primary/20 text-primary rounded-full whitespace-nowrap">
+                    私 有
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </div>
