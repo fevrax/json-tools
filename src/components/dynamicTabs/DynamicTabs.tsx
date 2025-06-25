@@ -232,30 +232,42 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
             });
           }
         }
+        setContextMenuPosition(null);
+        setContextMenuTabKey("");
         break;
       case "close":
         closeTab(contextMenuTabKey);
         onClose?.([contextMenuTabKey]);
+        setContextMenuPosition(null);
+        setContextMenuTabKey("");
         break;
       case "close-left":
         const closeLeftKeys = closeLeftTabs(contextMenuTabKey);
 
         onClose?.(closeLeftKeys);
+        setContextMenuPosition(null);
+        setContextMenuTabKey("");
         break;
       case "close-right":
         const closeRightKeys = closeRightTabs(contextMenuTabKey);
 
         onClose?.(closeRightKeys);
+        setContextMenuPosition(null);
+        setContextMenuTabKey("");
         break;
       case "close-others":
         const closeOtherKeys = closeOtherTabs(contextMenuTabKey);
 
         onClose?.(closeOtherKeys);
+        setContextMenuPosition(null);
+        setContextMenuTabKey("");
         break;
       case "close-all":
         const closeAllKeys = closeAllTabs();
 
         onClose?.(closeAllKeys);
+        setContextMenuPosition(null);
+        setContextMenuTabKey("");
         break;
     }
   };
@@ -306,6 +318,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
         break;
       case "sample":
         addTab("Sample JSON", JsonSample);
+        setShowAddMenu(false);
         break;
     }
   };
@@ -546,16 +559,14 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
       <div
         className={cn(
           "tab-context-menu fixed bg-default-50 border border-divider rounded-lg shadow-xl z-50",
-          "transition-all duration-200 ease-in-out",
           contextMenuPosition
-            ? "opacity-100 scale-100"
-            : "opacity-0 scale-95 pointer-events-none",
+            ? "opacity-100"
+            : "opacity-0 pointer-events-none"
         )}
         style={{
           left: contextMenuPosition?.x || 0,
           top: contextMenuPosition?.y || 0,
           minWidth: "220px",
-          transformOrigin: "top left",
         }}
       >
         <div className="py-1.5">
