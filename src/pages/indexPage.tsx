@@ -40,6 +40,7 @@ export default function IndexPage() {
     activeTabKey,
     activeTab,
     addTab,
+    getTabByKey,
     setTabContent,
     setTabModifiedValue,
     syncTabStore,
@@ -447,8 +448,8 @@ export default function IndexPage() {
   };
 
   // url 刷新时同步数据同步数据
-  const urlRefreshHandle = () => {
-    const currentTab = activeTab();
+  const urlRefreshHandle = (key: string) => {
+    const currentTab = getTabByKey(key);
 
     if (!currentTab) {
       return;
@@ -456,7 +457,7 @@ export default function IndexPage() {
 
     switch (sidebarStore.clickSwitchKey) {
       case SidebarKeys.textView:
-        setMonacoVersion(activeTabKey, currentTab.vanillaVersion);
+        setMonacoVersion(currentTab.key, currentTab.vanillaVersion);
         monacoJsonEditorRefs.current[currentTab.key]?.updateValue(
           activeTab().content,
         );
@@ -467,8 +468,8 @@ export default function IndexPage() {
         );
         break;
       case SidebarKeys.treeView:
-        jsonContent2VanillaContent(activeTabKey);
-        setVanillaVersion(activeTabKey, currentTab.monacoVersion);
+        jsonContent2VanillaContent(currentTab.key);
+        setVanillaVersion(currentTab.key, currentTab.monacoVersion);
         const tempTab = activeTab();
 
         if (tempTab && tempTab.vanilla) {
