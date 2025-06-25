@@ -639,8 +639,8 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     if (addButtonRef.current) {
       const buttonRect = addButtonRef.current.getBoundingClientRect();
       const newPosition = {
-        x: buttonRect.left,
-        y: buttonRect.bottom + 5,
+        x: buttonRect.left - 10,
+        y: buttonRect.bottom + 8,
       };
 
       setAddMenuPosition(newPosition);
@@ -659,8 +659,8 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
         const buttonRect = addButtonRef.current.getBoundingClientRect();
 
         setAddMenuPosition({
-          x: buttonRect.left,
-          y: buttonRect.bottom + 5,
+          x: buttonRect.left - 10,
+          y: buttonRect.bottom + 8,
         });
       }
     };
@@ -675,18 +675,6 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
       window.removeEventListener("resize", updateAddMenuPosition);
     };
   }, []);
-
-  // 右键菜单显示时更新位置
-  useEffect(() => {
-    if (showAddMenu && addButtonRef.current) {
-      const buttonRect = addButtonRef.current.getBoundingClientRect();
-
-      setAddMenuPosition({
-        x: buttonRect.left - 10,
-        y: buttonRect.bottom + 8,
-      });
-    }
-  }, [showAddMenu]);
 
   // 渲染菜单
   const renderAddMenu = () => {
