@@ -80,3 +80,20 @@
 .monaco-editor.hc-black .timestamp-decoration {
     color: #7eb9ff !important;
 }
+
+/* Base64样式 */
+.base64-decoration {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: #22c55e;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+    cursor: help;
+    background-color: rgba(34, 197, 94, 0.08);
+    border-radius: 2px;
+}
+.monaco-editor.vs-dark .base64-decoration,
+.monaco-editor.hc-black .base64-decoration {
+    text-decoration-color: #4ade80;
+    background-color: rgba(74, 222, 128, 0.1);
+}

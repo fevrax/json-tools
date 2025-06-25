@@ -38,6 +38,14 @@ import {
   ErrorDecoratorState,
   highlightErrorLine,
 } from "@/components/monacoEditor/decorations/errorDecoration.ts";
+import {
+  Base64DecoratorState,
+  clearBase64Cache,
+  toggleBase64Decorators,
+  updateBase64Decorations,
+  handleBase64ContentChange,
+  registerBase64HoverProvider,
+} from "@/components/monacoEditor/decorations/base64Decoration.ts";
 
 import "@/styles/monaco.css";
 import ErrorModal from "@/components/monacoEditor/ErrorModal.tsx";
@@ -62,6 +70,7 @@ export interface MonacoJsonEditorProps {
   showAi?: boolean; // 是否显示AI功能
   customQuickPrompts?: QuickPrompt[]; // 自定义快捷指令
   showTimestampDecorators?: boolean; // 是否显示时间戳装饰器
+  showBase64Decorators?: boolean; // 是否显示Base64装饰器
   onUpdateValue: (value: string) => void;
   onMount?: () => void;
   ref?: React.Ref<MonacoJsonEditorRef>;
@@ -80,7 +89,8 @@ export interface MonacoJsonEditorRef {
   updateValue: (value: string) => void;
   setLanguage: (language: string) => void;
   showAiPrompt: () => void;
-  toggleTimestampDecorators: (enabled?: boolean) => void; // 切换时间戳装饰器
+  toggleTimestampDecorators: (enabled?: boolean) => boolean; // 切换时间戳装饰器
+  toggleBase64Decorators: (enabled?: boolean) => boolean; // 切换Base64装饰器
 }
 
 const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
@@ -94,6 +104,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   minimap = false,
   customQuickPrompts,
   showTimestampDecorators = true, // 默认开启时间戳装饰器
+  showBase64Decorators = true, // 默认开启Base64装饰器
   onUpdateValue,
   onMount,
   ref,
@@ -119,7 +130,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const editorSettings = currentTab?.editorSettings || {
     fontSize: 14,
     language: language || "json",
-    timestampDecoratorsEnabled: showTimestampDecorators, // 默认值来自props
+    timestampDecoratorsEnabled: showTimestampDecorators,
+    base64DecoratorsEnabled: showBase64Decorators,
   };
 
   // 菜单状态
@@ -141,6 +153,20 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       : showTimestampDecorators,
   );
 
+  // Base64装饰器相关引用
+  const base64DecorationsRef =
+    useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+  const base64HoverProviderRef = useRef<monaco.IDisposable | null>(null);
+  const base64UpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const base64CacheRef = useRef<Record<string, boolean>>({});
+
+  // Base64装饰器启用状态，优先从编辑器设置中读取
+  const [base64DecoratorsEnabled, setBase64DecoratorsEnabled] = useState(
+    editorSettings.base64DecoratorsEnabled !== undefined
+      ? editorSettings.base64DecoratorsEnabled
+      : showBase64Decorators,
+  );
+
   // 时间戳装饰器状态
   const timestampDecoratorState: TimestampDecoratorState = {
     editorRef: editorRef,
@@ -149,6 +175,16 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     updateTimeoutRef: timestampUpdateTimeoutRef,
     cacheRef: timestampCacheRef,
     enabled: timestampDecoratorsEnabled,
+  };
+
+  // Base64装饰器状态
+  const base64DecoratorState: Base64DecoratorState = {
+    editorRef: editorRef,
+    decorationsRef: base64DecorationsRef,
+    hoverProviderId: base64HoverProviderRef,
+    cacheRef: base64CacheRef,
+    updateTimeoutRef: base64UpdateTimeoutRef,
+    enabled: base64DecoratorsEnabled,
   };
 
   // 错误高亮装饰器状态
@@ -354,6 +390,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       }
     }
 
+    // 重置时启用Base64装饰器
+    if (!base64DecoratorsEnabled) {
+      setBase64DecoratorsEnabled(true);
+      if (editorRef.current) {
+        toggleBase64Decorators(editorRef.current, base64DecoratorState, true);
+      }
+    }
+
     toast.success("已重置编辑器设置");
   };
 
@@ -441,142 +485,51 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
   }, [timestampDecoratorsEnabled]);
 
-  // 初始化编辑器的函数
-  const initializeEditor = async () => {
-    console.log("initializeEditor", tabKey);
-    // 确保只初始化一次
-    if (editorRef.current) return;
-    // const settings = await storage.getItem<SettingsState>("settings");
+  // 处理Base64装饰器状态变化
+  useEffect(() => {
+    // 更新状态对象中的启用状态
+    base64DecoratorState.enabled = base64DecoratorsEnabled;
 
-    // if (settings?.monacoEditorCDN == "cdn") {
-    //   loader.config({
-    //     paths: {
-    //       vs: "https://cdn.jsdelivr.net/npm/monaco-editor@0.52.0/min/vs",
-    //     },
-    //   });
-    //   loader.config({ "vs/nls": { availableLanguages: { "*": "zh-cn" } } });
-    // } else {
-    // }
-    loader.config({ monaco });
-
-    const monacoInstance: Monaco = await loader.init();
-
-    // 注册 JSON5 语言支持
-    if (
-      !monacoInstance.languages
-        .getLanguages()
-        .some((lang) => lang.id === "json5")
-    ) {
-      monacoInstance.languages.register({ id: "json5" });
-      monacoInstance.languages.setMonarchTokensProvider(
-        "json5",
-        Json5LanguageDef,
-      );
-    }
-
-    if (containerRef.current) {
-      const editor = monacoInstance.editor.create(containerRef.current, {
-        value: value || "",
-        language: language || "json",
-        minimap: {
-          enabled: minimap, // 启用缩略图
-        },
-        // fontFamily: `"Arial","Microsoft YaHei","黑体","宋体", sans-serif`, // 字体
-        fontSize: fontSize, // 使用状态中的字体大小
-        colorDecorators: true, // 颜色装饰器
-        readOnly: false, // 是否开启已读功能
-        theme: theme || "vs-light", // 主题
-        mouseWheelZoom: true, // 启用鼠标滚轮缩放
-        formatOnPaste: false, // 粘贴时自动格式化
-        formatOnType: false, // 输入时自动格式化
-        wordBasedSuggestions: "allDocuments", // 启用基于单词的建议
-        wordBasedSuggestionsOnlySameLanguage: true, // 仅在相同语言下启用基于单词的建议
-        scrollBeyondLastLine: false, // 禁用滚动超出最后一行
-        suggestOnTriggerCharacters: true, // 在触发字符时显示建议
-        acceptSuggestionOnCommitCharacter: true, // 接受关于提交字符的建议
-        acceptSuggestionOnEnter: "smart", // 按Enter键接受建议
-        wordWrap: "on", // 自动换行
-        autoSurround: "never", // 是否应自动环绕选择
-        cursorBlinking: "smooth", // 光标动画样式
-        cursorSmoothCaretAnimation: "on", // 是否启用光标平滑插入动画  当你在快速输入文字的时候 光标是直接平滑的移动还是直接"闪现"到当前文字所处位置
-        cursorStyle: "line", //  光标样式
-        cursorSurroundingLines: 0, // 光标环绕行数 当文字输入超过屏幕时 可以看见右侧滚动条中光标所处位置是在滚动条中间还是顶部还是底部 即光标环绕行数 环绕行数越大 光标在滚动条中位置越居中
-        cursorSurroundingLinesStyle: "all", // "default" | "all" 光标环绕样式
-        links: true, // 是否点击链接
-        folding: true, // 启用代码折叠功能
-      });
-
-      onMount && onMount();
-
-      editor.focus();
-
-      // 监听折叠状态变化
-      editor.onDidChangeHiddenAreas(() => {
+    if (base64DecoratorsEnabled) {
+      // 清空缓存并更新装饰器
+      clearBase64Cache(base64DecoratorState);
+      setTimeout(() => {
         if (editorRef.current) {
-          updateFoldingDecorations(
-            editorRef.current,
-            currentLanguage,
-            foldingDecorationsRef,
-          );
+          registerBase64HoverProvider(editorRef.current, base64DecoratorState);
+          updateBase64Decorations(editorRef.current, base64DecoratorState);
         }
-      });
-
-      // 监听滚动事件
-      editor.onDidScrollChange(() => {
-        if (timestampUpdateTimeoutRef.current) {
-          clearTimeout(timestampUpdateTimeoutRef.current);
-        }
-
-        timestampUpdateTimeoutRef.current = setTimeout(() => {
-          if (editorRef.current) {
-            updateTimestampDecorations(
-              editorRef.current,
-              timestampDecoratorState,
-            );
-          }
-        }, 200); // 添加防抖
-      });
-
-      // 监听内容变化
-      editor.onDidChangeModelContent(async (e) => {
-        const val = editor.getValue();
-        const languageId = editorRef.current?.getModel()?.getLanguageId();
-
-        if (languageId === "json" || languageId === "json5") {
-          if (parseJsonErrorTimeoutRef.current) {
-            clearTimeout(parseJsonErrorTimeoutRef.current);
-          }
-          // 自动验证 JSON 内容
-          parseJsonErrorTimeoutRef.current = setTimeout(() => {
-            editorValueValidate(val);
-          }, 1000);
-
-          // 更新时间戳装饰器
-          if (timestampDecoratorsEnabled) {
-            handleContentChange(e, timestampDecoratorState);
-          }
-        }
-        onUpdateValue(val);
-      });
-
-      // 添加粘贴事件监听
-      editor.onDidPaste(async () => {});
-
-      editorRef.current = editor;
-
-      // 初始化完成后更新时间戳装饰器
-      if (timestampDecoratorsEnabled) {
-        setTimeout(() => {
-          if (editorRef.current) {
-            updateTimestampDecorations(
-              editorRef.current,
-              timestampDecoratorState,
-            );
-          }
-        }, 300);
+      }, 0);
+    } else {
+      // 禁用时清理缓存和装饰器
+      if (base64DecorationsRef.current) {
+        base64DecorationsRef.current.clear();
       }
+      if (base64HoverProviderRef.current) {
+        base64HoverProviderRef.current.dispose();
+        base64HoverProviderRef.current = null;
+      }
+      clearBase64Cache(base64DecoratorState);
     }
-  };
+  }, [base64DecoratorsEnabled]);
+
+  // 初始化完成后更新时间戳装饰器和Base64装饰器
+  if (timestampDecoratorsEnabled) {
+    setTimeout(() => {
+      if (editorRef.current) {
+        updateTimestampDecorations(editorRef.current, timestampDecoratorState);
+      }
+    }, 300);
+  }
+
+  // 初始化Base64装饰器
+  if (base64DecoratorsEnabled) {
+    setTimeout(() => {
+      if (editorRef.current) {
+        registerBase64HoverProvider(editorRef.current, base64DecoratorState);
+        updateBase64Decorations(editorRef.current, base64DecoratorState);
+      }
+    }, 300);
+  }
 
   // 验证编辑器内容
   const editorValueValidate = (val: string): boolean => {
@@ -1013,14 +966,167 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         newState,
       );
     },
+    toggleBase64Decorators: (enabled?: boolean) => {
+      // 更新状态
+      const newState =
+        enabled !== undefined ? enabled : !base64DecoratorsEnabled;
+
+      setBase64DecoratorsEnabled(newState);
+
+      // 使用抽离出的函数处理装饰器
+      return toggleBase64Decorators(
+        editorRef.current,
+        base64DecoratorState,
+        newState,
+      );
+    },
   }));
 
-  // 修改初始化编辑器后，添加装饰器样式
+  // 修改初始化编辑器的函数并调用
   useEffect(() => {
     // 使用 setTimeout 确保在 React 严格模式下只执行一次
-    const timeoutId = setTimeout(() => {
-      initializeEditor();
+    const timeoutId = setTimeout(async () => {
+      console.log("initializeEditor", tabKey);
+      // 确保只初始化一次
+      if (editorRef.current) return;
 
+      loader.config({ monaco });
+
+      const monacoInstance: Monaco = await loader.init();
+
+      // 注册 JSON5 语言支持
+      if (
+        !monacoInstance.languages
+          .getLanguages()
+          .some((lang) => lang.id === "json5")
+      ) {
+        monacoInstance.languages.register({ id: "json5" });
+        monacoInstance.languages.setMonarchTokensProvider(
+          "json5",
+          Json5LanguageDef,
+        );
+      }
+
+      if (containerRef.current) {
+        const editor = monacoInstance.editor.create(containerRef.current, {
+          value: value || "",
+          language: language || "json",
+          minimap: {
+            enabled: minimap, // 启用缩略图
+          },
+          // fontFamily: `"Arial","Microsoft YaHei","黑体","宋体", sans-serif`, // 字体
+          fontSize: fontSize, // 使用状态中的字体大小
+          colorDecorators: true, // 颜色装饰器
+          readOnly: false, // 是否开启已读功能
+          theme: theme || "vs-light", // 主题
+          mouseWheelZoom: true, // 启用鼠标滚轮缩放
+          formatOnPaste: false, // 粘贴时自动格式化
+          formatOnType: false, // 输入时自动格式化
+          wordBasedSuggestions: "allDocuments", // 启用基于单词的建议
+          wordBasedSuggestionsOnlySameLanguage: true, // 仅在相同语言下启用基于单词的建议
+          scrollBeyondLastLine: false, // 禁用滚动超出最后一行
+          suggestOnTriggerCharacters: true, // 在触发字符时显示建议
+          acceptSuggestionOnCommitCharacter: true, // 接受关于提交字符的建议
+          acceptSuggestionOnEnter: "smart", // 按Enter键接受建议
+          wordWrap: "on", // 自动换行
+          autoSurround: "never", // 是否应自动环绕选择
+          cursorBlinking: "smooth", // 光标动画样式
+          cursorSmoothCaretAnimation: "on", // 是否启用光标平滑插入动画  当你在快速输入文字的时候 光标是直接平滑的移动还是直接"闪现"到当前文字所处位置
+          cursorStyle: "line", //  光标样式
+          cursorSurroundingLines: 0, // 光标环绕行数 当文字输入超过屏幕时 可以看见右侧滚动条中光标所处位置是在滚动条中间还是顶部还是底部 即光标环绕行数 环绕行数越大 光标在滚动条中位置越居中
+          cursorSurroundingLinesStyle: "all", // "default" | "all" 光标环绕样式
+          links: true, // 是否点击链接
+          folding: true, // 启用代码折叠功能
+        });
+
+        onMount && onMount();
+
+        editor.focus();
+
+        // 监听折叠状态变化
+        editor.onDidChangeHiddenAreas(() => {
+          if (editorRef.current) {
+            updateFoldingDecorations(
+              editorRef.current,
+              currentLanguage,
+              foldingDecorationsRef,
+            );
+          }
+        });
+
+        // 监听滚动事件
+        editor.onDidScrollChange(() => {
+          if (timestampUpdateTimeoutRef.current) {
+            clearTimeout(timestampUpdateTimeoutRef.current);
+          }
+
+          timestampUpdateTimeoutRef.current = setTimeout(() => {
+            if (editorRef.current) {
+              updateTimestampDecorations(
+                editorRef.current,
+                timestampDecoratorState,
+              );
+            }
+          }, 200); // 添加防抖
+        });
+
+        // 监听内容变化
+        editor.onDidChangeModelContent((e) => {
+          const val = editor.getValue();
+          const languageId = editorRef.current?.getModel()?.getLanguageId();
+
+          if (languageId === "json" || languageId === "json5") {
+            if (parseJsonErrorTimeoutRef.current) {
+              clearTimeout(parseJsonErrorTimeoutRef.current);
+            }
+            // 自动验证 JSON 内容
+            parseJsonErrorTimeoutRef.current = setTimeout(() => {
+              editorValueValidate(val);
+            }, 1000);
+
+            // 更新时间戳装饰器
+            if (timestampDecoratorsEnabled) {
+              handleContentChange(e, timestampDecoratorState);
+            }
+
+            // 更新Base64装饰器
+            if (base64DecoratorsEnabled) {
+              handleBase64ContentChange(e, base64DecoratorState);
+            }
+          }
+          onUpdateValue(val);
+        });
+
+        // 添加粘贴事件监听
+        editor.onDidPaste(() => {});
+
+        editorRef.current = editor;
+
+        // 初始化完成后更新时间戳装饰器
+        if (timestampDecoratorsEnabled) {
+          setTimeout(() => {
+            if (editorRef.current) {
+              updateTimestampDecorations(
+                editorRef.current,
+                timestampDecoratorState,
+              );
+            }
+          }, 300);
+        }
+
+        // 初始化Base64装饰器
+        if (base64DecoratorsEnabled) {
+          setTimeout(() => {
+            if (editorRef.current) {
+              registerBase64HoverProvider(
+                editorRef.current,
+                base64DecoratorState,
+              );
+              updateBase64Decorations(editorRef.current, base64DecoratorState);
+            }
+          }, 300);
+        }
+      }
     }, 0);
 
     return () => {
@@ -1034,11 +1140,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       fontSize: fontSize,
       language: currentLanguage,
       timestampDecoratorsEnabled: timestampDecoratorsEnabled,
+      base64DecoratorsEnabled: base64DecoratorsEnabled,
     });
   }, [
     fontSize,
     currentLanguage,
     timestampDecoratorsEnabled,
+    base64DecoratorsEnabled,
     tabKey,
     updateEditorSettings,
   ]);
@@ -1117,11 +1225,23 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       {/* 可拖动悬浮菜单 */}
       {isMenu && (
         <DraggableMenu
+          base64DecoratorsEnabled={base64DecoratorsEnabled}
           containerRef={rootContainerRef}
           currentFontSize={fontSize}
           currentLanguage={currentLanguage}
           tabKey={tabKey}
           timestampDecoratorsEnabled={timestampDecoratorsEnabled}
+          onBase64DecoratorsChange={(enabled) => {
+            setBase64DecoratorsEnabled(enabled);
+            // 调用内部方法切换Base64装饰器
+            if (editorRef.current) {
+              toggleBase64Decorators(
+                editorRef.current,
+                base64DecoratorState,
+                enabled,
+              );
+            }
+          }}
           onFontSizeChange={setFontSize}
           onLanguageChange={handleLanguageChange}
           onReset={handleReset}

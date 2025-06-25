@@ -3,6 +3,7 @@ export const JsonSample = `
     "user": {
         "id": 1234567890,
         "name": "张三",
+        "nameBase64": "5byg5LiJMTI=",
         "isActive": true,
         "profile": {
             "age": 29,
@@ -12,7 +13,8 @@ export const JsonSample = `
                 "province": "北京",
                 "city": "朝阳区",
                 "details": null,
-                "createTime": 1750563586000
+                "createTime": 1750563586000,
+                "addr": "6LCD5bqm5Lit5b+D"
             },
             "contacts": [
                 {
@@ -194,4 +196,4 @@ export const JsonSample = `
         }
     },
     "nullField": null
-}`
+}`;

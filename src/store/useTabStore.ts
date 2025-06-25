@@ -21,6 +21,7 @@ export interface TabItem {
     fontSize: number;
     language: string;
     timestampDecoratorsEnabled?: boolean; // 添加时间戳装饰器设置
+    base64DecoratorsEnabled?: boolean; // 添加Base64装饰器设置
   };
   extraData?: Record<string, any>;
 }
@@ -95,6 +96,7 @@ export const useTabStore = create<TabStore>()(
                 fontSize: 14,
                 language: "json",
                 timestampDecoratorsEnabled: true,
+                base64DecoratorsEnabled: true,
               },
             };
 
@@ -119,6 +121,7 @@ export const useTabStore = create<TabStore>()(
                   fontSize: 14,
                   language: "json",
                   timestampDecoratorsEnabled: true,
+                  base64DecoratorsEnabled: true,
                 },
               },
             ];
@@ -351,6 +354,7 @@ export const useTabStore = create<TabStore>()(
                   fontSize: 14,
                   language: "json",
                   timestampDecoratorsEnabled: true,
+                  base64DecoratorsEnabled: true,
                 },
               },
             ];
