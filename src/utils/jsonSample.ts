@@ -11,7 +11,7 @@ export const JsonSample = `
             "address": {
                 "country": "中国",
                 "province": "北京",
-                "city": "\u671D\u9633\u533A",
+                "city": "\\u671D\\u9633\\u533A",
                 "details": "5YyX5Lqs5aSp5a6J6Zeo5bm/5Zy6",
                 "createTime": 1750563586000
             }
@@ -25,7 +25,7 @@ export const JsonSample = `
                     "read",
                     "write",
                     {
-                        "module": "\u0066\u0069\u006E\u0061\u006E\u0063\u0065",
+                        "module": "\\u0066\\u0069\\u006E\\u0061\\u006E\\u0063\\u0065",
                         "access": [
                             "view",
                             "export"

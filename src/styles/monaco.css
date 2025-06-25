@@ -97,3 +97,20 @@
     text-decoration-color: #4ade80;
     background-color: rgba(74, 222, 128, 0.1);
 }
+
+/* Unicode样式 */
+.unicode-decoration {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: #8b5cf6;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+    cursor: help;
+    background-color: rgba(139, 92, 246, 0.08);
+    border-radius: 2px;
+}
+.monaco-editor.vs-dark .unicode-decoration,
+.monaco-editor.hc-black .unicode-decoration {
+    text-decoration-color: #a78bfa;
+    background-color: rgba(167, 139, 250, 0.1);
+}
