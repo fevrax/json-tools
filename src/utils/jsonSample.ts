@@ -15,22 +15,7 @@ export const JsonSample = `
                 "details": null,
                 "createTime": 1750563586000,
                 "addr": "6LCD5bqm5Lit5b+D"
-            },
-            "contacts": [
-                {
-                    "type": "email",
-                    "value": "zhangsan@example.com",
-                    "isPrimary": true
-                },
-                {
-                    "type": "social",
-                    "value": {
-                        "wechat": "zhangsan_wechat",
-                        "qq": "12345678"
-                    },
-                    "isPrimary": false
-                }
-            ]
+            }
         },
         "roles": [
             "admin",
@@ -56,38 +41,14 @@ export const JsonSample = `
             "id": 101,
             "title": "第一篇文章",
             "content": "这是内容。",
-            "tags": [
-                "生活",
-                "技术",
-                null
-            ],
+
             "comments": [
                 {
-                    "user": "用户A",
+                    "user": "55So5oi3QQ==",
                     "text": "写得不错！",
+                    "addr": "6LCD5bqm5Lit5b+D",
                     "replies": []
                 },
-                {
-                    "user": "用户B",
-                    "text": "有点问题",
-                    "replies": [
-                        {
-                            "user": "作者",
-                            "text": "请指出具体问题，谢谢！",
-                            "metadata": {
-                                "timestamp": "2024-06-01T10:20:30Z",
-                                "likes": 2,
-                                "attachments": [
-                                    null,
-                                    {
-                                        "type": "image",
-                                        "url": "https://example.com/image.png"
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                }
             ],
             "metadata": {
                 "createdAt": "2024-06-01T08:00:00Z",
@@ -95,28 +56,7 @@ export const JsonSample = `
                 "views": 1234,
                 "isPinned": false,
                 "extra": {
-                    "shares": 10,
-                    "devices": [
-                        {
-                            "type": "mobile",
-                            "os": "Android",
-                            "versions": [
-                                10,
-                                11,
-                                12
-                            ]
-                        },
-                        {
-                            "type": "desktop",
-                            "os": "Windows",
-                            "versions": [
-                                7,
-                                8.1,
-                                10,
-                                11
-                            ]
-                        }
-                    ]
+                    "shares": 10
                 }
             }
         },
@@ -142,7 +82,7 @@ export const JsonSample = `
         {
             "timestamp": "1750563661",
             "level": "info",
-            "message": "用户登录成功",
+            "message": "55So5oi355m75b2V5oiQ5Yqf",
             "context": {
                 "userId": 1234567890,
                 "ip": "192.168.1.1",

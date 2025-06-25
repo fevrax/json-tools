@@ -156,6 +156,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   // Base64装饰器相关引用
   const base64DecorationsRef =
     useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+  const base64DecorationIdsRef = useRef<Record<string, string[]>>({});
   const base64HoverProviderRef = useRef<monaco.IDisposable | null>(null);
   const base64UpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const base64CacheRef = useRef<Record<string, boolean>>({});
@@ -181,6 +182,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const base64DecoratorState: Base64DecoratorState = {
     editorRef: editorRef,
     decorationsRef: base64DecorationsRef,
+    decorationIdsRef: base64DecorationIdsRef,
     hoverProviderId: base64HoverProviderRef,
     cacheRef: base64CacheRef,
     updateTimeoutRef: base64UpdateTimeoutRef,
@@ -1068,6 +1070,16 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               );
             }
           }, 200); // 添加防抖
+
+          if (base64UpdateTimeoutRef.current) {
+            clearTimeout(base64UpdateTimeoutRef.current);
+          }
+
+          base64UpdateTimeoutRef.current = setTimeout(() => {
+            if (editorRef.current) {
+              updateBase64Decorations(editorRef.current, base64DecoratorState);
+            }
+          }, 200);
         });
 
         // 监听内容变化
@@ -1089,7 +1101,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               handleContentChange(e, timestampDecoratorState);
             }
 
-            // 更新Base64装饰器
+            // 更新 Base64 下划线装饰器
             if (base64DecoratorsEnabled) {
               handleBase64ContentChange(e, base64DecoratorState);
             }

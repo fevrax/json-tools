@@ -1,13 +1,14 @@
 import * as monaco from "monaco-editor";
 import { editor } from "monaco-editor";
 import { RefObject } from "react";
-import { Base64 } from "js-base64";
-import validator from "validator";
+
+import { checkBase64Strict, decodeBase64Strict } from "@/utils/base64.ts";
 
 // 定义Base64装饰器接口
 export interface Base64DecoratorState {
   editorRef: RefObject<editor.IStandaloneCodeEditor | null>;
   decorationsRef: RefObject<monaco.editor.IEditorDecorationsCollection | null>;
+  decorationIdsRef: RefObject<Record<string, string[]>>;
   hoverProviderId: RefObject<monaco.IDisposable | null>;
   cacheRef: RefObject<Record<string, boolean>>;
   updateTimeoutRef: RefObject<NodeJS.Timeout | null>;
@@ -15,7 +16,7 @@ export interface Base64DecoratorState {
 }
 
 const BASE64_REGEX =
-  /(?:"([A-Za-z0-9+/\-_]{12,}={0,3})"|(?<!")([A-Za-z0-9+/\-_]{12,}={0,3})(?!"))(?=,|\s|$|:|]|})/g;
+  /: "(([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==))"/g;
 
 /**
  * 注册Base64装饰器的悬停提供者
@@ -45,14 +46,7 @@ export const registerBase64HoverProvider = (
       const end = wordInfo.endColumn;
       const word = lineContent.substring(start - 1, end - 1);
 
-      // 检查是否是Base64字符串
-      if (!validator.isBase64(word)) {
-        console.log("Not a valid Base64 string");
-
-        return null;
-      }
-
-      const decoded = Base64.decode(word);
+      const decoded = decodeBase64Strict(word);
 
       if (!decoded) {
         return null;
@@ -103,8 +97,6 @@ export const updateBase64Decorations = (
     state.decorationsRef.current = editor.createDecorationsCollection();
   }
 
-  const decorations: monaco.editor.IModelDeltaDecoration[] = [];
-
   // 遍历可见范围内的每一行
   for (const range of visibleRanges) {
     for (
@@ -140,38 +132,59 @@ export const updateBase64Decorations = (
         matchCount++;
         const base64Str = match[1] || match[2];
 
-        console.log(`Line ${lineNumber}, found potential Base64:`, base64Str);
-
-        // 如果字符串太短或格式明显不符，跳过
-        if (!validator.isBase64(base64Str)) {
-          console.log("Skipping invalid Base64 format");
+        if (base64Str.length < 8 || base64Str.length > 2000) {
           continue;
         }
 
-        const startColumn = match.index + (match[0].startsWith('"') ? 2 : 1);
-        const endColumn = startColumn + base64Str.length;
+        if (!checkBase64Strict(base64Str)) {
+          continue;
+        }
 
-        decorations.push({
-          range: new monaco.Range(
-            lineNumber,
-            startColumn,
-            lineNumber,
-            endColumn,
-          ),
-          options: {
-            inlineClassName: "base64-decoration",
-            // hoverMessage: { 这里使用悬停提供者，提高性能
-            //   value: "**Base64 解码**：\n```\n" + decoded + "\n```",
-            // },
+        const startColumn = match.index + (match[0].startsWith(": ") ? 4 : 1);
+        const endColumn = startColumn + base64Str.length;
+        const decorations: monaco.editor.IModelDeltaDecoration[] = [
+          {
+            range: new monaco.Range(
+              lineNumber,
+              startColumn,
+              lineNumber,
+              endColumn,
+            ),
+            options: {
+              inlineClassName: "base64-decoration",
+              zIndex: 2999,
+              // hoverMessage: { 这里使用悬停提供者，提高性能
+              //   value: "**Base64 解码**：\n```\n" + decoded + "\n```",
+              // },
+            },
           },
-        });
+        ];
+
+        let lineDecorations =
+          state.editorRef.current?.getLineDecorations(lineNumber);
+
+        // 删除重新设置装饰器
+        if (lineDecorations) {
+          for (let i = lineDecorations.length - 1; i >= 0; i--) {
+            let lineDecoration = lineDecorations[i];
+
+            if (lineDecoration.options.zIndex === 2999) {
+              state.editorRef.current?.removeDecorations([lineDecoration.id]);
+              break;
+            }
+          }
+        }
+
+        let ids = state.decorationIdsRef.current[lineNumber];
+
+        if (ids && ids.length > 0) {
+          state.editorRef.current?.removeDecorations(ids);
+        }
+
+        state.decorationIdsRef.current[lineNumber] =
+          state.decorationsRef.current?.append(decorations);
       }
     }
-  }
-
-  console.log(`Found ${decorations.length} valid Base64 strings to decorate`);
-  if (decorations.length > 0) {
-    state.decorationsRef.current?.set(decorations);
   }
 };
 
