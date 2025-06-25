@@ -55,7 +55,7 @@ export const registerBase64HoverProvider = (
       // 如果解码成功，返回悬停信息
       return {
         contents: [
-          { value: "**Base64 解码**" },
+          { value: "**Base64 解码器**" },
           { value: "```\n" + decoded + "\n```" },
         ],
         range: new monaco.Range(

@@ -11,10 +11,9 @@ export const JsonSample = `
             "address": {
                 "country": "中国",
                 "province": "北京",
-                "city": "朝阳区",
-                "details": null,
-                "createTime": 1750563586000,
-                "addr": "6LCD5bqm5Lit5b+D"
+                "city": "\u671D\u9633\u533A",
+                "details": "5YyX5Lqs5aSp5a6J6Zeo5bm/5Zy6",
+                "createTime": 1750563586000
             }
         },
         "roles": [
@@ -26,7 +25,7 @@ export const JsonSample = `
                     "read",
                     "write",
                     {
-                        "module": "finance",
+                        "module": "\u0066\u0069\u006E\u0061\u006E\u0063\u0065",
                         "access": [
                             "view",
                             "export"
@@ -40,15 +39,13 @@ export const JsonSample = `
         {
             "id": 101,
             "title": "第一篇文章",
-            "content": "这是内容。",
-
+            "content": "5aaC5p6c5L2g6ZyA6KaB5ZyoIE1hY09T44CBTGludXgg5oiW6ICF5YW25LuW6K6+5aSH5LmL6Ze05YWx5Lqr6ZSu55uY5ZKM6byg5qCH77yM5L2g5pyJ5Lik56eN6YCJ5oup77ya5Y+v5Lul5L2/55So5aSa5aWX54us56uL55qE6ZSu6byg5aSW6K6+77yM5Lmf5Y+v5Lul5YCf5Yqp5LiA5qy+5byA5rqQ6L2v5Lu2IOKAlOKAlGRlc2tmbG9377yM5a6e546w5LuF55So5LiA5aWX6ZSu6byg5pON5o6n5aSa5Y+w55S16ISR44CCCg==",
             "comments": [
                 {
                     "user": "55So5oi3QQ==",
                     "text": "写得不错！",
-                    "addr": "6LCD5bqm5Lit5b+D",
                     "replies": []
-                },
+                }
             ],
             "metadata": {
                 "createdAt": "2024-06-01T08:00:00Z",
