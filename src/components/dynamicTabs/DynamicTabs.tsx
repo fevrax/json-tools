@@ -680,201 +680,220 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
   // 渲染菜单
   const renderAddMenu = () => {
     return (
-      <div
-        className={cn(
-          "add-menu fixed bg-default-50 border border-divider rounded-xl shadow-xl z-50",
-          "transition-all duration-300 ease-in-out",
-          "before:absolute before:w-3 before:h-3 before:bg-default-50 before:rotate-45 before:-top-1.5 before:left-5 before:border-t before:border-l before:border-divider",
-          showAddMenu
-            ? "opacity-100 scale-100 translate-y-0"
-            : "opacity-0 scale-95 translate-y-2 pointer-events-none",
-        )}
-        style={{
-          left: addMenuPosition.x,
-          top: addMenuPosition.y,
-          minWidth: "480px",
-          transformOrigin: "top left",
-        }}
-      >
-        <div className="p-5">
-          <div className="mb-5">
-            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-default-700">
-              <Icon
-                className="text-indigo-500"
-                icon="solar:magic-stick-linear"
-              />
-              快速创建
-            </h3>
-            <div className="border-b border-divider pb-5">
-              <div className="flex gap-3 w-full">
-                <Button
-                  className="flex-1 h-28 flex-col px-3 py-2 transition-all hover:scale-[1.02] bg-gradient-to-br from-default-50 to-default-100 hover:bg-gradient-to-br hover:from-primary-50/30 hover:to-default-100 hover:shadow-sm hover:border-primary-100 justify-center items-center"
-                  startContent={
-                    <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center">
-                      <Icon
-                        className="text-xl text-indigo-500"
-                        icon="carbon:document-blank"
-                      />
-                    </div>
-                  }
-                  variant="flat"
-                  onPress={() => {
-                    addTab("", "");
-                    setShowAddMenu(false);
-                  }}
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="font-medium">新建 Tab</span>
-                    <span className="text-xs text-default-500">
-                      创建空白 Tab 标签页
-                    </span>
-                  </div>
-                </Button>
-                <Button
-                  className="flex-1 h-28 flex-col px-3 py-2 transition-all hover:scale-[1.02] bg-gradient-to-br from-default-50 to-default-100 hover:bg-gradient-to-br hover:from-primary-50/30 hover:to-default-100 hover:shadow-sm hover:border-primary-100 justify-center items-center"
-                  startContent={
-                    <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center">
-                      <Icon
-                        className="text-xl text-indigo-500"
-                        icon="ri:file-code-line"
-                      />
-                    </div>
-                  }
-                  variant="flat"
-                  onPress={() => {
-                    handleAddMenuAction("sample");
-                    setShowAddMenu(false);
-                  }}
-                >
-                  <div className="flex flex-col items-center gap-1">
-                    <span className="font-medium">JSON 示例</span>
-                    <span className="text-xs text-default-500">
-                      包含常用字段
-                    </span>
-                  </div>
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-5">
-            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-default-700">
-              <Icon
-                className="text-indigo-500"
-                icon="solar:link-circle-linear"
-              />
-              从 URL 获取 JSON
-            </h3>
-            <div className="border-b border-divider pb-5">
-              <div className="w-full flex flex-col gap-2">
-                <Input
-                  classNames={{
-                    inputWrapper: "shadow-sm bg-default-100 border-divider",
-                    input: "focus:ring-0",
-                  }}
-                  endContent={
-                    <Button
-                      className="bg-indigo-500 border-0"
-                      color="primary"
-                      isDisabled={!jsonUrl.trim()}
-                      radius="sm"
-                      size="sm"
-                      onPress={handleUrlSubmit}
-                    >
-                      <span className="px-1">获取</span>
-                    </Button>
-                  }
-                  placeholder="输入 JSON 链接地址"
-                  startContent={
-                    <Icon
-                      className="text-default-400"
-                      icon="solar:link-linear"
-                      width={18}
-                    />
-                  }
-                  value={jsonUrl}
-                  variant="flat"
-                  onChange={(e) => setJsonUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleUrlSubmit();
-                    }
-                  }}
+      <>
+        <div
+          aria-label="关闭添加菜单"
+          className={cn(
+            "fixed inset-0 z-40 transition-opacity",
+            showAddMenu
+              ? "bg-black/40 backdrop-blur-md opacity-65"
+              : "opacity-0 pointer-events-none",
+          )}
+          role="button"
+          tabIndex={-1}
+          onClick={() => setShowAddMenu(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setShowAddMenu(false);
+            }
+          }}
+        />
+        <div
+          className={cn(
+            "add-menu fixed bg-default-50 border border-divider rounded-xl shadow-xl z-50",
+            "transition-all duration-300 ease-in-out",
+            "before:absolute before:w-3 before:h-3 before:bg-default-50 before:rotate-45 before:-top-1.5 before:left-5 before:border-t before:border-l before:border-divider",
+            showAddMenu
+              ? "opacity-100 scale-100 translate-y-0"
+              : "opacity-0 scale-95 translate-y-2 pointer-events-none",
+          )}
+          style={{
+            left: addMenuPosition.x,
+            top: addMenuPosition.y,
+            minWidth: "480px",
+            transformOrigin: "top left",
+          }}
+        >
+          <div className="p-5">
+            <div className="mb-5">
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-default-700">
+                <Icon
+                  className="text-indigo-500"
+                  icon="solar:magic-stick-linear"
                 />
-                <p className="text-xs text-default-400 px-1">
-                  支持任何公开的 JSON 资源 URL，系统将自动解析并加载
-                </p>
+                快速创建
+              </h3>
+              <div className="border-b border-divider pb-5">
+                <div className="flex gap-3 w-full">
+                  <Button
+                    className="flex-1 h-28 flex-col px-3 py-2 transition-all hover:scale-[1.02] bg-gradient-to-br from-default-50 to-default-100 hover:bg-gradient-to-br hover:from-primary-50/30 hover:to-default-100 hover:shadow-sm hover:border-primary-100 justify-center items-center"
+                    startContent={
+                      <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center">
+                        <Icon
+                          className="text-xl text-indigo-500"
+                          icon="carbon:document-blank"
+                        />
+                      </div>
+                    }
+                    variant="flat"
+                    onPress={() => {
+                      addTab("", "");
+                      setShowAddMenu(false);
+                    }}
+                  >
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="font-medium">新建 Tab</span>
+                      <span className="text-xs text-default-500">
+                        创建空白 Tab 标签页
+                      </span>
+                    </div>
+                  </Button>
+                  <Button
+                    className="flex-1 h-28 flex-col px-3 py-2 transition-all hover:scale-[1.02] bg-gradient-to-br from-default-50 to-default-100 hover:bg-gradient-to-br hover:from-primary-50/30 hover:to-default-100 hover:shadow-sm hover:border-primary-100 justify-center items-center"
+                    startContent={
+                      <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center">
+                        <Icon
+                          className="text-xl text-indigo-500"
+                          icon="ri:file-code-line"
+                        />
+                      </div>
+                    }
+                    variant="flat"
+                    onPress={() => {
+                      handleAddMenuAction("sample");
+                      setShowAddMenu(false);
+                    }}
+                  >
+                    <div className="flex flex-col items-center gap-1">
+                      <span className="font-medium">JSON 示例</span>
+                      <span className="text-xs text-default-500">
+                        包含常用字段
+                      </span>
+                    </div>
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div>
-            <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-default-700">
-              <Icon className="text-indigo-500" icon="solar:upload-linear" />
-              文件操作
-            </h3>
-            <div className="flex justify-center">
-              <Card
-                isPressable
-                className="border-2 border-dashed border-default-200 rounded-xl hover:border-indigo-500  hover:bg-primary-50/10 dark:hover:bg-primary-900/20 transition-all duration-300 w-full py-5 cursor-pointer"
-                onPress={() => {
-                  const fileInput = document.createElement("input");
-
-                  fileInput.type = "file";
-                  fileInput.accept = "application/json";
-                  fileInput.onchange = (e) => {
-                    const target = e.target as HTMLInputElement;
-
-                    if (target.files && target.files.length > 0) {
-                      const file = target.files[0];
-                      const reader = new FileReader();
-
-                      reader.onload = (event) => {
-                        try {
-                          const content = event.target?.result as string;
-
-                          addTab(file.name, content);
-                          setShowAddMenu(false);
-                          toast.success("文件上传成功");
-                        } catch (error) {
-                          toast.error(
-                            "文件处理失败",
-                            error instanceof Error
-                              ? error.message
-                              : "请确保文件格式正确",
-                          );
-                        }
-                      };
-
-                      reader.onerror = () => {
-                        toast.error(
-                          "文件读取失败",
-                          "请确保文件可访问且格式正确",
-                        );
-                      };
-
-                      reader.readAsText(file);
+            <div className="mb-5">
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-default-700">
+                <Icon
+                  className="text-indigo-500"
+                  icon="solar:link-circle-linear"
+                />
+                从 URL 获取 JSON
+              </h3>
+              <div className="border-b border-divider pb-5">
+                <div className="w-full flex flex-col gap-2">
+                  <Input
+                    classNames={{
+                      inputWrapper: "shadow-sm bg-default-100 border-divider",
+                      input: "focus:ring-0",
+                    }}
+                    endContent={
+                      <Button
+                        className="bg-indigo-500 border-0"
+                        color="primary"
+                        isDisabled={!jsonUrl.trim()}
+                        radius="sm"
+                        size="sm"
+                        onPress={handleUrlSubmit}
+                      >
+                        <span className="px-1">获取</span>
+                      </Button>
                     }
-                  };
-                  fileInput.click();
-                }}
-              >
-                <div className="flex flex-col items-center justify-center gap-3 w-full">
-                  <div className="p-3.5 rounded-full bg-primary-50 text-indigo-500">
-                    <Icon icon="heroicons:document-arrow-up" width={20} />
-                  </div>
-                  <div className="space-y-2 text-center">
-                    <p className="text-sm font-medium">上传 JSON 文件</p>
-                    <p className="text-xs text-default-500">
-                      或将JSON文件拖放到任意区域
-                    </p>
-                  </div>
+                    placeholder="输入 JSON 链接地址"
+                    startContent={
+                      <Icon
+                        className="text-default-400"
+                        icon="solar:link-linear"
+                        width={18}
+                      />
+                    }
+                    value={jsonUrl}
+                    variant="flat"
+                    onChange={(e) => setJsonUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        handleUrlSubmit();
+                      }
+                    }}
+                  />
+                  <p className="text-xs text-default-400 px-1">
+                    支持任何公开的 JSON 资源 URL，系统将自动解析并加载
+                  </p>
                 </div>
-              </Card>
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-default-700">
+                <Icon className="text-indigo-500" icon="solar:upload-linear" />
+                文件操作
+              </h3>
+              <div className="flex justify-center">
+                <Card
+                  isPressable
+                  className="border-2 border-dashed border-default-200 rounded-xl hover:border-indigo-500  hover:bg-primary-50/10 dark:hover:bg-primary-900/20 transition-all duration-300 w-full py-5 cursor-pointer"
+                  onPress={() => {
+                    const fileInput = document.createElement("input");
+
+                    fileInput.type = "file";
+                    fileInput.accept = "application/json";
+                    fileInput.onchange = (e) => {
+                      const target = e.target as HTMLInputElement;
+
+                      if (target.files && target.files.length > 0) {
+                        const file = target.files[0];
+                        const reader = new FileReader();
+
+                        reader.onload = (event) => {
+                          try {
+                            const content = event.target?.result as string;
+
+                            addTab(file.name, content);
+                            setShowAddMenu(false);
+                            toast.success("文件上传成功");
+                          } catch (error) {
+                            toast.error(
+                              "文件处理失败",
+                              error instanceof Error
+                                ? error.message
+                                : "请确保文件格式正确",
+                            );
+                          }
+                        };
+
+                        reader.onerror = () => {
+                          toast.error(
+                            "文件读取失败",
+                            "请确保文件可访问且格式正确",
+                          );
+                        };
+
+                        reader.readAsText(file);
+                      }
+                    };
+                    fileInput.click();
+                  }}
+                >
+                  <div className="flex flex-col items-center justify-center gap-3 w-full">
+                    <div className="p-3.5 rounded-full bg-primary-50 text-indigo-500">
+                      <Icon icon="heroicons:document-arrow-up" width={20} />
+                    </div>
+                    <div className="space-y-2 text-center">
+                      <p className="text-sm font-medium">上传 JSON 文件</p>
+                      <p className="text-xs text-default-500">
+                        或将JSON文件拖放到任意区域
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </>
     );
   };
 
@@ -1137,40 +1156,34 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
         <ModalContent>
           {(onClose) => (
             <>
-              <div className="absolute inset-0 bg-gradient-to-br from-primary-100/80 to-background/95 dark:from-primary-900/30 dark:to-background/95 -z-10 opacity-80" />
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-100 to-background/80 dark:from-background dark:to-primary-950/5 -z-10" />
 
               <ModalHeader className="flex flex-col gap-1 pt-6 pb-0">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-full bg-primary-100 dark:bg-primary-900/50 text-primary shadow-sm">
-                    <Icon icon="solar:refresh-broken" width={22} />
-                  </div>
-                  <span className="text-lg font-medium">刷新数据</span>
+                  <span className="text-lg font-medium">
+                    {" "}
+                    确定要从 URL 获取最新数据吗？
+                  </span>
                 </div>
               </ModalHeader>
 
               <ModalBody className="py-5">
                 <div className="space-y-5">
                   <div>
-                    <p className="text-default-700 text-base">
-                      确定要从 URL 获取最新数据吗？
-                    </p>
-                    <p className="text-default-500 text-sm mt-1.5">
+                    <p className="text-default-700 text-base dark:text-default-500">
                       当前标签页数据将被最新内容覆盖。
                     </p>
                   </div>
 
-                  <div className="p-4 bg-black/5 dark:bg-white/5 border border-default-200/50 dark:border-white/10 rounded-xl backdrop-blur-sm">
+                  <div className="p-4 bg-black/5 dark:bg-white/[0.03] border border-default-200/50 dark:border-white/[0.06] rounded-xl backdrop-blur-sm">
                     <div className="flex items-start gap-3">
-                      <div className="p-2 rounded-full bg-default-100 dark:bg-default-800 text-default-600 dark:text-default-400 flex-shrink-0 mt-0.5">
-                        <Icon icon="solar:link-circle-broken" width={18} />
-                      </div>
                       <div className="flex-1 overflow-hidden">
-                        <p className="text-sm font-medium text-default-700 dark:text-default-300 mb-1.5">
+                        <p className="font-medium text-default-700 dark:text-default-300/90 mb-1.5">
                           数据源地址
                         </p>
                         <div className="group relative">
                           <p
-                            className="text-xs text-default-500 break-all line-clamp-2 group-hover:line-clamp-none transition-all duration-300 pr-8"
+                            className="text-default-500 dark:text-default-500/80 break-all line-clamp-2 group-hover:line-clamp-none transition-all duration-300 pr-8"
                             title={refreshTabInfo?.url}
                           >
                             {refreshTabInfo?.url}
@@ -1178,7 +1191,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                           <div className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 transition-opacity">
                             <Tooltip content="复制链接">
                               <div
-                                className="p-1 rounded-md hover:bg-default-200/70 dark:hover:bg-default-700/70 cursor-pointer"
+                                className="p-1.5 rounded-md hover:bg-default-200/70 dark:hover:bg-default-700/70 cursor-pointer"
                                 role="button"
                                 tabIndex={0}
                                 onClick={() => {
@@ -1201,7 +1214,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                                   }
                                 }}
                               >
-                                <Icon icon="solar:copy-linear" width={14} />
+                                <Icon icon="solar:copy-linear" width={20} />
                               </div>
                             </Tooltip>
                           </div>
@@ -1214,7 +1227,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
 
               <ModalFooter className="flex gap-3 justify-end pb-6">
                 <Button
-                  className="font-medium text-default-700 dark:text-default-500 min-w-[80px]"
+                  className="font-medium text-default-700 dark:text-default-400 min-w-[80px]"
                   radius="full"
                   size="md"
                   variant="light"
@@ -1223,13 +1236,13 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                   取消
                 </Button>
                 <Button
-                  className="font-medium bg-gradient-to-r from-primary-500 to-primary-600 border-none min-w-[120px]"
+                  className="font-medium bg-gradient-to-r from-primary-500 to-primary-600 dark:from-primary-600/90 dark:to-primary-700/90 border-none min-w-[120px]"
                   color="primary"
                   radius="full"
                   size="md"
                   startContent={
                     <Icon
-                      className="animate-spin-slow"
+                      className="animate-spin-slow dark:text-white/80"
                       icon="solar:refresh-broken"
                       width={18}
                     />
