@@ -28,11 +28,13 @@ export interface DynamicTabsProps {
   ref?: React.Ref<DynamicTabsRef>;
   onSwitch: (key: string) => void;
   onClose?: (keys: Array<string>) => void;
+  onUrlRefresh?: (key: string) => void;
 }
 
 const DynamicTabs: React.FC<DynamicTabsProps> = ({
   onSwitch,
   onClose,
+  onUrlRefresh,
   ref,
 }) => {
   const {
@@ -413,7 +415,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
         return;
       }
       setTabContent(tabKey, responseText);
-
+      onUrlRefresh && onUrlRefresh(activeTabKey);
       toast.success("刷新成功");
     } catch (error) {
       console.error("刷新数据失败:", error);
@@ -1105,26 +1107,140 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
 
       {/* 刷新确认弹窗 */}
       <Modal
+        classNames={{
+          backdrop: "bg-black/40 backdrop-blur-md",
+          base: "border-none rounded-xl overflow-hidden shadow-2xl max-w-xl",
+          header: "border-none",
+          footer: "border-none py-4",
+          closeButton: "hover:bg-white/10",
+        }}
         isOpen={refreshConfirmOpen}
+        motionProps={{
+          variants: {
+            enter: {
+              opacity: 1,
+              scale: 1,
+              y: 0,
+              transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] },
+            },
+            exit: {
+              opacity: 0,
+              scale: 0.98,
+              y: 10,
+              transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+            },
+          },
+        }}
         placement="center"
         onClose={() => setRefreshConfirmOpen(false)}
       >
         <ModalContent>
-          <ModalHeader className="flex flex-col gap-1">确认刷新</ModalHeader>
-          <ModalBody>
-            <p>确定要从URL获取最新数据吗？当前数据将被覆盖。</p>
-            <p className="text-xs text-default-500 mt-2">
-              URL: {refreshTabInfo?.url}
-            </p>
-          </ModalBody>
-          <ModalFooter>
-            <Button variant="flat" onPress={() => setRefreshConfirmOpen(false)}>
-              取消
-            </Button>
-            <Button color="primary" onPress={handleConfirmRefresh}>
-              确认刷新
-            </Button>
-          </ModalFooter>
+          {(onClose) => (
+            <>
+              <div className="absolute inset-0 bg-gradient-to-br from-primary-100/80 to-background/95 dark:from-primary-900/30 dark:to-background/95 -z-10 opacity-80" />
+
+              <ModalHeader className="flex flex-col gap-1 pt-6 pb-0">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-full bg-primary-100 dark:bg-primary-900/50 text-primary shadow-sm">
+                    <Icon icon="solar:refresh-broken" width={22} />
+                  </div>
+                  <span className="text-lg font-medium">刷新数据</span>
+                </div>
+              </ModalHeader>
+
+              <ModalBody className="py-5">
+                <div className="space-y-5">
+                  <div>
+                    <p className="text-default-700 text-base">
+                      确定要从 URL 获取最新数据吗？
+                    </p>
+                    <p className="text-default-500 text-sm mt-1.5">
+                      当前标签页数据将被最新内容覆盖。
+                    </p>
+                  </div>
+
+                  <div className="p-4 bg-black/5 dark:bg-white/5 border border-default-200/50 dark:border-white/10 rounded-xl backdrop-blur-sm">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-full bg-default-100 dark:bg-default-800 text-default-600 dark:text-default-400 flex-shrink-0 mt-0.5">
+                        <Icon icon="solar:link-circle-broken" width={18} />
+                      </div>
+                      <div className="flex-1 overflow-hidden">
+                        <p className="text-sm font-medium text-default-700 dark:text-default-300 mb-1.5">
+                          数据源地址
+                        </p>
+                        <div className="group relative">
+                          <p
+                            className="text-xs text-default-500 break-all line-clamp-2 group-hover:line-clamp-none transition-all duration-300 pr-8"
+                            title={refreshTabInfo?.url}
+                          >
+                            {refreshTabInfo?.url}
+                          </p>
+                          <div className="absolute right-0 top-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Tooltip content="复制链接">
+                              <div
+                                className="p-1 rounded-md hover:bg-default-200/70 dark:hover:bg-default-700/70 cursor-pointer"
+                                role="button"
+                                tabIndex={0}
+                                onClick={() => {
+                                  if (refreshTabInfo?.url) {
+                                    navigator.clipboard.writeText(
+                                      refreshTabInfo.url,
+                                    );
+                                    toast.success("链接已复制到剪贴板");
+                                  }
+                                }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    if (refreshTabInfo?.url) {
+                                      navigator.clipboard.writeText(
+                                        refreshTabInfo.url,
+                                      );
+                                      toast.success("链接已复制到剪贴板");
+                                    }
+                                  }
+                                }}
+                              >
+                                <Icon icon="solar:copy-linear" width={14} />
+                              </div>
+                            </Tooltip>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </ModalBody>
+
+              <ModalFooter className="flex gap-3 justify-end pb-6">
+                <Button
+                  className="font-medium text-default-700 dark:text-default-500 min-w-[80px]"
+                  radius="full"
+                  size="md"
+                  variant="light"
+                  onPress={onClose}
+                >
+                  取消
+                </Button>
+                <Button
+                  className="font-medium bg-gradient-to-r from-primary-500 to-primary-600 border-none min-w-[120px]"
+                  color="primary"
+                  radius="full"
+                  size="md"
+                  startContent={
+                    <Icon
+                      className="animate-spin-slow"
+                      icon="solar:refresh-broken"
+                      width={18}
+                    />
+                  }
+                  onPress={handleConfirmRefresh}
+                >
+                  刷新数据
+                </Button>
+              </ModalFooter>
+            </>
+          )}
         </ModalContent>
       </Modal>
     </div>

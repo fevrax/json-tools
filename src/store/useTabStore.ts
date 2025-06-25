@@ -129,6 +129,19 @@ export const useTabStore = create<TabStore>()(
             };
           });
         },
+        setMonacoVersion: (key: string, version: number) =>
+          set((state) => {
+            const updatedTabs = state.tabs.map((tab) =>
+              tab.key === key
+                ? {
+                  ...tab,
+                  monacoVersion: version,
+                }
+                : tab,
+            );
+
+            return { tabs: updatedTabs };
+          }),
         setVanillaVersion: (key: string, version: number) =>
           set((state) => {
             const updatedTabs = state.tabs.map((tab) =>

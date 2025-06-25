@@ -1,27 +1,19 @@
-import { useRef, useState, useEffect, useLayoutEffect } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@heroui/react";
 import { useTheme } from "next-themes";
 import { Content } from "vanilla-jsoneditor-cn";
 
 import { useTabStore } from "@/store/useTabStore";
-import DynamicTabs, {
-  DynamicTabsRef,
-} from "@/components/dynamicTabs/DynamicTabs.tsx";
-import MonacoJsonEditor, {
-  MonacoJsonEditorRef,
-} from "@/components/monacoEditor/MonacoJsonEditor.tsx";
+import DynamicTabs, { DynamicTabsRef } from "@/components/dynamicTabs/DynamicTabs.tsx";
+import MonacoJsonEditor, { MonacoJsonEditorRef } from "@/components/monacoEditor/MonacoJsonEditor.tsx";
 import { useSidebarStore } from "@/store/useSidebarStore";
 // eslint-disable-next-line import/order
-import VanillaJsonEditor, {
-  VanillaJsonEditorRef,
-} from "@/components/vanillaJsonEditor/VanillaJsonEditor.tsx";
+import VanillaJsonEditor, { VanillaJsonEditorRef } from "@/components/vanillaJsonEditor/VanillaJsonEditor.tsx";
 
 import "vanilla-jsoneditor-cn/themes/jse-theme-dark.css";
-import MonacoDiffEditor, {
-  MonacoDiffEditorRef,
-} from "@/components/monacoEditor/MonacoDiffEditor.tsx";
+import MonacoDiffEditor, { MonacoDiffEditorRef } from "@/components/monacoEditor/MonacoDiffEditor.tsx";
 import MonacoDiffOperationBar, {
-  MonacoDiffOperationBarRef,
+  MonacoDiffOperationBarRef
 } from "@/components/monacoEditor/operationBar/MonacoDiffOperationBar.tsx";
 import MonacoOperationBar from "@/components/monacoEditor/operationBar/MonacoOperationBar.tsx";
 import { SettingsState } from "@/store/useSettingsStore";
@@ -29,9 +21,7 @@ import { storage } from "@/lib/indexedDBStore";
 
 import "@/styles/index.css";
 import { SidebarKeys } from "@/components/sidebar/Items.tsx";
-import JsonTableView, {
-  JsonTableViewRef,
-} from "@/components/jsonTable/JsonTableView.tsx";
+import JsonTableView, { JsonTableViewRef } from "@/components/jsonTable/JsonTableView.tsx";
 import clipboard from "@/utils/clipboard";
 import toast from "@/utils/toast";
 
@@ -456,6 +446,42 @@ export default function IndexPage() {
     }
   };
 
+  // url 刷新时同步数据同步数据
+  const urlRefreshHandle = () => {
+    const currentTab = activeTab();
+
+    if (!currentTab) {
+      return;
+    }
+
+    switch (sidebarStore.clickSwitchKey) {
+      case SidebarKeys.textView:
+        setMonacoVersion(activeTabKey, currentTab.vanillaVersion);
+        monacoJsonEditorRefs.current[currentTab.key]?.updateValue(
+          activeTab().content,
+        );
+        break;
+      case SidebarKeys.diffView:
+        monacoDiffEditorRefs.current[currentTab.key]?.updateOriginalValue(
+          activeTab().content,
+        );
+        break;
+      case SidebarKeys.treeView:
+        jsonContent2VanillaContent(activeTabKey);
+        setVanillaVersion(activeTabKey, currentTab.monacoVersion);
+        const tempTab = activeTab();
+
+        if (tempTab && tempTab.vanilla) {
+          vanillaJsonEditorRefs.current[
+            tempTab.key
+          ]?.updateEditorContentAndMode(tempTab.vanillaMode, tempTab.vanilla);
+        }
+        break;
+      case SidebarKeys.tableView:
+        break;
+    }
+  };
+
   useLayoutEffect(() => {
     const init = async () => {
       const settings = await storage.getItem<SettingsState>("settings");
@@ -662,6 +688,7 @@ export default function IndexPage() {
         ref={tabRef}
         onClose={closeTabHandle}
         onSwitch={tabSwitchHandle}
+        onUrlRefresh={urlRefreshHandle}
       />
       <div className="flex-grow h-0 overflow-hidden flex flex-col">
         {renderEditor()}
