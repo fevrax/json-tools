@@ -639,7 +639,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     if (addButtonRef.current) {
       const buttonRect = addButtonRef.current.getBoundingClientRect();
       const newPosition = {
-        x: buttonRect.left - 10,
+        x: buttonRect.left - 8,
         y: buttonRect.bottom + 8,
       };
 
