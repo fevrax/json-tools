@@ -14,7 +14,7 @@ export interface UnicodeDecoratorState {
 }
 
 // Unicode编码模式，匹配如 \u0041 或 \u{1F600} 的格式
-const UNICODE_REGEX = /\\u([0-9a-fA-F]{4})|\\u\{([0-9a-fA-F]{1,6})\}/g;
+const UNICODE_REGEX = /\\u([0-9a-fA-F]{4})|\\u\{([0-9a-fA-F]{1,6})}/g;
 
 /**
  * 解码Unicode字符串
@@ -84,8 +84,8 @@ export const registerUnicodeHoverProvider = (
       const currentWordRange = {
         startLineNumber: position.lineNumber,
         endLineNumber: position.lineNumber,
-        startColumn: Math.max(1, wordInfo.startColumn - 2), // 扩展范围以捕获\u前缀
-        endColumn: wordInfo.endColumn + 2, // 扩展范围以捕获可能的后续字符
+        startColumn: Math.max(1, wordInfo.startColumn), // 扩展范围以捕获\u前缀
+        endColumn: wordInfo.endColumn, // 扩展范围以捕获可能的后续字符
       };
 
       const currentWordText = model.getValueInRange(currentWordRange);
