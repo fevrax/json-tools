@@ -685,7 +685,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
           className={cn(
             "fixed inset-0 z-40 transition-opacity",
             showAddMenu
-              ? "bg-black/40 backdrop-blur-md opacity-65"
+              ? ""
               : "opacity-0 pointer-events-none",
           )}
           role="button"
