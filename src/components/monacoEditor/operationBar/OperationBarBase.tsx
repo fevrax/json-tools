@@ -188,38 +188,36 @@ export const renderDropdownButton = (
     <Dropdown
       key={button.key}
       classNames={{
-        base: "before:bg-default-200",
         content: "min-w-[140px] p-1",
       }}
       isOpen={isDropdownOpen}
+      placement="bottom"
       radius="sm"
       onOpenChange={setDropdownOpen}
     >
-      <Tooltip content={button.tooltip} delay={300}>
-        <DropdownTrigger
-          onMouseEnter={showDropdown}
-          onMouseLeave={unShowDropdown}
+      <DropdownTrigger
+        onMouseEnter={showDropdown}
+        onMouseLeave={unShowDropdown}
+      >
+        <Button
+          className={cn(
+            "pl-2 pr-2 h-8 gap-1 text-default-600 transition-colors text-sm",
+            button.className,
+            "hover:bg-default-200/50",
+          )}
+          size="sm"
+          startContent={
+            <Icon
+              className={button.iconColor || ""}
+              icon={button.icon}
+              width={18}
+            />
+          }
+          variant="light"
         >
-          <Button
-            className={cn(
-              "pl-2 pr-2 h-8 gap-1 text-default-600 transition-colors text-sm",
-              button.className,
-              "hover:bg-default-200/50",
-            )}
-            size="sm"
-            startContent={
-              <Icon
-                className={button.iconColor || ""}
-                icon={button.icon}
-                width={18}
-              />
-            }
-            variant="light"
-          >
-            {button.text}
-          </Button>
-        </DropdownTrigger>
-      </Tooltip>
+          {button.text}
+        </Button>
+      </DropdownTrigger>
       <DropdownMenu
         aria-label={`${button.text} options`}
         onMouseEnter={() =>
@@ -266,23 +264,22 @@ export const renderMoreMenu = (
         content: "min-w-[140px] p-1",
       }}
       isOpen={isMoreDropdownOpen}
+      placement="bottom"
       radius="sm"
       onOpenChange={setMoreDropdownOpen}
     >
-      <Tooltip content="更多操作" delay={300}>
-        <DropdownTrigger
-          onMouseEnter={showMoreDropdown}
-          onMouseLeave={unShowMoreDropdown}
+      <DropdownTrigger
+        onMouseEnter={showMoreDropdown}
+        onMouseLeave={unShowMoreDropdown}
+      >
+        <Button
+          className="pl-2 pr-2 h-8 gap-1 text-default-600 !min-w-16 hover:bg-default-200/50 transition-colors"
+          startContent={<Icon icon="mingcute:more-2-fill" width={20} />}
+          variant="light"
         >
-          <Button
-            className="pl-2 pr-2 h-8 gap-1 text-default-600 !min-w-16 hover:bg-default-200/50 transition-colors"
-            startContent={<Icon icon="mingcute:more-2-fill" width={20} />}
-            variant="light"
-          >
-            更多
-          </Button>
-        </DropdownTrigger>
-      </Tooltip>
+          更多
+        </Button>
+      </DropdownTrigger>
       <DropdownMenu
         aria-label="更多操作"
         onMouseEnter={() =>
