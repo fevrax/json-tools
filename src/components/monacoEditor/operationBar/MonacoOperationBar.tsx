@@ -12,14 +12,14 @@ import { Icon } from "@iconify/react";
 import {
   ButtonConfig,
   ButtonGroup as BarButtonGroup,
-  DEFAULT_DROPDOWN_TIMEOUT,
   IconStatus,
   renderDropdownButton,
   renderMoreMenu,
   renderStandardButton,
   useAdaptiveButtons,
-  useDropdownTimeout,
 } from "@/components/monacoEditor/operationBar/OperationBarBase.tsx";
+
+import { useDropdownTimeout, DEFAULT_DROPDOWN_TIMEOUT } from "@/components/monacoEditor/operationBar/useDropdownTimeout";
 
 import StatusButton from "@/components/button/StatusButton.tsx";
 import toast from "@/utils/toast.tsx";
@@ -61,7 +61,7 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // 使用通用的下拉菜单超时管理hook
-  const { createTimeout } = useDropdownTimeout();
+  const { createTimeout, clearTimeoutByKey } = useDropdownTimeout();
 
   const handleCopy = (type?: "compress" | "escape") => {
     onCopy(type);
@@ -79,6 +79,9 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
       DEFAULT_DROPDOWN_TIMEOUT,
     );
   };
+  const clearCopyDropdownTimeout = () => {
+    clearTimeoutByKey("copy");
+  };
 
   // 字段排序下拉菜单
   const showSortDropdown = () => {
@@ -91,6 +94,9 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
       DEFAULT_DROPDOWN_TIMEOUT,
     );
   };
+  const clearSortDropdownTimeout = (key: string) => {
+    clearTimeoutByKey(key);
+  };
 
   // 更多下拉菜单
   const showMoreDropdown = () => {
@@ -102,6 +108,9 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
       () => setMoreDropdownOpen(false),
       DEFAULT_DROPDOWN_TIMEOUT,
     );
+  };
+  const clearMoreDropdownTimeout = () => {
+    clearTimeoutByKey("more");
   };
 
   const handleAction = (action: "unescape" | "del_comment" | "save_file") => {
@@ -317,7 +326,7 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
               </DropdownTrigger>
               <DropdownMenu
                 aria-label="复制选项"
-                onMouseEnter={showCopyDropdown}
+                onMouseEnter={clearCopyDropdownTimeout}
                 onMouseLeave={unShowCopyDropdown}
               >
                 <DropdownItem
@@ -358,6 +367,7 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
           setSortDropdownOpen,
           showSortDropdown,
           unShowSortDropdown,
+          clearSortDropdownTimeout
         );
       }
     }
@@ -405,6 +415,7 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
           setMoreDropdownOpen,
           showMoreDropdown,
           unShowMoreDropdown,
+          clearMoreDropdownTimeout
         )}
       </div>
     </div>

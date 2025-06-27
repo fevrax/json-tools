@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Button,
   cn,
@@ -9,6 +9,8 @@ import {
   Tooltip,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
+
+import { DEFAULT_DROPDOWN_TIMEOUT } from "./useDropdownTimeout";
 
 // 定义基础按钮接口
 export interface BaseButtonConfig {
@@ -64,33 +66,7 @@ export enum IconStatus {
 export const MORE_BUTTON_WIDTH = 90;
 export const SEPARATOR_WIDTH = 25;
 export const MIN_PADDING = 16;
-export const DEFAULT_DROPDOWN_TIMEOUT = 300;
-
-// 创建用于管理超时的hook
-export const useDropdownTimeout = () => {
-  const timeoutRef = useRef<{ [key: string]: NodeJS.Timeout }>({});
-
-  const createTimeout = (key: string, callback: () => void, delay: number) => {
-    if (timeoutRef.current[key]) {
-      clearTimeout(timeoutRef.current[key]);
-    }
-    timeoutRef.current[key] = setTimeout(callback, delay);
-  };
-
-  const clearTimeouts = () => {
-    Object.values(timeoutRef.current).forEach((timeout) => {
-      clearTimeout(timeout);
-    });
-  };
-
-  useEffect(() => {
-    return () => {
-      clearTimeouts();
-    };
-  }, []);
-
-  return { createTimeout, clearTimeouts };
-};
+export { DEFAULT_DROPDOWN_TIMEOUT };
 
 // 自适应按钮显示计算逻辑
 export const useAdaptiveButtons = (
@@ -206,6 +182,7 @@ export const renderDropdownButton = (
   setDropdownOpen: React.Dispatch<React.SetStateAction<boolean>> | undefined,
   showDropdown?: () => void,
   unShowDropdown?: () => void,
+  clearDropdownTimeout?: (key: string) => void,
 ) => {
   return (
     <Dropdown
@@ -245,7 +222,9 @@ export const renderDropdownButton = (
       </Tooltip>
       <DropdownMenu
         aria-label={`${button.text} options`}
-        onMouseEnter={showDropdown}
+        onMouseEnter={() =>
+          clearDropdownTimeout && clearDropdownTimeout(button.key)
+        }
         onMouseLeave={unShowDropdown}
       >
         {button.dropdownItems.map((item) => (
@@ -275,6 +254,7 @@ export const renderMoreMenu = (
     | undefined,
   showMoreDropdown?: () => void,
   unShowMoreDropdown?: () => void,
+  clearMoreDropdownTimeout?: () => void,
 ) => {
   // 如果没有隐藏的按钮，不显示更多菜单
   if (hiddenButtons.length === 0) return null;
@@ -305,7 +285,9 @@ export const renderMoreMenu = (
       </Tooltip>
       <DropdownMenu
         aria-label="更多操作"
-        onMouseEnter={showMoreDropdown}
+        onMouseEnter={() =>
+          clearMoreDropdownTimeout && clearMoreDropdownTimeout()
+        }
         onMouseLeave={unShowMoreDropdown}
       >
         {hiddenButtons.flatMap((button) => {

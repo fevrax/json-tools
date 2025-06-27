@@ -3,14 +3,15 @@ import React, { useState, useRef } from "react";
 import {
   ButtonConfig,
   ButtonGroup as BarButtonGroup,
-  DEFAULT_DROPDOWN_TIMEOUT,
   renderDropdownButton,
   renderMoreMenu,
   renderStandardButton,
   useAdaptiveButtons,
-  useDropdownTimeout,
 } from "@/components/monacoEditor/operationBar/OperationBarBase.tsx";
-
+import {
+  useDropdownTimeout,
+  DEFAULT_DROPDOWN_TIMEOUT,
+} from "@/components/monacoEditor/operationBar/useDropdownTimeout";
 import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEntity.ts";
 
 interface MonacoDiffOperationBarProps {
@@ -44,7 +45,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // 使用通用的下拉菜单超时管理hook
-  const { createTimeout } = useDropdownTimeout();
+  const { createTimeout, clearTimeoutByKey } = useDropdownTimeout();
 
   // 复制下拉菜单
   const showCopyDropdown = () => {
@@ -56,6 +57,9 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
       () => setCopyDropdownOpen(false),
       DEFAULT_DROPDOWN_TIMEOUT,
     );
+  };
+  const clearCopyDropdownTimeout = (key: string) => {
+    clearTimeoutByKey(key);
   };
 
   // 格式化下拉菜单
@@ -69,6 +73,9 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
       DEFAULT_DROPDOWN_TIMEOUT,
     );
   };
+  const clearFormatDropdownTimeout = (key: string) => {
+    clearTimeoutByKey(key);
+  };
 
   // 字段排序下拉菜单
   const showSortDropdown = () => {
@@ -80,6 +87,9 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
       () => setSortDropdownOpen(false),
       DEFAULT_DROPDOWN_TIMEOUT,
     );
+  };
+  const clearSortDropdownTimeout = (key: string) => {
+    clearTimeoutByKey(key);
   };
 
   // 清空下拉菜单
@@ -93,6 +103,9 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
       DEFAULT_DROPDOWN_TIMEOUT,
     );
   };
+  const clearClearDropdownTimeout = (key: string) => {
+    clearTimeoutByKey(key);
+  };
 
   // 更多下拉菜单
   const showMoreDropdown = () => {
@@ -104,6 +117,9 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
       () => setMoreDropdownOpen(false),
       DEFAULT_DROPDOWN_TIMEOUT,
     );
+  };
+  const clearMoreDropdownTimeout = () => {
+    clearTimeoutByKey("more");
   };
 
   // 按钮组配置
@@ -309,6 +325,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
             setCopyDropdownOpen,
             showCopyDropdown,
             unShowCopyDropdown,
+            clearCopyDropdownTimeout,
           );
         case "format":
           return renderDropdownButton(
@@ -317,6 +334,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
             setFormatDropdownOpen,
             showFormatDropdown,
             unShowFormatDropdown,
+            clearFormatDropdownTimeout,
           );
         case "sort":
           return renderDropdownButton(
@@ -325,6 +343,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
             setSortDropdownOpen,
             showSortDropdown,
             unShowSortDropdown,
+            clearSortDropdownTimeout,
           );
         case "clear":
           return renderDropdownButton(
@@ -333,6 +352,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
             setClearDropdownOpen,
             showClearDropdown,
             unShowClearDropdown,
+            clearClearDropdownTimeout,
           );
       }
     }
@@ -367,6 +387,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           setMoreDropdownOpen,
           showMoreDropdown,
           unShowMoreDropdown,
+          clearMoreDropdownTimeout,
         )}
       </div>
     </div>
