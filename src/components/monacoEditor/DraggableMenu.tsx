@@ -4,6 +4,19 @@ import { Icon } from "@iconify/react";
 
 import { useTabStore } from "@/store/useTabStore";
 
+import {
+  setBase64DecorationEnabled,
+  getBase64DecorationEnabled,
+  setBase64ProviderEnabled,
+  getBase64ProviderEnabled,
+} from "@/components/monacoEditor/decorations/base64Decoration.ts";
+import {
+  setUnicodeDecorationEnabled,
+  getUnicodeDecorationEnabled,
+  setUnicodeProviderEnabled,
+  getUnicodeProviderEnabled,
+} from "@/components/monacoEditor/decorations/unicodeDecoration.ts";
+
 // 定义菜单位置类型
 interface MenuPosition {
   x: number;
@@ -52,6 +65,10 @@ interface DraggableMenuProps {
   tabKey: string;
   timestampDecoratorsEnabled?: boolean; // 添加时间戳装饰器状态
   onTimestampDecoratorsChange?: (enabled: boolean) => void; // 添加时间戳装饰器状态变更函数
+  base64DecoratorsEnabled?: boolean; // 添加Base64装饰器状态
+  onBase64DecoratorsChange?: (enabled: boolean) => void; // 添加Base64装饰器状态变更函数
+  unicodeDecoratorsEnabled?: boolean; // 添加Unicode装饰器状态
+  onUnicodeDecoratorsChange?: (enabled: boolean) => void; // 添加Unicode装饰器状态变更函数
 }
 
 const DraggableMenu: React.FC<DraggableMenuProps> = ({
@@ -64,6 +81,10 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   tabKey,
   timestampDecoratorsEnabled = true, // 默认启用
   onTimestampDecoratorsChange,
+  base64DecoratorsEnabled = true, // 默认启用
+  onBase64DecoratorsChange,
+  unicodeDecoratorsEnabled = true, // 默认启用
+  onUnicodeDecoratorsChange,
 }) => {
   const { updateEditorSettings, activeTab } = useTabStore();
   const [menuPosition, setMenuPosition] = useState<MenuPosition>({
@@ -80,6 +101,20 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   // 添加延时关闭的定时器引用
   const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // 添加Base64和Unicode解码器的状态
+  const [base64DecodersEnabledState, setBase64DecodersEnabledState] =
+    useState<boolean>(
+      base64DecoratorsEnabled !== undefined
+        ? base64DecoratorsEnabled
+        : getBase64ProviderEnabled() && getBase64DecorationEnabled(),
+    );
+  const [unicodeDecodersEnabledState, setUnicodeDecodersEnabledState] =
+    useState<boolean>(
+      unicodeDecoratorsEnabled !== undefined
+        ? unicodeDecoratorsEnabled
+        : getUnicodeProviderEnabled() && getUnicodeDecorationEnabled(),
+    );
+
   // 保存拖动状态，避免状态更新引起的重渲染
   const dragStateRef = useRef({
     startX: 0,
@@ -90,6 +125,51 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     dy: 0,
     animationFrameId: 0,
   });
+
+  // 处理Base64解码器状态变化
+  const handleBase64DecodersChange = (enabled: boolean) => {
+    setBase64DecodersEnabledState(enabled);
+
+    // 更新全局状态
+    setBase64ProviderEnabled(enabled);
+    setBase64DecorationEnabled(enabled);
+
+    // 如果提供了回调，调用回调通知父组件
+    if (onBase64DecoratorsChange) {
+      onBase64DecoratorsChange(enabled);
+    }
+  };
+
+  // 处理Unicode解码器状态变化
+  const handleUnicodeDecodersChange = (enabled: boolean) => {
+    setUnicodeDecodersEnabledState(enabled);
+
+    // 更新全局状态
+    setUnicodeProviderEnabled(enabled);
+    setUnicodeDecorationEnabled(enabled);
+
+    // 如果提供了回调，调用回调通知父组件
+    if (onUnicodeDecoratorsChange) {
+      onUnicodeDecoratorsChange(enabled);
+    }
+  };
+
+  // 同步props和state
+  useEffect(() => {
+    if (
+      base64DecoratorsEnabled !== undefined &&
+      base64DecoratorsEnabled !== base64DecodersEnabledState
+    ) {
+      setBase64DecodersEnabledState(base64DecoratorsEnabled);
+    }
+
+    if (
+      unicodeDecoratorsEnabled !== undefined &&
+      unicodeDecoratorsEnabled !== unicodeDecodersEnabledState
+    ) {
+      setUnicodeDecodersEnabledState(unicodeDecoratorsEnabled);
+    }
+  }, [base64DecoratorsEnabled, unicodeDecoratorsEnabled]);
 
   // 重新计算菜单位置的函数
   const recalculatePosition = useCallback(() => {
@@ -172,11 +252,15 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
       fontSize: currentFontSize,
       language: currentLanguage,
       timestampDecoratorsEnabled,
+      base64DecoratorsEnabled: base64DecodersEnabledState,
+      unicodeDecoratorsEnabled: unicodeDecodersEnabledState,
     });
   }, [
     currentLanguage,
     currentFontSize,
     timestampDecoratorsEnabled,
+    base64DecodersEnabledState,
+    unicodeDecodersEnabledState,
     tabKey,
     updateEditorSettings,
   ]);
@@ -698,6 +782,56 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
               />
             </div>
           )}
+
+          {/* Base64解码器开关 */}
+          <div className="flex items-center justify-between px-1">
+            <div className="space-y-1">
+              <label
+                className="text-xs uppercase tracking-wide font-semibold text-gray-600 dark:text-gray-300"
+                htmlFor="base64-switch"
+              >
+                Base64解码器(全局)
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                自动识别并显示Base64字符串解码结果
+              </p>
+            </div>
+            <Switch
+              aria-label="Base64解码器开关"
+              color="primary"
+              id="base64-switch"
+              isSelected={base64DecodersEnabledState}
+              size="sm"
+              onChange={() =>
+                handleBase64DecodersChange(!base64DecodersEnabledState)
+              }
+            />
+          </div>
+
+          {/* Unicode解码器开关 */}
+          <div className="flex items-center justify-between px-1">
+            <div className="space-y-1">
+              <label
+                className="text-xs uppercase tracking-wide font-semibold text-gray-600 dark:text-gray-300"
+                htmlFor="unicode-switch"
+              >
+                Unicode解码器(全局)
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                自动识别并显示Unicode转义序列的解码结果
+              </p>
+            </div>
+            <Switch
+              aria-label="Unicode解码器开关"
+              color="primary"
+              id="unicode-switch"
+              isSelected={unicodeDecodersEnabledState}
+              size="sm"
+              onChange={() =>
+                handleUnicodeDecodersChange(!unicodeDecodersEnabledState)
+              }
+            />
+          </div>
 
           {/* 分隔线 */}
           <div className="h-px bg-gray-200 dark:bg-gray-700/40" />

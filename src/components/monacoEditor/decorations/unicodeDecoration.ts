@@ -1,7 +1,8 @@
 import * as monaco from "monaco-editor";
 import { editor } from "monaco-editor";
 import { RefObject } from "react";
-import {UNICODE_REGEX} from "@/utils/unicode.ts";
+
+import { decodeUnicode, UNICODE_REGEX } from "@/utils/unicode.ts";
 
 // 定义Unicode下划线装饰器接口
 export interface UnicodeDecoratorState {
@@ -14,6 +15,50 @@ export interface UnicodeDecoratorState {
   enabled: boolean;
 }
 
+// 全局启用状态控制
+let isUnicodeDecorationEnabled = true; // 下划线装饰器全局启用状态
+let isUnicodeProviderEnabled = true; // 全局悬浮提供者启用状态
+
+// 注册全局Unicode 悬停提供者
+export const registerUnicodeHoverProvider = () => {
+  monaco.languages.registerHoverProvider(["json", "json5"], {
+    provideHover: (model, position) => {
+      // 如果提供者被禁用，直接返回null
+      if (!isUnicodeProviderEnabled) return null;
+      const wordInfo = model?.getWordAtPosition(position);
+
+      if (!wordInfo) return null;
+
+      // 获取当前行的文本并检查是否包含Unicode序列
+      const currentWordRange = {
+        startLineNumber: position.lineNumber,
+        endLineNumber: position.lineNumber,
+        startColumn: Math.max(1, wordInfo.startColumn), // 扩展范围以捕获\u前缀
+        endColumn: wordInfo.endColumn, // 扩展范围以捕获可能的后续字符
+      };
+
+      const currentWordText = model.getValueInRange(currentWordRange);
+
+      const decoded = decodeUnicode(currentWordText);
+
+      if (!decoded) {
+        return null;
+      }
+
+      // 如果解码成功，返回悬停信息
+      return {
+        contents: [{ value: "**Unicode 解码**" }, { value: decoded }],
+        range: new monaco.Range(
+          position.lineNumber,
+          currentWordRange.startColumn,
+          position.lineNumber,
+          currentWordRange.endColumn,
+        ),
+      };
+    },
+  });
+};
+
 /**
  * 更新Unicode下划线装饰器
  * @param editor 编辑器实例
@@ -23,7 +68,12 @@ export const updateUnicodeDecorations = (
   editor: editor.IStandaloneCodeEditor,
   state: UnicodeDecoratorState,
 ): void => {
-  if (!editor || !state.enabled) {
+  // 如果全局状态或组件状态禁用，则清除装饰器并退出
+  if (!editor || !state.enabled || !isUnicodeDecorationEnabled) {
+    if (state.decorationsRef.current) {
+      state.decorationsRef.current.clear();
+    }
+
     return;
   }
 
@@ -131,7 +181,8 @@ export const handleUnicodeContentChange = (
   e: editor.IModelContentChangedEvent,
   state: UnicodeDecoratorState,
 ): void => {
-  if (!state.enabled) {
+  // 如果装饰器全局禁用，则直接返回
+  if (!isUnicodeDecorationEnabled || !state.enabled) {
     return;
   }
 
@@ -176,4 +227,65 @@ export const handleUnicodeContentChange = (
  */
 export const clearUnicodeCache = (state: UnicodeDecoratorState): void => {
   state.cacheRef.current = {};
+};
+
+/**
+ * 切换Unicode下划线装饰器状态
+ * @param editor 编辑器实例
+ * @param state Unicode下划线装饰器状态
+ * @param enabled 是否启用装饰器
+ * @returns 操作是否成功
+ */
+export const toggleUnicodeDecorators = (
+  editor: editor.IStandaloneCodeEditor | null,
+  state: UnicodeDecoratorState,
+  enabled: boolean,
+): boolean => {
+  if (!editor) return false;
+
+  // 更新状态
+  state.enabled = enabled;
+
+  if (enabled) {
+    // 启用时，清空缓存并重新计算装饰器
+    clearUnicodeCache(state);
+    updateUnicodeDecorations(editor, state);
+  } else {
+    // 禁用时清除所有装饰器
+    if (state.decorationsRef.current) {
+      state.decorationsRef.current.clear();
+    }
+  }
+
+  return true;
+};
+
+/**
+ * 获取Unicode下划线装饰器的全局启用状态
+ */
+export const getUnicodeDecorationEnabled = (): boolean => {
+  return isUnicodeDecorationEnabled;
+};
+
+/**
+ * 设置Unicode下划线装饰器的全局启用状态
+ * @param enabled 是否启用
+ */
+export const setUnicodeDecorationEnabled = (enabled: boolean): void => {
+  isUnicodeDecorationEnabled = enabled;
+};
+
+/**
+ * 设置Unicode悬停提供者的启用状态
+ * @param enabled 是否启用
+ */
+export const setUnicodeProviderEnabled = (enabled: boolean) => {
+  isUnicodeProviderEnabled = enabled;
+};
+
+/**
+ * 获取Unicode悬停提供者的当前启用状态
+ */
+export const getUnicodeProviderEnabled = (): boolean => {
+  return isUnicodeProviderEnabled;
 };

@@ -15,7 +15,7 @@ import DefaultLayout from "@/layouts/default";
 
 // 全局初始化Monaco编辑器
 initMonacoGlobally().then(() => {
-  // 注册全局Base64和Unicode提供者
+  // 注册全局提供者
   registerGlobalBase64Provider();
 });
 

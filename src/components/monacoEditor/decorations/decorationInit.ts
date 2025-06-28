@@ -2,8 +2,8 @@ import * as monaco from "monaco-editor";
 import { loader } from "@monaco-editor/react";
 
 import { Json5LanguageDef } from "@/components/monacoEditor/MonacoLanguageDef.tsx";
-import { decodeBase64Strict } from "@/utils/base64.ts";
-import {decodeUnicode} from "@/utils/unicode.ts";
+import { registerBase64HoverProvider } from "@/components/monacoEditor/decorations/base64Decoration.ts";
+import { registerUnicodeHoverProvider } from "@/components/monacoEditor/decorations/unicodeDecoration.ts";
 
 /**
  * Monaco编辑器全局初始化状态管理
@@ -20,6 +20,7 @@ import {decodeUnicode} from "@/utils/unicode.ts";
 // 全局Monaco初始化状态
 let isInitialized = false;
 let baseProviderRegistered = false;
+
 
 /**
  * 初始化Monaco编辑器全局配置
@@ -59,79 +60,11 @@ export const initMonacoGlobally = async () => {
 export const registerGlobalBase64Provider = () => {
   if (baseProviderRegistered) return;
 
-  console.log("Registering global Base64 and Unicode hover providers");
-
   // 注册全局Base64悬停提供者
-  monaco.languages.registerHoverProvider(["json", "json5"], {
-    provideHover: (model, position) => {
-      const lineContent = model.getLineContent(position.lineNumber);
-      const wordInfo = model?.getWordAtPosition(position);
-
-      if (!wordInfo) return null;
-
-      // 获取当前词的范围
-      const start = wordInfo.startColumn;
-      const end = wordInfo.endColumn;
-      const word = lineContent.substring(start - 1, end - 1);
-
-      const decoded = decodeBase64Strict(word);
-
-      if (!decoded) {
-        return null;
-      }
-
-      // 如果解码成功，返回悬停信息
-      return {
-        contents: [
-          { value: "**Base64 解码器**" },
-          { value: "```\n" + decoded + "\n```" },
-        ],
-        range: new monaco.Range(
-          position.lineNumber,
-          start,
-          position.lineNumber,
-          end,
-        ),
-      };
-    },
-  });
+  registerBase64HoverProvider();
 
   // 注册全局Unicode悬停提供者
-  monaco.languages.registerHoverProvider(["json", "json5"], {
-    provideHover: (model, position) => {
-      // const lineContent = model.getLineContent(position.lineNumber);
-      const wordInfo = model?.getWordAtPosition(position);
-
-      if (!wordInfo) return null;
-
-      // 获取当前行的文本并检查是否包含Unicode序列
-      const currentWordRange = {
-        startLineNumber: position.lineNumber,
-        endLineNumber: position.lineNumber,
-        startColumn: Math.max(1, wordInfo.startColumn), // 扩展范围以捕获\u前缀
-        endColumn: wordInfo.endColumn, // 扩展范围以捕获可能的后续字符
-      };
-
-      const currentWordText = model.getValueInRange(currentWordRange);
-
-      const decoded = decodeUnicode(currentWordText);
-
-      if (!decoded) {
-        return null;
-      }
-
-      // 如果解码成功，返回悬停信息
-      return {
-        contents: [{ value: "**Unicode 解码**" }, { value: decoded }],
-        range: new monaco.Range(
-          position.lineNumber,
-          currentWordRange.startColumn,
-          position.lineNumber,
-          currentWordRange.endColumn,
-        ),
-      };
-    },
-  });
+  registerUnicodeHoverProvider();
 
   baseProviderRegistered = true;
 };

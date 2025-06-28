@@ -2,7 +2,11 @@ import * as monaco from "monaco-editor";
 import { editor } from "monaco-editor";
 import { RefObject } from "react";
 
-import {BASE64_REGEX, checkBase64Strict} from "@/utils/base64.ts";
+import {
+  BASE64_REGEX,
+  checkBase64Strict,
+  decodeBase64Strict,
+} from "@/utils/base64.ts";
 
 // 定义Base64下划线装饰器接口
 export interface Base64DecoratorState {
@@ -15,6 +19,50 @@ export interface Base64DecoratorState {
   enabled: boolean;
 }
 
+// 全局启用状态控制
+let isBase64DecorationEnabled = true; // 下划线装饰器状态
+let isBase64ProviderEnabled = true; // 全局Base64悬停提供者状态
+
+// 注册全局Base64悬停提供者
+export const registerBase64HoverProvider = () => {
+  monaco.languages.registerHoverProvider(["json", "json5"], {
+    provideHover: (model, position) => {
+      // 如果提供者被禁用，直接返回null
+      if (!isBase64ProviderEnabled) return null;
+
+      const lineContent = model.getLineContent(position.lineNumber);
+      const wordInfo = model?.getWordAtPosition(position);
+
+      if (!wordInfo) return null;
+
+      // 获取当前词的范围
+      const start = wordInfo.startColumn;
+      const end = wordInfo.endColumn;
+      const word = lineContent.substring(start - 1, end - 1);
+
+      const decoded = decodeBase64Strict(word);
+
+      if (!decoded) {
+        return null;
+      }
+
+      // 如果解码成功，返回悬停信息
+      return {
+        contents: [
+          { value: "**Base64 解码器**" },
+          { value: "```\n" + decoded + "\n```" },
+        ],
+        range: new monaco.Range(
+          position.lineNumber,
+          start,
+          position.lineNumber,
+          end,
+        ),
+      };
+    },
+  });
+};
+
 /**
  * 更新Base64下划线装饰器
  * @param editor 编辑器实例
@@ -24,7 +72,12 @@ export const updateBase64Decorations = (
   editor: editor.IStandaloneCodeEditor,
   state: Base64DecoratorState,
 ): void => {
-  if (!editor || !state.enabled) {
+  // 如果全局状态或组件状态禁用，则清除装饰器并退出
+  if (!editor || !state.enabled || !isBase64DecorationEnabled) {
+    if (state.decorationsRef.current) {
+      state.decorationsRef.current.clear();
+    }
+
     return;
   }
 
@@ -140,7 +193,8 @@ export const handleBase64ContentChange = (
   e: editor.IModelContentChangedEvent,
   state: Base64DecoratorState,
 ): void => {
-  if (!state.enabled) {
+  // 如果装饰器全局禁用，则直接返回
+  if (!isBase64DecorationEnabled || !state.enabled) {
     return;
   }
 
@@ -185,4 +239,65 @@ export const handleBase64ContentChange = (
  */
 export const clearBase64Cache = (state: Base64DecoratorState): void => {
   state.cacheRef.current = {};
+};
+
+/**
+ * 切换Base64下划线装饰器状态
+ * @param editor 编辑器实例
+ * @param state Base64下划线装饰器状态
+ * @param enabled 是否启用装饰器
+ * @returns 操作是否成功
+ */
+export const toggleBase64Decorators = (
+  editor: editor.IStandaloneCodeEditor | null,
+  state: Base64DecoratorState,
+  enabled: boolean,
+): boolean => {
+  if (!editor) return false;
+
+  // 更新状态
+  state.enabled = enabled;
+
+  if (enabled) {
+    // 启用时，清空缓存并重新计算装饰器
+    clearBase64Cache(state);
+    updateBase64Decorations(editor, state);
+  } else {
+    // 禁用时清除所有装饰器
+    if (state.decorationsRef.current) {
+      state.decorationsRef.current.clear();
+    }
+  }
+
+  return true;
+};
+
+/**
+ * 获取Base64下划线装饰器的全局启用状态
+ */
+export const getBase64DecorationEnabled = (): boolean => {
+  return isBase64DecorationEnabled;
+};
+
+/**
+ * 设置Base64下划线装饰器的全局启用状态
+ * @param enabled 是否启用
+ */
+export const setBase64DecorationEnabled = (enabled: boolean): void => {
+  isBase64DecorationEnabled = enabled;
+};
+
+/**
+ * 设置Base64悬停提供者的启用状态
+ * @param enabled 是否启用
+ */
+export const setBase64ProviderEnabled = (enabled: boolean) => {
+  isBase64ProviderEnabled = enabled;
+};
+
+/**
+ * 获取Base64悬停提供者的当前启用状态
+ */
+export const getBase64ProviderEnabled = (): boolean => {
+  return isBase64ProviderEnabled;
 };
