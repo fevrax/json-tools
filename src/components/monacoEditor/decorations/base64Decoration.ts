@@ -16,20 +16,6 @@ export interface Base64DecoratorState {
 }
 
 /**
- * 注册Base64下划线装饰器的悬停提供者
- * @param editor 编辑器实例
- * @param state Base64下划线装饰器状态
- */
-export function registerBase64HoverProvider(
-  editor: monaco.editor.IStandaloneCodeEditor,
-  state: Base64DecoratorState
-): void {
-  // 全局已注册提供者，无需在此处重复注册
-  // 保留函数以保持API兼容性
-  return;
-}
-
-/**
  * 更新Base64下划线装饰器
  * @param editor 编辑器实例
  * @param state Base64下划线装饰器状态
@@ -199,49 +185,4 @@ export const handleBase64ContentChange = (
  */
 export const clearBase64Cache = (state: Base64DecoratorState): void => {
   state.cacheRef.current = {};
-};
-
-/**
- * 切换Base64下划线装饰器状态
- * @param editor 编辑器实例
- * @param state Base64下划线装饰器状态
- * @param enabled 是否启用装饰器
- * @returns 是否成功切换
- */
-export const toggleBase64Decorators = (
-  editor: editor.IStandaloneCodeEditor | null,
-  state: Base64DecoratorState,
-  enabled?: boolean,
-): boolean => {
-  if (!editor) {
-    return false;
-  }
-
-  // 如果没有提供参数，则切换状态
-  const newState = enabled !== undefined ? enabled : !state.enabled;
-
-  // 更新状态
-  state.enabled = newState;
-
-  // 立即应用更改
-  if (newState) {
-    // 启用装饰器时，注册悬停提供者和更新装饰器
-    registerBase64HoverProvider(editor, state);
-    clearBase64Cache(state);
-    setTimeout(() => {
-      updateBase64Decorations(editor, state);
-    }, 0);
-  } else {
-    // 禁用装饰器时，清除现有装饰和注销悬停提供者
-    if (state.decorationsRef.current) {
-      state.decorationsRef.current.clear();
-    }
-    if (state.hoverProviderId.current) {
-      state.hoverProviderId.current.dispose();
-      state.hoverProviderId.current = null;
-    }
-    clearBase64Cache(state);
-  }
-
-  return true;
 };

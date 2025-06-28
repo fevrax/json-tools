@@ -14,19 +14,6 @@ export interface UnicodeDecoratorState {
   enabled: boolean;
 }
 
-
-/**
- * 注册Unicode下划线装饰器的悬停提供者
- * @param editor 编辑器实例
- * @param state Unicode下划线装饰器状态
- */
-export function registerUnicodeHoverProvider(
-  editor: monaco.editor.IStandaloneCodeEditor,
-  state: UnicodeDecoratorState
-): void {
-  return;
-}
-
 /**
  * 更新Unicode下划线装饰器
  * @param editor 编辑器实例
@@ -189,49 +176,4 @@ export const handleUnicodeContentChange = (
  */
 export const clearUnicodeCache = (state: UnicodeDecoratorState): void => {
   state.cacheRef.current = {};
-};
-
-/**
- * 切换Unicode下划线装饰器状态
- * @param editor 编辑器实例
- * @param state Unicode下划线装饰器状态
- * @param enabled 是否启用装饰器
- * @returns 是否成功切换
- */
-export const toggleUnicodeDecorators = (
-  editor: editor.IStandaloneCodeEditor | null,
-  state: UnicodeDecoratorState,
-  enabled?: boolean,
-): boolean => {
-  if (!editor) {
-    return false;
-  }
-
-  // 如果没有提供参数，则切换状态
-  const newState = enabled !== undefined ? enabled : !state.enabled;
-
-  // 更新状态
-  state.enabled = newState;
-
-  // 立即应用更改
-  if (newState) {
-    // 启用装饰器时，注册悬停提供者和更新装饰器
-    registerUnicodeHoverProvider(editor, state);
-    clearUnicodeCache(state);
-    setTimeout(() => {
-      updateUnicodeDecorations(editor, state);
-    }, 0);
-  } else {
-    // 禁用装饰器时，清除现有装饰和注销悬停提供者
-    if (state.decorationsRef.current) {
-      state.decorationsRef.current.clear();
-    }
-    if (state.hoverProviderId.current) {
-      state.hoverProviderId.current.dispose();
-      state.hoverProviderId.current = null;
-    }
-    clearUnicodeCache(state);
-  }
-
-  return true;
 };

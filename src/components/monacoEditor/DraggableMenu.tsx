@@ -52,10 +52,6 @@ interface DraggableMenuProps {
   tabKey: string;
   timestampDecoratorsEnabled?: boolean; // 添加时间戳装饰器状态
   onTimestampDecoratorsChange?: (enabled: boolean) => void; // 添加时间戳装饰器状态变更函数
-  base64DecoratorsEnabled?: boolean; // 添加Base64装饰器状态
-  onBase64DecoratorsChange?: (enabled: boolean) => void; // 添加Base64装饰器状态变更函数
-  unicodeDecoratorsEnabled?: boolean; // 添加Unicode装饰器状态
-  onUnicodeDecoratorsChange?: (enabled: boolean) => void; // 添加Unicode装饰器状态变更函数
 }
 
 const DraggableMenu: React.FC<DraggableMenuProps> = ({
@@ -68,10 +64,6 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   tabKey,
   timestampDecoratorsEnabled = true, // 默认启用
   onTimestampDecoratorsChange,
-  base64DecoratorsEnabled = true, // 默认启用
-  onBase64DecoratorsChange,
-  unicodeDecoratorsEnabled = true, // 默认启用
-  onUnicodeDecoratorsChange,
 }) => {
   const { updateEditorSettings, activeTab } = useTabStore();
   const [menuPosition, setMenuPosition] = useState<MenuPosition>({
@@ -180,15 +172,11 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
       fontSize: currentFontSize,
       language: currentLanguage,
       timestampDecoratorsEnabled,
-      base64DecoratorsEnabled,
-      unicodeDecoratorsEnabled,
     });
   }, [
     currentLanguage,
     currentFontSize,
     timestampDecoratorsEnabled,
-    base64DecoratorsEnabled,
-    unicodeDecoratorsEnabled,
     tabKey,
     updateEditorSettings,
   ]);
@@ -709,70 +697,6 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
                 }
               />
             </div>
-          )}
-
-          {/* Base64识别开关 */}
-          {onBase64DecoratorsChange && (
-            <>
-              {/* 分隔线 */}
-              <div className="h-px bg-gray-200 dark:bg-gray-700/40" />
-
-              <div className="flex items-center justify-between px-1">
-                <div className="space-y-1">
-                  <label
-                    className="text-xs uppercase tracking-wide font-semibold text-gray-600 dark:text-gray-300"
-                    htmlFor="base64-switch"
-                  >
-                    Base64 解码
-                  </label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    自动识别并解码 Base64 字符串
-                  </p>
-                </div>
-                <Switch
-                  aria-label="Base64 解码开关"
-                  color="primary"
-                  id="base64-switch"
-                  isSelected={base64DecoratorsEnabled}
-                  size="sm"
-                  onChange={() =>
-                    onBase64DecoratorsChange(!base64DecoratorsEnabled)
-                  }
-                />
-              </div>
-            </>
-          )}
-
-          {/* Unicode识别开关 */}
-          {onUnicodeDecoratorsChange && (
-            <>
-              {/* 分隔线 */}
-              <div className="h-px bg-gray-200 dark:bg-gray-700/40" />
-
-              <div className="flex items-center justify-between px-1">
-                <div className="space-y-1">
-                  <label
-                    className="text-xs uppercase tracking-wide font-semibold text-gray-600 dark:text-gray-300"
-                    htmlFor="unicode-switch"
-                  >
-                    Unicode 解码
-                  </label>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    自动识别并解码 Unicode 字符串
-                  </p>
-                </div>
-                <Switch
-                  aria-label="Unicode 解码开关"
-                  color="primary"
-                  id="unicode-switch"
-                  isSelected={unicodeDecoratorsEnabled}
-                  size="sm"
-                  onChange={() =>
-                    onUnicodeDecoratorsChange(!unicodeDecoratorsEnabled)
-                  }
-                />
-              </div>
-            </>
           )}
 
           {/* 分隔线 */}
