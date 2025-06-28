@@ -2,9 +2,9 @@ import * as monaco from "monaco-editor";
 import { editor } from "monaco-editor";
 import { RefObject } from "react";
 
-import { checkBase64Strict, decodeBase64Strict } from "@/utils/base64.ts";
+import {BASE64_REGEX, checkBase64Strict} from "@/utils/base64.ts";
 
-// 定义Base64装饰器接口
+// 定义Base64下划线装饰器接口
 export interface Base64DecoratorState {
   editorRef: RefObject<editor.IStandaloneCodeEditor | null>;
   decorationsRef: RefObject<monaco.editor.IEditorDecorationsCollection | null>;
@@ -15,64 +15,24 @@ export interface Base64DecoratorState {
   enabled: boolean;
 }
 
-const BASE64_REGEX =
-  /: "(([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==))"/g;
-
 /**
- * 注册Base64装饰器的悬停提供者
+ * 注册Base64下划线装饰器的悬停提供者
  * @param editor 编辑器实例
- * @param state Base64装饰器状态
+ * @param state Base64下划线装饰器状态
  */
-export const registerBase64HoverProvider = (
-  editor: editor.IStandaloneCodeEditor,
-  state: Base64DecoratorState,
-): void => {
-  if (!state.enabled || state.hoverProviderId.current) {
-    return;
-  }
-
-  // 注册悬停提供者
-  state.hoverProviderId.current = monaco.languages.registerHoverProvider("*", {
-    provideHover: (model, position) => {
-      if (!state.enabled) return null;
-
-      const lineContent = model.getLineContent(position.lineNumber);
-      const wordInfo = editor.getModel()?.getWordAtPosition(position);
-
-      if (!wordInfo) return null;
-
-      // 获取当前词的范围
-      const start = wordInfo.startColumn;
-      const end = wordInfo.endColumn;
-      const word = lineContent.substring(start - 1, end - 1);
-
-      const decoded = decodeBase64Strict(word);
-
-      if (!decoded) {
-        return null;
-      }
-
-      // 如果解码成功，返回悬停信息
-      return {
-        contents: [
-          { value: "**Base64 解码器**" },
-          { value: "```\n" + decoded + "\n```" },
-        ],
-        range: new monaco.Range(
-          position.lineNumber,
-          start,
-          position.lineNumber,
-          end,
-        ),
-      };
-    },
-  });
-};
+export function registerBase64HoverProvider(
+  editor: monaco.editor.IStandaloneCodeEditor,
+  state: Base64DecoratorState
+): void {
+  // 全局已注册提供者，无需在此处重复注册
+  // 保留函数以保持API兼容性
+  return;
+}
 
 /**
- * 更新Base64装饰器
+ * 更新Base64下划线装饰器
  * @param editor 编辑器实例
- * @param state Base64装饰器状态
+ * @param state Base64下划线装饰器状态
  */
 export const updateBase64Decorations = (
   editor: editor.IStandaloneCodeEditor,
@@ -153,9 +113,6 @@ export const updateBase64Decorations = (
             options: {
               inlineClassName: "base64-decoration",
               zIndex: 2999,
-              // hoverMessage: { 这里使用悬停提供者，提高性能
-              //   value: "**Base64 解码**：\n```\n" + decoded + "\n```",
-              // },
             },
           },
         ];
@@ -189,9 +146,9 @@ export const updateBase64Decorations = (
 };
 
 /**
- * 处理编辑器内容变化时更新Base64装饰器
+ * 处理编辑器内容变化时更新Base64下划线装饰器
  * @param e 编辑器内容变化事件
- * @param state Base64装饰器状态
+ * @param state Base64下划线装饰器状态
  */
 export const handleBase64ContentChange = (
   e: editor.IModelContentChangedEvent,
@@ -238,16 +195,16 @@ export const handleBase64ContentChange = (
 
 /**
  * 清理Base64缓存
- * @param state Base64装饰器状态
+ * @param state Base64下划线装饰器状态
  */
 export const clearBase64Cache = (state: Base64DecoratorState): void => {
   state.cacheRef.current = {};
 };
 
 /**
- * 切换Base64装饰器状态
+ * 切换Base64下划线装饰器状态
  * @param editor 编辑器实例
- * @param state Base64装饰器状态
+ * @param state Base64下划线装饰器状态
  * @param enabled 是否启用装饰器
  * @returns 是否成功切换
  */

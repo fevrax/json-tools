@@ -1,5 +1,8 @@
 import { Base64 } from "js-base64";
 
+export const BASE64_REGEX =
+  /: "(([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==))"/g;
+
 /**
  * 更严格的base64检测函数（包含UTF-8解码验证）
  * @param str 待检测的字符串
@@ -47,7 +50,6 @@ export function decodeBase64Strict(str: string): string {
 
     // 如果这里没有抛出异常，说明是有效的UTF-8序列
     return decoder.decode(uint8Array);
-
   } catch (error) {
     return "";
   }

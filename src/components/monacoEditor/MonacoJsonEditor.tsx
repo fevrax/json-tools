@@ -44,7 +44,6 @@ import {
   toggleBase64Decorators,
   updateBase64Decorations,
   handleBase64ContentChange,
-  registerBase64HoverProvider,
 } from "@/components/monacoEditor/decorations/base64Decoration.ts";
 import {
   UnicodeDecoratorState,
@@ -52,7 +51,6 @@ import {
   toggleUnicodeDecorators,
   updateUnicodeDecorations,
   handleUnicodeContentChange,
-  registerUnicodeHoverProvider,
 } from "@/components/monacoEditor/decorations/unicodeDecoration.ts";
 
 import "@/styles/monaco.css";
@@ -63,7 +61,6 @@ import PromptContainer, {
   PromptContainerRef,
 } from "@/components/ai/PromptContainer";
 import { jsonQuickPrompts } from "@/components/ai/JsonQuickPrompts.tsx";
-import { Json5LanguageDef } from "@/components/monacoEditor/MonacoLanguageDef.tsx";
 
 export interface MonacoJsonEditorProps {
   tabTitle?: string;
@@ -210,7 +207,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     editorRef: editorRef,
     decorationsRef: base64DecorationsRef,
     decorationIdsRef: base64DecorationIdsRef,
-    hoverProviderId: base64HoverProviderRef,
+    hoverProviderId: { current: null },
     cacheRef: base64CacheRef,
     updateTimeoutRef: base64UpdateTimeoutRef,
     enabled: base64DecoratorsEnabled,
@@ -221,7 +218,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     editorRef: editorRef,
     decorationsRef: unicodeDecorationsRef,
     decorationIdsRef: unicodeDecorationIdsRef,
-    hoverProviderId: unicodeHoverProviderRef,
+    hoverProviderId: { current: null },
     cacheRef: unicodeCacheRef,
     updateTimeoutRef: unicodeUpdateTimeoutRef,
     enabled: unicodeDecoratorsEnabled,
@@ -543,7 +540,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       clearBase64Cache(base64DecoratorState);
       setTimeout(() => {
         if (editorRef.current) {
-          registerBase64HoverProvider(editorRef.current, base64DecoratorState);
+          // 不再需要注册提供者，只需更新装饰器
           updateBase64Decorations(editorRef.current, base64DecoratorState);
         }
       }, 0);
@@ -551,10 +548,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       // 禁用时清理缓存和装饰器
       if (base64DecorationsRef.current) {
         base64DecorationsRef.current.clear();
-      }
-      if (base64HoverProviderRef.current) {
-        base64HoverProviderRef.current.dispose();
-        base64HoverProviderRef.current = null;
       }
       clearBase64Cache(base64DecoratorState);
     }
@@ -570,10 +563,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       clearUnicodeCache(unicodeDecoratorState);
       setTimeout(() => {
         if (editorRef.current) {
-          registerUnicodeHoverProvider(
-            editorRef.current,
-            unicodeDecoratorState,
-          );
+          // 不再需要注册提供者，只需更新装饰器
           updateUnicodeDecorations(editorRef.current, unicodeDecoratorState);
         }
       }, 0);
@@ -581,10 +571,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       // 禁用时清理缓存和装饰器
       if (unicodeDecorationsRef.current) {
         unicodeDecorationsRef.current.clear();
-      }
-      if (unicodeHoverProviderRef.current) {
-        unicodeHoverProviderRef.current.dispose();
-        unicodeHoverProviderRef.current = null;
       }
       clearUnicodeCache(unicodeDecoratorState);
     }
@@ -603,7 +589,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   if (base64DecoratorsEnabled) {
     setTimeout(() => {
       if (editorRef.current) {
-        registerBase64HoverProvider(editorRef.current, base64DecoratorState);
+        // 不需要再次注册提供者，全局已注册
         updateBase64Decorations(editorRef.current, base64DecoratorState);
       }
     }, 300);
@@ -613,7 +599,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   if (unicodeDecoratorsEnabled) {
     setTimeout(() => {
       if (editorRef.current) {
-        registerUnicodeHoverProvider(editorRef.current, unicodeDecoratorState);
+        // 不需要再次注册提供者，全局已注册
         updateUnicodeDecorations(editorRef.current, unicodeDecoratorState);
       }
     }, 300);
@@ -1092,22 +1078,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       // 确保只初始化一次
       if (editorRef.current) return;
 
-      loader.config({ monaco });
-
+      // 注意: 这里使用全局初始化的Monaco实例，不再重复加载配置
       const monacoInstance: Monaco = await loader.init();
-
-      // 注册 JSON5 语言支持
-      if (
-        !monacoInstance.languages
-          .getLanguages()
-          .some((lang) => lang.id === "json5")
-      ) {
-        monacoInstance.languages.register({ id: "json5" });
-        monacoInstance.languages.setMonarchTokensProvider(
-          "json5",
-          Json5LanguageDef,
-        );
-      }
 
       if (containerRef.current) {
         const editor = monacoInstance.editor.create(containerRef.current, {
@@ -1244,27 +1216,21 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           }, 300);
         }
 
-        // 初始化Base64装饰器
+        // 初始化Base64装饰器 - 注意这里只更新装饰器，不再注册悬停提供者
         if (base64DecoratorsEnabled) {
           setTimeout(() => {
             if (editorRef.current) {
-              registerBase64HoverProvider(
-                editorRef.current,
-                base64DecoratorState,
-              );
+              // 不需要再次注册提供者，全局已注册
               updateBase64Decorations(editorRef.current, base64DecoratorState);
             }
           }, 300);
         }
 
-        // 初始化Unicode装饰器
+        // 初始化Unicode装饰器 - 注意这里只更新装饰器，不再注册悬停提供者
         if (unicodeDecoratorsEnabled) {
           setTimeout(() => {
             if (editorRef.current) {
-              registerUnicodeHoverProvider(
-                editorRef.current,
-                unicodeDecoratorState,
-              );
+              // 不需要再次注册提供者，全局已注册
               updateUnicodeDecorations(
                 editorRef.current,
                 unicodeDecoratorState,

@@ -1,8 +1,9 @@
 import * as monaco from "monaco-editor";
 import { editor } from "monaco-editor";
 import { RefObject } from "react";
+import {UNICODE_REGEX} from "@/utils/unicode.ts";
 
-// 定义Unicode装饰器接口
+// 定义Unicode下划线装饰器接口
 export interface UnicodeDecoratorState {
   editorRef: RefObject<editor.IStandaloneCodeEditor | null>;
   decorationsRef: RefObject<monaco.editor.IEditorDecorationsCollection | null>;
@@ -13,107 +14,23 @@ export interface UnicodeDecoratorState {
   enabled: boolean;
 }
 
-// Unicode编码模式，匹配如 \u0041 或 \u{1F600} 的格式
-const UNICODE_REGEX = /\\u([0-9a-fA-F]{4})|\\u\{([0-9a-fA-F]{1,6})}/g;
 
 /**
- * 解码Unicode字符串
- * @param text 包含Unicode编码的字符串
- * @returns 解码后的字符串，如果无法解码则返回null
- */
-export const decodeUnicode = (text: string): string | null => {
-  try {
-    // 替换所有Unicode转义序列
-    const decoded = text.replace(
-      UNICODE_REGEX,
-      (_match, fourDigits, variableDigits) => {
-        const codePoint = parseInt(fourDigits || variableDigits, 16);
-
-        return String.fromCodePoint(codePoint);
-      },
-    );
-
-    // 如果解码后没有变化，返回null
-    if (decoded === text) {
-      return null;
-    }
-
-    return decoded;
-  } catch (e) {
-    console.error("Unicode decode error:", e);
-
-    return null;
-  }
-};
-
-/**
- * 检查字符串是否包含Unicode转义序列
- * @param text 要检查的字符串
- * @returns 是否包含Unicode转义序列
- */
-export const containsUnicode = (text: string): boolean => {
-  UNICODE_REGEX.lastIndex = 0;
-
-  return UNICODE_REGEX.test(text);
-};
-
-/**
- * 注册Unicode装饰器的悬停提供者
+ * 注册Unicode下划线装饰器的悬停提供者
  * @param editor 编辑器实例
- * @param state Unicode装饰器状态
+ * @param state Unicode下划线装饰器状态
  */
-export const registerUnicodeHoverProvider = (
-  editor: editor.IStandaloneCodeEditor,
-  state: UnicodeDecoratorState,
-): void => {
-  if (!state.enabled || state.hoverProviderId.current) {
-    return;
-  }
-
-  // 注册悬停提供者
-  state.hoverProviderId.current = monaco.languages.registerHoverProvider("*", {
-    provideHover: (model, position) => {
-      if (!state.enabled) return null;
-
-      // const lineContent = model.getLineContent(position.lineNumber);
-      const wordInfo = editor.getModel()?.getWordAtPosition(position);
-
-      if (!wordInfo) return null;
-
-      // 获取当前行的文本并检查是否包含Unicode序列
-      const currentWordRange = {
-        startLineNumber: position.lineNumber,
-        endLineNumber: position.lineNumber,
-        startColumn: Math.max(1, wordInfo.startColumn), // 扩展范围以捕获\u前缀
-        endColumn: wordInfo.endColumn, // 扩展范围以捕获可能的后续字符
-      };
-
-      const currentWordText = model.getValueInRange(currentWordRange);
-
-      const decoded = decodeUnicode(currentWordText);
-
-      if (!decoded) {
-        return null;
-      }
-
-      // 如果解码成功，返回悬停信息
-      return {
-        contents: [{ value: "**Unicode 解码**" }, { value: decoded }],
-        range: new monaco.Range(
-          position.lineNumber,
-          currentWordRange.startColumn,
-          position.lineNumber,
-          currentWordRange.endColumn,
-        ),
-      };
-    },
-  });
-};
+export function registerUnicodeHoverProvider(
+  editor: monaco.editor.IStandaloneCodeEditor,
+  state: UnicodeDecoratorState
+): void {
+  return;
+}
 
 /**
- * 更新Unicode装饰器
+ * 更新Unicode下划线装饰器
  * @param editor 编辑器实例
- * @param state Unicode装饰器状态
+ * @param state Unicode下划线装饰器状态
  */
 export const updateUnicodeDecorations = (
   editor: editor.IStandaloneCodeEditor,
@@ -219,9 +136,9 @@ export const updateUnicodeDecorations = (
 };
 
 /**
- * 处理编辑器内容变化时更新Unicode装饰器
+ * 处理编辑器内容变化时更新Unicode下划线装饰器
  * @param e 编辑器内容变化事件
- * @param state Unicode装饰器状态
+ * @param state Unicode下划线装饰器状态
  */
 export const handleUnicodeContentChange = (
   e: editor.IModelContentChangedEvent,
@@ -268,16 +185,16 @@ export const handleUnicodeContentChange = (
 
 /**
  * 清理Unicode缓存
- * @param state Unicode装饰器状态
+ * @param state Unicode下划线装饰器状态
  */
 export const clearUnicodeCache = (state: UnicodeDecoratorState): void => {
   state.cacheRef.current = {};
 };
 
 /**
- * 切换Unicode装饰器状态
+ * 切换Unicode下划线装饰器状态
  * @param editor 编辑器实例
- * @param state Unicode装饰器状态
+ * @param state Unicode下划线装饰器状态
  * @param enabled 是否启用装饰器
  * @returns 是否成功切换
  */

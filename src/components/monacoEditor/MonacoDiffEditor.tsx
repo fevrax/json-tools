@@ -142,8 +142,8 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
 
   // 时间戳装饰器启用状态，优先从编辑器设置中读取
   const [timestampDecoratorsEnabled, setTimestampDecoratorsEnabled] = useState(
-    editorSettings.timestampDecoratorsEnabled !== undefined 
-      ? editorSettings.timestampDecoratorsEnabled 
+    editorSettings.timestampDecoratorsEnabled !== undefined
+      ? editorSettings.timestampDecoratorsEnabled
       : showTimestampDecorators
   );
 
@@ -515,22 +515,22 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
         });
 
         // 初始化完成后更新时间戳装饰器
-        if (timestampDecoratorsEnabled) {
-          setTimeout(() => {
-            if (originalEditorRef.current) {
-              updateTimestampDecorations(
-                originalEditorRef.current,
-                originalTimestampDecoratorState,
-              );
-            }
-            if (modifiedEditorRef.current) {
-              updateTimestampDecorations(
-                modifiedEditorRef.current,
-                modifiedTimestampDecoratorState,
-              );
-            }
-          }, 300);
-        }
+        // if (timestampDecoratorsEnabled) {
+        //   setTimeout(() => {
+        //     if (originalEditorRef.current) {
+        //       updateTimestampDecorations(
+        //         originalEditorRef.current,
+        //         originalTimestampDecoratorState,
+        //       );
+        //     }
+        //     if (modifiedEditorRef.current) {
+        //       updateTimestampDecorations(
+        //         modifiedEditorRef.current,
+        //         modifiedTimestampDecoratorState,
+        //       );
+        //     }
+        //   }, 300);
+        // }
       }
     });
   }
