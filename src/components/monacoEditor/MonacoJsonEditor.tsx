@@ -246,11 +246,11 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     Array<{ role: "user" | "assistant"; content: string; timestamp: number }>
   >([]);
 
-  // 左右推拉相关状态
+  // Ai 面板左右推拉相关状态
   const [aiPanelWidth, setAiPanelWidth] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const dragStartX = useRef<number>(0);
-  const dragStartWidth = useRef<number>(0);
+  const [aiPanelIsDragging, setAIPaneIsDragging] = useState(false);
+  const aiPanelDragStartX = useRef<number>(0);
+  const aiPanelDragStartWidth = useRef<number>(0);
 
   const {
     isOpen: jsonErrorDetailsModel,
@@ -781,17 +781,17 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const handleDragStart = useCallback(
     (e: React.MouseEvent) => {
       e.preventDefault();
-      dragStartX.current = e.clientX;
-      dragStartWidth.current = aiPanelWidth;
-      setIsDragging(true);
+      aiPanelDragStartX.current = e.clientX;
+      aiPanelDragStartWidth.current = aiPanelWidth;
+      setAIPaneIsDragging(true);
     },
     [aiPanelWidth],
   );
 
   // 拖动AI面板
-  const handleMouseMove = useCallback(
+  const handleMouseAIPanelMove = useCallback(
     (e: MouseEvent) => {
-      if (!isDragging || !rootContainerRef.current) return;
+      if (!aiPanelIsDragging || !rootContainerRef.current) return;
 
       // 使用requestAnimationFrame优化性能
       requestAnimationFrame(() => {
@@ -816,9 +816,9 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         const upperBound = 0.6 * totalWidth - effectiveMinWidth;
 
         // 根据拖动偏移量计算潜在的aiPanelWidth
-        const deltaX = e.clientX - dragStartX.current;
+        const deltaX = e.clientX - aiPanelDragStartX.current;
         // 向左拖动时aiPanelWidth增加（deltaX为负）
-        let potentialAiPanelWidth = dragStartWidth.current - deltaX;
+        let potentialAiPanelWidth = aiPanelDragStartWidth.current - deltaX;
 
         // 将潜在宽度限制在计算的边界内，确保lowerBound <= upperBound
         if (lowerBound <= upperBound) {
@@ -842,35 +842,35 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         editorRef.current?.layout();
       });
     },
-    [isDragging],
+    [aiPanelIsDragging],
   );
 
   // 鼠标抬起处理
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
+  const handleMouseAIPanelUp = useCallback(() => {
+    setAIPaneIsDragging(false);
   }, []);
 
   // 添加/移除鼠标事件监听
   useEffect(() => {
-    if (isDragging) {
-      document.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseup", handleMouseUp);
+    if (aiPanelIsDragging) {
+      document.addEventListener("mousemove", handleMouseAIPanelMove);
+      document.addEventListener("mouseup", handleMouseAIPanelUp);
       document.body.style.userSelect = "none";
       document.body.style.cursor = "ew-resize";
     } else {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseAIPanelMove);
+      document.removeEventListener("mouseup", handleMouseAIPanelUp);
       document.body.style.userSelect = "";
       document.body.style.cursor = "";
     }
 
     return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mousemove", handleMouseAIPanelMove);
+      document.removeEventListener("mouseup", handleMouseAIPanelUp);
       document.body.style.userSelect = "";
       document.body.style.cursor = "";
     };
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+  }, [aiPanelIsDragging, handleMouseAIPanelMove, handleMouseAIPanelUp]);
 
   // 暴露给父组件的方法
   useImperativeHandle(ref, () => ({
