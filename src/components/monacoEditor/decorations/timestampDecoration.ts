@@ -5,15 +5,20 @@ import { RefObject } from "react";
 // 定义时间戳转换黑名单关键字
 export const TIMESTAMP_BLACKLIST = ["id", "url", "size", "count", "length"];
 
-// 时间戳装饰器接口
+// 定义时间戳下划线装饰器接口
 export interface TimestampDecoratorState {
   editorRef: RefObject<editor.IStandaloneCodeEditor | null>;
   decorationsRef: RefObject<monaco.editor.IEditorDecorationsCollection | null>;
   decorationIdsRef: RefObject<Record<string, string[]>>;
-  updateTimeoutRef: RefObject<NodeJS.Timeout | null>;
+  hoverProviderId: RefObject<monaco.IDisposable | null>;
   cacheRef: RefObject<Record<string, boolean>>;
+  updateTimeoutRef: RefObject<NodeJS.Timeout | null>;
   enabled: boolean;
 }
+
+// 全局启用状态控制
+let isTimestampDecorationEnabled = true; // 下划线装饰器状态
+let isTimestampProviderEnabled = true; // 全局时间戳悬停提供者状态
 
 /**
  * 更新时间戳装饰器
@@ -24,7 +29,12 @@ export const updateTimestampDecorations = (
   editor: editor.IStandaloneCodeEditor,
   state: TimestampDecoratorState,
 ): void => {
-  if (!editor || !state.enabled) {
+  // 如果全局状态或组件状态禁用，则清除装饰器并退出
+  if (!editor || !state.enabled || !isTimestampDecorationEnabled) {
+    if (state.decorationsRef.current) {
+      state.decorationsRef.current.clear();
+    }
+
     return;
   }
 
@@ -272,4 +282,27 @@ export const toggleTimestampDecorators = (
   }
 
   return true;
+};
+
+/**
+ * 获取时间戳下划线装饰器的全局启用状态
+ */
+export const getTimestampDecorationEnabled = (): boolean => {
+  return isTimestampDecorationEnabled;
+};
+
+/**
+ * 设置时间戳下划线装饰器的全局启用状态
+ * @param enabled 是否启用
+ */
+export const setTimestampDecorationEnabled = (enabled: boolean): void => {
+  isTimestampDecorationEnabled = enabled;
+};
+
+/**
+ * 设置时间戳悬停提供者的启用状态
+ * @param enabled 是否启用
+ */
+export const setTimestampProviderEnabled = (enabled: boolean) => {
+  isTimestampProviderEnabled = enabled;
 };

@@ -26,6 +26,11 @@ import {
 } from "@/store/useOpenAIConfigStore.ts";
 import { openAIService } from "@/services/openAIService.ts";
 
+// 导入解码器控制函数
+import { setBase64DecorationEnabled, setBase64ProviderEnabled } from "@/components/monacoEditor/decorations/base64Decoration.ts";
+import { setUnicodeDecorationEnabled } from "@/components/monacoEditor/decorations/unicodeDecoration.ts";
+import { setTimestampDecorationEnabled } from "@/components/monacoEditor/decorations/timestampDecoration.ts";
+
 // 检查 utools 是否可用
 const isUtoolsAvailable = typeof window !== "undefined" && "utools" in window;
 
@@ -39,6 +44,13 @@ export default function SettingsPage() {
     setExpandSidebar,
     setChatStyle,
     setMonacoEditorCDN,
+    // 解码器设置相关状态
+    timestampDecoderEnabled,
+    base64DecoderEnabled,
+    unicodeDecoderEnabled,
+    setTimestampDecoderEnabled,
+    setBase64DecoderEnabled,
+    setUnicodeDecoderEnabled,
   } = useSettingsStore();
 
   const {
@@ -164,6 +176,22 @@ export default function SettingsPage() {
         setMonacoEditorCDN(value);
         toast.success("编辑器加载方式已更改，请重新加载或刷新后生效");
         reloadApp();
+        break;
+      case "timestampDecoderEnabled":
+        setTimestampDecorationEnabled(value);
+        setTimestampDecoderEnabled(value);
+        toast.success(`时间戳解码器已${value ? '启用' : '禁用'}`);
+        break;
+      case "base64DecoderEnabled":
+        setBase64DecorationEnabled(value);
+        setBase64ProviderEnabled(value);
+        setBase64DecoderEnabled(value);
+        toast.success(`Base64解码器已${value ? '启用' : '禁用'}`);
+        break;
+      case "unicodeDecoderEnabled":
+        setUnicodeDecorationEnabled(value);
+        setUnicodeDecoderEnabled(value);
+        toast.success(`Unicode解码器已${value ? '启用' : '禁用'}`);
         break;
     }
   };
@@ -492,6 +520,7 @@ export default function SettingsPage() {
   const menuItems = [
     { key: "general", label: "通用设置", icon: "solar:settings-bold" },
     { key: "appearance", label: "外观设置", icon: "catppuccin:folder-themes" },
+    { key: "decoders", label: "解码器设置", icon: "solar:code-bold" },
     { key: "ai", label: "AI 助手", icon: "hugeicons:ai-chat-02" },
     { key: "about", label: "关于", icon: "solar:info-circle-bold" },
   ];
@@ -1486,6 +1515,110 @@ export default function SettingsPage() {
     </div>
   );
 
+  // 渲染解码器设置内容
+  const renderDecoderSettings = () => (
+    <div className="h-full">
+      <div className="mb-6 md:mb-8">
+        <h2 className="text-xl md:text-2xl font-bold text-default-900 flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-primary/15 shadow-sm">
+            <Icon className="text-primary" icon="solar:code-bold" width={22} />
+          </div>
+          解码器设置
+        </h2>
+        <p className="text-sm md:text-base text-default-500 mt-2 ml-1">
+          管理编辑器中各种解码器的显示和行为
+        </p>
+      </div>
+
+      <div className="bg-background/80 backdrop-blur-sm rounded-2xl overflow-hidden border border-default-200 shadow-sm">
+        <div className="divide-y divide-default-200">
+          {/* 时间戳解码器 */}
+          <div className="flex items-center justify-between p-5 hover:bg-default-100/40 transition-colors">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-xl bg-blue-500/15 text-blue-500 shadow-sm">
+                <Icon icon="solar:clock-circle-bold" width={22} />
+              </div>
+              <div>
+                <p className="text-default-900 font-medium">时间戳解码器</p>
+                <p className="text-sm text-default-500 mt-1">
+                  自动识别并转换时间戳为人类可读的日期时间格式
+                </p>
+              </div>
+            </div>
+            <Switch
+              className="ml-4"
+              color="primary"
+              isSelected={timestampDecoderEnabled}
+              size="lg"
+              onValueChange={(value) => handleSettingChange("timestampDecoderEnabled", value)}
+            />
+          </div>
+
+          {/* Base64解码器 */}
+          <div className="flex items-center justify-between p-5 hover:bg-default-100/40 transition-colors">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-xl bg-indigo-500/15 text-indigo-500 shadow-sm">
+                <Icon icon="ph:binary-fill" width={22} />
+              </div>
+              <div>
+                <p className="text-default-900 font-medium">Base64 解码器</p>
+                <p className="text-sm text-default-500 mt-1">
+                  自动识别并解码 Base64 编码的字符串
+                </p>
+              </div>
+            </div>
+            <Switch
+              className="ml-4"
+              color="primary"
+              isSelected={base64DecoderEnabled}
+              size="lg"
+              onValueChange={(value) => handleSettingChange("base64DecoderEnabled", value)}
+            />
+          </div>
+
+          {/* Unicode解码器 */}
+          <div className="flex items-center justify-between p-5 hover:bg-default-100/40 transition-colors">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-xl bg-purple-500/15 text-purple-500 shadow-sm">
+                <Icon icon="solar:global-bold" width={22} />
+              </div>
+              <div>
+                <p className="text-default-900 font-medium">Unicode 解码器</p>
+                <p className="text-sm text-default-500 mt-1">
+                  自动识别并转换 Unicode 转义序列为可读字符
+                </p>
+              </div>
+            </div>
+            <Switch
+              className="ml-4"
+              color="primary"
+              isSelected={unicodeDecoderEnabled}
+              size="lg"
+              onValueChange={(value) => handleSettingChange("unicodeDecoderEnabled", value)}
+            />
+          </div>
+
+          {/* 解码器信息提示 */}
+          <div className="p-5">
+            <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-start gap-3">
+              <Icon
+                className="text-primary mt-0.5 flex-shrink-0"
+                icon="solar:info-circle-bold"
+                width={20}
+              />
+              <div className="text-sm text-default-700">
+                <p className="font-medium mb-1 text-primary">关于解码器</p>
+                <p>
+                  解码器可以自动识别并转换特定格式的数据，使其更易读。禁用某个解码器后，相关数据将以原始形式显示。这些设置在所有编辑器中全局生效。
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   // 渲染关于内容
   const renderAboutContent = () => (
     <div className="h-full">
@@ -1639,6 +1772,8 @@ export default function SettingsPage() {
         return renderAISettings();
       case "appearance":
         return renderAppearanceSettings();
+      case "decoders":
+        return renderDecoderSettings();
       case "about":
         return renderAboutContent();
       default:

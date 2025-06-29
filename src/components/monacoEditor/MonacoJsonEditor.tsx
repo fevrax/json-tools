@@ -62,6 +62,7 @@ import PromptContainer, {
   PromptContainerRef,
 } from "@/components/ai/PromptContainer";
 import { jsonQuickPrompts } from "@/components/ai/JsonQuickPrompts.tsx";
+import { useSettingsStore } from "@/store/useSettingsStore";
 
 export interface MonacoJsonEditorProps {
   tabTitle?: string;
@@ -76,8 +77,6 @@ export interface MonacoJsonEditorProps {
   showAi?: boolean; // 是否显示AI功能
   customQuickPrompts?: QuickPrompt[]; // 自定义快捷指令
   showTimestampDecorators?: boolean; // 是否显示时间戳装饰器
-  showBase64Decorators?: boolean; // 是否显示Base64下划线装饰器
-  showUnicodeDecorators?: boolean; // 是否显示Unicode下划线装饰器
   onUpdateValue: (value: string) => void;
   onMount?: () => void;
   ref?: React.Ref<MonacoJsonEditorRef>;
@@ -112,8 +111,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   minimap = false,
   customQuickPrompts,
   showTimestampDecorators = true, // 默认开启时间戳装饰器
-  showBase64Decorators = true, // 默认开启Base64下划线装饰器
-  showUnicodeDecorators = true, // 默认开启Unicode下划线装饰器
   onUpdateValue,
   onMount,
   ref,
@@ -136,12 +133,12 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
   // 从 store 获取当前 tab 的设置
   const currentTab = getTabByKey(tabKey);
+  const { base64DecoderEnabled, unicodeDecoderEnabled } = useSettingsStore();
+
   const editorSettings = currentTab?.editorSettings || {
     fontSize: 14,
     language: language || "json",
     timestampDecoratorsEnabled: showTimestampDecorators,
-    base64DecoratorsEnabled: showBase64Decorators,
-    unicodeDecoratorsEnabled: showUnicodeDecorators,
   };
 
   // 菜单状态
@@ -163,19 +160,11 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       : showTimestampDecorators,
   );
 
-  // Base64装饰器启用状态，优先从编辑器设置中读取
-  const [base64DecoratorsEnabled, setBase64DecoratorsEnabled] = useState(
-    editorSettings.base64DecoratorsEnabled !== undefined
-      ? editorSettings.base64DecoratorsEnabled
-      : showBase64Decorators,
-  );
+  // Base64装饰器使用全局状态
+  const [base64DecoratorsEnabled, setBase64DecoratorsEnabled] = useState(base64DecoderEnabled);
 
-  // Unicode装饰器启用状态，优先从编辑器设置中读取
-  const [unicodeDecoratorsEnabled, setUnicodeDecoratorsEnabled] = useState(
-    editorSettings.unicodeDecoratorsEnabled !== undefined
-      ? editorSettings.unicodeDecoratorsEnabled
-      : showUnicodeDecorators,
-  );
+  // Unicode装饰器使用全局状态
+  const [unicodeDecoratorsEnabled, setUnicodeDecoratorsEnabled] = useState(unicodeDecoderEnabled);
 
   // Base64下划线装饰器相关引用
   const base64DecorationsRef =
@@ -199,6 +188,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     updateTimeoutRef: timestampUpdateTimeoutRef,
     cacheRef: timestampCacheRef,
     enabled: timestampDecoratorsEnabled,
+    hoverProviderId: { current: null },
   };
 
   // Base64下划线装饰器状态
@@ -1009,21 +999,15 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       );
     },
     toggleBase64Decorators: (enabled?: boolean) => {
-      // 更新状态
-      const newState =
-        enabled !== undefined ? enabled : !base64DecoratorsEnabled;
-
-      setBase64DecoratorsEnabled(newState);
-
+      const newState = enabled !== undefined ? enabled : !base64DecoratorsEnabled;
+      // 更新全局状态
+      useSettingsStore.getState().setBase64DecoderEnabled(newState);
       return true;
     },
     toggleUnicodeDecorators: (enabled?: boolean) => {
-      // 更新状态
-      const newState =
-        enabled !== undefined ? enabled : !unicodeDecoratorsEnabled;
-
-      setUnicodeDecoratorsEnabled(newState);
-
+      const newState = enabled !== undefined ? enabled : !unicodeDecoratorsEnabled;
+      // 更新全局状态
+      useSettingsStore.getState().setUnicodeDecoderEnabled(newState);
       return true;
     },
   }));
@@ -1207,18 +1191,41 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       fontSize: fontSize,
       language: currentLanguage,
       timestampDecoratorsEnabled: timestampDecoratorsEnabled,
-      base64DecoratorsEnabled: base64DecoratorsEnabled,
-      unicodeDecoratorsEnabled: unicodeDecoratorsEnabled,
     });
   }, [
     fontSize,
     currentLanguage,
     timestampDecoratorsEnabled,
-    base64DecoratorsEnabled,
-    unicodeDecoratorsEnabled,
     tabKey,
     updateEditorSettings,
   ]);
+
+  // 添加对全局状态变化的监听，并更新相关函数调用
+
+  // 使用useSettingsStore的state更新
+  useEffect(() => {
+    // 同步全局状态到本地状态
+    setBase64DecoratorsEnabled(base64DecoderEnabled);
+    // 更新装饰器状态
+    if (editorRef.current) {
+      setBase64DecorationEnabled(base64DecoderEnabled);
+      setBase64ProviderEnabled(base64DecoderEnabled);
+      // 更新装饰
+      updateBase64Decorations(editorRef.current, base64DecoratorState);
+    }
+  }, [base64DecoderEnabled]);
+
+  useEffect(() => {
+    // 同步全局状态到本地状态
+    setUnicodeDecoratorsEnabled(unicodeDecoderEnabled);
+    // 更新装饰器状态
+    if (editorRef.current) {
+      setUnicodeDecorationEnabled(unicodeDecoderEnabled);
+      setUnicodeProviderEnabled(unicodeDecoderEnabled);
+      // 更新装饰
+      updateUnicodeDecorations(editorRef.current, unicodeDecoratorState);
+    }
+  }, [unicodeDecoderEnabled]);
 
   return (
     <div
@@ -1292,35 +1299,25 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       </div>
 
       {/* 可拖动悬浮菜单 */}
-      {isMenu && (
+      {isMenu && editorRef.current && (
         <DraggableMenu
-          base64DecoratorsEnabled={base64DecoratorsEnabled}
           containerRef={rootContainerRef}
           currentFontSize={fontSize}
           currentLanguage={currentLanguage}
           tabKey={tabKey}
           timestampDecoratorsEnabled={timestampDecoratorsEnabled}
-          unicodeDecoratorsEnabled={unicodeDecoratorsEnabled}
-          onBase64DecoratorsChange={(enabled) => {
-            setBase64DecoratorsEnabled(enabled);
-            // Base64装饰器状态变化会在useEffect中处理
-          }}
           onFontSizeChange={setFontSize}
           onLanguageChange={handleLanguageChange}
           onReset={handleReset}
           onTimestampDecoratorsChange={(enabled) => {
             setTimestampDecoratorsEnabled(enabled);
-            // 调用内部方法切换时间戳装饰器
             if (editorRef.current) {
               toggleTimestampDecorators(
                 editorRef.current,
                 timestampDecoratorState,
-                enabled,
+                enabled
               );
             }
-          }}
-          onUnicodeDecoratorsChange={(enabled) => {
-            setUnicodeDecoratorsEnabled(enabled);
           }}
         />
       )}

@@ -3,18 +3,14 @@ import { Button, cn, Select, SelectItem, Slider, Switch } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
 import { useTabStore } from "@/store/useTabStore";
-
+import { useSettingsStore } from "@/store/useSettingsStore";
 import {
   setBase64DecorationEnabled,
-  getBase64DecorationEnabled,
   setBase64ProviderEnabled,
-  getBase64ProviderEnabled,
 } from "@/components/monacoEditor/decorations/base64Decoration.ts";
 import {
   setUnicodeDecorationEnabled,
-  getUnicodeDecorationEnabled,
   setUnicodeProviderEnabled,
-  getUnicodeProviderEnabled,
 } from "@/components/monacoEditor/decorations/unicodeDecoration.ts";
 
 // 定义菜单位置类型
@@ -65,10 +61,6 @@ interface DraggableMenuProps {
   tabKey: string;
   timestampDecoratorsEnabled?: boolean; // 添加时间戳装饰器状态
   onTimestampDecoratorsChange?: (enabled: boolean) => void; // 添加时间戳装饰器状态变更函数
-  base64DecoratorsEnabled?: boolean; // 添加Base64装饰器状态
-  onBase64DecoratorsChange?: (enabled: boolean) => void; // 添加Base64装饰器状态变更函数
-  unicodeDecoratorsEnabled?: boolean; // 添加Unicode装饰器状态
-  onUnicodeDecoratorsChange?: (enabled: boolean) => void; // 添加Unicode装饰器状态变更函数
 }
 
 const DraggableMenu: React.FC<DraggableMenuProps> = ({
@@ -81,12 +73,15 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   tabKey,
   timestampDecoratorsEnabled = true, // 默认启用
   onTimestampDecoratorsChange,
-  base64DecoratorsEnabled = true, // 默认启用
-  onBase64DecoratorsChange,
-  unicodeDecoratorsEnabled = true, // 默认启用
-  onUnicodeDecoratorsChange,
 }) => {
   const { updateEditorSettings, activeTab } = useTabStore();
+  const {
+    base64DecoderEnabled,
+    unicodeDecoderEnabled,
+    setBase64DecoderEnabled,
+    setUnicodeDecoderEnabled,
+  } = useSettingsStore();
+
   const [menuPosition, setMenuPosition] = useState<MenuPosition>({
     x: 0,
     y: 300,
@@ -101,20 +96,6 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   // 添加延时关闭的定时器引用
   const closeTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 添加Base64和Unicode解码器的状态
-  const [base64DecodersEnabledState, setBase64DecodersEnabledState] =
-    useState<boolean>(
-      base64DecoratorsEnabled !== undefined
-        ? base64DecoratorsEnabled
-        : getBase64ProviderEnabled() && getBase64DecorationEnabled(),
-    );
-  const [unicodeDecodersEnabledState, setUnicodeDecodersEnabledState] =
-    useState<boolean>(
-      unicodeDecoratorsEnabled !== undefined
-        ? unicodeDecoratorsEnabled
-        : getUnicodeProviderEnabled() && getUnicodeDecorationEnabled(),
-    );
-
   // 保存拖动状态，避免状态更新引起的重渲染
   const dragStateRef = useRef({
     startX: 0,
@@ -128,48 +109,42 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
 
   // 处理Base64解码器状态变化
   const handleBase64DecodersChange = (enabled: boolean) => {
-    setBase64DecodersEnabledState(enabled);
-
     // 更新全局状态
+    setBase64DecoderEnabled(enabled);
     setBase64ProviderEnabled(enabled);
     setBase64DecorationEnabled(enabled);
-
-    // 如果提供了回调，调用回调通知父组件
-    if (onBase64DecoratorsChange) {
-      onBase64DecoratorsChange(enabled);
-    }
   };
 
   // 处理Unicode解码器状态变化
   const handleUnicodeDecodersChange = (enabled: boolean) => {
-    setUnicodeDecodersEnabledState(enabled);
-
     // 更新全局状态
+    setUnicodeDecoderEnabled(enabled);
     setUnicodeProviderEnabled(enabled);
     setUnicodeDecorationEnabled(enabled);
-
-    // 如果提供了回调，调用回调通知父组件
-    if (onUnicodeDecoratorsChange) {
-      onUnicodeDecoratorsChange(enabled);
-    }
   };
 
-  // 同步props和state
+  // 同步全局设置到Monaco编辑器
   useEffect(() => {
-    if (
-      base64DecoratorsEnabled !== undefined &&
-      base64DecoratorsEnabled !== base64DecodersEnabledState
-    ) {
-      setBase64DecodersEnabledState(base64DecoratorsEnabled);
-    }
+    // 同步全局设置到Monaco装饰器
+    setBase64DecorationEnabled(base64DecoderEnabled);
+    setBase64ProviderEnabled(base64DecoderEnabled);
+    setUnicodeDecorationEnabled(unicodeDecoderEnabled);
+    setUnicodeProviderEnabled(unicodeDecoderEnabled);
+  }, [base64DecoderEnabled, unicodeDecoderEnabled]);
 
-    if (
-      unicodeDecoratorsEnabled !== undefined &&
-      unicodeDecoratorsEnabled !== unicodeDecodersEnabledState
-    ) {
-      setUnicodeDecodersEnabledState(unicodeDecoratorsEnabled);
-    }
-  }, [base64DecoratorsEnabled, unicodeDecoratorsEnabled]);
+  useEffect(() => {
+    updateEditorSettings(tabKey, {
+      fontSize: currentFontSize,
+      language: currentLanguage,
+      timestampDecoratorsEnabled,
+    });
+  }, [
+    currentLanguage,
+    currentFontSize,
+    timestampDecoratorsEnabled,
+    tabKey,
+    updateEditorSettings,
+  ]);
 
   // 重新计算菜单位置的函数
   const recalculatePosition = useCallback(() => {
@@ -246,24 +221,6 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
       }, 500); // 添加较短的延迟，确保DOM更新完成
     });
   }, [containerRef]);
-
-  useEffect(() => {
-    updateEditorSettings(tabKey, {
-      fontSize: currentFontSize,
-      language: currentLanguage,
-      timestampDecoratorsEnabled,
-      base64DecoratorsEnabled: base64DecodersEnabledState,
-      unicodeDecoratorsEnabled: unicodeDecodersEnabledState,
-    });
-  }, [
-    currentLanguage,
-    currentFontSize,
-    timestampDecoratorsEnabled,
-    base64DecodersEnabledState,
-    unicodeDecodersEnabledState,
-    tabKey,
-    updateEditorSettings,
-  ]);
 
   // 处理窗口大小变化
   useEffect(() => {
@@ -800,11 +757,9 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
               aria-label="Base64解码器开关"
               color="primary"
               id="base64-switch"
-              isSelected={base64DecodersEnabledState}
+              isSelected={base64DecoderEnabled}
               size="sm"
-              onChange={() =>
-                handleBase64DecodersChange(!base64DecodersEnabledState)
-              }
+              onChange={() => handleBase64DecodersChange(!base64DecoderEnabled)}
             />
           </div>
 
@@ -825,10 +780,10 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
               aria-label="Unicode解码器开关"
               color="primary"
               id="unicode-switch"
-              isSelected={unicodeDecodersEnabledState}
+              isSelected={unicodeDecoderEnabled}
               size="sm"
               onChange={() =>
-                handleUnicodeDecodersChange(!unicodeDecodersEnabledState)
+                handleUnicodeDecodersChange(!unicodeDecoderEnabled)
               }
             />
           </div>

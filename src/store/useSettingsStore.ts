@@ -4,17 +4,27 @@ import { devtools } from "zustand/middleware";
 
 import { storage } from "@/lib/indexedDBStore";
 
+// 定义聊天窗口样式类型
 export type ChatStyle = "bubble" | "document";
 
+// 全局设置状态接口，包含解码器配置
 export interface SettingsState {
   editDataSaveLocal: boolean;
   expandSidebar: boolean;
   monacoEditorCDN: "local" | "cdn";
   chatStyle: ChatStyle;
+  // 解码器设置
+  timestampDecoderEnabled: boolean;
+  base64DecoderEnabled: boolean;
+  unicodeDecoderEnabled: boolean;
   setEditDataSaveLocal: (value: boolean) => void;
   setExpandSidebar: (value: boolean) => void;
   setMonacoEditorCDN: (value: "local" | "cdn") => void;
   setChatStyle: (value: ChatStyle) => void;
+  // 解码器setter方法
+  setTimestampDecoderEnabled: (value: boolean) => void;
+  setBase64DecoderEnabled: (value: boolean) => void;
+  setUnicodeDecoderEnabled: (value: boolean) => void;
   setSettings: (settings: SettingsState) => void;
 }
 
@@ -26,12 +36,20 @@ export const useSettingsStore = create<SettingsState>()(
       expandSidebar: false,
       monacoEditorCDN: "local",
       chatStyle: "bubble",
+      // 解码器默认启用
+      timestampDecoderEnabled: true,
+      base64DecoderEnabled: true,
+      unicodeDecoderEnabled: true,
 
       // actions
       setEditDataSaveLocal: (value) => set({ editDataSaveLocal: value }),
       setExpandSidebar: (value) => set({ expandSidebar: value }),
       setMonacoEditorCDN: (value) => set({ monacoEditorCDN: value }),
       setChatStyle: (value) => set({ chatStyle: value }),
+      // 解码器setter实现
+      setTimestampDecoderEnabled: (value) => set({ timestampDecoderEnabled: value }),
+      setBase64DecoderEnabled: (value) => set({ base64DecoderEnabled: value }),
+      setUnicodeDecoderEnabled: (value) => set({ unicodeDecoderEnabled: value }),
       setSettings: (settings) => {
         set(settings);
       },
@@ -48,6 +66,10 @@ useSettingsStore.subscribe((state) => {
     expandSidebar: state.expandSidebar,
     monacoEditorCDN: state.monacoEditorCDN,
     chatStyle: state.chatStyle,
+    // 保存解码器设置
+    timestampDecoderEnabled: state.timestampDecoderEnabled,
+    base64DecoderEnabled: state.base64DecoderEnabled,
+    unicodeDecoderEnabled: state.unicodeDecoderEnabled,
   };
 
   storage.setItem("settings", data);
