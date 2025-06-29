@@ -17,7 +17,7 @@ JSON Tools Next 是一个多功能的JSON工具集，提供了直观的界面和
 - 🧩 **多标签页**：支持同时打开多个JSON文件处理
 - 🧩 **丰富工具箱**：集成多种专用JSON处理工具 
 
-## 📦 JSON 工具箱
+## 📦 JSON 工具箱 
 
 <div align="center">
   <table>
