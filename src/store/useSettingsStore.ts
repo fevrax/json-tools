@@ -17,6 +17,7 @@ export interface SettingsState {
   timestampDecoderEnabled: boolean;
   base64DecoderEnabled: boolean;
   unicodeDecoderEnabled: boolean;
+  urlDecoderEnabled: boolean;
   setEditDataSaveLocal: (value: boolean) => void;
   setExpandSidebar: (value: boolean) => void;
   setMonacoEditorCDN: (value: "local" | "cdn") => void;
@@ -25,6 +26,7 @@ export interface SettingsState {
   setTimestampDecoderEnabled: (value: boolean) => void;
   setBase64DecoderEnabled: (value: boolean) => void;
   setUnicodeDecoderEnabled: (value: boolean) => void;
+  setUrlDecoderEnabled: (value: boolean) => void;
   setSettings: (settings: SettingsState) => void;
 }
 
@@ -40,6 +42,7 @@ export const useSettingsStore = create<SettingsState>()(
       timestampDecoderEnabled: true,
       base64DecoderEnabled: true,
       unicodeDecoderEnabled: true,
+      urlDecoderEnabled: true,
 
       // actions
       setEditDataSaveLocal: (value) => set({ editDataSaveLocal: value }),
@@ -50,6 +53,7 @@ export const useSettingsStore = create<SettingsState>()(
       setTimestampDecoderEnabled: (value) => set({ timestampDecoderEnabled: value }),
       setBase64DecoderEnabled: (value) => set({ base64DecoderEnabled: value }),
       setUnicodeDecoderEnabled: (value) => set({ unicodeDecoderEnabled: value }),
+      setUrlDecoderEnabled: (value) => set({ urlDecoderEnabled: value }),
       setSettings: (settings) => {
         set(settings);
       },
@@ -70,6 +74,7 @@ useSettingsStore.subscribe((state) => {
     timestampDecoderEnabled: state.timestampDecoderEnabled,
     base64DecoderEnabled: state.base64DecoderEnabled,
     unicodeDecoderEnabled: state.unicodeDecoderEnabled,
+    urlDecoderEnabled: state.urlDecoderEnabled,
   };
 
   storage.setItem("settings", data);

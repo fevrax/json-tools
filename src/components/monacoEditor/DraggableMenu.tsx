@@ -12,6 +12,10 @@ import {
   setUnicodeDecorationEnabled,
   setUnicodeProviderEnabled,
 } from "@/components/monacoEditor/decorations/unicodeDecoration.ts";
+import {
+  setUrlDecorationEnabled,
+  setUrlProviderEnabled,
+} from "@/components/monacoEditor/decorations/urlDecoration.ts";
 
 // 定义菜单位置类型
 interface MenuPosition {
@@ -78,8 +82,10 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   const {
     base64DecoderEnabled,
     unicodeDecoderEnabled,
+    urlDecoderEnabled,
     setBase64DecoderEnabled,
     setUnicodeDecoderEnabled,
+    setUrlDecoderEnabled,
     timestampDecoderEnabled, // 获取全局时间戳解码器设置
   } = useSettingsStore();
 
@@ -130,6 +136,14 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     setUnicodeProviderEnabled(enabled);
     setUnicodeDecorationEnabled(enabled);
   };
+  
+  // 处理URL解码器状态变化
+  const handleUrlDecodersChange = (enabled: boolean) => {
+    // 更新全局状态
+    setUrlDecoderEnabled(enabled);
+    setUrlProviderEnabled(enabled);
+    setUrlDecorationEnabled(enabled);
+  };
 
   // 处理时间戳装饰器状态变化
   const handleTimestampDecoratorsChange = (enabled: boolean) => {
@@ -150,7 +164,9 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     setBase64ProviderEnabled(base64DecoderEnabled);
     setUnicodeDecorationEnabled(unicodeDecoderEnabled);
     setUnicodeProviderEnabled(unicodeDecoderEnabled);
-  }, [base64DecoderEnabled, unicodeDecoderEnabled]);
+    setUrlDecorationEnabled(urlDecoderEnabled);
+    setUrlProviderEnabled(urlDecoderEnabled);
+  }, [base64DecoderEnabled, unicodeDecoderEnabled, urlDecoderEnabled]);
 
   // 全局设置变化时，确保局部设置不超出全局权限
   useEffect(() => {
@@ -828,6 +844,29 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
               onChange={() =>
                 handleUnicodeDecodersChange(!unicodeDecoderEnabled)
               }
+            />
+          </div>
+
+          {/* URL解码器开关 */}
+          <div className="flex items-center justify-between px-1">
+            <div className="space-y-1">
+              <label
+                className="text-xs uppercase tracking-wide font-semibold text-gray-600 dark:text-gray-300"
+                htmlFor="url-switch"
+              >
+                URL解码器(全局)
+              </label>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                自动识别并显示URL编码字符串的解码结果
+              </p>
+            </div>
+            <Switch
+              aria-label="URL解码器开关"
+              color="primary"
+              id="url-switch"
+              isSelected={urlDecoderEnabled}
+              size="sm"
+              onChange={() => handleUrlDecodersChange(!urlDecoderEnabled)}
             />
           </div>
 

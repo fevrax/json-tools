@@ -51,8 +51,14 @@ import {
   handleUnicodeContentChange,
   setUnicodeDecorationEnabled,
   setUnicodeProviderEnabled,
-  
 } from "@/components/monacoEditor/decorations/unicodeDecoration.ts";
+import {
+  UrlDecoratorState,
+  updateUrlDecorations,
+  handleUrlContentChange,
+  setUrlDecorationEnabled,
+  setUrlProviderEnabled,
+} from "@/components/monacoEditor/decorations/urlDecoration.ts";
 
 import "@/styles/monaco.css";
 import ErrorModal from "@/components/monacoEditor/ErrorModal.tsx";
@@ -98,6 +104,7 @@ export interface MonacoJsonEditorRef {
   toggleTimestampDecorators: (enabled?: boolean) => boolean; // 切换时间戳装饰器
   toggleBase64Decorators: (enabled?: boolean) => boolean; // 切换Base64装饰器
   toggleUnicodeDecorators: (enabled?: boolean) => boolean; // 切换Unicode装饰器
+  toggleUrlDecorators: (enabled?: boolean) => boolean; // 切换URL装饰器
 }
 
 const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
@@ -133,7 +140,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
   // 从 store 获取当前 tab 的设置
   const currentTab = getTabByKey(tabKey);
-  const { base64DecoderEnabled, unicodeDecoderEnabled } = useSettingsStore();
+  const { base64DecoderEnabled, unicodeDecoderEnabled, urlDecoderEnabled } =
+    useSettingsStore();
 
   const editorSettings = currentTab?.editorSettings || {
     fontSize: 14,
@@ -161,10 +169,17 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   );
 
   // Base64装饰器使用全局状态
-  const [base64DecoratorsEnabled, setBase64DecoratorsEnabled] = useState(base64DecoderEnabled);
+  const [base64DecoratorsEnabled, setBase64DecoratorsEnabled] =
+    useState(base64DecoderEnabled);
 
   // Unicode装饰器使用全局状态
-  const [unicodeDecoratorsEnabled, setUnicodeDecoratorsEnabled] = useState(unicodeDecoderEnabled);
+  const [unicodeDecoratorsEnabled, setUnicodeDecoratorsEnabled] = useState(
+    unicodeDecoderEnabled,
+  );
+
+  // URL装饰器使用全局状态
+  const [urlDecoratorsEnabled, setUrlDecoratorsEnabled] =
+    useState(urlDecoderEnabled);
 
   // Base64下划线装饰器相关引用
   const base64DecorationsRef =
@@ -179,6 +194,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const unicodeDecorationIdsRef = useRef<Record<string, string[]>>({});
   const unicodeUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const unicodeCacheRef = useRef<Record<string, boolean>>({});
+
+  // URL下划线装饰器相关引用
+  const urlDecorationsRef =
+    useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+  const urlDecorationIdsRef = useRef<Record<string, string[]>>({});
+  const urlUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const urlCacheRef = useRef<Record<string, boolean>>({});
 
   // 时间戳装饰器状态
   const timestampDecoratorState: TimestampDecoratorState = {
@@ -211,6 +233,17 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     cacheRef: unicodeCacheRef,
     updateTimeoutRef: unicodeUpdateTimeoutRef,
     enabled: unicodeDecoratorsEnabled,
+  };
+
+  // URL下划线装饰器状态
+  const urlDecoratorState: UrlDecoratorState = {
+    editorRef: editorRef,
+    decorationsRef: urlDecorationsRef,
+    decorationIdsRef: urlDecorationIdsRef,
+    hoverProviderId: { current: null },
+    cacheRef: urlCacheRef,
+    updateTimeoutRef: urlUpdateTimeoutRef,
+    enabled: urlDecoratorsEnabled,
   };
 
   // 错误高亮装饰器状态
@@ -562,6 +595,36 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       }
     }
   }, [unicodeDecoratorsEnabled]);
+
+  // 监听URL装饰器状态变化
+  useEffect(() => {
+    // 更新状态对象中的启用状态
+    urlDecoratorState.enabled = urlDecoratorsEnabled;
+
+    // 更新全局状态
+    setUrlProviderEnabled(urlDecoratorsEnabled);
+    setUrlDecorationEnabled(urlDecoratorsEnabled);
+
+    if (urlDecoratorsEnabled) {
+      // 清空缓存并更新装饰器
+      if (urlCacheRef.current) {
+        urlCacheRef.current = {};
+      }
+      setTimeout(() => {
+        if (editorRef.current) {
+          updateUrlDecorations(editorRef.current, urlDecoratorState);
+        }
+      }, 0);
+    } else {
+      // 禁用时清理装饰器
+      if (urlDecorationsRef.current) {
+        urlDecorationsRef.current.clear();
+      }
+      if (urlCacheRef.current) {
+        urlCacheRef.current = {};
+      }
+    }
+  }, [urlDecoratorsEnabled]);
 
   // 验证编辑器内容
   const editorValueValidate = (val: string): boolean => {
@@ -999,15 +1062,29 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       );
     },
     toggleBase64Decorators: (enabled?: boolean) => {
-      const newState = enabled !== undefined ? enabled : !base64DecoratorsEnabled;
+      const newState =
+        enabled !== undefined ? enabled : !base64DecoratorsEnabled;
+
       // 更新全局状态
       useSettingsStore.getState().setBase64DecoderEnabled(newState);
+
       return true;
     },
     toggleUnicodeDecorators: (enabled?: boolean) => {
-      const newState = enabled !== undefined ? enabled : !unicodeDecoratorsEnabled;
+      const newState =
+        enabled !== undefined ? enabled : !unicodeDecoratorsEnabled;
+
       // 更新全局状态
       useSettingsStore.getState().setUnicodeDecoderEnabled(newState);
+
+      return true;
+    },
+    toggleUrlDecorators: (enabled?: boolean) => {
+      const newState = enabled !== undefined ? enabled : !urlDecoratorsEnabled;
+
+      // 更新全局状态
+      useSettingsStore.getState().setUrlDecoderEnabled(newState);
+
       return true;
     },
   }));
@@ -1107,6 +1184,16 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               );
             }
           }, 200);
+
+          if (urlUpdateTimeoutRef.current) {
+            clearTimeout(urlUpdateTimeoutRef.current);
+          }
+
+          urlUpdateTimeoutRef.current = setTimeout(() => {
+            if (editorRef.current) {
+              updateUrlDecorations(editorRef.current, urlDecoratorState);
+            }
+          }, 200);
         });
 
         // 监听内容变化
@@ -1136,6 +1223,11 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
             // 更新 Unicode 下划线装饰器
             if (unicodeDecoratorsEnabled) {
               handleUnicodeContentChange(e, unicodeDecoratorState);
+            }
+
+            // 更新 URL 下划线装饰器
+            if (urlDecoratorsEnabled) {
+              handleUrlContentChange(e, urlDecoratorState);
             }
           }
           onUpdateValue(val);
@@ -1174,6 +1266,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
                 editorRef.current,
                 unicodeDecoratorState,
               );
+            }
+
+            // 初始化URL装饰器
+            if (urlDecoratorsEnabled) {
+              // 确保全局状态与本地状态同步
+              setUrlProviderEnabled(urlDecoratorsEnabled);
+              setUrlDecorationEnabled(urlDecoratorsEnabled);
+              updateUrlDecorations(editorRef.current, urlDecoratorState);
             }
           }
         }, 300);
@@ -1226,6 +1326,18 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       updateUnicodeDecorations(editorRef.current, unicodeDecoratorState);
     }
   }, [unicodeDecoderEnabled]);
+
+  useEffect(() => {
+    // 同步全局状态到本地状态
+    setUrlDecoratorsEnabled(urlDecoderEnabled);
+    // 更新装饰器状态
+    if (editorRef.current) {
+      setUrlDecorationEnabled(urlDecoderEnabled);
+      setUrlProviderEnabled(urlDecoderEnabled);
+      // 更新装饰
+      updateUrlDecorations(editorRef.current, urlDecoratorState);
+    }
+  }, [urlDecoderEnabled]);
 
   return (
     <div
@@ -1315,7 +1427,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               toggleTimestampDecorators(
                 editorRef.current,
                 timestampDecoratorState,
-                enabled
+                enabled,
               );
             }
           }}

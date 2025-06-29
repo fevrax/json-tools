@@ -30,6 +30,7 @@ import { openAIService } from "@/services/openAIService.ts";
 import { setBase64DecorationEnabled, setBase64ProviderEnabled } from "@/components/monacoEditor/decorations/base64Decoration.ts";
 import { setUnicodeDecorationEnabled } from "@/components/monacoEditor/decorations/unicodeDecoration.ts";
 import { setTimestampDecorationEnabled } from "@/components/monacoEditor/decorations/timestampDecoration.ts";
+import { setUrlDecorationEnabled, setUrlProviderEnabled } from "@/components/monacoEditor/decorations/urlDecoration.ts";
 
 // 检查 utools 是否可用
 const isUtoolsAvailable = typeof window !== "undefined" && "utools" in window;
@@ -48,9 +49,11 @@ export default function SettingsPage() {
     timestampDecoderEnabled,
     base64DecoderEnabled,
     unicodeDecoderEnabled,
+    urlDecoderEnabled,
     setTimestampDecoderEnabled,
     setBase64DecoderEnabled,
     setUnicodeDecoderEnabled,
+    setUrlDecoderEnabled,
   } = useSettingsStore();
 
   const {
@@ -192,6 +195,12 @@ export default function SettingsPage() {
         setUnicodeDecorationEnabled(value);
         setUnicodeDecoderEnabled(value);
         toast.success(`Unicode解码器已${value ? '启用' : '禁用'}`);
+        break;
+      case "urlDecoderEnabled":
+        setUrlDecorationEnabled(value);
+        setUrlProviderEnabled(value);
+        setUrlDecoderEnabled(value);
+        toast.success(`URL解码器已${value ? '启用' : '禁用'}`);
         break;
     }
   };
@@ -1595,6 +1604,28 @@ export default function SettingsPage() {
               isSelected={unicodeDecoderEnabled}
               size="lg"
               onValueChange={(value) => handleSettingChange("unicodeDecoderEnabled", value)}
+            />
+          </div>
+
+          {/* URL解码器 */}
+          <div className="flex items-center justify-between p-5 hover:bg-default-100/40 transition-colors">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-xl bg-amber-500/15 text-amber-500 shadow-sm">
+                <Icon icon="solar:link-bold" width={22} />
+              </div>
+              <div>
+                <p className="text-default-900 font-medium">URL 解码器</p>
+                <p className="text-sm text-default-500 mt-1">
+                  自动识别并转换URL编码序列为可读字符
+                </p>
+              </div>
+            </div>
+            <Switch
+              className="ml-4"
+              color="primary"
+              isSelected={urlDecoderEnabled}
+              size="lg"
+              onValueChange={(value) => handleSettingChange("urlDecoderEnabled", value)}
             />
           </div>
 

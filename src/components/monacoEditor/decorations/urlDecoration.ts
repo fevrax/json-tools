@@ -2,14 +2,24 @@ import * as monaco from "monaco-editor";
 import { editor } from "monaco-editor";
 import { RefObject } from "react";
 
-import {
-  BASE64_REGEX,
-  checkBase64Strict,
-  decodeBase64Strict,
-} from "@/utils/base64.ts";
+// URL编码正则表达式 - 匹配%xx形式的编码
+export const URL_REGEX = /%(?:[0-9a-fA-F]{2})+/g;
 
-// 定义Base64下划线装饰器接口
-export interface Base64DecoratorState {
+// URL解码函数
+export const decodeUrl = (text: string): string | null => {
+  try {
+    if (!text || !text.match(URL_REGEX)) {
+      return null;
+    }
+
+    return decodeURIComponent(text);
+  } catch (e) {
+    return null;
+  }
+};
+
+// 定义URL下划线装饰器接口
+export interface UrlDecoratorState {
   editorRef: RefObject<editor.IStandaloneCodeEditor | null>;
   decorationsRef: RefObject<monaco.editor.IEditorDecorationsCollection | null>;
   decorationIdsRef: RefObject<Record<string, string[]>>;
@@ -20,27 +30,30 @@ export interface Base64DecoratorState {
 }
 
 // 全局启用状态控制
-let isBase64DecorationEnabled = true; // 下划线装饰器状态
-let isBase64ProviderEnabled = true; // 全局Base64悬停提供者状态
+let isUrlDecorationEnabled = true; // 下划线装饰器全局启用状态
+let isUrlProviderEnabled = true; // 全局悬浮提供者启用状态
 
-// 注册全局Base64悬停提供者
-export const registerBase64HoverProvider = () => {
+// 注册全局URL解码悬停提供者
+export const registerUrlHoverProvider = () => {
   monaco.languages.registerHoverProvider(["json", "json5"], {
     provideHover: (model, position) => {
       // 如果提供者被禁用，直接返回null
-      if (!isBase64ProviderEnabled) return null;
-
-      const lineContent = model.getLineContent(position.lineNumber);
+      if (!isUrlProviderEnabled) return null;
       const wordInfo = model?.getWordAtPosition(position);
 
       if (!wordInfo) return null;
 
-      // 获取当前词的范围
-      const start = wordInfo.startColumn;
-      const end = wordInfo.endColumn;
-      const word = lineContent.substring(start - 1, end - 1);
+      // 获取当前行的文本并检查是否包含URL编码序列
+      const currentWordRange = {
+        startLineNumber: position.lineNumber,
+        endLineNumber: position.lineNumber,
+        startColumn: Math.max(1, wordInfo.startColumn), // 扩展范围以捕获%前缀
+        endColumn: wordInfo.endColumn, // 扩展范围以捕获可能的后续字符
+      };
 
-      const decoded = decodeBase64Strict(word);
+      const currentWordText = model.getValueInRange(currentWordRange);
+
+      const decoded = decodeUrl(currentWordText);
 
       if (!decoded) {
         return null;
@@ -48,15 +61,12 @@ export const registerBase64HoverProvider = () => {
 
       // 如果解码成功，返回悬停信息
       return {
-        contents: [
-          { value: "**Base64 解码器**" },
-          { value: "```\n" + decoded + "\n```" },
-        ],
+        contents: [{ value: "**URL 解码器**" }, { value: decoded }],
         range: new monaco.Range(
           position.lineNumber,
-          start,
+          currentWordRange.startColumn,
           position.lineNumber,
-          end,
+          currentWordRange.endColumn,
         ),
       };
     },
@@ -64,16 +74,16 @@ export const registerBase64HoverProvider = () => {
 };
 
 /**
- * 更新Base64下划线装饰器
+ * 更新URL下划线装饰器
  * @param editor 编辑器实例
- * @param state Base64下划线装饰器状态
+ * @param state URL下划线装饰器状态
  */
-export const updateBase64Decorations = (
+export const updateUrlDecorations = (
   editor: editor.IStandaloneCodeEditor,
-  state: Base64DecoratorState,
+  state: UrlDecoratorState,
 ): void => {
   // 如果全局状态或组件状态禁用，则清除装饰器并退出
-  if (!editor || !state.enabled || !isBase64DecorationEnabled) {
+  if (!editor || !state.enabled || !isUrlDecorationEnabled) {
     if (state.decorationsRef.current) {
       state.decorationsRef.current.clear();
     }
@@ -118,55 +128,47 @@ export const updateBase64Decorations = (
       }
 
       // 复位正则表达式的lastIndex
-      BASE64_REGEX.lastIndex = 0;
+      URL_REGEX.lastIndex = 0;
 
-      // 使用正则表达式查找可能的Base64字符串
+      // 使用正则表达式查找URL编码序列
       let match;
       let matchCount = 0;
+      const decorations: monaco.editor.IModelDeltaDecoration[] = [];
 
       while (
-        (match = BASE64_REGEX.exec(lineContent)) !== null &&
+        (match = URL_REGEX.exec(lineContent)) !== null &&
         matchCount < 100
       ) {
         matchCount++;
-        const base64Str = match[1] || match[2];
 
-        if (base64Str.length < 8 || base64Str.length > 2000) {
-          continue;
-        }
+        const startColumn = match.index + 1;
+        const endColumn = startColumn + match[0].length;
 
-        if (!checkBase64Strict(base64Str)) {
-          continue;
-        }
-
-        const startColumn = match.index + (match[0].startsWith(": ") ? 4 : 1);
-        const endColumn = startColumn + base64Str.length;
-        const decorations: monaco.editor.IModelDeltaDecoration[] = [
-          {
-            range: new monaco.Range(
-              lineNumber,
-              startColumn,
-              lineNumber,
-              endColumn,
-            ),
-            options: {
-              inlineClassName: "base64-decoration",
-              zIndex: 2999,
-            },
+        decorations.push({
+          range: new monaco.Range(
+            lineNumber,
+            startColumn,
+            lineNumber,
+            endColumn,
+          ),
+          options: {
+            inlineClassName: "url-decoration",
+            zIndex: 3000,
           },
-        ];
+        });
+      }
 
+      if (decorations.length > 0) {
         let lineDecorations =
           state.editorRef.current?.getLineDecorations(lineNumber);
 
-        // 删除重新设置装饰器
+        // 删除之前的装饰器
         if (lineDecorations) {
           for (let i = lineDecorations.length - 1; i >= 0; i--) {
             let lineDecoration = lineDecorations[i];
 
-            if (lineDecoration.options.zIndex === 2999) {
+            if (lineDecoration.options.zIndex === 3000) {
               state.editorRef.current?.removeDecorations([lineDecoration.id]);
-              break;
             }
           }
         }
@@ -185,16 +187,16 @@ export const updateBase64Decorations = (
 };
 
 /**
- * 处理编辑器内容变化时更新Base64下划线装饰器
+ * 处理编辑器内容变化时更新URL下划线装饰器
  * @param e 编辑器内容变化事件
- * @param state Base64下划线装饰器状态
+ * @param state URL下划线装饰器状态
  */
-export const handleBase64ContentChange = (
+export const handleUrlContentChange = (
   e: editor.IModelContentChangedEvent,
-  state: Base64DecoratorState,
+  state: UrlDecoratorState,
 ): void => {
   // 如果装饰器全局禁用，则直接返回
-  if (!isBase64DecorationEnabled || !state.enabled) {
+  if (!isUrlDecorationEnabled || !state.enabled) {
     return;
   }
 
@@ -203,7 +205,7 @@ export const handleBase64ContentChange = (
   }
 
   state.updateTimeoutRef.current = setTimeout(() => {
-    // 内容发生变化则base64需要重新计算
+    // 内容发生变化时需要重新计算
     if (e.changes && e.changes.length > 0) {
       const regex = new RegExp(e.eol, "g");
 
@@ -228,45 +230,45 @@ export const handleBase64ContentChange = (
     }
 
     if (state.editorRef.current) {
-      updateBase64Decorations(state.editorRef.current, state);
+      updateUrlDecorations(state.editorRef.current, state);
     }
   }, 200);
 };
 
 /**
- * 清理Base64缓存
- * @param state Base64下划线装饰器状态
+ * 清理URL缓存
+ * @param state URL下划线装饰器状态
  */
-export const clearBase64Cache = (state: Base64DecoratorState): void => {
+export const clearUrlCache = (state: UrlDecoratorState): void => {
   state.cacheRef.current = {};
 };
 
 /**
- * 获取Base64下划线装饰器的全局启用状态
+ * 获取URL下划线装饰器的全局启用状态
  */
-export const getBase64DecorationEnabled = (): boolean => {
-  return isBase64DecorationEnabled;
+export const getUrlDecorationEnabled = (): boolean => {
+  return isUrlDecorationEnabled;
 };
 
 /**
- * 设置Base64下划线装饰器的全局启用状态
+ * 设置URL下划线装饰器的全局启用状态
  * @param enabled 是否启用
  */
-export const setBase64DecorationEnabled = (enabled: boolean): void => {
-  isBase64DecorationEnabled = enabled;
+export const setUrlDecorationEnabled = (enabled: boolean): void => {
+  isUrlDecorationEnabled = enabled;
 };
 
 /**
- * 设置Base64悬停提供者的启用状态
+ * 设置URL悬停提供者的启用状态
  * @param enabled 是否启用
  */
-export const setBase64ProviderEnabled = (enabled: boolean) => {
-  isBase64ProviderEnabled = enabled;
+export const setUrlProviderEnabled = (enabled: boolean) => {
+  isUrlProviderEnabled = enabled;
 };
 
 /**
- * 获取Base64悬停提供者的当前启用状态
+ * 获取URL悬停提供者的当前启用状态
  */
-export const getBase64ProviderEnabled = (): boolean => {
-  return isBase64ProviderEnabled;
+export const getUrlProviderEnabled = (): boolean => {
+  return isUrlProviderEnabled;
 };

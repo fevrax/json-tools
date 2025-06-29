@@ -114,3 +114,20 @@
     text-decoration-color: #a78bfa;
     background-color: rgba(167, 139, 250, 0.1);
 }
+
+/* URL样式 */
+.url-decoration {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: #f59e0b;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+    cursor: help;
+    background-color: rgba(245, 158, 11, 0.08);
+    border-radius: 2px;
+}
+.monaco-editor.vs-dark .url-decoration,
+.monaco-editor.hc-black .url-decoration {
+    text-decoration-color: #fbbf24;
+    background-color: rgba(251, 191, 36, 0.1);
+}

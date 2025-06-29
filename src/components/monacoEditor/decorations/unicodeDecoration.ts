@@ -230,37 +230,6 @@ export const clearUnicodeCache = (state: UnicodeDecoratorState): void => {
 };
 
 /**
- * 切换Unicode下划线装饰器状态
- * @param editor 编辑器实例
- * @param state Unicode下划线装饰器状态
- * @param enabled 是否启用装饰器
- * @returns 操作是否成功
- */
-export const toggleUnicodeDecorators = (
-  editor: editor.IStandaloneCodeEditor | null,
-  state: UnicodeDecoratorState,
-  enabled: boolean,
-): boolean => {
-  if (!editor) return false;
-
-  // 更新状态
-  state.enabled = enabled;
-
-  if (enabled) {
-    // 启用时，清空缓存并重新计算装饰器
-    clearUnicodeCache(state);
-    updateUnicodeDecorations(editor, state);
-  } else {
-    // 禁用时清除所有装饰器
-    if (state.decorationsRef.current) {
-      state.decorationsRef.current.clear();
-    }
-  }
-
-  return true;
-};
-
-/**
  * 获取Unicode下划线装饰器的全局启用状态
  */
 export const getUnicodeDecorationEnabled = (): boolean => {
