@@ -32,7 +32,7 @@ import {
   clearTimestampCache,
   toggleTimestampDecorators,
   updateTimestampDecorations,
-  handleContentChange,
+  handleTimestampContentChange,
 } from "@/components/monacoEditor/decorations/timestampDecoration.ts";
 import {
   ErrorDecoratorState,
@@ -1141,7 +1141,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
             // 更新时间戳装饰器
             if (timestampDecoratorsEnabled) {
-              handleContentChange(e, timestampDecoratorState);
+              handleTimestampContentChange(e, timestampDecoratorState);
             }
 
             // 更新 Base64 下划线装饰器

@@ -26,12 +26,26 @@ import {
   clearTimestampCache,
   toggleTimestampDecorators,
   updateTimestampDecorations,
-  handleContentChange,
+  handleTimestampContentChange,
 } from "@/components/monacoEditor/decorations/timestampDecoration.ts";
+import {
+  Base64DecoratorState,
+  updateBase64Decorations,
+  handleBase64ContentChange,
+  setBase64DecorationEnabled,
+  setBase64ProviderEnabled,
+} from "@/components/monacoEditor/decorations/base64Decoration.ts";
+import {
+  UnicodeDecoratorState,
+  updateUnicodeDecorations,
+  handleUnicodeContentChange,
+  setUnicodeDecorationEnabled,
+  setUnicodeProviderEnabled,
+} from "@/components/monacoEditor/decorations/unicodeDecoration.ts";
 
 import "@/styles/monaco.css";
-import { diffJsonQuickPrompts } from "@/components/ai/JsonQuickPrompts.tsx";
 import { Json5LanguageDef } from "@/components/monacoEditor/MonacoLanguageDef.tsx";
+import { diffJsonQuickPrompts } from "@/components/ai/JsonQuickPrompts.tsx";
 
 export interface MonacoDiffEditorProps {
   tabKey: string;
@@ -43,6 +57,8 @@ export interface MonacoDiffEditorProps {
   theme?: string;
   customQuickPrompts?: QuickPrompt[];
   showTimestampDecorators?: boolean;
+  showBase64Decorators?: boolean;
+  showUnicodeDecorators?: boolean;
   onUpdateOriginalValue: (value: string) => void;
   onUpdateModifiedValue?: (value: string) => void;
   onMount?: () => void;
@@ -64,6 +80,8 @@ export interface MonacoDiffEditorRef {
   updateModifiedValue: (value: string) => void;
   updateOriginalValue: (value: string) => void;
   toggleTimestampDecorators: (enabled?: boolean) => boolean;
+  toggleBase64Decorators: (enabled?: boolean) => boolean;
+  toggleUnicodeDecorators: (enabled?: boolean) => boolean;
 }
 
 const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
@@ -75,6 +93,8 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   tabKey,
   customQuickPrompts,
   showTimestampDecorators = true,
+  showBase64Decorators = true,
+  showUnicodeDecorators = true,
   onUpdateOriginalValue,
   onUpdateModifiedValue,
   onMount,
@@ -91,7 +111,9 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   const editorSettings = currentTab?.editorSettings || {
     fontSize: 14,
     language: language || "json",
-    timestampDecoratorsEnabled: showTimestampDecorators, // 默认值来自props
+    timestampDecoratorsEnabled: showTimestampDecorators,
+    base64DecoratorsEnabled: showBase64Decorators,
+    unicodeDecoratorsEnabled: showUnicodeDecorators,
   };
 
   // 菜单状态
@@ -144,7 +166,21 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   const [timestampDecoratorsEnabled, setTimestampDecoratorsEnabled] = useState(
     editorSettings.timestampDecoratorsEnabled !== undefined
       ? editorSettings.timestampDecoratorsEnabled
-      : showTimestampDecorators
+      : showTimestampDecorators,
+  );
+
+  // Base64下划线装饰器启用状态，优先从编辑器设置中读取
+  const [base64DecoratorsEnabled, setBase64DecoratorsEnabled] = useState(
+    editorSettings.base64DecoratorsEnabled !== undefined
+      ? editorSettings.base64DecoratorsEnabled
+      : showBase64Decorators,
+  );
+
+  // Unicode装饰器启用状态，优先从编辑器设置中读取
+  const [unicodeDecoratorsEnabled, setUnicodeDecoratorsEnabled] = useState(
+    editorSettings.unicodeDecoratorsEnabled !== undefined
+      ? editorSettings.unicodeDecoratorsEnabled
+      : showUnicodeDecorators,
   );
 
   // 时间戳装饰器状态
@@ -164,6 +200,74 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     updateTimeoutRef: modifiedTimestampUpdateTimeoutRef,
     cacheRef: modifiedTimestampCacheRef,
     enabled: timestampDecoratorsEnabled,
+  };
+
+  // Base64下划线装饰器相关引用
+  const originalBase64DecorationsRef =
+    useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+  const originalBase64DecorationIdsRef = useRef<Record<string, string[]>>({});
+  const originalBase64UpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const originalBase64CacheRef = useRef<Record<string, boolean>>({});
+
+  const modifiedBase64DecorationsRef =
+    useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+  const modifiedBase64DecorationIdsRef = useRef<Record<string, string[]>>({});
+  const modifiedBase64UpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const modifiedBase64CacheRef = useRef<Record<string, boolean>>({});
+
+  // Unicode下划线装饰器相关引用
+  const originalUnicodeDecorationsRef =
+    useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+  const originalUnicodeDecorationIdsRef = useRef<Record<string, string[]>>({});
+  const originalUnicodeUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const originalUnicodeCacheRef = useRef<Record<string, boolean>>({});
+
+  const modifiedUnicodeDecorationsRef =
+    useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+  const modifiedUnicodeDecorationIdsRef = useRef<Record<string, string[]>>({});
+  const modifiedUnicodeUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const modifiedUnicodeCacheRef = useRef<Record<string, boolean>>({});
+
+  // Base64下划线装饰器状态
+  const originalBase64DecoratorState: Base64DecoratorState = {
+    editorRef: originalEditorRef,
+    decorationsRef: originalBase64DecorationsRef,
+    decorationIdsRef: originalBase64DecorationIdsRef,
+    hoverProviderId: { current: null },
+    cacheRef: originalBase64CacheRef,
+    updateTimeoutRef: originalBase64UpdateTimeoutRef,
+    enabled: base64DecoratorsEnabled,
+  };
+
+  const modifiedBase64DecoratorState: Base64DecoratorState = {
+    editorRef: modifiedEditorRef,
+    decorationsRef: modifiedBase64DecorationsRef,
+    decorationIdsRef: modifiedBase64DecorationIdsRef,
+    hoverProviderId: { current: null },
+    cacheRef: modifiedBase64CacheRef,
+    updateTimeoutRef: modifiedBase64UpdateTimeoutRef,
+    enabled: base64DecoratorsEnabled,
+  };
+
+  // Unicode下划线装饰器状态
+  const originalUnicodeDecoratorState: UnicodeDecoratorState = {
+    editorRef: originalEditorRef,
+    decorationsRef: originalUnicodeDecorationsRef,
+    decorationIdsRef: originalUnicodeDecorationIdsRef,
+    hoverProviderId: { current: null },
+    cacheRef: originalUnicodeCacheRef,
+    updateTimeoutRef: originalUnicodeUpdateTimeoutRef,
+    enabled: unicodeDecoratorsEnabled,
+  };
+
+  const modifiedUnicodeDecoratorState: UnicodeDecoratorState = {
+    editorRef: modifiedEditorRef,
+    decorationsRef: modifiedUnicodeDecorationsRef,
+    decorationIdsRef: modifiedUnicodeDecorationIdsRef,
+    hoverProviderId: { current: null },
+    cacheRef: modifiedUnicodeCacheRef,
+    updateTimeoutRef: modifiedUnicodeUpdateTimeoutRef,
+    enabled: unicodeDecoratorsEnabled,
   };
 
   // 使用自定义快捷指令或默认快捷指令
@@ -205,6 +309,104 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       clearTimestampCache(modifiedTimestampDecoratorState);
     }
   }, [timestampDecoratorsEnabled]);
+
+  // 监听Base64下划线装饰器状态变化
+  useEffect(() => {
+    // 更新状态对象中的启用状态
+    originalBase64DecoratorState.enabled = base64DecoratorsEnabled;
+    modifiedBase64DecoratorState.enabled = base64DecoratorsEnabled;
+
+    // 更新全局状态
+    setBase64ProviderEnabled(base64DecoratorsEnabled);
+    setBase64DecorationEnabled(base64DecoratorsEnabled);
+
+    if (base64DecoratorsEnabled) {
+      // 清空缓存并更新装饰器
+      if (originalBase64CacheRef.current) {
+        originalBase64CacheRef.current = {};
+      }
+      if (modifiedBase64CacheRef.current) {
+        modifiedBase64CacheRef.current = {};
+      }
+      setTimeout(() => {
+        if (originalEditorRef.current) {
+          updateBase64Decorations(
+            originalEditorRef.current,
+            originalBase64DecoratorState,
+          );
+        }
+        if (modifiedEditorRef.current) {
+          updateBase64Decorations(
+            modifiedEditorRef.current,
+            modifiedBase64DecoratorState,
+          );
+        }
+      }, 0);
+    } else {
+      // 禁用时清理装饰器
+      if (originalBase64DecorationsRef.current) {
+        originalBase64DecorationsRef.current.clear();
+      }
+      if (modifiedBase64DecorationsRef.current) {
+        modifiedBase64DecorationsRef.current.clear();
+      }
+      if (originalBase64CacheRef.current) {
+        originalBase64CacheRef.current = {};
+      }
+      if (modifiedBase64CacheRef.current) {
+        modifiedBase64CacheRef.current = {};
+      }
+    }
+  }, [base64DecoratorsEnabled]);
+
+  // 监听Unicode装饰器状态变化
+  useEffect(() => {
+    // 更新状态对象中的启用状态
+    originalUnicodeDecoratorState.enabled = unicodeDecoratorsEnabled;
+    modifiedUnicodeDecoratorState.enabled = unicodeDecoratorsEnabled;
+
+    // 更新全局状态
+    setUnicodeProviderEnabled(unicodeDecoratorsEnabled);
+    setUnicodeDecorationEnabled(unicodeDecoratorsEnabled);
+
+    if (unicodeDecoratorsEnabled) {
+      // 清空缓存并更新装饰器
+      if (originalUnicodeCacheRef.current) {
+        originalUnicodeCacheRef.current = {};
+      }
+      if (modifiedUnicodeCacheRef.current) {
+        modifiedUnicodeCacheRef.current = {};
+      }
+      setTimeout(() => {
+        if (originalEditorRef.current) {
+          updateUnicodeDecorations(
+            originalEditorRef.current,
+            originalUnicodeDecoratorState,
+          );
+        }
+        if (modifiedEditorRef.current) {
+          updateUnicodeDecorations(
+            modifiedEditorRef.current,
+            modifiedUnicodeDecoratorState,
+          );
+        }
+      }, 0);
+    } else {
+      // 禁用时清理装饰器
+      if (originalUnicodeDecorationsRef.current) {
+        originalUnicodeDecorationsRef.current.clear();
+      }
+      if (modifiedUnicodeDecorationsRef.current) {
+        modifiedUnicodeDecorationsRef.current.clear();
+      }
+      if (originalUnicodeCacheRef.current) {
+        originalUnicodeCacheRef.current = {};
+      }
+      if (modifiedUnicodeCacheRef.current) {
+        modifiedUnicodeCacheRef.current = {};
+      }
+    }
+  }, [unicodeDecoratorsEnabled]);
 
   useEffect(() => {
     if (editorRef.current) {
@@ -458,7 +660,17 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
 
           // 更新时间戳装饰器
           if (timestampDecoratorsEnabled) {
-            handleContentChange(e, originalTimestampDecoratorState);
+            handleTimestampContentChange(e, originalTimestampDecoratorState);
+          }
+
+          // 更新Base64下划线装饰器
+          if (base64DecoratorsEnabled) {
+            handleBase64ContentChange(e, originalBase64DecoratorState);
+          }
+
+          // Unicode下划线装饰器
+          if (unicodeDecoratorsEnabled) {
+            handleUnicodeContentChange(e, originalUnicodeDecoratorState);
           }
         });
 
@@ -479,7 +691,17 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
 
           // 更新时间戳装饰器
           if (timestampDecoratorsEnabled) {
-            handleContentChange(e, modifiedTimestampDecoratorState);
+            handleTimestampContentChange(e, modifiedTimestampDecoratorState);
+          }
+
+          // 更新Base64下划线装饰器
+          if (base64DecoratorsEnabled) {
+            handleBase64ContentChange(e, modifiedBase64DecoratorState);
+          }
+
+          // Unicode下划线装饰器
+          if (unicodeDecoratorsEnabled) {
+            handleUnicodeContentChange(e, modifiedUnicodeDecoratorState);
           }
         });
 
@@ -497,6 +719,32 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
               );
             }
           }, 200); // 添加防抖
+
+          if (originalBase64UpdateTimeoutRef.current) {
+            clearTimeout(originalBase64UpdateTimeoutRef.current);
+          }
+
+          originalBase64UpdateTimeoutRef.current = setTimeout(() => {
+            if (originalEditorRef.current && base64DecoratorsEnabled) {
+              updateBase64Decorations(
+                originalEditorRef.current,
+                originalBase64DecoratorState,
+              );
+            }
+          }, 200);
+
+          if (originalUnicodeUpdateTimeoutRef.current) {
+            clearTimeout(originalUnicodeUpdateTimeoutRef.current);
+          }
+
+          originalUnicodeUpdateTimeoutRef.current = setTimeout(() => {
+            if (originalEditorRef.current && unicodeDecoratorsEnabled) {
+              updateUnicodeDecorations(
+                originalEditorRef.current,
+                originalUnicodeDecoratorState,
+              );
+            }
+          }, 200);
         });
 
         modifiedEditorRef.current.onDidScrollChange(() => {
@@ -512,25 +760,80 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
               );
             }
           }, 200); // 添加防抖
+
+          if (modifiedBase64UpdateTimeoutRef.current) {
+            clearTimeout(modifiedBase64UpdateTimeoutRef.current);
+          }
+
+          modifiedBase64UpdateTimeoutRef.current = setTimeout(() => {
+            if (modifiedEditorRef.current && base64DecoratorsEnabled) {
+              updateBase64Decorations(
+                modifiedEditorRef.current,
+                modifiedBase64DecoratorState,
+              );
+            }
+          }, 200);
+
+          if (modifiedUnicodeUpdateTimeoutRef.current) {
+            clearTimeout(modifiedUnicodeUpdateTimeoutRef.current);
+          }
+
+          modifiedUnicodeUpdateTimeoutRef.current = setTimeout(() => {
+            if (modifiedEditorRef.current && unicodeDecoratorsEnabled) {
+              updateUnicodeDecorations(
+                modifiedEditorRef.current,
+                modifiedUnicodeDecoratorState,
+              );
+            }
+          }, 200);
         });
 
         // 初始化完成后更新时间戳装饰器
-        // if (timestampDecoratorsEnabled) {
-        //   setTimeout(() => {
-        //     if (originalEditorRef.current) {
-        //       updateTimestampDecorations(
-        //         originalEditorRef.current,
-        //         originalTimestampDecoratorState,
-        //       );
-        //     }
-        //     if (modifiedEditorRef.current) {
-        //       updateTimestampDecorations(
-        //         modifiedEditorRef.current,
-        //         modifiedTimestampDecoratorState,
-        //       );
-        //     }
-        //   }, 300);
-        // }
+        setTimeout(() => {
+          if (originalEditorRef.current && modifiedEditorRef.current) {
+            if (timestampDecoratorsEnabled) {
+              // 初始化时间戳装饰器
+              updateTimestampDecorations(
+                originalEditorRef.current,
+                originalTimestampDecoratorState,
+              );
+              updateTimestampDecorations(
+                modifiedEditorRef.current,
+                modifiedTimestampDecoratorState,
+              );
+            }
+
+            // 初始化Base64下划线装饰器
+            if (base64DecoratorsEnabled) {
+              // 确保全局状态与本地状态同步
+              setBase64ProviderEnabled(base64DecoratorsEnabled);
+              setBase64DecorationEnabled(base64DecoratorsEnabled);
+              updateBase64Decorations(
+                originalEditorRef.current,
+                originalBase64DecoratorState,
+              );
+              updateBase64Decorations(
+                modifiedEditorRef.current,
+                modifiedBase64DecoratorState,
+              );
+            }
+
+            // 初始化Unicode装饰器
+            if (unicodeDecoratorsEnabled) {
+              // 确保全局状态与本地状态同步
+              setUnicodeProviderEnabled(unicodeDecoratorsEnabled);
+              setUnicodeDecorationEnabled(unicodeDecoratorsEnabled);
+              updateUnicodeDecorations(
+                originalEditorRef.current,
+                originalUnicodeDecoratorState,
+              );
+              updateUnicodeDecorations(
+                modifiedEditorRef.current,
+                modifiedUnicodeDecoratorState,
+              );
+            }
+          }
+        }, 300);
       }
     });
   }
@@ -557,8 +860,18 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       fontSize: fontSize,
       language: currentLanguage,
       timestampDecoratorsEnabled: timestampDecoratorsEnabled,
+      base64DecoratorsEnabled: base64DecoratorsEnabled,
+      unicodeDecoratorsEnabled: unicodeDecoratorsEnabled,
     });
-  }, [fontSize, currentLanguage, timestampDecoratorsEnabled, tabKey, updateEditorSettings]);
+  }, [
+    fontSize,
+    currentLanguage,
+    timestampDecoratorsEnabled,
+    base64DecoratorsEnabled,
+    unicodeDecoratorsEnabled,
+    tabKey,
+    updateEditorSettings,
+  ]);
 
   // 处理AI提交
   const handleAiSubmit = async () => {
@@ -942,6 +1255,24 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
 
       return result1 && result2;
     },
+    toggleBase64Decorators: (enabled?: boolean) => {
+      // 更新状态
+      const newState =
+        enabled !== undefined ? enabled : !base64DecoratorsEnabled;
+
+      setBase64DecoratorsEnabled(newState);
+
+      return true;
+    },
+    toggleUnicodeDecorators: (enabled?: boolean) => {
+      // 更新状态
+      const newState =
+        enabled !== undefined ? enabled : !unicodeDecoratorsEnabled;
+
+      setUnicodeDecoratorsEnabled(newState);
+
+      return true;
+    },
   }));
 
   // 更新编辑器选项
@@ -976,28 +1307,36 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       >
         {/* 添加 DraggableMenu 组件 */}
         <DraggableMenu
+          base64DecoratorsEnabled={base64DecoratorsEnabled}
           containerRef={editorContainerRef}
           currentFontSize={fontSize}
           currentLanguage={currentLanguage}
           tabKey={tabKey}
           timestampDecoratorsEnabled={timestampDecoratorsEnabled}
+          unicodeDecoratorsEnabled={unicodeDecoratorsEnabled}
+          onBase64DecoratorsChange={(enabled) => {
+            setBase64DecoratorsEnabled(enabled);
+          }}
           onFontSizeChange={setFontSize}
           onLanguageChange={setCurrentLanguage}
-          onTimestampDecoratorsChange={(enabled) => {
-            setTimestampDecoratorsEnabled(enabled);
-            // 调用ref方法来切换时间戳装饰器
-            if (ref && typeof ref !== 'function' && ref.current) {
-              ref.current.toggleTimestampDecorators(enabled);
-            }
-          }}
           onReset={() => {
             setFontSize(14);
             setCurrentLanguage("json");
             // 重置时也启用时间戳装饰器
             setTimestampDecoratorsEnabled(true);
-            if (ref && typeof ref !== 'function' && ref.current) {
+            if (ref && typeof ref !== "function" && ref.current) {
               ref.current.toggleTimestampDecorators(true);
             }
+          }}
+          onTimestampDecoratorsChange={(enabled) => {
+            setTimestampDecoratorsEnabled(enabled);
+            // 调用ref方法来切换时间戳装饰器
+            if (ref && typeof ref !== "function" && ref.current) {
+              ref.current.toggleTimestampDecorators(enabled);
+            }
+          }}
+          onUnicodeDecoratorsChange={(enabled) => {
+            setUnicodeDecoratorsEnabled(enabled);
           }}
         />
       </div>

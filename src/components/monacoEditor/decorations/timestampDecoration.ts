@@ -141,13 +141,12 @@ export const updateTimestampDecorations = (
   }
 };
 
-
 /**
  * 处理编辑器内容变化时更新时间戳装饰器
  * @param e 编辑器内容变化事件
  * @param state 时间戳装饰器状态
  */
-export const handleContentChange = (
+export const handleTimestampContentChange = (
   e: editor.IModelContentChangedEvent,
   state: TimestampDecoratorState,
 ): void => {
