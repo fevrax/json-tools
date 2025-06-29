@@ -1,3 +1,10 @@
+## [1.8.2](https://github.com/fevrax/json-tools/compare/v1.8.1...v1.8.2) (2025-06-29)
+
+
+### Bug Fixes
+
+* **editor:** 测试4 ([b0d96a5](https://github.com/fevrax/json-tools/commit/b0d96a5fc5c070b6ae1bfb5ba94bcc1fec8a3ecb))
+
 # [1.8.0](https://github.com/fevrax/json-tools/compare/v1.7.0...v1.8.0) (2025-06-29)
 
 
