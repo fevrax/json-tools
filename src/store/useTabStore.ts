@@ -21,6 +21,9 @@ export interface TabItem {
     fontSize: number;
     language: string;
     timestampDecoratorsEnabled?: boolean; // 添加时间戳装饰器设置
+    base64DecoratorsEnabled?: boolean; // Base64装饰器设置
+    unicodeDecoratorsEnabled?: boolean; // Unicode装饰器设置
+    urlDecoratorsEnabled?: boolean; // URL装饰器设置
   };
   extraData?: Record<string, any>;
 }
@@ -95,6 +98,9 @@ export const useTabStore = create<TabStore>()(
                 fontSize: 14,
                 language: "json",
                 timestampDecoratorsEnabled: true,
+                base64DecoratorsEnabled: true,
+                unicodeDecoratorsEnabled: true,
+                urlDecoratorsEnabled: true,
               },
             };
 
@@ -119,6 +125,9 @@ export const useTabStore = create<TabStore>()(
                   fontSize: 14,
                   language: "json",
                   timestampDecoratorsEnabled: true,
+                  base64DecoratorsEnabled: true,
+                  unicodeDecoratorsEnabled: true,
+                  urlDecoratorsEnabled: true,
                 },
               },
             ];
@@ -351,6 +360,9 @@ export const useTabStore = create<TabStore>()(
                   fontSize: 14,
                   language: "json",
                   timestampDecoratorsEnabled: true,
+                  base64DecoratorsEnabled: true,
+                  unicodeDecoratorsEnabled: true,
+                  urlDecoratorsEnabled: true,
                 },
               },
             ];

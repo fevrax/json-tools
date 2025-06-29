@@ -65,6 +65,12 @@ interface DraggableMenuProps {
   tabKey: string;
   timestampDecoratorsEnabled?: boolean; // 添加时间戳装饰器状态
   onTimestampDecoratorsChange?: (enabled: boolean) => void; // 添加时间戳装饰器状态变更函数
+  base64DecoratorsEnabled?: boolean; // 添加Base64装饰器状态
+  unicodeDecoratorsEnabled?: boolean; // 添加Unicode装饰器状态
+  urlDecoratorsEnabled?: boolean; // 添加URL装饰器状态
+  onBase64DecoratorsChange?: (enabled: boolean) => void; // 添加Base64装饰器状态变更函数
+  onUnicodeDecoratorsChange?: (enabled: boolean) => void; // 添加Unicode装饰器状态变更函数
+  onUrlDecoratorsChange?: (enabled: boolean) => void; // 添加URL装饰器状态变更函数
 }
 
 const DraggableMenu: React.FC<DraggableMenuProps> = ({
@@ -77,6 +83,12 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   tabKey,
   timestampDecoratorsEnabled,
   onTimestampDecoratorsChange,
+  base64DecoratorsEnabled,
+  unicodeDecoratorsEnabled,
+  urlDecoratorsEnabled,
+  onBase64DecoratorsChange,
+  onUnicodeDecoratorsChange,
+  onUrlDecoratorsChange,
 }) => {
   const { updateEditorSettings, activeTab } = useTabStore();
   const {
