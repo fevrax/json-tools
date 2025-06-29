@@ -1,0 +1,118 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  TZ: Asia/Shanghai
+  NODE_VERSION: 20
+
+jobs:
+  build-and-release:
+    name: Build and Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Build project
+        run: pnpm build
+      
+      - name: Generate version info
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "RELEASE_NAME=v$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Package build artifacts
+        run: |
+          mkdir -p release
+          cp -r dist/* release/
+          tar -zcvf json-tools-${{ steps.get_version.outputs.VERSION }}.tar.gz release
+          zip -r json-tools-${{ steps.get_version.outputs.VERSION }}.zip release
+      
+      - name: Generate changelog
+        id: github_release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { repo, owner } = context.repo;
+            const allTags = await github.rest.repos.listTags({
+              owner,
+              repo,
+              per_page: 2
+            });
+            
+            const currentTag = context.ref.replace('refs/tags/', '');
+            let compareTag = allTags.data.length > 1 ? allTags.data[1].name : '';
+            
+            let changelog = '';
+            
+            if (compareTag) {
+              const response = await github.rest.repos.compareCommits({
+                owner,
+                repo,
+                base: compareTag,
+                head: currentTag
+              });
+              
+              changelog = response.data.commits
+                .map(commit => {
+                  const message = commit.commit.message.split('\n')[0];
+                  return \`- \${message} (\${commit.sha.substring(0, 7)})\`;
+                })
+                .join('\n');
+            } else {
+              const response = await github.rest.repos.listCommits({
+                owner,
+                repo,
+                per_page: 10
+              });
+              
+              changelog = response.data
+                .map(commit => {
+                  const message = commit.commit.message.split('\n')[0];
+                  return \`- \${message} (\${commit.sha.substring(0, 7)})\`;
+                })
+                .join('\n');
+            }
+            
+            return changelog;
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: ${{ steps.get_version.outputs.RELEASE_NAME }}
+          body: |
+            ## Changelog
+            ${{ steps.github_release.outputs.result }}
+            
+            ## Installation
+            Download and extract the archive or use Docker image \`fevrax/json-tools:${{ steps.get_version.outputs.VERSION }}\`
+          files: |
+            json-tools-${{ steps.get_version.outputs.VERSION }}.tar.gz
+            json-tools-${{ steps.get_version.outputs.VERSION }}.zip
+          draft: false
+          prerelease: false
