@@ -166,6 +166,48 @@ pnpm preview
 
 欢迎提交PR、创建Issue或提供功能建议！请查看[贡献指南](CONTRIBUTING.md)了解更多。
 
+## 📝 提交规范
+
+本项目使用 [semantic-release](https://github.com/semantic-release/semantic-release) 进行版本管理和自动发布。
+为确保正确生成版本号和更新日志，请遵循以下提交消息格式：
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### 提交类型（type）
+
+- `feat`: 新功能
+- `fix`: 修复Bug
+- `docs`: 文档更新
+- `style`: 代码样式调整（不影响功能）
+- `refactor`: 代码重构
+- `perf`: 性能优化
+- `test`: 测试相关
+- `build`: 构建系统或外部依赖变更
+- `ci`: CI配置文件和脚本变更
+- `chore`: 其他不修改src或test的变更
+- `revert`: 撤销之前的提交
+
+### 示例
+
+```
+feat(editor): 添加JSON格式化快捷键
+
+添加Ctrl+Shift+F快捷键用于格式化JSON
+
+BREAKING CHANGE: 修改了之前的格式化行为
+```
+
+提交符合规范的消息后，semantic-release 会：
+1. 根据提交类型自动确定版本号变更（major/minor/patch）
+2. 自动生成更新日志（CHANGELOG.md）
+3. 创建Git标签
+4. 发布GitHub Release
 
 ## 🙏 致谢
 

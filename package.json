@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint -c .eslintrc.json ./src/**/**/*.{ts,tsx} --fix",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "semantic-release": "semantic-release"
   },
   "dependencies": {
     "@heroui/react": "^2.7.11",
@@ -50,6 +51,8 @@
   },
   "devDependencies": {
     "@iconify/react": "^5.2.1",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
     "@types/js-yaml": "^4.0.9",
     "@types/jsonwebtoken": "8.5.1",
     "@types/node": "20.5.7",
@@ -73,11 +76,25 @@
     "eslint-plugin-unused-imports": "4.1.4",
     "postcss": "8.4.38",
     "prettier": "3.3.3",
+    "semantic-release": "^23.0.0",
     "typescript": "5.6.3",
     "vite": "^5.4.19",
     "vite-plugin-monaco-editor-esm": "^2.0.2",
     "vite-plugin-node-polyfills": "^0.23.0",
     "vite-tsconfig-paths": "^4.3.2"
   },
-  "packageManager": "pnpm@9.12.2+sha512.22721b3a11f81661ae1ec68ce1a7b879425a1ca5b991c975b074ac220b187ce56c708fe5db69f4c962c989452eee76c82877f4ee80f474cebd61ee13461b6228"
+  "packageManager": "pnpm@9.12.2+sha512.22721b3a11f81661ae1ec68ce1a7b879425a1ca5b991c975b074ac220b187ce56c708fe5db69f4c962c989452eee76c82877f4ee80f474cebd61ee13461b6228",
+  "release": {
+    "branches": ["main"],
+    "plugins": [
+      "@semantic-release/commit-analyzer",
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/changelog",
+      "@semantic-release/github",
+      ["@semantic-release/git", {
+        "assets": ["package.json", "CHANGELOG.md"],
+        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+      }]
+    ]
+  }
 }
