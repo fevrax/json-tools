@@ -34,7 +34,7 @@ export const useSettingsStore = create<SettingsState>()(
   devtools(
     (set) => ({
       // 初始状态
-      editDataSaveLocal: false,
+      editDataSaveLocal: true,
       expandSidebar: false,
       monacoEditorCDN: "local",
       chatStyle: "bubble",

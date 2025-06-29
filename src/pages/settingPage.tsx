@@ -529,7 +529,7 @@ export default function SettingsPage() {
   const menuItems = [
     { key: "general", label: "通用设置", icon: "solar:settings-bold" },
     { key: "appearance", label: "外观设置", icon: "catppuccin:folder-themes" },
-    { key: "decoders", label: "解码器设置", icon: "solar:code-bold" },
+    { key: "decoders", label: "自动解码", icon: "solar:code-bold" },
     { key: "ai", label: "AI 助手", icon: "hugeicons:ai-chat-02" },
     { key: "about", label: "关于", icon: "solar:info-circle-bold" },
   ];
@@ -1640,8 +1640,9 @@ export default function SettingsPage() {
               <div className="text-sm text-default-700">
                 <p className="font-medium mb-1 text-primary">关于解码器</p>
                 <p>
-                  解码器可以自动识别并转换特定格式的数据，使其更易读。禁用某个解码器后，相关数据将以原始形式显示。这些设置在所有编辑器中全局生效。
+                  解码器可以自动识别并转换特定格式的数据，使其更易读。这些设置在所有编辑器中全局生效。
                 </p>
+                <p>如果程序出现卡顿等性能问题，可以尝试关闭部分解码器。</p>
               </div>
             </div>
           </div>
