@@ -1,3 +1,15 @@
+# [1.9.0](https://github.com/fevrax/json-tools/compare/v1.8.3...v1.9.0) (2025-06-29)
+
+
+### Bug Fixes
+
+* 测试6 ([25076f8](https://github.com/fevrax/json-tools/commit/25076f8b4b8752777c41ac18973b08ab53bacac8))
+
+
+### Features
+
+* 测试6 ([d8b25b5](https://github.com/fevrax/json-tools/commit/d8b25b57b7bfeab8d5670cffa96ce16dd96c4ee8))
+
 ## [1.8.3](https://github.com/fevrax/json-tools/compare/v1.8.2...v1.8.3) (2025-06-29)
 
 
