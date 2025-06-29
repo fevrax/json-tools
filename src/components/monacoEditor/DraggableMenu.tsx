@@ -71,7 +71,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   currentLanguage,
   currentFontSize,
   tabKey,
-  timestampDecoratorsEnabled = true, // 默认启用
+  timestampDecoratorsEnabled,
   onTimestampDecoratorsChange,
 }) => {
   const { updateEditorSettings, activeTab } = useTabStore();
@@ -80,7 +80,15 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     unicodeDecoderEnabled,
     setBase64DecoderEnabled,
     setUnicodeDecoderEnabled,
+    timestampDecoderEnabled, // 获取全局时间戳解码器设置
   } = useSettingsStore();
+
+  // 根据全局设置确定局部开关实际状态
+  // 如果传入的timestampDecoratorsEnabled为undefined，则使用全局设置
+  // 否则使用传入的值，但不能超过全局设置的权限
+  const actualTimestampDecoratorsEnabled = timestampDecoratorsEnabled !== undefined 
+    ? (timestampDecoderEnabled && timestampDecoratorsEnabled) // 如果全局关闭，强制局部也关闭
+    : timestampDecoderEnabled; // 默认继承全局设置
 
   const [menuPosition, setMenuPosition] = useState<MenuPosition>({
     x: 0,
@@ -123,6 +131,18 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     setUnicodeDecorationEnabled(enabled);
   };
 
+  // 处理时间戳装饰器状态变化
+  const handleTimestampDecoratorsChange = (enabled: boolean) => {
+    // 如果全局设置为关闭，则不允许开启局部设置
+    if (!timestampDecoderEnabled && enabled) {
+      return; // 全局关闭时，不允许开启局部设置
+    }
+    
+    if (onTimestampDecoratorsChange) {
+      onTimestampDecoratorsChange(enabled);
+    }
+  };
+
   // 同步全局设置到Monaco编辑器
   useEffect(() => {
     // 同步全局设置到Monaco装饰器
@@ -132,16 +152,24 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     setUnicodeProviderEnabled(unicodeDecoderEnabled);
   }, [base64DecoderEnabled, unicodeDecoderEnabled]);
 
+  // 全局设置变化时，确保局部设置不超出全局权限
+  useEffect(() => {
+    // 如果全局时间戳解码器被禁用，强制关闭局部设置
+    if (!timestampDecoderEnabled && actualTimestampDecoratorsEnabled && onTimestampDecoratorsChange) {
+      onTimestampDecoratorsChange(false);
+    }
+  }, [timestampDecoderEnabled, actualTimestampDecoratorsEnabled, onTimestampDecoratorsChange]);
+
   useEffect(() => {
     updateEditorSettings(tabKey, {
       fontSize: currentFontSize,
       language: currentLanguage,
-      timestampDecoratorsEnabled,
+      timestampDecoratorsEnabled: actualTimestampDecoratorsEnabled,
     });
   }, [
     currentLanguage,
     currentFontSize,
-    timestampDecoratorsEnabled,
+    actualTimestampDecoratorsEnabled,
     tabKey,
     updateEditorSettings,
   ]);
@@ -540,6 +568,10 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     };
   }, []);
 
+  // 计算时间戳开关是否应该禁用
+  // 当全局时间戳解码器为关闭状态时，禁用局部开关
+  const isTimestampSwitchDisabled = !timestampDecoderEnabled;
+
   return (
     <div
       ref={menuRef}
@@ -718,23 +750,34 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
             <div className="flex items-center justify-between px-1">
               <div className="space-y-1">
                 <label
-                  className="text-xs uppercase tracking-wide font-semibold text-gray-600 dark:text-gray-300"
+                  className={`text-xs uppercase tracking-wide font-semibold ${
+                    isTimestampSwitchDisabled 
+                      ? "text-gray-400 dark:text-gray-500" 
+                      : "text-gray-600 dark:text-gray-300"
+                  }`}
                   htmlFor="timestamp-switch"
                 >
                   时间戳格式化
                 </label>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  自动识别并格式化Unix时间戳
+                <p className={`text-xs ${
+                  isTimestampSwitchDisabled 
+                    ? "text-gray-400 dark:text-gray-500" 
+                    : "text-gray-500 dark:text-gray-400"
+                }`}>
+                  {isTimestampSwitchDisabled 
+                    ? "全局时间戳解码器已禁用，请在设置中启用" 
+                    : "自动识别并格式化Unix时间戳"}
                 </p>
               </div>
               <Switch
                 aria-label="时间戳格式化开关"
                 color="primary"
                 id="timestamp-switch"
-                isSelected={timestampDecoratorsEnabled}
+                isDisabled={isTimestampSwitchDisabled}
+                isSelected={actualTimestampDecoratorsEnabled}
                 size="sm"
                 onChange={() =>
-                  onTimestampDecoratorsChange(!timestampDecoratorsEnabled)
+                  handleTimestampDecoratorsChange(!actualTimestampDecoratorsEnabled)
                 }
               />
             </div>
