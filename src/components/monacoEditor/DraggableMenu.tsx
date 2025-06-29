@@ -83,14 +83,8 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   tabKey,
   timestampDecoratorsEnabled,
   onTimestampDecoratorsChange,
-  base64DecoratorsEnabled,
-  unicodeDecoratorsEnabled,
-  urlDecoratorsEnabled,
-  onBase64DecoratorsChange,
-  onUnicodeDecoratorsChange,
-  onUrlDecoratorsChange,
 }) => {
-  const { updateEditorSettings, activeTab } = useTabStore();
+  const { updateEditorSettings, activeTab, activeTabKey } = useTabStore();
   const {
     base64DecoderEnabled,
     unicodeDecoderEnabled,
@@ -104,9 +98,10 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   // 根据全局设置确定局部开关实际状态
   // 如果传入的timestampDecoratorsEnabled为undefined，则使用全局设置
   // 否则使用传入的值，但不能超过全局设置的权限
-  const actualTimestampDecoratorsEnabled = timestampDecoratorsEnabled !== undefined 
-    ? (timestampDecoderEnabled && timestampDecoratorsEnabled) // 如果全局关闭，强制局部也关闭
-    : timestampDecoderEnabled; // 默认继承全局设置
+  const actualTimestampDecoratorsEnabled =
+    timestampDecoratorsEnabled !== undefined
+      ? timestampDecoderEnabled && timestampDecoratorsEnabled // 如果全局关闭，强制局部也关闭
+      : timestampDecoderEnabled; // 默认继承全局设置
 
   const [menuPosition, setMenuPosition] = useState<MenuPosition>({
     x: 0,
@@ -148,7 +143,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     setUnicodeProviderEnabled(enabled);
     setUnicodeDecorationEnabled(enabled);
   };
-  
+
   // 处理URL解码器状态变化
   const handleUrlDecodersChange = (enabled: boolean) => {
     // 更新全局状态
@@ -163,7 +158,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     if (!timestampDecoderEnabled && enabled) {
       return; // 全局关闭时，不允许开启局部设置
     }
-    
+
     if (onTimestampDecoratorsChange) {
       onTimestampDecoratorsChange(enabled);
     }
@@ -183,10 +178,18 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   // 全局设置变化时，确保局部设置不超出全局权限
   useEffect(() => {
     // 如果全局时间戳解码器被禁用，强制关闭局部设置
-    if (!timestampDecoderEnabled && actualTimestampDecoratorsEnabled && onTimestampDecoratorsChange) {
+    if (
+      !timestampDecoderEnabled &&
+      actualTimestampDecoratorsEnabled &&
+      onTimestampDecoratorsChange
+    ) {
       onTimestampDecoratorsChange(false);
     }
-  }, [timestampDecoderEnabled, actualTimestampDecoratorsEnabled, onTimestampDecoratorsChange]);
+  }, [
+    timestampDecoderEnabled,
+    actualTimestampDecoratorsEnabled,
+    onTimestampDecoratorsChange,
+  ]);
 
   useEffect(() => {
     updateEditorSettings(tabKey, {
@@ -600,6 +603,11 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   // 当全局时间戳解码器为关闭状态时，禁用局部开关
   const isTimestampSwitchDisabled = !timestampDecoderEnabled;
 
+  // 当tab key 相当时才渲染，解决diff编辑器重复渲染的问题
+  if (activeTabKey !== tabKey) {
+    return null;
+  }
+
   return (
     <div
       ref={menuRef}
@@ -779,21 +787,23 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
               <div className="space-y-1">
                 <label
                   className={`text-xs uppercase tracking-wide font-semibold ${
-                    isTimestampSwitchDisabled 
-                      ? "text-gray-400 dark:text-gray-500" 
+                    isTimestampSwitchDisabled
+                      ? "text-gray-400 dark:text-gray-500"
                       : "text-gray-600 dark:text-gray-300"
                   }`}
                   htmlFor="timestamp-switch"
                 >
                   时间戳格式化
                 </label>
-                <p className={`text-xs ${
-                  isTimestampSwitchDisabled 
-                    ? "text-gray-400 dark:text-gray-500" 
-                    : "text-gray-500 dark:text-gray-400"
-                }`}>
-                  {isTimestampSwitchDisabled 
-                    ? "全局时间戳解码器已禁用，请在设置中启用" 
+                <p
+                  className={`text-xs ${
+                    isTimestampSwitchDisabled
+                      ? "text-gray-400 dark:text-gray-500"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                >
+                  {isTimestampSwitchDisabled
+                    ? "全局时间戳解码器已禁用，请在设置中启用"
                     : "自动识别并格式化Unix时间戳"}
                 </p>
               </div>
@@ -805,7 +815,9 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
                 isSelected={actualTimestampDecoratorsEnabled}
                 size="sm"
                 onChange={() =>
-                  handleTimestampDecoratorsChange(!actualTimestampDecoratorsEnabled)
+                  handleTimestampDecoratorsChange(
+                    !actualTimestampDecoratorsEnabled,
+                  )
                 }
               />
             </div>
