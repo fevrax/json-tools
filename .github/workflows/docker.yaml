@@ -2,7 +2,7 @@ name: Docker Image CI
 
 on:
   push:
-    tags: ['x*']
+    tags: ['v*']
 
 env:
   TZ: Asia/Shanghai
