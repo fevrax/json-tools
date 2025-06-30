@@ -1,13 +1,41 @@
 name: Docker Image CI
 
+#on:
+#  push:
+#    tags: ['v*']
 on:
   push:
-    tags: ['v*']
+    branches:
+      - main
 
 env:
   TZ: Asia/Shanghai
 
 jobs:
+  check_commit:
+    name: Check if commit should trigger release
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Check commit message
+        id: check
+        run: |
+          commit_message="${{ github.event.head_commit.message }}"
+          echo "Commit message: $commit_message"
+
+          # 检查是否包含触发版本更新的关键字
+          if echo "$commit_message" | grep -qE "^(feat|fix|perf|revert):"; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "✅ Found release trigger in commit message"
+          else
+            echo "should_release=false" >> $GITHUB_OUTPUT
+            echo "❌ No release trigger found in commit message"
+          fi
+
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
@@ -46,6 +74,6 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: |
             type=gha,scope=${{ github.ref_name }}-${{ github.workflow }}
-            type=registry,ref=fevrax/hexo-blog:latest
+            type=registry,ref=fevrax/json-tools:latest
           cache-to: |
             type=gha,scope=${{ github.ref_name }}-${{ github.workflow }},mode=max
