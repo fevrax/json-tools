@@ -6,9 +6,35 @@ on:
       - main
 
 jobs:
+  check_commit:
+    name: Check if commit should trigger release
+    runs-on: ubuntu-latest
+    outputs:
+      should_release: ${{ steps.check.outputs.should_release }}
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Check commit message
+        id: check
+        run: |
+          commit_message="${{ github.event.head_commit.message }}"
+          echo "Commit message: $commit_message"
+
+          # 检查是否包含触发版本更新的关键字
+          if echo "$commit_message" | grep -qE "^(feat|fix|perf|revert):"; then
+            echo "should_release=true" >> $GITHUB_OUTPUT
+            echo "✅ Found release trigger in commit message"
+          else
+            echo "should_release=false" >> $GITHUB_OUTPUT
+            echo "❌ No release trigger found in commit message"
+          fi
+
   release:
     name: Release
     runs-on: ubuntu-latest
+    needs: check_commit
+    if: needs.check_commit.outputs.should_release == 'true'
     permissions:
       contents: write
       issues: write
