@@ -1,3 +1,10 @@
+## [1.8.2](https://github.com/fevrax/json-tools/compare/v1.8.1...v1.8.2) (2025-06-30)
+
+
+### Bug Fixes
+
+* test docker push1 ([b378f4c](https://github.com/fevrax/json-tools/commit/b378f4c6c61b2815d8e8913587e6f5d6b8573d35))
+
 ## [1.8.1](https://github.com/fevrax/json-tools/compare/v1.8.0...v1.8.1) (2025-06-30)
 
 
