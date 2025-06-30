@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/fevrax/json-tools/compare/v1.7.0...v1.8.0) (2025-06-30)
+
+
+### Features
+
+* auto github docker push ([18a5e1a](https://github.com/fevrax/json-tools/commit/18a5e1ab79817d0ec47c1633cb3d200691dd652b))
+
 # [1.7.0](https://github.com/fevrax/json-tools/compare/v1.6.5...v1.7.0) (2025-06-30)
 
 
