@@ -214,7 +214,6 @@ BREAKING CHANGE: 修改了之前的格式化行为
 感谢以下优秀工具对项目的支持：
 
 - [Cursor](https://www.cursor.com/) - 强大的AI代码编辑器
-- [Cline](https://github.com/cline/cline/) - AI开发助手
 - [uTools](https://u.tools/) - 高效的效率工具平台
 
 
