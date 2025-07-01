@@ -2,7 +2,7 @@ import * as monaco from "monaco-editor";
 import { editor } from "monaco-editor";
 import { RefObject } from "react";
 
-import { decodeUnicode, UNICODE_REGEX } from "@/utils/unicode.ts";
+import { decodeUnicode, UNICODE_STRING_REGEX } from "@/utils/unicode.ts";
 
 // 定义Unicode下划线装饰器接口
 export interface UnicodeDecoratorState {
@@ -19,12 +19,16 @@ export interface UnicodeDecoratorState {
 let isUnicodeDecorationEnabled = true; // 下划线装饰器全局启用状态
 let isUnicodeProviderEnabled = true; // 全局悬浮提供者启用状态
 
+const MAXShowDecodeLength = 100; // 最大显示解码长度
+
 // 注册全局Unicode 悬停提供者
 export const registerUnicodeHoverProvider = () => {
   monaco.languages.registerHoverProvider(["json", "json5"], {
     provideHover: (model, position) => {
       // 如果提供者被禁用，直接返回null
       if (!isUnicodeProviderEnabled) return null;
+
+      const lineContent = model.getLineContent(position.lineNumber);
       const wordInfo = model?.getWordAtPosition(position);
 
       if (!wordInfo) return null;
@@ -39,10 +43,33 @@ export const registerUnicodeHoverProvider = () => {
 
       const currentWordText = model.getValueInRange(currentWordRange);
 
-      const decoded = decodeUnicode(currentWordText);
+      // 尝试直接解码当前单词
+      let decoded = decodeUnicode(currentWordText);
 
       if (!decoded) {
-        return null;
+        // 如果直接解码失败，尝试检查当前位置是否在 ": "{unicode内容}" 格式内
+        const start = wordInfo.startColumn;
+        const end = wordInfo.endColumn;
+
+        // 检查该位置是否在引号内的内容中
+        UNICODE_STRING_REGEX.lastIndex = 0;
+        let stringMatch;
+
+        while (
+          (stringMatch = UNICODE_STRING_REGEX.exec(lineContent)) !== null
+        ) {
+          const matchStart = stringMatch.index + 3; // ": " 后面的引号位置
+          const matchEnd = matchStart + stringMatch[1].length + 1; // 加上引号
+
+          if (start >= matchStart && end <= matchEnd) {
+            decoded = decodeUnicode(stringMatch[1]);
+            break;
+          }
+        }
+
+        if (!decoded) {
+          return null;
+        }
       }
 
       // 如果解码成功，返回悬停信息
@@ -114,38 +141,62 @@ export const updateUnicodeDecorations = (
       }
 
       // 复位正则表达式的lastIndex
-      UNICODE_REGEX.lastIndex = 0;
+      UNICODE_STRING_REGEX.lastIndex = 0;
 
       // 使用正则表达式查找Unicode转义序列
       let match;
       let matchCount = 0;
       const decorations: monaco.editor.IModelDeltaDecoration[] = [];
 
+      // 处理 ": "{unicode内容}" 格式的内容
+      UNICODE_STRING_REGEX.lastIndex = 0;
+      matchCount = 0;
+
       while (
-        (match = UNICODE_REGEX.exec(lineContent)) !== null &&
+        (match = UNICODE_STRING_REGEX.exec(lineContent)) !== null &&
         matchCount < 100
       ) {
         matchCount++;
+        const unicodeStr = match[1];
 
-        const startColumn = match.index + 1;
-        const endColumn = startColumn + match[0].length;
+        const decoded = decodeUnicode(unicodeStr);
 
-        decorations.push({
+        if (!decoded) {
+          continue;
+        }
+
+        const startColumn = match.index + 3; // ": " 后面的位置
+        const endColumn = startColumn + unicodeStr.length;
+
+        const decoration: monaco.editor.IModelDeltaDecoration = {
           range: new monaco.Range(
             lineNumber,
             startColumn,
             lineNumber,
-            endColumn,
+            endColumn + 3,
           ),
           options: {
             inlineClassName: "unicode-decoration",
             zIndex: 3000,
-            // after: {
-            //   content: `()`,
-            //   inlineClassName: "timestamp-decoration",
-            // }
+            after: {
+              content: `(${decoded})`,
+              inlineClassName: "timestamp-decoration",
+            },
           },
-        });
+        };
+
+        // 如果解码后内容太长，不显示after装饰
+        if (decoded.length > MAXShowDecodeLength) {
+          decoration.options.after = null;
+          decoration.range = new monaco.Range(
+            lineNumber,
+            startColumn,
+            lineNumber,
+            endColumn,
+          );
+        }
+
+        decorations.push(decoration);
       }
 
       if (decorations.length > 0) {

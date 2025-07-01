@@ -35,7 +35,7 @@ export interface UrlDecoratorState {
 let isUrlDecorationEnabled = true; // 下划线装饰器全局启用状态
 let isUrlProviderEnabled = true; // 全局悬浮提供者启用状态
 
-const MAXShowDecodeLength = 50; // 最大显示解码长度
+const MAXShowDecodeLength = 100; // 最大显示解码长度
 
 // 注册全局URL解码悬停提供者
 export const registerUrlHoverProvider = () => {
