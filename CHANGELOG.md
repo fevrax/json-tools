@@ -1,3 +1,11 @@
+## [1.9.1](https://github.com/fevrax/json-tools/compare/v1.9.0...v1.9.1) (2025-07-01)
+
+
+### Bug Fixes
+
+* 文档说明 ([8a86f0e](https://github.com/fevrax/json-tools/commit/8a86f0e4c7c2bc5c725778322106547d188b567a))
+* 自动发布版本配置 ([d5d7a7a](https://github.com/fevrax/json-tools/commit/d5d7a7a154f5cac6e3cb1ac284f93d78ed303eaf))
+
 # [1.9.0](https://github.com/fevrax/json-tools/compare/v1.8.2...v1.9.0) (2025-07-01)
 
 
