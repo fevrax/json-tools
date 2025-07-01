@@ -4,6 +4,8 @@ import { RefObject } from "react";
 
 // URL编码正则表达式 - 匹配%xx形式的编码
 export const URL_REGEX = /%(?:[0-9a-fA-F]{2})+/g;
+// 匹配 ": "{urlencode内容}" 格式的正则表达式
+export const URL_STRING_REGEX = /: "([^"]*?(?:%(?:[0-9a-fA-F]{2})+)[^"]*?)"/g;
 
 // URL解码函数
 export const decodeUrl = (text: string): string | null => {
@@ -33,12 +35,16 @@ export interface UrlDecoratorState {
 let isUrlDecorationEnabled = true; // 下划线装饰器全局启用状态
 let isUrlProviderEnabled = true; // 全局悬浮提供者启用状态
 
+const MAXShowDecodeLength = 50; // 最大显示解码长度
+
 // 注册全局URL解码悬停提供者
 export const registerUrlHoverProvider = () => {
   monaco.languages.registerHoverProvider(["json", "json5"], {
     provideHover: (model, position) => {
       // 如果提供者被禁用，直接返回null
       if (!isUrlProviderEnabled) return null;
+
+      const lineContent = model.getLineContent(position.lineNumber);
       const wordInfo = model?.getWordAtPosition(position);
 
       if (!wordInfo) return null;
@@ -53,10 +59,31 @@ export const registerUrlHoverProvider = () => {
 
       const currentWordText = model.getValueInRange(currentWordRange);
 
-      const decoded = decodeUrl(currentWordText);
+      // 尝试直接解码当前单词
+      let decoded = decodeUrl(currentWordText);
 
       if (!decoded) {
-        return null;
+        // 如果直接解码失败，尝试检查当前位置是否在 ": "{urlencode内容}" 格式内
+        const start = wordInfo.startColumn;
+        const end = wordInfo.endColumn;
+
+        // 检查该位置是否在引号内的内容中
+        URL_STRING_REGEX.lastIndex = 0;
+        let stringMatch;
+
+        while ((stringMatch = URL_STRING_REGEX.exec(lineContent)) !== null) {
+          const matchStart = stringMatch.index + 3; // ": " 后面的引号位置
+          const matchEnd = matchStart + stringMatch[1].length + 1; // 加上引号
+
+          if (start >= matchStart && end <= matchEnd) {
+            decoded = decodeUrl(stringMatch[1]);
+            break;
+          }
+        }
+
+        if (!decoded) {
+          return null;
+        }
       }
 
       // 如果解码成功，返回悬停信息
@@ -129,8 +156,8 @@ export const updateUrlDecorations = (
 
       // 复位正则表达式的lastIndex
       URL_REGEX.lastIndex = 0;
+      URL_STRING_REGEX.lastIndex = 0;
 
-      // 使用正则表达式查找URL编码序列
       let match;
       let matchCount = 0;
       const decorations: monaco.editor.IModelDeltaDecoration[] = [];
@@ -156,6 +183,62 @@ export const updateUrlDecorations = (
             zIndex: 3000,
           },
         });
+      }
+
+      // 处理 ": "{urlencode内容}" 格式的内容
+      URL_STRING_REGEX.lastIndex = 0;
+      matchCount = 0;
+
+      while (
+        (match = URL_STRING_REGEX.exec(lineContent)) !== null &&
+        matchCount < 100
+      ) {
+        matchCount++;
+        const urlStr = match[1];
+
+        // 确保包含URL编码内容
+        if (!urlStr || !urlStr.match(URL_REGEX)) {
+          continue;
+        }
+
+        const decoded = decodeUrl(urlStr);
+
+        if (!decoded) {
+          continue;
+        }
+
+        const startColumn = match.index + 3; // ": " 后面的位置
+        const endColumn = startColumn + urlStr.length;
+
+        const decoration: monaco.editor.IModelDeltaDecoration = {
+          range: new monaco.Range(
+            lineNumber,
+            startColumn,
+            lineNumber,
+            endColumn + 2,
+          ),
+          options: {
+            inlineClassName: "url-decoration",
+            zIndex: 3000,
+            after: {
+              content: `(${decoded})`,
+              inlineClassName: "timestamp-decoration",
+            },
+          },
+        };
+
+        // 如果解码后内容太长，不显示after装饰
+        if (decoded.length > MAXShowDecodeLength) {
+          decoration.options.after = null;
+          decoration.range = new monaco.Range(
+            lineNumber,
+            startColumn,
+            lineNumber,
+            endColumn,
+          );
+        }
+
+        decorations.push(decoration);
       }
 
       if (decorations.length > 0) {

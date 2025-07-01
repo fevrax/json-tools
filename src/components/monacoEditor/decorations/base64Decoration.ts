@@ -19,7 +19,7 @@ export interface Base64DecoratorState {
 let isBase64DecorationEnabled = true; // 下划线装饰器状态
 let isBase64ProviderEnabled = true; // 全局Base64悬停提供者状态
 
-const MAXShowDecodeHeigth = 250; // 最大显示解码长度
+const MAXShowDecodeLength = 100; // 最大显示解码长度
 
 // 注册全局Base64悬停提供者
 export const registerBase64HoverProvider = () => {
@@ -160,7 +160,7 @@ export const updateBase64Decorations = (
           },
         };
 
-        if (decodeBase64.length > MAXShowDecodeHeigth) {
+        if (decodeBase64.length > MAXShowDecodeLength) {
           decoration.options.after = null;
           decoration.range = new monaco.Range(
             lineNumber,
