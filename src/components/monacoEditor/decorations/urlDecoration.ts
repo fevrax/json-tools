@@ -236,14 +236,6 @@ export const handleUrlContentChange = (
 };
 
 /**
- * 清理URL缓存
- * @param state URL下划线装饰器状态
- */
-export const clearUrlCache = (state: UrlDecoratorState): void => {
-  state.cacheRef.current = {};
-};
-
-/**
  * 获取URL下划线装饰器的全局启用状态
  */
 export const getUrlDecorationEnabled = (): boolean => {

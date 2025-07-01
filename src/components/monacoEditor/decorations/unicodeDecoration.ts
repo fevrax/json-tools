@@ -140,6 +140,10 @@ export const updateUnicodeDecorations = (
           options: {
             inlineClassName: "unicode-decoration",
             zIndex: 3000,
+            // after: {
+            //   content: `()`,
+            //   inlineClassName: "timestamp-decoration",
+            // }
           },
         });
       }
