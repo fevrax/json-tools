@@ -15,7 +15,9 @@ JSON Tools Next 是一个多功能的JSON工具集，提供了直观的界面和
 - 🎨 **深色/浅色主题**：适应各种工作环境和个人偏好
 - 🔄 **视图切换**：快速在不同视图模式间切换
 - 🧩 **多标签页**：支持同时打开多个JSON文件处理
-- 🧩 **丰富工具箱**：集成多种专用JSON处理工具 
+- 🧩 **丰富工具箱**：集成多种专用JSON处理工具
+- 🔍 **字符解码器**：自动识别并解码常见编码格式
+- 🤖 **AI驱动功能**：利用AI技术增强JSON处理体验
 
 ## 📦 JSON 工具箱 
 
@@ -68,37 +70,19 @@ JSON Tools Next 是一个多功能的JSON工具集，提供了直观的界面和
 - **差异对比视图**：方便对比JSON数据差异
 - **表格视图**：以表格形式展示JSON数据
 
+### 字符解码解码器
+
+- **时间戳解码器**：自动识别并将时间戳转换为可读日期时间格式
+- **Base64解码器**：检测并解码Base64编码字符串
+- **Unicode解码器**：自动解码Unicode转义序列为可读字符
+- **URL解码器**：识别并解码URL编码的字符串
+- **可配置性**：支持全局或按编辑器实例单独启用/禁用解码器
+
 ### JSON AI 修复
 
 - **自动修复**：使用jsonrepair库自动修复常见格式错误
 - **AI智能修复**：借助OpenAI API进行更复杂的JSON修复
-- **实时预览**：对比修复前后的差异
 
-### 对象类型转换器
-
-- **支持多种语言**：TypeScript、Go、Java、Python、Rust等
-- **AI辅助转换**：添加注释、自定义字段标签等增强功能
-- **快捷预设**：常用转换场景一键使用
-
-### 数据格式转换
-
-- **多格式互转**：支持JSON、YAML、XML、TOML等格式互相转换
-- **智能处理**：保留数据结构与层次关系
-
-### JWT解析与验证
-
-- **令牌解析**：快速查看Header和Payload信息
-- **签名验证**：验证JWT令牌的有效性
-
-## 💡 使用技术
-
-- **React 19**：现代化UI构建
-- **Vite**：高效的构建工具
-- **TypeScript**：类型安全保障
-- **Monaco Editor**：专业的代码编辑器
-- **TailwindCSS**：灵活的样式解决方案
-- **Zustand**：简洁的状态管理
-- **OpenAI API**：AI增强功能支持
 
 
 ## 🐳 Docker 部署
@@ -213,11 +197,12 @@ BREAKING CHANGE: 修改了之前的格式化行为
 
 ## 🙏 致谢
 
-感谢以下优秀工具对项目的支持：
+感谢以下优秀项目的支持：
 
 - [Cursor](https://www.cursor.com/) - 强大的AI代码编辑器
 - [uTools](https://u.tools/) - 高效的效率工具平台
-
+- [Monaco Editor](https://microsoft.github.io/monaco-editor/) - 专业的代码编辑器组件
+- [svelte-jsoneditor](https://github.com/josdejong/svelte-jsoneditor/) - 多功能的代码编辑器组件
 
 ## 📜 许可证
 
