@@ -215,7 +215,7 @@ export const updateUrlDecorations = (
             lineNumber,
             startColumn,
             lineNumber,
-            endColumn + 2,
+            endColumn + 3,
           ),
           options: {
             inlineClassName: "url-decoration",

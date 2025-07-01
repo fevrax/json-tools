@@ -74,7 +74,7 @@ export const registerUnicodeHoverProvider = () => {
 
       // 如果解码成功，返回悬停信息
       return {
-        contents: [{ value: "**Unicode 解码**" }, { value: decoded }],
+        contents: [{ value: "**Unicode 解码器**" }, { value: decoded }],
         range: new monaco.Range(
           position.lineNumber,
           currentWordRange.startColumn,
