@@ -168,6 +168,8 @@ pnpm preview
 
 ## 📝 提交规范
 
+详情查看：[CONTRIBUTING.md](./CONTRIBUTING.md)
+
 本项目使用 [semantic-release](https://github.com/semantic-release/semantic-release) 进行版本管理和自动发布。
 为确保正确生成版本号和更新日志，请遵循以下提交消息格式：
 
@@ -181,17 +183,17 @@ pnpm preview
 
 ### 提交类型（type）
 
-- `feat`: 新功能
-- `fix`: 修复Bug
-- `docs`: 文档更新
-- `style`: 代码样式调整（不影响功能）
-- `refactor`: 代码重构
-- `perf`: 性能优化
-- `test`: 测试相关
-- `build`: 构建系统或外部依赖变更
-- `ci`: CI配置文件和脚本变更
-- `chore`: 其他不修改src或test的变更
-- `revert`: 撤销之前的提交
+- `feat:` 新功能（触发 minor 版本更新）
+- `fix:` 修复bug（触发 patch 版本更新）
+- `docs:` 文档更新（不触发版本更新）
+- `style:` 代码风格变更（不影响代码功能，不触发版本更新）
+- `refactor:` 代码重构（不触发版本更新）
+- `perf:` 性能优化（触发 patch 版本更新）
+- `test:` 测试相关（不触发版本更新）
+- `build:` 构建系统或外部依赖变更（不触发版本更新）
+- `ci:` CI配置变更（不触发版本更新）
+- `chore:` 其他变更（不触发版本更新）
+- `revert:` 撤销之前的提交（触发 patch 版本更新）
 
 ### 示例
 
