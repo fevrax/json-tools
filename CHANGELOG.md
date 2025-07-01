@@ -1,3 +1,10 @@
+# [1.9.0](https://github.com/fevrax/json-tools/compare/v1.8.2...v1.9.0) (2025-07-01)
+
+
+### Features
+
+* 解码器默认显示在字符后面，最大100字符 ([5f895c7](https://github.com/fevrax/json-tools/commit/5f895c7a82a7b8531dfe6675bfabdd67da9a7d30))
+
 ## [1.8.2](https://github.com/fevrax/json-tools/compare/v1.8.1...v1.8.2) (2025-06-30)
 
 
