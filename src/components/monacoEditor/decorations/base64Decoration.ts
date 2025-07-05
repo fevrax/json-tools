@@ -2,11 +2,7 @@ import * as monaco from "monaco-editor";
 import { editor } from "monaco-editor";
 import { RefObject } from "react";
 
-import {
-  BASE64_REGEX,
-  checkBase64Strict,
-  decodeBase64Strict,
-} from "@/utils/base64.ts";
+import { BASE64_REGEX, decodeBase64Strict } from "@/utils/base64.ts";
 
 // 定义Base64下划线装饰器接口
 export interface Base64DecoratorState {
@@ -22,6 +18,8 @@ export interface Base64DecoratorState {
 // 全局启用状态控制
 let isBase64DecorationEnabled = true; // 下划线装饰器状态
 let isBase64ProviderEnabled = true; // 全局Base64悬停提供者状态
+
+const MAXShowDecodeLength = 100; // 最大显示解码长度
 
 // 注册全局Base64悬停提供者
 export const registerBase64HoverProvider = () => {
@@ -131,30 +129,48 @@ export const updateBase64Decorations = (
         matchCount++;
         const base64Str = match[1] || match[2];
 
-        if (base64Str.length < 8 || base64Str.length > 2000) {
+        // 超过3k不进行解码
+        if (base64Str.length < 8 || base64Str.length > 3000) {
           continue;
         }
 
-        if (!checkBase64Strict(base64Str)) {
+        const decodeBase64 = decodeBase64Strict(base64Str);
+
+        if (!decodeBase64) {
           continue;
         }
 
         const startColumn = match.index + (match[0].startsWith(": ") ? 4 : 1);
-        const endColumn = startColumn + base64Str.length;
-        const decorations: monaco.editor.IModelDeltaDecoration[] = [
-          {
-            range: new monaco.Range(
-              lineNumber,
-              startColumn,
-              lineNumber,
-              endColumn,
-            ),
-            options: {
-              inlineClassName: "base64-decoration",
-              zIndex: 2999,
+        let endColumn = startColumn + base64Str.length;
+
+        const decoration: monaco.editor.IModelDeltaDecoration = {
+          range: new monaco.Range(
+            lineNumber,
+            startColumn,
+            lineNumber,
+            endColumn + 3,
+          ),
+          options: {
+            inlineClassName: "base64-decoration",
+            zIndex: 2999,
+            after: {
+              content: `(${decodeBase64})`,
+              inlineClassName: "timestamp-decoration",
             },
           },
-        ];
+        };
+
+        if (decodeBase64.length > MAXShowDecodeLength) {
+          decoration.options.after = null;
+          decoration.range = new monaco.Range(
+            lineNumber,
+            startColumn,
+            lineNumber,
+            endColumn,
+          );
+        }
+
+        const decorations: monaco.editor.IModelDeltaDecoration[] = [decoration];
 
         let lineDecorations =
           state.editorRef.current?.getLineDecorations(lineNumber);

@@ -87,7 +87,7 @@
     text-decoration-style: dotted;
     text-decoration-color: #22c55e;
     text-decoration-thickness: 2px;
-    text-underline-offset: 3px;
+    text-underline-offset: auto;
     cursor: help;
     background-color: rgba(34, 197, 94, 0.08);
     border-radius: 2px;
@@ -104,7 +104,7 @@
     text-decoration-style: dotted;
     text-decoration-color: #8b5cf6;
     text-decoration-thickness: 2px;
-    text-underline-offset: 3px;
+    text-underline-offset: auto;
     cursor: help;
     background-color: rgba(139, 92, 246, 0.08);
     border-radius: 2px;
@@ -121,7 +121,7 @@
     text-decoration-style: dotted;
     text-decoration-color: #f59e0b;
     text-decoration-thickness: 2px;
-    text-underline-offset: 3px;
+    text-underline-offset:auto;
     cursor: help;
     background-color: rgba(245, 158, 11, 0.08);
     border-radius: 2px;
