@@ -192,9 +192,8 @@ BREAKING CHANGE: 修改了之前的格式化行为
 4. 发布GitHub Release
 
 
-## 📈 Star
-
-[[![Star History Chart](https://api.star-history.com/svg?repos=fevrax/json-tools&type=Date)](https://star-history.com/#dalefengs/json-tools&Date)](https://starchart.cc/fevrax/json-tools)
+## 📈 Stargazers over time
+[![Stargazers over time](https://starchart.cc/fevrax/json-tools.svg?variant=adaptive)](https://starchart.cc/fevrax/json-tools)
 
 ## 🙏 致谢
 
