@@ -142,10 +142,6 @@ pnpm preview
 ```
 
 
-## 📈 Star 历史
-
-[![Star History Chart](https://api.star-history.com/svg?repos=fevrax/json-tools&type=Date)](https://star-history.com/#dalefengs/json-tools&Date)
-
 ## 🤝 贡献
 
 欢迎提交PR、创建Issue或提供功能建议！请查看[贡献指南](CONTRIBUTING.md)了解更多。
@@ -194,6 +190,11 @@ BREAKING CHANGE: 修改了之前的格式化行为
 2. 自动生成更新日志（CHANGELOG.md）
 3. 创建Git标签
 4. 发布GitHub Release
+
+
+## 📈 Star
+
+[[![Star History Chart](https://api.star-history.com/svg?repos=fevrax/json-tools&type=Date)](https://star-history.com/#dalefengs/json-tools&Date)](https://starchart.cc/fevrax/json-tools)
 
 ## 🙏 致谢
 
