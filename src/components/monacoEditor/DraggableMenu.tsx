@@ -59,9 +59,11 @@ interface DraggableMenuProps {
   containerRef: React.RefObject<HTMLDivElement | null>;
   onLanguageChange: (language: string) => void;
   onFontSizeChange: (fontSize: number) => void;
+  onIndentSizeChange: (indentSize: number) => void;
   onReset: () => void;
   currentLanguage: string;
   currentFontSize: number;
+  currentIndentSize: number;
   tabKey: string;
   timestampDecoratorsEnabled?: boolean; // 添加时间戳装饰器状态
   onTimestampDecoratorsChange?: (enabled: boolean) => void; // 添加时间戳装饰器状态变更函数
@@ -77,9 +79,11 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   containerRef,
   onLanguageChange,
   onFontSizeChange,
+  onIndentSizeChange,
   onReset,
   currentLanguage,
   currentFontSize,
+  currentIndentSize,
   tabKey,
   timestampDecoratorsEnabled,
   onTimestampDecoratorsChange,
@@ -195,11 +199,13 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     updateEditorSettings(tabKey, {
       fontSize: currentFontSize,
       language: currentLanguage,
+      indentSize: currentIndentSize,
       timestampDecoratorsEnabled: actualTimestampDecoratorsEnabled,
     });
   }, [
     currentLanguage,
     currentFontSize,
+    currentIndentSize,
     actualTimestampDecoratorsEnabled,
     tabKey,
     updateEditorSettings,
@@ -451,6 +457,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
     updateEditorSettings(tabKey, {
       fontSize: currentFontSize,
       language: currentLanguage,
+      indentSize: currentIndentSize,
     });
 
     // 更新状态
@@ -925,6 +932,37 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
             <div className="flex justify-between text-xs text-gray-500">
               <span>小</span>
               <span>大</span>
+            </div>
+          </div>
+
+          {/* 缩进大小滑块 */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label
+                className="text-xs uppercase tracking-wide font-semibold text-gray-600 dark:text-gray-300"
+                htmlFor="indent-size-slider"
+              >
+                缩进大小
+              </label>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700/50 px-2 py-0.5 rounded">
+                {currentIndentSize}空格
+              </span>
+            </div>
+            <Slider
+              aria-label="调整缩进大小"
+              className="w-full"
+              color="primary"
+              id="indent-size-slider"
+              maxValue={8}
+              minValue={1}
+              size="sm"
+              step={1}
+              value={currentIndentSize}
+              onChange={(value) => onIndentSizeChange(value as number)}
+            />
+            <div className="flex justify-between text-xs text-gray-500">
+              <span>紧凑</span>
+              <span>宽松</span>
             </div>
           </div>
 

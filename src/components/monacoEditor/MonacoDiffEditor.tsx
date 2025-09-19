@@ -112,7 +112,8 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   ref,
 }) => {
   const { getTabByKey, updateEditorSettings } = useTabStore();
-  const { base64DecoderEnabled, unicodeDecoderEnabled, urlDecoderEnabled } = useSettingsStore();
+  const { base64DecoderEnabled, unicodeDecoderEnabled, urlDecoderEnabled } =
+    useSettingsStore();
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<editor.IStandaloneDiffEditor | null>(null);
   const originalEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
@@ -123,6 +124,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   const editorSettings = currentTab?.editorSettings || {
     fontSize: 14,
     language: language || "json",
+    indentSize: 4,
     timestampDecoratorsEnabled: showTimestampDecorators,
     base64DecoratorsEnabled: showBase64Decorators,
     unicodeDecoratorsEnabled: showUnicodeDecorators,
@@ -134,6 +136,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     editorSettings.language,
   );
   const [fontSize, setFontSize] = useState(editorSettings.fontSize);
+  const [indentSize, setIndentSize] = useState(editorSettings.indentSize || 4);
 
   // AI相关状态
   const [showAiPrompt, setShowAiPrompt] = useState(false);
@@ -195,7 +198,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       ? editorSettings.unicodeDecoratorsEnabled
       : unicodeDecoderEnabled,
   );
-  
+
   // URL装饰器启用状态，优先从编辑器设置中读取
   const [urlDecoratorsEnabled, setUrlDecoratorsEnabled] = useState(
     editorSettings.urlDecoratorsEnabled !== undefined
@@ -249,7 +252,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   const modifiedUnicodeDecorationIdsRef = useRef<Record<string, string[]>>({});
   const modifiedUnicodeUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const modifiedUnicodeCacheRef = useRef<Record<string, boolean>>({});
-  
+
   // URL下划线装饰器相关引用
   const originalUrlDecorationsRef =
     useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
@@ -304,7 +307,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     updateTimeoutRef: modifiedUnicodeUpdateTimeoutRef,
     enabled: unicodeDecoratorsEnabled,
   };
-  
+
   // URL下划线装饰器状态
   const originalUrlDecoratorState: UrlDecoratorState = {
     editorRef: originalEditorRef,
@@ -463,7 +466,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       }
     }
   }, [unicodeDecoratorsEnabled]);
-  
+
   // 监听URL装饰器状态变化
   useEffect(() => {
     // 更新状态对象中的启用状态
@@ -535,6 +538,12 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       fontSize: fontSize,
     });
   }, [fontSize]);
+
+  // 监听缩进大小变化
+  useEffect(() => {
+    updateEditorTabSize(indentSize);
+    editorFormat(MonacoDiffEditorEditorType.all)
+  }, [indentSize]);
 
   // 监听语言变化
   useEffect(() => {
@@ -697,7 +706,6 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
         editorRef.current = monacoInstance.editor.createDiffEditor(
           editorContainerRef.current,
           {
-            fontSize: fontSize,
             originalEditable: true, // 允许编辑原始文本
             renderSideBySide: true, // 并排显示
             useInlineViewWhenSpaceIsLimited: false, // 当空间有限时使用InlineView
@@ -705,6 +713,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
               enabled: true, // 启用缩略图
             },
             // fontFamily: `${jetbrainsMono.style.fontFamily}, "Arial","Microsoft YaHei","黑体","宋体", sans-serif`, // 字体
+            fontSize: fontSize, // 使用状态中的字体大小
             colorDecorators: true, // 颜色装饰器
             readOnly: false, // 是否开启已读功能
             theme: theme || "vs-light", // 主题
@@ -777,7 +786,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
           if (unicodeDecoratorsEnabled) {
             handleUnicodeContentChange(e, originalUnicodeDecoratorState);
           }
-          
+
           // URL下划线装饰器
           if (urlDecoratorsEnabled) {
             handleUrlContentChange(e, originalUrlDecoratorState);
@@ -813,7 +822,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
           if (unicodeDecoratorsEnabled) {
             handleUnicodeContentChange(e, modifiedUnicodeDecoratorState);
           }
-          
+
           // URL下划线装饰器
           if (urlDecoratorsEnabled) {
             handleUrlContentChange(e, modifiedUrlDecoratorState);
@@ -973,7 +982,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
                 modifiedUnicodeDecoratorState,
               );
             }
-            
+
             // 初始化URL装饰器
             if (urlDecoratorsEnabled) {
               // 确保全局状态与本地状态同步
@@ -1015,6 +1024,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     updateEditorSettings(tabKey, {
       fontSize: fontSize,
       language: currentLanguage,
+      indentSize: indentSize,
       timestampDecoratorsEnabled: timestampDecoratorsEnabled,
       base64DecoratorsEnabled: base64DecoratorsEnabled,
       unicodeDecoratorsEnabled: unicodeDecoratorsEnabled,
@@ -1023,6 +1033,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   }, [
     fontSize,
     currentLanguage,
+    indentSize,
     timestampDecoratorsEnabled,
     base64DecoratorsEnabled,
     unicodeDecoratorsEnabled,
@@ -1040,8 +1051,14 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       setBase64ProviderEnabled(base64DecoderEnabled);
       setBase64DecorationEnabled(base64DecoderEnabled);
       // 更新装饰
-      updateBase64Decorations(originalEditorRef.current, originalBase64DecoratorState);
-      updateBase64Decorations(modifiedEditorRef.current, modifiedBase64DecoratorState);
+      updateBase64Decorations(
+        originalEditorRef.current,
+        originalBase64DecoratorState,
+      );
+      updateBase64Decorations(
+        modifiedEditorRef.current,
+        modifiedBase64DecoratorState,
+      );
     }
   }, [base64DecoderEnabled]);
 
@@ -1053,11 +1070,17 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       setUnicodeProviderEnabled(unicodeDecoderEnabled);
       setUnicodeDecorationEnabled(unicodeDecoderEnabled);
       // 更新装饰
-      updateUnicodeDecorations(originalEditorRef.current, originalUnicodeDecoratorState);
-      updateUnicodeDecorations(modifiedEditorRef.current, modifiedUnicodeDecoratorState);
+      updateUnicodeDecorations(
+        originalEditorRef.current,
+        originalUnicodeDecoratorState,
+      );
+      updateUnicodeDecorations(
+        modifiedEditorRef.current,
+        modifiedUnicodeDecoratorState,
+      );
     }
   }, [unicodeDecoderEnabled]);
-  
+
   useEffect(() => {
     // 同步全局状态到本地状态
     setUrlDecoratorsEnabled(urlDecoderEnabled);
@@ -1066,8 +1089,14 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       setUrlProviderEnabled(urlDecoderEnabled);
       setUrlDecorationEnabled(urlDecoderEnabled);
       // 更新装饰
-      updateUrlDecorations(originalEditorRef.current, originalUrlDecoratorState);
-      updateUrlDecorations(modifiedEditorRef.current, modifiedUrlDecoratorState);
+      updateUrlDecorations(
+        originalEditorRef.current,
+        originalUrlDecoratorState,
+      );
+      updateUrlDecorations(
+        modifiedEditorRef.current,
+        modifiedUrlDecoratorState,
+      );
     }
   }, [urlDecoderEnabled]);
 
@@ -1180,7 +1209,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       // 如果解析成功，格式化并设置到左侧编辑器
       setEditorValue(
         originalEditorRef.current,
-        JSON.stringify(jsonObj, null, 2),
+        JSON.stringify(jsonObj, null, indentSize),
       );
       toast.success("已应用代码到左侧编辑器");
     } catch {
@@ -1209,7 +1238,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       // 如果解析成功，格式化并设置到右侧编辑器
       setEditorValue(
         modifiedEditorRef.current,
-        JSON.stringify(jsonObj, null, 2),
+        JSON.stringify(jsonObj, null, indentSize),
       );
       toast.success("已应用代码到右侧编辑器");
     } catch {
@@ -1230,6 +1259,14 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   };
 
   const editorFormat = (type: MonacoDiffEditorEditorType): boolean => {
+    // 暂时关闭自动缩进
+    let op = {
+      detectIndentation: false,
+    };
+
+    originalEditorRef.current?.updateOptions(op);
+    modifiedEditorRef.current?.updateOptions(op);
+
     switch (type) {
       case MonacoDiffEditorEditorType.left:
         formatEditorAction(originalEditorRef);
@@ -1246,6 +1283,15 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
 
         return false;
     }
+
+    setTimeout(() => {
+      let op = {
+        detectIndentation: true,
+      };
+
+      originalEditorRef.current?.updateOptions(op);
+      modifiedEditorRef.current?.updateOptions(op);
+    }, 50);
 
     return true;
   };
@@ -1473,8 +1519,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     },
     toggleUrlDecorators: (enabled?: boolean) => {
       // 更新状态
-      const newState =
-        enabled !== undefined ? enabled : !urlDecoratorsEnabled;
+      const newState = enabled !== undefined ? enabled : !urlDecoratorsEnabled;
 
       setUrlDecoratorsEnabled(newState);
 
@@ -1488,6 +1533,19 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       editorRef.current.updateOptions(options);
       originalEditorRef.current?.updateOptions(options);
       modifiedEditorRef.current?.updateOptions(options);
+    }
+  };
+  // 更新编辑器tabSize
+  const updateEditorTabSize = (tabSize: number) => {
+    if (editorRef.current) {
+      let op = {
+        tabSize: tabSize,
+        detectIndentation: false,
+      };
+
+      // @ts-ignore
+      // 类型中没有tabSize，但实际有效
+      editorRef.current.updateOptions(op);
     }
   };
 
@@ -1517,6 +1575,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
           base64DecoratorsEnabled={base64DecoratorsEnabled}
           containerRef={editorContainerRef}
           currentFontSize={fontSize}
+          currentIndentSize={indentSize}
           currentLanguage={currentLanguage}
           tabKey={tabKey}
           timestampDecoratorsEnabled={timestampDecoratorsEnabled}
@@ -1526,9 +1585,11 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
             setBase64DecoratorsEnabled(enabled);
           }}
           onFontSizeChange={setFontSize}
+          onIndentSizeChange={setIndentSize}
           onLanguageChange={setCurrentLanguage}
           onReset={() => {
             setFontSize(14);
+            setIndentSize(4);
             setCurrentLanguage("json");
             // 重置时也启用时间戳装饰器
             setTimestampDecoratorsEnabled(true);

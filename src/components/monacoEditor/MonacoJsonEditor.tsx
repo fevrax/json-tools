@@ -146,6 +146,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const editorSettings = currentTab?.editorSettings || {
     fontSize: 14,
     language: language || "json",
+    indentSize: 4,
     timestampDecoratorsEnabled: showTimestampDecorators,
   };
 
@@ -154,6 +155,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     editorSettings.language,
   );
   const [fontSize, setFontSize] = useState(editorSettings.fontSize);
+  const [indentSize, setIndentSize] = useState(editorSettings.indentSize || 4);
 
   // 时间戳装饰器相关引用
   const timestampDecorationsRef =
@@ -373,7 +375,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       const jsonObj = JSON.parse(code);
 
       // 如果解析成功，格式化并设置到编辑器
-      setEditorValue(JSON.stringify(jsonObj, null, 2));
+      setEditorValue(JSON.stringify(jsonObj, null, indentSize));
       toast.success("已应用代码到编辑器");
     } catch {
       // 如果解析失败，尝试直接设置文本
@@ -411,14 +413,17 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
   }, [theme]);
 
-  // 字体大小变更监听
+  // 字体大小和缩进大小变更监听
   useEffect(() => {
     if (editorRef.current) {
       editorRef.current.updateOptions({
         fontSize: fontSize,
+        tabSize: indentSize,
+        detectIndentation: false, // 关闭自动检测缩进
       });
     }
-  }, [fontSize]);
+    editorFormat();
+  }, [fontSize, indentSize]);
 
   // 语言变更处理函数
   const handleLanguageChange = (newLanguage: string) => {
@@ -435,6 +440,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   // 重置设置
   const handleReset = () => {
     setFontSize(14); // 重置字体大小
+    setIndentSize(4); // 重置缩进大小
     handleLanguageChange("json"); // 重置语言
 
     // 重置时启用时间戳装饰器
@@ -675,6 +681,12 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     if (!editorRef.current) {
       return false;
     }
+
+    // 格式化暂时关闭自动检测缩进
+    editorRef.current?.updateOptions({
+      detectIndentation: false,
+    });
+
     if (editorRef.current.getValue() === "") {
       toast.error("暂无内容!");
 
@@ -700,6 +712,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       // 对于其他格式，使用 Monaco 内置的格式化功能
       editorRef.current.getAction("editor.action.formatDocument")?.run();
     }
+
+    // 格式化成功 开启自动缩进
+    setTimeout(() => {
+      editorRef.current?.updateOptions({
+        detectIndentation: true, // 开启自动检测缩进
+      });
+    }, 50);
 
     return true;
   };
@@ -771,7 +790,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       if (!isArrayOrObject(unescapedJsonObject)) {
         return "不是有效的 JSON 数据，无法进行解码操作";
       }
-      setEditorValue(JSON.stringify(unescapedJsonObject, null, 4));
+      setEditorValue(JSON.stringify(unescapedJsonObject, null, indentSize));
     } catch (error) {
       console.error("formatModelByUnEscapeJson", error);
       if (error instanceof SyntaxError) {
@@ -1130,6 +1149,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           cursorSurroundingLinesStyle: "all", // "default" | "all" 光标环绕样式
           links: true, // 是否点击链接
           folding: true, // 启用代码折叠功能
+          tabSize: indentSize, // 设置制表符大小为当前缩进大小
         });
 
         onMount && onMount();
@@ -1290,11 +1310,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     updateEditorSettings(tabKey, {
       fontSize: fontSize,
       language: currentLanguage,
+      indentSize: indentSize,
       timestampDecoratorsEnabled: timestampDecoratorsEnabled,
     });
   }, [
     fontSize,
     currentLanguage,
+    indentSize,
     timestampDecoratorsEnabled,
     tabKey,
     updateEditorSettings,
@@ -1415,10 +1437,12 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         <DraggableMenu
           containerRef={rootContainerRef}
           currentFontSize={fontSize}
+          currentIndentSize={indentSize}
           currentLanguage={currentLanguage}
           tabKey={tabKey}
           timestampDecoratorsEnabled={timestampDecoratorsEnabled}
           onFontSizeChange={setFontSize}
+          onIndentSizeChange={setIndentSize}
           onLanguageChange={handleLanguageChange}
           onReset={handleReset}
           onTimestampDecoratorsChange={(enabled) => {

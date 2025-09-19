@@ -20,6 +20,7 @@ export interface TabItem {
   editorSettings: {
     fontSize: number;
     language: string;
+    indentSize: number; // 缩进大小
     timestampDecoratorsEnabled?: boolean; // 添加时间戳装饰器设置
     base64DecoratorsEnabled?: boolean; // Base64装饰器设置
     unicodeDecoratorsEnabled?: boolean; // Unicode装饰器设置
@@ -84,6 +85,7 @@ export const useTabStore = create<TabStore>()(
           extraData?: Record<string, any>,
         ) =>
           set((state) => {
+            const settings = useSettingsStore.getState();
             const newTabKey = `${state.nextKey}`;
             const newTab: TabItem = {
               key: `${state.nextKey}`,
@@ -97,6 +99,7 @@ export const useTabStore = create<TabStore>()(
               editorSettings: {
                 fontSize: 14,
                 language: "json",
+                indentSize: settings.defaultIndentSize,
                 timestampDecoratorsEnabled: true,
                 base64DecoratorsEnabled: true,
                 unicodeDecoratorsEnabled: true,
@@ -112,6 +115,7 @@ export const useTabStore = create<TabStore>()(
           }),
         initTab: () => {
           set((state) => {
+            const settings = useSettingsStore.getState();
             const tabs = [
               {
                 key: "1",
@@ -124,6 +128,7 @@ export const useTabStore = create<TabStore>()(
                 editorSettings: {
                   fontSize: 14,
                   language: "json",
+                  indentSize: settings.defaultIndentSize,
                   timestampDecoratorsEnabled: true,
                   base64DecoratorsEnabled: true,
                   unicodeDecoratorsEnabled: true,
@@ -347,6 +352,7 @@ export const useTabStore = create<TabStore>()(
             .map((tab) => tab.key);
 
           set(() => {
+            const settings = useSettingsStore.getState();
             const defaultTab = [
               {
                 key: "1",
@@ -359,6 +365,7 @@ export const useTabStore = create<TabStore>()(
                 editorSettings: {
                   fontSize: 14,
                   language: "json",
+                  indentSize: settings.defaultIndentSize,
                   timestampDecoratorsEnabled: true,
                   base64DecoratorsEnabled: true,
                   unicodeDecoratorsEnabled: true,
@@ -398,7 +405,8 @@ export const useTabStore = create<TabStore>()(
 
             try {
               if (isJSONContent(vanilla)) {
-                activeTab.content = JSON.stringify(vanilla.json, null, 2);
+                const indentSize = activeTab.editorSettings.indentSize || 2;
+                activeTab.content = JSON.stringify(vanilla.json, null, indentSize);
 
                 // 处理JSON内容
                 return {

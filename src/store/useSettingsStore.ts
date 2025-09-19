@@ -18,6 +18,8 @@ export interface SettingsState {
   base64DecoderEnabled: boolean;
   unicodeDecoderEnabled: boolean;
   urlDecoderEnabled: boolean;
+  // 编辑器默认设置
+  defaultIndentSize: number;
   // 快捷键设置
   newTabShortcut: string;
   setEditDataSaveLocal: (value: boolean) => void;
@@ -29,6 +31,8 @@ export interface SettingsState {
   setBase64DecoderEnabled: (value: boolean) => void;
   setUnicodeDecoderEnabled: (value: boolean) => void;
   setUrlDecoderEnabled: (value: boolean) => void;
+  // 编辑器默认设置setter方法
+  setDefaultIndentSize: (value: number) => void;
   // 快捷键setter方法
   setNewTabShortcut: (value: string) => void;
   setSettings: (settings: SettingsState) => void;
@@ -47,6 +51,8 @@ export const useSettingsStore = create<SettingsState>()(
       base64DecoderEnabled: true,
       unicodeDecoderEnabled: true,
       urlDecoderEnabled: true,
+      // 编辑器默认设置
+      defaultIndentSize: 4,
       // 快捷键默认设置
       newTabShortcut: "Ctrl+Shift+T",
 
@@ -60,6 +66,8 @@ export const useSettingsStore = create<SettingsState>()(
       setBase64DecoderEnabled: (value) => set({ base64DecoderEnabled: value }),
       setUnicodeDecoderEnabled: (value) => set({ unicodeDecoderEnabled: value }),
       setUrlDecoderEnabled: (value) => set({ urlDecoderEnabled: value }),
+      // 编辑器默认设置setter实现
+      setDefaultIndentSize: (value) => set({ defaultIndentSize: value }),
       // 快捷键setter实现
       setNewTabShortcut: (value) => set({ newTabShortcut: value }),
       setSettings: (settings) => {
@@ -83,6 +91,8 @@ useSettingsStore.subscribe((state) => {
     base64DecoderEnabled: state.base64DecoderEnabled,
     unicodeDecoderEnabled: state.unicodeDecoderEnabled,
     urlDecoderEnabled: state.urlDecoderEnabled,
+    // 保存编辑器默认设置
+    defaultIndentSize: state.defaultIndentSize,
     // 保存快捷键设置
     newTabShortcut: state.newTabShortcut,
   };

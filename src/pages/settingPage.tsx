@@ -10,6 +10,7 @@ import {
   ModalBody,
   ModalFooter,
   useDisclosure,
+  Slider,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useTheme } from "next-themes";
@@ -55,6 +56,9 @@ export default function SettingsPage() {
     setBase64DecoderEnabled,
     setUnicodeDecoderEnabled,
     setUrlDecoderEnabled,
+    // 编辑器默认设置
+    defaultIndentSize,
+    setDefaultIndentSize,
     // 快捷键设置
     newTabShortcut,
     setNewTabShortcut,
@@ -210,6 +214,10 @@ export default function SettingsPage() {
         setNewTabShortcut(value);
         toast.success(`新建标签页快捷键已设置为 ${value}`);
         break;
+      case "defaultIndentSize":
+        setDefaultIndentSize(value);
+        toast.success(`默认缩进大小已设置为 ${value} 个空格`);
+        break;
     }
   };
 
@@ -329,6 +337,7 @@ export default function SettingsPage() {
       base64DecoderEnabled: true,
       unicodeDecoderEnabled: true,
       urlDecoderEnabled: true,
+      defaultIndentSize: 4,
       newTabShortcut: "Ctrl+Shift+T",
     });
 
@@ -649,6 +658,33 @@ export default function SettingsPage() {
               />
             </div>
           ))}
+
+          {/* 默认缩进大小设置 */}
+          <div className="flex items-center justify-between p-5 hover:bg-default-100/40 transition-colors">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-xl bg-orange-500/15 text-orange-500 shadow-sm">
+                <Icon icon="fluent:text-indent-increase-16-filled" width={22} />
+              </div>
+              <div className="flex-1">
+                <p className="text-default-900 font-medium">默认缩进大小</p>
+                <p className="text-sm text-default-500 mt-1">
+                  设置新标签页的JSON缩进空格数量
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 ml-4">
+              <span className="text-sm text-default-600 w-8 text-center">{defaultIndentSize}</span>
+              <Slider
+                aria-label="调整默认缩进大小"
+                className="w-32"
+                maxValue={8}
+                minValue={1}
+                step={1}
+                value={defaultIndentSize}
+                onChange={(value) => handleSettingChange("defaultIndentSize", value as number)}
+              />
+            </div>
+          </div>
 
           {/* 重置应用 */}
           <div className="p-5">
