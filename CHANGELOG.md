@@ -1,3 +1,30 @@
+# [1.10.0](https://github.com/fevrax/json-tools/compare/v1.9.1...v1.10.0) (2025-09-19)
+
+
+### Bug Fixes
+
+* docker name ([7b6ac6a](https://github.com/fevrax/json-tools/commit/7b6ac6a3b37e341006cda12c21ff56bb1b9da573))
+* **editor:** 测试4 ([b0d96a5](https://github.com/fevrax/json-tools/commit/b0d96a5fc5c070b6ae1bfb5ba94bcc1fec8a3ecb))
+* github relase ([ac61fb3](https://github.com/fevrax/json-tools/commit/ac61fb38f3b761b7ddfc966e63fa90bdaac04c17))
+* github relase1 ([d7276e2](https://github.com/fevrax/json-tools/commit/d7276e2e4ca6dfb0e375c8dd7f147eccec0c94e8))
+* github relase2 ([fcb6012](https://github.com/fevrax/json-tools/commit/fcb60126ea45b3f10a9e82f1f779fe7c100010f2))
+* release ([275a744](https://github.com/fevrax/json-tools/commit/275a744e92167272cd30ec4675679300500806ae))
+* release tag ([08756f6](https://github.com/fevrax/json-tools/commit/08756f6490f4537dd67231c71f4584b2c92b48e3))
+* 测试5 ([5b7f0fd](https://github.com/fevrax/json-tools/commit/5b7f0fd0bb0e1f1720ffd7b47ee3f72d618174c1))
+* 测试6 ([25076f8](https://github.com/fevrax/json-tools/commit/25076f8b4b8752777c41ac18973b08ab53bacac8))
+
+
+### Features
+
+* **editor:** 测试 ([d34ab49](https://github.com/fevrax/json-tools/commit/d34ab498924b76380d2e68425a0ec3db290509d8))
+* **editor:** 测试2 ([4b0690d](https://github.com/fevrax/json-tools/commit/4b0690d9f56276112971fd9e234055de6b7c0401))
+* **editor:** 测试3 ([4929428](https://github.com/fevrax/json-tools/commit/4929428584c98b0c6de4e230a1b25675a39b63ea))
+* github relase ([5f6f464](https://github.com/fevrax/json-tools/commit/5f6f464b0ceb370de0caa8e8b7b398c116018da5))
+* release ([b291bb6](https://github.com/fevrax/json-tools/commit/b291bb67773fbd42a459ebb70c31685b1c080bbd))
+* release config ([60423d9](https://github.com/fevrax/json-tools/commit/60423d97c18bf834ff1f15eab375cca8b66d0988))
+* release tag ([2efeb6c](https://github.com/fevrax/json-tools/commit/2efeb6cbb8723932769e6dd45d7fbce3964ff698))
+* 测试6 ([d8b25b5](https://github.com/fevrax/json-tools/commit/d8b25b57b7bfeab8d5670cffa96ce16dd96c4ee8))
+
 ## [1.9.1](https://github.com/fevrax/json-tools/compare/v1.9.0...v1.9.1) (2025-07-01)
 
 
