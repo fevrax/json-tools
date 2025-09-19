@@ -58,9 +58,9 @@ JSON Tools Next 是一个多功能的JSON工具集，提供了直观的界面和
 
 ## 🖼️ 界面预览
 
-![250419132143711.png](https://minio.kl.do/default/250419132143711-20250419132143726.png)
-![250419132241894.png](https://minio.kl.do/default/250419132241894-20250419132242640.png)
-![250419132405927.png](https://minio.kl.do/default/250419132405927-20250419132406260.png)
+![250419132143711.png](https://fs.ssooai.com/default/250419132143711-20250419132143726.png)
+![250419132241894.png](https://fs.ssooai.com/default/250419132241894-20250419132242640.png)
+![250419132405927.png](https://fs.ssooai.com/default/250419132405927-20250419132406260.png)
 ## 🔥 核心功能
 
 ### 多视图JSON编辑器
@@ -142,10 +142,6 @@ pnpm preview
 ```
 
 
-## 📈 Star 历史
-
-[![Star History Chart](https://api.star-history.com/svg?repos=fevrax/json-tools&type=Date)](https://star-history.com/#dalefengs/json-tools&Date)
-
 ## 🤝 贡献
 
 欢迎提交PR、创建Issue或提供功能建议！请查看[贡献指南](CONTRIBUTING.md)了解更多。
@@ -194,6 +190,10 @@ BREAKING CHANGE: 修改了之前的格式化行为
 2. 自动生成更新日志（CHANGELOG.md）
 3. 创建Git标签
 4. 发布GitHub Release
+
+
+## 📈 Stargazers over time
+[![Stargazers over time](https://starchart.cc/fevrax/json-tools.svg?variant=adaptive)](https://starchart.cc/fevrax/json-tools)
 
 ## 🙏 致谢
 
