@@ -31,6 +31,7 @@ import { setBase64DecorationEnabled, setBase64ProviderEnabled } from "@/componen
 import { setUnicodeDecorationEnabled } from "@/components/monacoEditor/decorations/unicodeDecoration.ts";
 import { setTimestampDecorationEnabled } from "@/components/monacoEditor/decorations/timestampDecoration.ts";
 import { setUrlDecorationEnabled, setUrlProviderEnabled } from "@/components/monacoEditor/decorations/urlDecoration.ts";
+import { parseShortcut } from "@/utils/shortcut.ts";
 
 // 检查 utools 是否可用
 const isUtoolsAvailable = typeof window !== "undefined" && "utools" in window;
@@ -54,6 +55,9 @@ export default function SettingsPage() {
     setBase64DecoderEnabled,
     setUnicodeDecoderEnabled,
     setUrlDecoderEnabled,
+    // 快捷键设置
+    newTabShortcut,
+    setNewTabShortcut,
   } = useSettingsStore();
 
   const {
@@ -202,6 +206,27 @@ export default function SettingsPage() {
         setUrlDecoderEnabled(value);
         toast.success(`URL解码器已${value ? '启用' : '禁用'}`);
         break;
+      case "newTabShortcut":
+        setNewTabShortcut(value);
+        toast.success(`新建标签页快捷键已设置为 ${value}`);
+        break;
+    }
+  };
+
+  // 处理快捷键配置更改
+  const handleShortcutChange = (newShortcut: string) => {
+    try {
+      // 验证快捷键格式
+      const config = parseShortcut(newShortcut);
+      if (!config.key) {
+        toast.error("无效的快捷键格式");
+        return;
+      }
+      
+      setNewTabShortcut(newShortcut);
+      toast.success(`新建标签页快捷键已设置为 ${newShortcut}`);
+    } catch (error) {
+      toast.error("快捷键格式错误，请使用如 Ctrl+Shift+T 的格式");
     }
   };
 
@@ -300,6 +325,11 @@ export default function SettingsPage() {
       expandSidebar: false,
       monacoEditorCDN: "local",
       chatStyle: "bubble",
+      timestampDecoderEnabled: true,
+      base64DecoderEnabled: true,
+      unicodeDecoderEnabled: true,
+      urlDecoderEnabled: true,
+      newTabShortcut: "Ctrl+Shift+T",
     });
 
     // 重置 OpenAI 配置
@@ -528,6 +558,7 @@ export default function SettingsPage() {
   // 侧边栏菜单项
   const menuItems = [
     { key: "general", label: "通用设置", icon: "solar:settings-bold" },
+    { key: "shortcuts", label: "快捷键", icon: "solar:keyboard-bold" },
     { key: "appearance", label: "外观设置", icon: "catppuccin:folder-themes" },
     { key: "decoders", label: "自动解码", icon: "solar:code-bold" },
     { key: "ai", label: "AI 助手", icon: "hugeicons:ai-chat-02" },
@@ -646,6 +677,100 @@ export default function SettingsPage() {
                   重置应用
                 </Button>
               </Tooltip>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // 渲染快捷键设置内容
+  const renderShortcutsSettings = () => (
+    <div className="h-full">
+      <div className="mb-6 md:mb-8">
+        <h2 className="text-xl md:text-2xl font-bold text-default-900 flex items-center gap-2.5">
+          <div className="p-2 rounded-xl bg-primary/15 shadow-sm">
+            <Icon
+              className="text-primary"
+              icon="solar:keyboard-bold"
+              width={22}
+            />
+          </div>
+          快捷键设置
+        </h2>
+        <p className="text-sm md:text-base text-default-500 mt-2 ml-1">
+          自定义应用的快捷键操作
+        </p>
+      </div>
+
+      <div className="bg-background/80 backdrop-blur-sm rounded-2xl overflow-hidden border border-default-200 shadow-sm">
+        <div className="divide-y divide-default-200">
+          {/* 新建标签页快捷键 */}
+          <div className="flex items-center justify-between p-5 hover:bg-default-100/40 transition-colors">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-xl bg-green-500/15 text-green-500 shadow-sm">
+                <Icon icon="solar:document-add-bold" width={22} />
+              </div>
+              <div>
+                <p className="text-default-900 font-medium">新建标签页</p>
+                <p className="text-sm text-default-500 mt-1">
+                  快速创建新的空白标签页
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Input
+                className="w-40"
+                placeholder="Ctrl+Shift+T"
+                size="sm"
+                value={newTabShortcut}
+                variant="bordered"
+                onChange={(e) => handleShortcutChange(e.target.value)}
+                onKeyDown={(e) => {
+                  // 支持用户通过按键设置快捷键
+                  if (e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) {
+                    e.preventDefault();
+                    const modifiers = [];
+                    if (e.ctrlKey) modifiers.push('Ctrl');
+                    if (e.altKey) modifiers.push('Alt');
+                    if (e.shiftKey) modifiers.push('Shift');
+                    if (e.metaKey) modifiers.push('Cmd');
+                    
+                    const key = e.key.toUpperCase();
+                    const shortcut = [...modifiers, key].join('+');
+                    handleShortcutChange(shortcut);
+                  }
+                }}
+              />
+              <div className="text-xs text-default-500 bg-default-100 px-2 py-1 rounded">
+                按组合键设置
+              </div>
+            </div>
+          </div>
+
+          {/* 快捷键说明 */}
+          <div className="p-5">
+            <div className="p-4 rounded-xl bg-primary/10 border border-primary/20 flex items-start gap-3">
+              <Icon
+                className="text-primary mt-0.5 flex-shrink-0"
+                icon="solar:info-circle-bold"
+                width={20}
+              />
+              <div className="text-sm text-default-700">
+                <p className="font-medium mb-1 text-primary">关于快捷键</p>
+                <p>
+                  • 支持的修饰键：Ctrl、Alt、Shift、Cmd（Mac）
+                </p>
+                <p>
+                  • 支持的主键：字母键（A-Z）、数字键（0-9）
+                </p>
+                <p>
+                  • 示例格式：Ctrl+Shift+T、Cmd+Shift+T、Ctrl+T
+                </p>
+                <p>
+                  • 在输入框中按下组合键可自动设置
+                </p>
+              </div>
             </div>
           </div>
         </div>
@@ -1800,6 +1925,8 @@ export default function SettingsPage() {
     switch (activeTab) {
       case "general":
         return renderGeneralSettings();
+      case "shortcuts":
+        return renderShortcutsSettings();
       case "ai":
         return renderAISettings();
       case "appearance":

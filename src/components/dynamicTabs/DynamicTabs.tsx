@@ -19,6 +19,8 @@ import toast from "@/utils/toast";
 import { useTabStore, TabItem } from "@/store/useTabStore";
 import { IcRoundClose } from "@/components/Icons.tsx";
 import { JsonSample } from "@/utils/jsonSample.ts";
+import { useSettingsStore } from "@/store/useSettingsStore.ts";
+import { globalShortcutListener } from "@/utils/shortcut.ts";
 
 export interface DynamicTabsRef {
   getPositionTop: () => number;
@@ -51,6 +53,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     closeOtherTabs,
     getTabByKey,
   } = useTabStore();
+  const { newTabShortcut } = useSettingsStore();
   const tabListRef = useRef<HTMLDivElement>(null);
   const tabContainerRef = useRef<HTMLDivElement>(null);
   const tabRenameInputRef = useRef<HTMLInputElement>(null);
@@ -469,6 +472,33 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     }
   };
 
+  // 使用 useRef 保持回调函数的稳定性
+  const handleNewTabShortcutRef = useRef(() => {
+    addTab(undefined, undefined);
+  });
+
+  // 更新 ref 中的函数
+  useEffect(() => {
+    handleNewTabShortcutRef.current = () => {
+      addTab(undefined, undefined);
+    };
+  }, [addTab]);
+
+  // 设置快捷键监听
+  useEffect(() => {
+    const handleNewTabShortcut = () => {
+      handleNewTabShortcutRef.current();
+    };
+
+    // 注册快捷键监听（设置为全局快捷键，即使在编辑器中也能使用）
+    globalShortcutListener.addListener(newTabShortcut, handleNewTabShortcut, { global: true });
+
+    return () => {
+      // 清理快捷键监听
+      globalShortcutListener.removeListener(newTabShortcut, handleNewTabShortcut, { global: true });
+    };
+  }, [newTabShortcut]);
+
   // 使用 useImperativeHandle 暴露方法
   useImperativeHandle(ref, () => ({
     getPositionTop: () => {
@@ -744,6 +774,9 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                       <span className="font-medium">新建 Tab</span>
                       <span className="text-xs text-default-500">
                         创建空白 Tab 标签页
+                      </span>
+                      <span className="text-xs text-primary font-medium">
+                        {newTabShortcut}
                       </span>
                     </div>
                   </Button>

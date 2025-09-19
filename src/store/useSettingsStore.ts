@@ -18,6 +18,8 @@ export interface SettingsState {
   base64DecoderEnabled: boolean;
   unicodeDecoderEnabled: boolean;
   urlDecoderEnabled: boolean;
+  // 快捷键设置
+  newTabShortcut: string;
   setEditDataSaveLocal: (value: boolean) => void;
   setExpandSidebar: (value: boolean) => void;
   setMonacoEditorCDN: (value: "local" | "cdn") => void;
@@ -27,6 +29,8 @@ export interface SettingsState {
   setBase64DecoderEnabled: (value: boolean) => void;
   setUnicodeDecoderEnabled: (value: boolean) => void;
   setUrlDecoderEnabled: (value: boolean) => void;
+  // 快捷键setter方法
+  setNewTabShortcut: (value: string) => void;
   setSettings: (settings: SettingsState) => void;
 }
 
@@ -43,6 +47,8 @@ export const useSettingsStore = create<SettingsState>()(
       base64DecoderEnabled: true,
       unicodeDecoderEnabled: true,
       urlDecoderEnabled: true,
+      // 快捷键默认设置
+      newTabShortcut: "Ctrl+Shift+T",
 
       // actions
       setEditDataSaveLocal: (value) => set({ editDataSaveLocal: value }),
@@ -54,6 +60,8 @@ export const useSettingsStore = create<SettingsState>()(
       setBase64DecoderEnabled: (value) => set({ base64DecoderEnabled: value }),
       setUnicodeDecoderEnabled: (value) => set({ unicodeDecoderEnabled: value }),
       setUrlDecoderEnabled: (value) => set({ urlDecoderEnabled: value }),
+      // 快捷键setter实现
+      setNewTabShortcut: (value) => set({ newTabShortcut: value }),
       setSettings: (settings) => {
         set(settings);
       },
@@ -75,6 +83,8 @@ useSettingsStore.subscribe((state) => {
     base64DecoderEnabled: state.base64DecoderEnabled,
     unicodeDecoderEnabled: state.unicodeDecoderEnabled,
     urlDecoderEnabled: state.urlDecoderEnabled,
+    // 保存快捷键设置
+    newTabShortcut: state.newTabShortcut,
   };
 
   storage.setItem("settings", data);
