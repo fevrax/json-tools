@@ -35,6 +35,7 @@ const TARGET_LANGUAGES = [
   { value: "python", label: "Python", icon: "devicon:python" },
   { value: "swift", label: "Swift", icon: "devicon:swift" },
   { value: "kotlin", label: "Kotlin", icon: "devicon:kotlin" },
+  { value: "dart", label: "Dart", icon: "devicon:dart" },
   { value: "ruby", label: "Ruby", icon: "devicon:ruby" },
   { value: "rust", label: "Rust", icon: "devicon:rust" },
   { value: "php", label: "PHP", icon: "devicon:php" },
@@ -98,6 +99,13 @@ const quickPrompts: QuickPrompt[] = [
     icon: "simple-icons:kotlin",
     prompt: "请将这个JSON转换为Kotlin数据类，添加序列化注解",
     color: "secondary",
+  },
+  {
+    id: "convert_to_dart",
+    label: "转换为Dart类",
+    icon: "simple-icons:dart",
+    prompt: "请将这个JSON转换为Dart类，使用json_serializable进行序列化，添加适当的类型注解",
+    color: "warning",
   },
   {
     id: "generate_graphql",
