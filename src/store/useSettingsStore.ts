@@ -22,6 +22,7 @@ export interface SettingsState {
   defaultIndentSize: number;
   // 快捷键设置
   newTabShortcut: string;
+  closeTabShortcut: string;
   setEditDataSaveLocal: (value: boolean) => void;
   setExpandSidebar: (value: boolean) => void;
   setMonacoEditorCDN: (value: "local" | "cdn") => void;
@@ -35,6 +36,7 @@ export interface SettingsState {
   setDefaultIndentSize: (value: number) => void;
   // 快捷键setter方法
   setNewTabShortcut: (value: string) => void;
+  setCloseTabShortcut: (value: string) => void;
   setSettings: (settings: SettingsState) => void;
 }
 
@@ -55,6 +57,7 @@ export const useSettingsStore = create<SettingsState>()(
       defaultIndentSize: 4,
       // 快捷键默认设置
       newTabShortcut: "Ctrl+Shift+T",
+      closeTabShortcut: "Ctrl+Shift+W",
 
       // actions
       setEditDataSaveLocal: (value) => set({ editDataSaveLocal: value }),
@@ -70,6 +73,7 @@ export const useSettingsStore = create<SettingsState>()(
       setDefaultIndentSize: (value) => set({ defaultIndentSize: value }),
       // 快捷键setter实现
       setNewTabShortcut: (value) => set({ newTabShortcut: value }),
+      setCloseTabShortcut: (value) => set({ closeTabShortcut: value }),
       setSettings: (settings) => {
         set(settings);
       },
@@ -95,6 +99,7 @@ useSettingsStore.subscribe((state) => {
     defaultIndentSize: state.defaultIndentSize,
     // 保存快捷键设置
     newTabShortcut: state.newTabShortcut,
+    closeTabShortcut: state.closeTabShortcut,
   };
 
   storage.setItem("settings", data);

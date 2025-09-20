@@ -53,7 +53,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     closeOtherTabs,
     getTabByKey,
   } = useTabStore();
-  const { newTabShortcut } = useSettingsStore();
+  const { newTabShortcut, closeTabShortcut } = useSettingsStore();
   const tabListRef = useRef<HTMLDivElement>(null);
   const tabContainerRef = useRef<HTMLDivElement>(null);
   const tabRenameInputRef = useRef<HTMLInputElement>(null);
@@ -477,6 +477,15 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     addTab(undefined, undefined);
   });
 
+  // 使用 useRef 保持关闭标签页回调函数的稳定性
+  const handleCloseTabShortcutRef = useRef(() => {
+    const currentTab = tabs.find(tab => tab.key === activeTabKey);
+    if (currentTab && currentTab.closable) {
+      closeTab(activeTabKey);
+      onClose?.([activeTabKey]);
+    }
+  });
+
   // 更新 ref 中的函数
   useEffect(() => {
     handleNewTabShortcutRef.current = () => {
@@ -484,20 +493,37 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     };
   }, [addTab]);
 
+  // 更新关闭标签页 ref 中的函数
+  useEffect(() => {
+    handleCloseTabShortcutRef.current = () => {
+      const currentTab = tabs.find(tab => tab.key === activeTabKey);
+      if (currentTab && currentTab.closable) {
+        closeTab(activeTabKey);
+        onClose?.([activeTabKey]);
+      }
+    };
+  }, [tabs, activeTabKey, closeTab, onClose]);
+
   // 设置快捷键监听
   useEffect(() => {
     const handleNewTabShortcut = () => {
       handleNewTabShortcutRef.current();
     };
 
+    const handleCloseTabShortcut = () => {
+      handleCloseTabShortcutRef.current();
+    };
+
     // 注册快捷键监听（设置为全局快捷键，即使在编辑器中也能使用）
     globalShortcutListener.addListener(newTabShortcut, handleNewTabShortcut, { global: true });
+    globalShortcutListener.addListener(closeTabShortcut, handleCloseTabShortcut, { global: true });
 
     return () => {
       // 清理快捷键监听
       globalShortcutListener.removeListener(newTabShortcut, handleNewTabShortcut, { global: true });
+      globalShortcutListener.removeListener(closeTabShortcut, handleCloseTabShortcut, { global: true });
     };
-  }, [newTabShortcut]);
+  }, [newTabShortcut, closeTabShortcut]);
 
   // 使用 useImperativeHandle 暴露方法
   useImperativeHandle(ref, () => ({

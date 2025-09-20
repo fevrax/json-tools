@@ -61,7 +61,9 @@ export default function SettingsPage() {
     setDefaultIndentSize,
     // 快捷键设置
     newTabShortcut,
+    closeTabShortcut,
     setNewTabShortcut,
+    setCloseTabShortcut,
   } = useSettingsStore();
 
   const {
@@ -214,6 +216,10 @@ export default function SettingsPage() {
         setNewTabShortcut(value);
         toast.success(`新建标签页快捷键已设置为 ${value}`);
         break;
+      case "closeTabShortcut":
+        setCloseTabShortcut(value);
+        toast.success(`关闭标签页快捷键已设置为 ${value}`);
+        break;
       case "defaultIndentSize":
         setDefaultIndentSize(value);
         toast.success(`默认缩进大小已设置为 ${value} 个空格`);
@@ -222,7 +228,7 @@ export default function SettingsPage() {
   };
 
   // 处理快捷键配置更改
-  const handleShortcutChange = (newShortcut: string) => {
+  const handleShortcutChange = (shortcutType: string, newShortcut: string) => {
     try {
       // 验证快捷键格式
       const config = parseShortcut(newShortcut);
@@ -231,8 +237,13 @@ export default function SettingsPage() {
         return;
       }
       
-      setNewTabShortcut(newShortcut);
-      toast.success(`新建标签页快捷键已设置为 ${newShortcut}`);
+      if (shortcutType === "newTab") {
+        setNewTabShortcut(newShortcut);
+        toast.success(`新建标签页快捷键已设置为 ${newShortcut}`);
+      } else if (shortcutType === "closeTab") {
+        setCloseTabShortcut(newShortcut);
+        toast.success(`关闭标签页快捷键已设置为 ${newShortcut}`);
+      }
     } catch (error) {
       toast.error("快捷键格式错误，请使用如 Ctrl+Shift+T 的格式");
     }
@@ -339,6 +350,7 @@ export default function SettingsPage() {
       urlDecoderEnabled: true,
       defaultIndentSize: 4,
       newTabShortcut: "Ctrl+Shift+T",
+      closeTabShortcut: "Ctrl+Shift+W",
     });
 
     // 重置 OpenAI 配置
@@ -761,7 +773,7 @@ export default function SettingsPage() {
                 size="sm"
                 value={newTabShortcut}
                 variant="bordered"
-                onChange={(e) => handleShortcutChange(e.target.value)}
+                onChange={(e) => handleShortcutChange("newTab", e.target.value)}
                 onKeyDown={(e) => {
                   // 支持用户通过按键设置快捷键
                   if (e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) {
@@ -774,7 +786,50 @@ export default function SettingsPage() {
                     
                     const key = e.key.toUpperCase();
                     const shortcut = [...modifiers, key].join('+');
-                    handleShortcutChange(shortcut);
+                    handleShortcutChange("newTab", shortcut);
+                  }
+                }}
+              />
+              <div className="text-xs text-default-500 bg-default-100 px-2 py-1 rounded">
+                按组合键设置
+              </div>
+            </div>
+          </div>
+
+          {/* 关闭标签页快捷键 */}
+          <div className="flex items-center justify-between p-5 hover:bg-default-100/40 transition-colors">
+            <div className="flex items-start gap-4">
+              <div className="p-3 rounded-xl bg-red-500/15 text-red-500 shadow-sm">
+                <Icon icon="solar:close-circle-bold" width={22} />
+              </div>
+              <div>
+                <p className="text-default-900 font-medium">关闭标签页</p>
+                <p className="text-sm text-default-500 mt-1">
+                  快速关闭当前活动的标签页
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Input
+                className="w-40"
+                placeholder="Ctrl+Shift+W"
+                size="sm"
+                value={closeTabShortcut}
+                variant="bordered"
+                onChange={(e) => handleShortcutChange("closeTab", e.target.value)}
+                onKeyDown={(e) => {
+                  // 支持用户通过按键设置快捷键
+                  if (e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) {
+                    e.preventDefault();
+                    const modifiers = [];
+                    if (e.ctrlKey) modifiers.push('Ctrl');
+                    if (e.altKey) modifiers.push('Alt');
+                    if (e.shiftKey) modifiers.push('Shift');
+                    if (e.metaKey) modifiers.push('Cmd');
+                    
+                    const key = e.key.toUpperCase();
+                    const shortcut = [...modifiers, key].join('+');
+                    handleShortcutChange("closeTab", shortcut);
                   }
                 }}
               />
