@@ -23,6 +23,7 @@ import MonacoEditor, {
   MonacoJsonEditorRef,
 } from "@/components/monacoEditor/MonacoJsonEditor.tsx";
 import ToolboxPageTemplate from "@/layouts/toolboxPageTemplate";
+import ResizableEditorLayout from "@/components/layout/ResizableEditorLayout.tsx";
 import AIPromptOverlay, {
   QuickPrompt,
 } from "@/components/ai/AIPromptOverlay.tsx";
@@ -68,6 +69,21 @@ export default function DataFormatConverterPage() {
   // 数据格式转换相关状态
   const [inputFormat, setInputFormat] = useState<string>("json");
   const [outputFormat, setOutputFormat] = useState<string>("yaml");
+
+  // 处理编辑器布局调整
+  const handleEditorResize = (width: number) => {
+    console.log('Editor left width:', width + '%');
+  };
+
+  // 在拖动结束后更新编辑器布局
+  const handleEditorResizeComplete = (width: number) => {
+    console.log('Editor resize complete:', width + '%');
+    // 更新两个编辑器的布局
+    setTimeout(() => {
+      inputEditorRef.current?.layout();
+      outputEditorRef.current?.layout();
+    }, 50); // 给DOM更新一点时间
+  };
 
   // 处理快捷指令点击
   const handleQuickPromptClick = (quickPrompt: QuickPrompt) => {
@@ -607,132 +623,144 @@ export default function DataFormatConverterPage() {
           onQuickPromptClick={handleQuickPromptClick}
           onSubmit={handleAiConvert}
         />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow h-0 overflow-hidden">
-          <Card className="flex-1 overflow-hidden shadow-md border border-default-200 transition-shadow hover:shadow-lg">
-            <CardBody className="p-0 h-full flex flex-col">
-              <div className="p-2.5 bg-default-50 border-b border-default-200 flex justify-between items-center">
-                <span className="text-sm font-medium flex items-center gap-2">
-                  <Icon
-                    className="text-default-600"
-                    icon="solar:document-text-outline"
-                    width={16}
-                  />
-                  输入{" "}
-                  {DATA_FORMATS.find((f) => f.value === inputFormat)?.label ||
-                    inputFormat}
-                </span>
-                <div className="flex items-center gap-1">
-                  <Tooltip content="格式化" placement="top">
-                    <Button
-                      isIconOnly
-                      aria-label="格式化"
-                      className="bg-default-100/50 hover:bg-default-200/60"
-                      size="sm"
-                      variant="light"
-                      onPress={formatInput}
-                    >
-                      <Icon
-                        className="text-default-600"
-                        icon="solar:magic-stick-linear"
-                        width={18}
-                      />
-                    </Button>
-                  </Tooltip>
-                  <Tooltip content="复制" placement="top">
-                    <Button
-                      isIconOnly
-                      aria-label="复制"
-                      className="bg-default-100/50 hover:bg-default-200/60"
-                      size="sm"
-                      variant="light"
-                      onPress={copyInput}
-                    >
-                      <Icon
-                        className="text-default-600"
-                        icon="solar:copy-outline"
-                        width={18}
-                      />
-                    </Button>
-                  </Tooltip>
+        {/* 可调整大小的双编辑器布局 */}
+        <div className="flex-grow h-0 overflow-hidden">
+          <ResizableEditorLayout
+            initialLeftWidth={50}
+            minLeftWidth={30}
+            maxLeftWidth={70}
+            onResize={handleEditorResize}
+            onResizeComplete={handleEditorResizeComplete}
+            className="h-full"
+          >
+            {/* 左侧编辑器面板 */}
+            <Card className="h-full overflow-hidden shadow-md border border-default-200 transition-shadow hover:shadow-lg m-2">
+              <CardBody className="p-0 h-full flex flex-col">
+                <div className="p-2.5 bg-default-50 border-b border-default-200 flex justify-between items-center">
+                  <span className="text-sm font-medium flex items-center gap-2">
+                    <Icon
+                      className="text-default-600"
+                      icon="solar:document-text-outline"
+                      width={16}
+                    />
+                    输入{" "}
+                    {DATA_FORMATS.find((f) => f.value === inputFormat)?.label ||
+                      inputFormat}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Tooltip content="格式化" placement="top">
+                      <Button
+                        isIconOnly
+                        aria-label="格式化"
+                        className="bg-default-100/50 hover:bg-default-200/60"
+                        size="sm"
+                        variant="light"
+                        onPress={formatInput}
+                      >
+                        <Icon
+                          className="text-default-600"
+                          icon="solar:magic-stick-linear"
+                          width={18}
+                        />
+                      </Button>
+                    </Tooltip>
+                    <Tooltip content="复制" placement="top">
+                      <Button
+                        isIconOnly
+                        aria-label="复制"
+                        className="bg-default-100/50 hover:bg-default-200/60"
+                        size="sm"
+                        variant="light"
+                        onPress={copyInput}
+                      >
+                        <Icon
+                          className="text-default-600"
+                          icon="solar:copy-outline"
+                          width={18}
+                        />
+                      </Button>
+                    </Tooltip>
+                  </div>
                 </div>
-              </div>
-              <div className="flex-1 w-full h-full flex-grow overflow-hidden">
-                <MonacoEditor
-                  ref={inputEditorRef}
-                  height="100%"
-                  language={inputFormat}
-                  tabKey="input"
-                  theme={theme === "dark" ? "vs-dark" : "vs-light"}
-                  value={inputValue}
-                  onUpdateValue={(value) => setInputValue(value || "")}
-                />
-              </div>
-            </CardBody>
-          </Card>
+                <div className="flex-1 w-full h-full flex-grow overflow-hidden">
+                  <MonacoEditor
+                    ref={inputEditorRef}
+                    height="100%"
+                    language={inputFormat}
+                    tabKey="input"
+                    theme={theme === "dark" ? "vs-dark" : "vs-light"}
+                    value={inputValue}
+                    onUpdateValue={(value) => setInputValue(value || "")}
+                  />
+                </div>
+              </CardBody>
+            </Card>
 
-          <Card className="flex-1 overflow-hidden shadow-md border border-default-200 transition-shadow hover:shadow-lg">
-            <CardBody className="p-0 h-full flex flex-col">
-              <div className="p-2.5 bg-default-50 border-b border-default-200 flex justify-between items-center">
-                <span className="text-sm font-medium flex items-center gap-2">
-                  <Icon
-                    className="text-default-600"
-                    icon="solar:code-square-linear"
-                    width={16}
-                  />
-                  输出{" "}
-                  {DATA_FORMATS.find((f) => f.value === outputFormat)?.label ||
-                    outputFormat}
-                </span>
-                <div className="flex items-center gap-1">
-                  <Tooltip content="格式化" placement="top">
-                    <Button
-                      isIconOnly
-                      aria-label="格式化"
-                      className="bg-default-100/50 hover:bg-default-200/60"
-                      size="sm"
-                      variant="light"
-                      onPress={formatOutput}
-                    >
-                      <Icon
-                        className="text-default-600"
-                        icon="solar:magic-stick-linear"
-                        width={18}
-                      />
-                    </Button>
-                  </Tooltip>
-                  <Tooltip content="复制" placement="top">
-                    <Button
-                      isIconOnly
-                      aria-label="复制"
-                      className="bg-default-100/50 hover:bg-default-200/60"
-                      size="sm"
-                      variant="light"
-                      onPress={copyOutput}
-                    >
-                      <Icon
-                        className="text-default-600"
-                        icon="solar:copy-outline"
-                        width={18}
-                      />
-                    </Button>
-                  </Tooltip>
+            {/* 右侧编辑器面板 */}
+            <Card className="h-full overflow-hidden shadow-md border border-default-200 transition-shadow hover:shadow-lg m-2">
+              <CardBody className="p-0 h-full flex flex-col">
+                <div className="p-2.5 bg-default-50 border-b border-default-200 flex justify-between items-center">
+                  <span className="text-sm font-medium flex items-center gap-2">
+                    <Icon
+                      className="text-default-600"
+                      icon="solar:code-square-linear"
+                      width={16}
+                    />
+                    输出{" "}
+                    {DATA_FORMATS.find((f) => f.value === outputFormat)?.label ||
+                      outputFormat}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <Tooltip content="格式化" placement="top">
+                      <Button
+                        isIconOnly
+                        aria-label="格式化"
+                        className="bg-default-100/50 hover:bg-default-200/60"
+                        size="sm"
+                        variant="light"
+                        onPress={formatOutput}
+                      >
+                        <Icon
+                          className="text-default-600"
+                          icon="solar:magic-stick-linear"
+                          width={18}
+                        />
+                      </Button>
+                    </Tooltip>
+                    <Tooltip content="复制" placement="top">
+                      <Button
+                        isIconOnly
+                        aria-label="复制"
+                        className="bg-default-100/50 hover:bg-default-200/60"
+                        size="sm"
+                        variant="light"
+                        onPress={copyOutput}
+                      >
+                        <Icon
+                          className="text-default-600"
+                          icon="solar:copy-outline"
+                          width={18}
+                        />
+                      </Button>
+                    </Tooltip>
+                  </div>
                 </div>
-              </div>
-              <div className="flex-1 h-full flex-grow overflow-hidden">
-                <MonacoEditor
-                  ref={outputEditorRef}
-                  height="100%"
-                  language={outputFormat}
-                  tabKey="out"
-                  theme={theme === "dark" ? "vs-dark" : "vs-light"}
-                  value={outputValue}
-                  onUpdateValue={(val) => {
-                    setOutputValue(val || "");
-                  }}
-                />
-              </div>
-            </CardBody>
-          </Card>
+                <div className="flex-1 h-full flex-grow overflow-hidden">
+                  <MonacoEditor
+                    ref={outputEditorRef}
+                    height="100%"
+                    language={outputFormat}
+                    tabKey="out"
+                    theme={theme === "dark" ? "vs-dark" : "vs-light"}
+                    value={outputValue}
+                    onUpdateValue={(val) => {
+                      setOutputValue(val || "");
+                    }}
+                  />
+                </div>
+              </CardBody>
+            </Card>
+          </ResizableEditorLayout>
         </div>
       </div>
     </ToolboxPageTemplate>
