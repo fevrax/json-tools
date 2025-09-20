@@ -542,7 +542,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   // 监听缩进大小变化
   useEffect(() => {
     updateEditorTabSize(indentSize);
-    editorFormat(MonacoDiffEditorEditorType.all)
+    editorFormat(MonacoDiffEditorEditorType.all);
   }, [indentSize]);
 
   // 监听语言变化
@@ -1319,12 +1319,12 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   };
   const clearEditor = (
     editorRef: React.MutableRefObject<editor.IStandaloneCodeEditor | null>,
-    editorType: 'original' | 'modified' | 'both',
+    editorType: "original" | "modified" | "both",
   ) => {
     setEditorValue(editorRef.current, "");
-    
+
     // 清空装饰器状态
-    if (editorType === 'original' || editorType === 'both') {
+    if (editorType === "original" || editorType === "both") {
       // 清空原始编辑器的装饰器状态
       if (originalTimestampDecorationsRef.current) {
         originalTimestampDecorationsRef.current.clear();
@@ -1335,7 +1335,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       if (originalTimestampDecorationIdsRef.current) {
         originalTimestampDecorationIdsRef.current = {};
       }
-      
+
       if (originalBase64DecorationsRef.current) {
         originalBase64DecorationsRef.current.clear();
       }
@@ -1345,7 +1345,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       if (originalBase64DecorationIdsRef.current) {
         originalBase64DecorationIdsRef.current = {};
       }
-      
+
       if (originalUnicodeDecorationsRef.current) {
         originalUnicodeDecorationsRef.current.clear();
       }
@@ -1355,7 +1355,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       if (originalUnicodeDecorationIdsRef.current) {
         originalUnicodeDecorationIdsRef.current = {};
       }
-      
+
       if (originalUrlDecorationsRef.current) {
         originalUrlDecorationsRef.current.clear();
       }
@@ -1366,8 +1366,8 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
         originalUrlDecorationIdsRef.current = {};
       }
     }
-    
-    if (editorType === 'modified' || editorType === 'both') {
+
+    if (editorType === "modified" || editorType === "both") {
       // 清空修改后编辑器的装饰器状态
       if (modifiedTimestampDecorationsRef.current) {
         modifiedTimestampDecorationsRef.current.clear();
@@ -1378,7 +1378,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       if (modifiedTimestampDecorationIdsRef.current) {
         modifiedTimestampDecorationIdsRef.current = {};
       }
-      
+
       if (modifiedBase64DecorationsRef.current) {
         modifiedBase64DecorationsRef.current.clear();
       }
@@ -1388,7 +1388,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       if (modifiedBase64DecorationIdsRef.current) {
         modifiedBase64DecorationIdsRef.current = {};
       }
-      
+
       if (modifiedUnicodeDecorationsRef.current) {
         modifiedUnicodeDecorationsRef.current.clear();
       }
@@ -1398,7 +1398,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       if (modifiedUnicodeDecorationIdsRef.current) {
         modifiedUnicodeDecorationIdsRef.current = {};
       }
-      
+
       if (modifiedUrlDecorationsRef.current) {
         modifiedUrlDecorationsRef.current.clear();
       }
@@ -1510,13 +1510,13 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       }
       switch (type) {
         case MonacoDiffEditorEditorType.left:
-          clearEditor(originalEditorRef, 'original');
+          clearEditor(originalEditorRef, "original");
           break;
         case MonacoDiffEditorEditorType.right:
-          clearEditor(modifiedEditorRef, 'modified');
+          clearEditor(modifiedEditorRef, "modified");
           break;
         case MonacoDiffEditorEditorType.all:
-          clearEditor(originalEditorRef, 'both');
+          clearEditor(originalEditorRef, "both");
           break;
         default:
           return false;

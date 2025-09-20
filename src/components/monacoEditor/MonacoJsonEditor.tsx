@@ -986,7 +986,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       if (editorRef.current) {
         // 清空编辑器内容
         setEditorValue("");
-        
+
         // 清空所有装饰器的状态
         if (timestampDecorationsRef.current) {
           timestampDecorationsRef.current.clear();
@@ -997,7 +997,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         if (timestampDecorationIdsRef.current) {
           timestampDecorationIdsRef.current = {};
         }
-        
+
         if (base64DecorationsRef.current) {
           base64DecorationsRef.current.clear();
         }
@@ -1007,7 +1007,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         if (base64DecorationIdsRef.current) {
           base64DecorationIdsRef.current = {};
         }
-        
+
         if (unicodeDecorationsRef.current) {
           unicodeDecorationsRef.current.clear();
         }
@@ -1017,7 +1017,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         if (unicodeDecorationIdsRef.current) {
           unicodeDecorationIdsRef.current = {};
         }
-        
+
         if (urlDecorationsRef.current) {
           urlDecorationsRef.current.clear();
         }
@@ -1027,10 +1027,10 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         if (urlDecorationIdsRef.current) {
           urlDecorationIdsRef.current = {};
         }
-        
+
         return true;
       }
-      
+
       return false;
     },
     fieldSort: (type: "asc" | "desc"): boolean => {

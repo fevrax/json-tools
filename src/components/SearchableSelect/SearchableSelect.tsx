@@ -40,6 +40,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
   const updatePosition = useCallback(() => {
     if (containerRef.current && isOpen) {
       const rect = containerRef.current.getBoundingClientRect();
+
       setPosition({
         top: rect.bottom + window.scrollY,
         left: rect.left + window.scrollX,
@@ -168,7 +169,7 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
               )}
             </ul>
           </div>,
-          document.body
+          document.body,
         )}
     </div>
   );

@@ -81,6 +81,10 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
 
   const addButtonRef = useRef<HTMLDivElement>(null);
 
+  // 点击检测相关状态
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastClickTimeRef = useRef<number>(0);
+
   // 添加确认弹窗相关状态
   const [refreshConfirmOpen, setRefreshConfirmOpen] = useState(false);
   const [refreshTabInfo, setRefreshTabInfo] = useState<{
@@ -176,6 +180,36 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
       top: rect.top,
       width: rect.width,
     });
+  };
+
+  // 处理添加按钮的智能点击（区分单击和双击）
+  const handleAddButtonClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const now = Date.now();
+    const timeSinceLastClick = now - lastClickTimeRef.current;
+
+    // 清除之前的定时器
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
+    }
+
+    // 如果两次点击间隔小于300ms，认为是双击
+    if (timeSinceLastClick < 300) {
+      // 双击 - 创建空白tab
+      addTab(undefined, undefined);
+      lastClickTimeRef.current = 0;
+    } else {
+      // 单击 - 延迟执行菜单显示，等待可能的双击
+      clickTimeoutRef.current = setTimeout(() => {
+        toggleAddMenu();
+        clickTimeoutRef.current = null;
+      }, 300);
+    }
+
+    lastClickTimeRef.current = now;
   };
 
   const handleContextMenu = (
@@ -479,7 +513,8 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
 
   // 使用 useRef 保持关闭标签页回调函数的稳定性
   const handleCloseTabShortcutRef = useRef(() => {
-    const currentTab = tabs.find(tab => tab.key === activeTabKey);
+    const currentTab = tabs.find((tab) => tab.key === activeTabKey);
+
     if (currentTab && currentTab.closable) {
       closeTab(activeTabKey);
       onClose?.([activeTabKey]);
@@ -496,7 +531,8 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
   // 更新关闭标签页 ref 中的函数
   useEffect(() => {
     handleCloseTabShortcutRef.current = () => {
-      const currentTab = tabs.find(tab => tab.key === activeTabKey);
+      const currentTab = tabs.find((tab) => tab.key === activeTabKey);
+
       if (currentTab && currentTab.closable) {
         closeTab(activeTabKey);
         onClose?.([activeTabKey]);
@@ -515,13 +551,27 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     };
 
     // 注册快捷键监听（设置为全局快捷键，即使在编辑器中也能使用）
-    globalShortcutListener.addListener(newTabShortcut, handleNewTabShortcut, { global: true });
-    globalShortcutListener.addListener(closeTabShortcut, handleCloseTabShortcut, { global: true });
+    globalShortcutListener.addListener(newTabShortcut, handleNewTabShortcut, {
+      global: true,
+    });
+    globalShortcutListener.addListener(
+      closeTabShortcut,
+      handleCloseTabShortcut,
+      { global: true },
+    );
 
     return () => {
       // 清理快捷键监听
-      globalShortcutListener.removeListener(newTabShortcut, handleNewTabShortcut, { global: true });
-      globalShortcutListener.removeListener(closeTabShortcut, handleCloseTabShortcut, { global: true });
+      globalShortcutListener.removeListener(
+        newTabShortcut,
+        handleNewTabShortcut,
+        { global: true },
+      );
+      globalShortcutListener.removeListener(
+        closeTabShortcut,
+        handleCloseTabShortcut,
+        { global: true },
+      );
     };
   }, [newTabShortcut, closeTabShortcut]);
 
@@ -608,6 +658,15 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     };
   }, [contextMenuPosition, showAddMenu]);
 
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // 修改右键菜单样式
   const renderTabContextMenu = () => {
     // 即使没有contextMenuPosition，也要渲染菜单但使其不可见，以支持动画
@@ -615,9 +674,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
       <div
         className={cn(
           "tab-context-menu fixed bg-default-50 border border-divider rounded-lg shadow-xl z-50",
-          contextMenuPosition
-            ? "opacity-100"
-            : "opacity-0 pointer-events-none"
+          contextMenuPosition ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
         style={{
           left: contextMenuPosition?.x || 0,
@@ -740,9 +797,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
           aria-label="关闭添加菜单"
           className={cn(
             "fixed inset-0 z-40 transition-opacity",
-            showAddMenu
-              ? ""
-              : "opacity-0 pointer-events-none",
+            showAddMenu ? "" : "opacity-0 pointer-events-none",
           )}
           role="button"
           tabIndex={-1}
@@ -802,7 +857,17 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                         创建空白 Tab 标签页
                       </span>
                       <span className="text-xs text-primary font-medium">
-                        {newTabShortcut}
+                        <div className="flex">
+                          {newTabShortcut} 或 {"  "}
+                          <div className="flex ml-0.5">
+                            双击
+                            <Icon
+                              icon="solar:add-square-linear"
+                              style={{ margin: "1.5px 0 0 1px" }}
+                              width={14}
+                            />
+                          </div>
+                        </div>
                       </span>
                     </div>
                   </Button>
@@ -1047,11 +1112,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
             className="sticky left-0 z-50 cursor-pointer p-1.5 ml-1.5 flex-shrink-0 bg-default-100 hover:bg-default-200 rounded-lg text-default-600 transition-colors"
             role="button"
             tabIndex={0}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              toggleAddMenu();
-            }}
+            onClick={handleAddButtonClick}
             onContextMenu={(e) => {
               e.preventDefault();
               e.stopPropagation();

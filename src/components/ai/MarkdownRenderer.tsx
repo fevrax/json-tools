@@ -96,7 +96,9 @@ const CodeBlock: React.FC<CodeBlockProps> = ({
           >
             {isCollapsed ? <ChevronRightIcon /> : <ChevronDownIcon />}
           </Button>
-          <span className="font-mono font-medium text-base">{language || "text"}</span>
+          <span className="font-mono font-medium text-base">
+            {language || "text"}
+          </span>
         </div>
         <div className="flex items-center space-x-1">
           {/* 差异编辑器模式下显示两个应用按钮 */}

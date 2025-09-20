@@ -80,7 +80,9 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
     (state) => state.customRoute.proxyUrl,
   );
   const utoolsModels = useOpenAIConfigStore((state) => state.utoolsModels);
-  const ssooaiModels = useOpenAIConfigStore((state) => state.ssooaiModels || []);
+  const ssooaiModels = useOpenAIConfigStore(
+    (state) => state.ssooaiModels || [],
+  );
   const customModels = useOpenAIConfigStore((state) => state.customModels);
 
   // 单独获取更新函数，避免重新渲染
@@ -216,19 +218,19 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
   // 获取可用的线路列表
   const availableRoutes = useMemo(() => {
     const routes: AIRouteType[] = ["default"]; // 默认线路总是可用的
-    
+
     if (routeEnabled.utools && isUtoolsAvailable) {
       routes.push("utools");
     }
-    
+
     if (routeEnabled.ssooai) {
       routes.push("ssooai");
     }
-    
+
     if (routeEnabled.custom) {
       routes.push("custom");
     }
-    
+
     return routes;
   }, [routeEnabled, isUtoolsAvailable]);
 
@@ -253,7 +255,9 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
     if (newRouteType === "utools" && isUtoolsAvailable) {
       fetchUtoolsModels();
       // 设置默认uTools模型（使用列表中的第一个或fallback）
-      const defaultUtoolsModel = utoolsModels.length > 0 ? utoolsModels[0].value : "deepseek-v3";
+      const defaultUtoolsModel =
+        utoolsModels.length > 0 ? utoolsModels[0].value : "deepseek-v3";
+
       updateUtoolsRouteConfig({ model: defaultUtoolsModel });
     }
 
@@ -261,7 +265,9 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
     if (newRouteType === "ssooai") {
       fetchSsooaiModels();
       // 设置默认SSOOAI模型
-      const defaultSsooaiModel = ssooaiModels.length > 0 ? ssooaiModels[0].value : "gpt-4.1";
+      const defaultSsooaiModel =
+        ssooaiModels.length > 0 ? ssooaiModels[0].value : "gpt-4.1";
+
       updateSsooaiRouteConfig({ model: defaultSsooaiModel });
     }
 
@@ -449,8 +455,8 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
               size="sm"
               onChange={handleRouteChange}
             >
-              {availableRoutes.map(route => {
-                switch(route) {
+              {availableRoutes.map((route) => {
+                switch (route) {
                   case "default":
                     return (
                       <SelectItem

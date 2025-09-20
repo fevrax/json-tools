@@ -105,7 +105,8 @@ const quickPrompts: QuickPrompt[] = [
     id: "convert_to_dart",
     label: "转换为Dart类",
     icon: "simple-icons:dart",
-    prompt: "请将这个JSON转换为Dart类，使用json_serializable进行序列化，添加适当的类型注解",
+    prompt:
+      "请将这个JSON转换为Dart类，使用json_serializable进行序列化，添加适当的类型注解",
     color: "warning",
   },
   {
@@ -145,12 +146,12 @@ export default function JsonTypeConverterPage() {
 
   // 处理编辑器布局调整
   const handleEditorResize = (width: number) => {
-    console.log('Editor left width:', width + '%');
+    console.log("Editor left width:", width + "%");
   };
 
   // 在拖动结束后更新编辑器布局
   const handleEditorResizeComplete = (width: number) => {
-    console.log('Editor resize complete:', width + '%');
+    console.log("Editor resize complete:", width + "%");
     // 更新两个编辑器的布局
     setTimeout(() => {
       inputEditorRef.current?.layout();
@@ -512,12 +513,12 @@ export default function JsonTypeConverterPage() {
         {/* 可调整大小的双编辑器布局 */}
         <div className="flex-grow h-0 overflow-hidden">
           <ResizableEditorLayout
+            className="h-full"
             initialLeftWidth={50}
-            minLeftWidth={30}
             maxLeftWidth={70}
+            minLeftWidth={30}
             onResize={handleEditorResize}
             onResizeComplete={handleEditorResizeComplete}
-            className="h-full"
           >
             {/* 左侧编辑器面板 */}
             <Card className="h-full overflow-hidden shadow-md border border-default-200 transition-shadow hover:shadow-lg m-2">

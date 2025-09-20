@@ -38,7 +38,6 @@ export const jsonQuickPrompts: QuickPrompt[] = [
   },
 ];
 
-
 // 定义适合JSON差异比较的快捷指令
 export const diffJsonQuickPrompts: QuickPrompt[] = [
   {
@@ -52,8 +51,7 @@ export const diffJsonQuickPrompts: QuickPrompt[] = [
     id: "suggest_merge",
     label: "合并建议",
     icon: "fluent:arrow-merge-20-filled",
-    prompt:
-      "请帮我智能合并这两个 JSON 文本，保留双方的有效内容并解决所有冲突",
+    prompt: "请帮我智能合并这两个 JSON 文本，保留双方的有效内容并解决所有冲突",
     color: "success",
   },
   {
@@ -87,4 +85,3 @@ export const diffJsonQuickPrompts: QuickPrompt[] = [
     color: "warning",
   },
 ];
-

@@ -115,7 +115,7 @@ const ResizableEditorLayout: React.FC<ResizableEditorLayoutProps> = ({
   const defaultResizeHandle = (
     <div
       className={cn(
-        "w-2 h-full cursor-ew-resize flex items-center justify-center transition-all duration-200"
+        "w-2 h-full cursor-ew-resize flex items-center justify-center transition-all duration-200",
       )}
       role="button"
       style={{ touchAction: "none" }}
