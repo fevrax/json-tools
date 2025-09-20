@@ -12,6 +12,7 @@ import {
 
 import "@/styles/globals.css";
 import DefaultLayout from "@/layouts/default";
+import { FontSizeManager } from "@/components/FontSizeManager";
 
 // 全局初始化Monaco编辑器
 initMonacoGlobally().then(() => {
@@ -25,6 +26,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
     >
       <Provider>
+        <FontSizeManager />
         <DefaultLayout>
           <App />
         </DefaultLayout>

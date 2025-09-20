@@ -114,11 +114,13 @@ const SearchableSelect: React.FC<SearchableSelectProps> = ({
           <div
             ref={dropdownRef}
             className="fixed z-[9999] shadow-lg bg-white dark:bg-default-100 rounded-lg border border-default-200"
+            role="listbox"
             style={{
               top: `${position.top}px`,
               left: `${position.left}px`,
               width: `${position.width}px`,
             }}
+            tabIndex={0}
             onMouseDown={(e) => e.stopPropagation()}
           >
             {/* 搜索框 */}

@@ -21,6 +21,7 @@ import { IcRoundClose } from "@/components/Icons.tsx";
 import { JsonSample } from "@/utils/jsonSample.ts";
 import { useSettingsStore } from "@/store/useSettingsStore.ts";
 import { globalShortcutListener } from "@/utils/shortcut.ts";
+import { getFontSizeConfig } from "@/styles/fontSize.ts";
 
 export interface DynamicTabsRef {
   getPositionTop: () => number;
@@ -53,7 +54,8 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     closeOtherTabs,
     getTabByKey,
   } = useTabStore();
-  const { newTabShortcut, closeTabShortcut } = useSettingsStore();
+  const { newTabShortcut, closeTabShortcut, fontSize } = useSettingsStore();
+  const fontSizeConfig = getFontSizeConfig(fontSize);
   const tabListRef = useRef<HTMLDivElement>(null);
   const tabContainerRef = useRef<HTMLDivElement>(null);
   const tabRenameInputRef = useRef<HTMLInputElement>(null);
@@ -400,7 +402,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
         if (!fileName.toLowerCase().endsWith(".json")) {
           fileName += ".json";
         }
-      } catch (parseError) {
+      } catch {
         // 不是有效的JSON格式，作为文本处理
         isJson = false;
 
@@ -616,7 +618,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                   onClick={confirmRename}
                   onKeyDown={confirmRename}
                 >
-                  <Icon icon="mage:check" width={20} />
+                  <Icon icon="mage:check" width={fontSizeConfig.icon} />
                 </div>
               </Tooltip>
             }
@@ -688,7 +690,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
             onClick={() => handleMenuAction("close")}
           >
             <div className="w-5 h-5 flex items-center justify-center text-default-600">
-              <Icon icon="gg:close" width={18} />
+              <Icon icon="gg:close" width={fontSizeConfig.icon} />
             </div>
             <span>关闭</span>
           </button>
@@ -697,7 +699,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
             onClick={() => handleMenuAction("rename")}
           >
             <div className="w-5 h-5 flex items-center justify-center text-default-600">
-              <Icon icon="solar:pen-linear" width={18} />
+              <Icon icon="solar:pen-linear" width={fontSizeConfig.icon} />
             </div>
             <span>重命名</span>
           </button>
@@ -707,7 +709,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
             onClick={() => handleMenuAction("close-left")}
           >
             <div className="w-5 h-5 flex items-center justify-center text-default-600">
-              <Icon icon="ph:arrow-left" width={18} />
+              <Icon icon="ph:arrow-left" width={fontSizeConfig.icon} />
             </div>
             <span>关闭左侧</span>
           </button>
@@ -716,7 +718,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
             onClick={() => handleMenuAction("close-right")}
           >
             <div className="w-5 h-5 flex items-center justify-center text-default-600">
-              <Icon icon="ph:arrow-right" width={18} />
+              <Icon icon="ph:arrow-right" width={fontSizeConfig.icon} />
             </div>
             <span>关闭右侧</span>
           </button>
@@ -738,7 +740,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
             onClick={() => handleMenuAction("close-all")}
           >
             <div className="w-5 h-5 flex items-center justify-center text-danger">
-              <Icon icon="gg:close" width={18} />
+              <Icon icon="gg:close" width={fontSizeConfig.icon} />
             </div>
             <span>关闭所有</span>
           </button>
@@ -1002,7 +1004,10 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                 >
                   <div className="flex flex-col items-center justify-center gap-3 w-full">
                     <div className="p-3.5 rounded-full bg-primary-50 text-indigo-500">
-                      <Icon icon="heroicons:document-arrow-up" width={20} />
+                      <Icon
+                        icon="heroicons:document-arrow-up"
+                        width={fontSizeConfig.icon}
+                      />
                     </div>
                     <div className="space-y-2 text-center">
                       <p className="text-sm font-medium">上传 JSON 文件</p>
@@ -1124,7 +1129,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
               })
             }
           >
-            <Icon icon="solar:add-square-linear" width={22} />
+            <Icon icon="solar:add-square-linear" width={fontSizeConfig.icon} />
           </div>
         </div>
 
@@ -1137,15 +1142,19 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
             ref={tabListRef}
             aria-label="标签页"
             classNames={{
-              tabList:
-                "gap-1 w-full h-10 relative rounded-none p-0 pr-4 ml-2 overflow-x-visible flex-shrink-0",
-              tab: "max-w-fit px-1.5 h-10 flex-shrink-0 data-[hover=true]:bg-default-100 rounded-t-md transition-colors",
+              tabList: `gap-1 w-full h-10 relative rounded-none p-0 pr-4 ml-2 overflow-x-visible flex-shrink-0`,
+              tab: `max-w-fit px-1.5 h-10 flex-shrink-0 data-[hover=true]:bg-default-100 rounded-t-md transition-colors font-size-tab`,
               cursor: "w-full",
               panel:
                 "flex-grow overflow-auto border-t border-divider px-0 pb-0 pt-1",
             }}
             disabledKeys={tabDisableKeys}
             selectedKey={activeTabKey}
+            style={{
+              // 使用动态字体大小
+              fontSize: fontSizeConfig.tab,
+              lineHeight: fontSizeConfig.lineHeight,
+            }}
             variant="underlined"
             onSelectionChange={(key) => setActiveTab(key as string)}
           >
@@ -1190,7 +1199,10 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                             e.preventDefault();
                           }}
                         >
-                          <Icon icon="solar:refresh-linear" width={16} />
+                          <Icon
+                            icon="solar:refresh-linear"
+                            width={fontSizeConfig.icon}
+                          />
                         </div>
                       )}
                       {tab.closable && (
@@ -1216,7 +1228,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                           onMouseEnter={() => setTabDisableKeys([tab.key])}
                           onMouseLeave={() => setTabDisableKeys([])}
                         >
-                          <IcRoundClose width={16} />
+                          <IcRoundClose width={fontSizeConfig.icon} />
                         </div>
                       )}
                     </>
@@ -1333,7 +1345,10 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                                   }
                                 }}
                               >
-                                <Icon icon="solar:copy-linear" width={20} />
+                                <Icon
+                                  icon="solar:copy-linear"
+                                  width={fontSizeConfig.icon}
+                                />
                               </div>
                             </Tooltip>
                           </div>

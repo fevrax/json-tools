@@ -19,8 +19,9 @@ import { useSidebarStore } from "@/store/useSidebarStore";
 import { SettingsState, useSettingsStore } from "@/store/useSettingsStore";
 import { storage } from "@/lib/indexedDBStore";
 import { useTabStore } from "@/store/useTabStore";
+import { getFontSizeConfig } from "@/styles/fontSize";
 
-export default function RootLayout({
+function RootLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -221,5 +222,32 @@ export default function RootLayout({
       {/*  Settings Content */}
       <div className="flex-1 text- overflow-auto min-w-16">{children}</div>
     </div>
+  );
+}
+
+// 根组件外层包装字体大小样式
+function FontSizeLayout({ children }: { children: React.ReactNode }) {
+  const { fontSize } = useSettingsStore();
+  const fontSizeConfig = getFontSizeConfig(fontSize);
+  
+  return (
+    <div
+      style={{
+        // 应用字体大小到整个布局
+        fontSize: fontSizeConfig.base,
+        lineHeight: fontSizeConfig.lineHeight,
+      }}
+      className="font-size-text"
+    >
+      {children}
+    </div>
+  );
+}
+
+export default function DefaultLayout(props: { children: React.ReactNode }) {
+  return (
+    <FontSizeLayout>
+      <RootLayout {...props} />
+    </FontSizeLayout>
   );
 }

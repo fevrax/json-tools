@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 import SearchableSelect from "@/components/SearchableSelect/SearchableSelect.tsx";
 import toast from "@/utils/toast";
 import { useSettingsStore, ChatStyle } from "@/store/useSettingsStore.ts";
+import { FontSizeSettings } from "@/components/setting/FontSizeSettings.tsx";
 import { storage } from "@/lib/indexedDBStore.ts";
 import {
   useOpenAIConfigStore,
@@ -1736,6 +1737,11 @@ export default function SettingsPage() {
             </p>
           </div>
         </div>
+      </div>
+
+      {/* 字体大小设置 */}
+      <div className="mt-6">
+        <FontSizeSettings />
       </div>
     </div>
   );

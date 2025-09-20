@@ -7,12 +7,17 @@ import { storage } from "@/lib/indexedDBStore";
 // 定义聊天窗口样式类型
 export type ChatStyle = "bubble" | "document";
 
+// 定义字体大小类型
+export type FontSize = "small" | "medium" | "large";
+
 // 全局设置状态接口，包含解码器配置
 export interface SettingsState {
   editDataSaveLocal: boolean;
   expandSidebar: boolean;
   monacoEditorCDN: "local" | "cdn";
   chatStyle: ChatStyle;
+  // 字体大小设置
+  fontSize: FontSize;
   // 解码器设置
   timestampDecoderEnabled: boolean;
   base64DecoderEnabled: boolean;
@@ -27,6 +32,8 @@ export interface SettingsState {
   setExpandSidebar: (value: boolean) => void;
   setMonacoEditorCDN: (value: "local" | "cdn") => void;
   setChatStyle: (value: ChatStyle) => void;
+  // 字体大小setter方法
+  setFontSize: (value: FontSize) => void;
   // 解码器setter方法
   setTimestampDecoderEnabled: (value: boolean) => void;
   setBase64DecoderEnabled: (value: boolean) => void;
@@ -48,6 +55,8 @@ export const useSettingsStore = create<SettingsState>()(
       expandSidebar: false,
       monacoEditorCDN: "local",
       chatStyle: "bubble",
+      // 字体大小设置
+      fontSize: "medium",
       // 解码器默认启用
       timestampDecoderEnabled: true,
       base64DecoderEnabled: true,
@@ -64,6 +73,8 @@ export const useSettingsStore = create<SettingsState>()(
       setExpandSidebar: (value) => set({ expandSidebar: value }),
       setMonacoEditorCDN: (value) => set({ monacoEditorCDN: value }),
       setChatStyle: (value) => set({ chatStyle: value }),
+      // 字体大小setter实现
+      setFontSize: (value) => set({ fontSize: value }),
       // 解码器setter实现
       setTimestampDecoderEnabled: (value) => set({ timestampDecoderEnabled: value }),
       setBase64DecoderEnabled: (value) => set({ base64DecoderEnabled: value }),
@@ -90,6 +101,8 @@ useSettingsStore.subscribe((state) => {
     expandSidebar: state.expandSidebar,
     monacoEditorCDN: state.monacoEditorCDN,
     chatStyle: state.chatStyle,
+    // 保存字体大小设置
+    fontSize: state.fontSize,
     // 保存解码器设置
     timestampDecoderEnabled: state.timestampDecoderEnabled,
     base64DecoderEnabled: state.base64DecoderEnabled,
