@@ -1319,8 +1319,96 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
   };
   const clearEditor = (
     editorRef: React.MutableRefObject<editor.IStandaloneCodeEditor | null>,
+    editorType: 'original' | 'modified' | 'both',
   ) => {
     setEditorValue(editorRef.current, "");
+    
+    // 清空装饰器状态
+    if (editorType === 'original' || editorType === 'both') {
+      // 清空原始编辑器的装饰器状态
+      if (originalTimestampDecorationsRef.current) {
+        originalTimestampDecorationsRef.current.clear();
+      }
+      if (originalTimestampCacheRef.current) {
+        originalTimestampCacheRef.current = {};
+      }
+      if (originalTimestampDecorationIdsRef.current) {
+        originalTimestampDecorationIdsRef.current = {};
+      }
+      
+      if (originalBase64DecorationsRef.current) {
+        originalBase64DecorationsRef.current.clear();
+      }
+      if (originalBase64CacheRef.current) {
+        originalBase64CacheRef.current = {};
+      }
+      if (originalBase64DecorationIdsRef.current) {
+        originalBase64DecorationIdsRef.current = {};
+      }
+      
+      if (originalUnicodeDecorationsRef.current) {
+        originalUnicodeDecorationsRef.current.clear();
+      }
+      if (originalUnicodeCacheRef.current) {
+        originalUnicodeCacheRef.current = {};
+      }
+      if (originalUnicodeDecorationIdsRef.current) {
+        originalUnicodeDecorationIdsRef.current = {};
+      }
+      
+      if (originalUrlDecorationsRef.current) {
+        originalUrlDecorationsRef.current.clear();
+      }
+      if (originalUrlCacheRef.current) {
+        originalUrlCacheRef.current = {};
+      }
+      if (originalUrlDecorationIdsRef.current) {
+        originalUrlDecorationIdsRef.current = {};
+      }
+    }
+    
+    if (editorType === 'modified' || editorType === 'both') {
+      // 清空修改后编辑器的装饰器状态
+      if (modifiedTimestampDecorationsRef.current) {
+        modifiedTimestampDecorationsRef.current.clear();
+      }
+      if (modifiedTimestampCacheRef.current) {
+        modifiedTimestampCacheRef.current = {};
+      }
+      if (modifiedTimestampDecorationIdsRef.current) {
+        modifiedTimestampDecorationIdsRef.current = {};
+      }
+      
+      if (modifiedBase64DecorationsRef.current) {
+        modifiedBase64DecorationsRef.current.clear();
+      }
+      if (modifiedBase64CacheRef.current) {
+        modifiedBase64CacheRef.current = {};
+      }
+      if (modifiedBase64DecorationIdsRef.current) {
+        modifiedBase64DecorationIdsRef.current = {};
+      }
+      
+      if (modifiedUnicodeDecorationsRef.current) {
+        modifiedUnicodeDecorationsRef.current.clear();
+      }
+      if (modifiedUnicodeCacheRef.current) {
+        modifiedUnicodeCacheRef.current = {};
+      }
+      if (modifiedUnicodeDecorationIdsRef.current) {
+        modifiedUnicodeDecorationIdsRef.current = {};
+      }
+      
+      if (modifiedUrlDecorationsRef.current) {
+        modifiedUrlDecorationsRef.current.clear();
+      }
+      if (modifiedUrlCacheRef.current) {
+        modifiedUrlCacheRef.current = {};
+      }
+      if (modifiedUrlDecorationIdsRef.current) {
+        modifiedUrlDecorationIdsRef.current = {};
+      }
+    }
   };
 
   const sortEditor = (
@@ -1422,14 +1510,13 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       }
       switch (type) {
         case MonacoDiffEditorEditorType.left:
-          clearEditor(originalEditorRef);
+          clearEditor(originalEditorRef, 'original');
           break;
         case MonacoDiffEditorEditorType.right:
-          clearEditor(modifiedEditorRef);
+          clearEditor(modifiedEditorRef, 'modified');
           break;
         case MonacoDiffEditorEditorType.all:
-          clearEditor(originalEditorRef);
-          clearEditor(modifiedEditorRef);
+          clearEditor(originalEditorRef, 'both');
           break;
         default:
           return false;

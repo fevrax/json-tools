@@ -125,7 +125,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const { getTabByKey, updateEditorSettings } = useTabStore();
   const errorBottomHeight = 45; // 底部错误详情弹窗的高度
   const containerRef = useRef<HTMLDivElement>(null);
-  const rootContainerRef = useRef<HTMLDivElement>(null); // 新增：根容器引用
+  const rootContainerRef = useRef<HTMLDivElement>(null); // 根容器引用
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const [parseJsonError, setParseJsonError] = useState<JsonErrorInfo | null>(
     null,
@@ -984,11 +984,53 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     },
     clear: () => {
       if (editorRef.current) {
+        // 清空编辑器内容
         setEditorValue("");
-
+        
+        // 清空所有装饰器的状态
+        if (timestampDecorationsRef.current) {
+          timestampDecorationsRef.current.clear();
+        }
+        if (timestampCacheRef.current) {
+          timestampCacheRef.current = {};
+        }
+        if (timestampDecorationIdsRef.current) {
+          timestampDecorationIdsRef.current = {};
+        }
+        
+        if (base64DecorationsRef.current) {
+          base64DecorationsRef.current.clear();
+        }
+        if (base64CacheRef.current) {
+          base64CacheRef.current = {};
+        }
+        if (base64DecorationIdsRef.current) {
+          base64DecorationIdsRef.current = {};
+        }
+        
+        if (unicodeDecorationsRef.current) {
+          unicodeDecorationsRef.current.clear();
+        }
+        if (unicodeCacheRef.current) {
+          unicodeCacheRef.current = {};
+        }
+        if (unicodeDecorationIdsRef.current) {
+          unicodeDecorationIdsRef.current = {};
+        }
+        
+        if (urlDecorationsRef.current) {
+          urlDecorationsRef.current.clear();
+        }
+        if (urlCacheRef.current) {
+          urlCacheRef.current = {};
+        }
+        if (urlDecorationIdsRef.current) {
+          urlDecorationIdsRef.current = {};
+        }
+        
         return true;
       }
-
+      
       return false;
     },
     fieldSort: (type: "asc" | "desc"): boolean => {
