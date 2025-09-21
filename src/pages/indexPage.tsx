@@ -24,6 +24,7 @@ import { SidebarKeys } from "@/components/sidebar/Items.tsx";
 import JsonTableView, { JsonTableViewRef } from "@/components/jsonTable/JsonTableView.tsx";
 import clipboard from "@/utils/clipboard";
 import toast from "@/utils/toast";
+import UtoolsListener from "@/services/utoolsListener";
 
 export default function IndexPage() {
   const { theme } = useTheme();
@@ -493,6 +494,11 @@ export default function IndexPage() {
 
     init();
   }, []);
+
+  useEffect(() => {
+    // 设置 UtoolsListener 的编辑器引用
+    UtoolsListener.getInstance().setEditorRefs(monacoJsonEditorRefs.current);
+  }, [monacoJsonEditorRefs]);
 
   useEffect(() => {
     // 在切换标签时预加载下一个编辑器
