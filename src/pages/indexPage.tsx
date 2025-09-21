@@ -39,7 +39,6 @@ export default function IndexPage() {
     tabs,
     activeTabKey,
     activeTab,
-    addTab,
     getTabByKey,
     setTabContent,
     setTabModifiedValue,
@@ -489,14 +488,6 @@ export default function IndexPage() {
 
       if (settings?.editDataSaveLocal) {
         await syncTabStore();
-      }
-
-      if ((window as any).utools) {
-        (window as any).utools.onPluginEnter((data: any) => {
-          if (data.type === "regex") {
-            addTab(undefined, data.payload);
-          }
-        });
       }
     };
 
