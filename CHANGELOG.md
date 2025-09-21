@@ -1,3 +1,18 @@
+# [1.12.0](https://github.com/fevrax/json-tools/compare/v1.11.0...v1.12.0) (2025-09-21)
+
+
+### Bug Fixes
+
+* utools enter event ([c5fa79c](https://github.com/fevrax/json-tools/commit/c5fa79ce47fb919589a71d4cbf0d1d12495f9a31))
+* utools enter event editor update content ([657f33b](https://github.com/fevrax/json-tools/commit/657f33bab0ce8e6999105e24e8f3517c9769501d))
+
+
+### Features
+
+* custom app font size ([6939808](https://github.com/fevrax/json-tools/commit/69398083ce3033eedb1b4bc78d90e6813df151ff))
+* json query ([736caeb](https://github.com/fevrax/json-tools/commit/736caeb73247409c69341b67dd5e7a9951ef016f))
+* json query document ([c221f2f](https://github.com/fevrax/json-tools/commit/c221f2fb7ac2aaaf32d4f4bfb3e44bceb1ac2692))
+
 # [1.11.0](https://github.com/fevrax/json-tools/compare/v1.10.0...v1.11.0) (2025-09-20)
 
 
