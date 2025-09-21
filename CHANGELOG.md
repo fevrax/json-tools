@@ -1,3 +1,21 @@
+# [1.11.0](https://github.com/fevrax/json-tools/compare/v1.10.0...v1.11.0) (2025-09-20)
+
+
+### Bug Fixes
+
+* clear decorators ([7cbc13c](https://github.com/fevrax/json-tools/commit/7cbc13c3fe5d148e5cb1342f67ef53edc3593fd4))
+
+
+### Features
+
+* add close tab keyboard shortcut ([71cf649](https://github.com/fevrax/json-tools/commit/71cf649a068624b2b1764800c554e89deb65bbe8))
+* add new tab keyboard shortcut ([77f113a](https://github.com/fevrax/json-tools/commit/77f113a0a2537646651cb9ed6c52328409a271d7))
+* convert to dart ([158bc29](https://github.com/fevrax/json-tools/commit/158bc299fc1d3731e5dd58e196b45ca89c94fb98))
+* dataFormatConverter windows move ([d661072](https://github.com/fevrax/json-tools/commit/d661072df2c30b06c94d8ef9c77f3a60336a7aa7))
+* double add tab create new tab ([5d82e65](https://github.com/fevrax/json-tools/commit/5d82e65464516bd80841821605484b190d99f624))
+* edit change tabSize ([82401e5](https://github.com/fevrax/json-tools/commit/82401e59cfc6a00b1eadd8950aafb16102d3a52c))
+* jsonTypeConverter windows move ([df583b5](https://github.com/fevrax/json-tools/commit/df583b5d931677f5370508def6639a2fb92ac10d))
+
 # [1.10.0](https://github.com/fevrax/json-tools/compare/v1.9.1...v1.10.0) (2025-09-19)
 
 
