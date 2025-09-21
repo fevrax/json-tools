@@ -8,10 +8,11 @@ import React, {
 import { loader, Monaco } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
 import { editor } from "monaco-editor";
-import { Button, cn, useDisclosure } from "@heroui/react";
+import { Button, cn, useDisclosure, Input } from "@heroui/react";
 import { jsonrepair } from "jsonrepair";
 import { Icon } from "@iconify/react";
 import JSON5 from "json5";
+import { jsonquery } from "@jsonquerylang/jsonquery";
 
 import { AIResultHeader } from "./AIResultHeader";
 
@@ -83,6 +84,7 @@ export interface MonacoJsonEditorProps {
   showAi?: boolean; // 是否显示AI功能
   customQuickPrompts?: QuickPrompt[]; // 自定义快捷指令
   showTimestampDecorators?: boolean; // 是否显示时间戳装饰器
+  showJsonQueryFilter?: boolean; // 是否显示 jsonQuery 过滤功能
   onUpdateValue: (value: string) => void;
   onMount?: () => void;
   ref?: React.Ref<MonacoJsonEditorRef>;
@@ -118,6 +120,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   minimap = false,
   customQuickPrompts,
   showTimestampDecorators = true, // 默认开启时间戳装饰器
+  showJsonQueryFilter = true, // 默认开启 jsonQuery 过滤功能
   onUpdateValue,
   onMount,
   ref,
@@ -127,6 +130,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const rootContainerRef = useRef<HTMLDivElement>(null); // 根容器引用
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
+  const filterEditorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const [parseJsonError, setParseJsonError] = useState<JsonErrorInfo | null>(
     null,
   );
@@ -273,6 +277,16 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const aiPanelDragStartX = useRef<number>(0);
   const aiPanelDragStartWidth = useRef<number>(0);
 
+  // jsonQuery 过滤相关状态
+  const [jsonQueryFilter, setJsonQueryFilter] = useState<string>("");
+  const [showFilterEditor, setShowFilterEditor] = useState<boolean>(false);
+  const [filterLeftWidth, setFilterLeftWidth] = useState<number>(50);
+  const [isFilterDragging, setIsFilterDragging] = useState<boolean>(false);
+  const filterDragStartX = useRef<number>(0);
+  const filterDragStartWidth = useRef<number>(0);
+  const [filterError, setFilterError] = useState<string | null>(null);
+  const [filteredValue, setFilteredValue] = useState<string>("");
+
   const {
     isOpen: jsonErrorDetailsModel,
     onOpen: openJsonErrorDetailsModel,
@@ -293,8 +307,128 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       return `calc(${baseHeight} - ${errorBottomHeight}px)`;
     }
 
+    // 当显示 jsonQuery 过滤器时，减去过滤器高度
+    if (showJsonQueryFilter) {
+      return `calc(${baseHeight} - 40px)`;
+    }
+
     return baseHeight;
   };
+
+  // 处理 jsonQuery 过滤
+  const handleJsonQueryFilter = useCallback(() => {
+    // 使用 ref 中的最新值，避免闭包问题
+    const currentFilter = latestFilterRef.current;
+
+    if (!currentFilter.trim()) {
+      setShowFilterEditor(false);
+      setFilteredValue("");
+      setFilterError(null);
+
+      return;
+    }
+
+    const editorValue = editorRef.current?.getValue() || "";
+
+    if (!editorValue.trim()) {
+      setFilterError("编辑器内容为空，无法进行过滤");
+
+      return;
+    }
+
+    try {
+      // 解析 JSON 数据
+      const jsonData = JSON.parse(editorValue);
+
+      // 使用 jsonQuery 进行过滤
+      const filteredData = jsonquery(jsonData, currentFilter);
+
+      // 格式化过滤后的数据
+      const formattedResult = JSON.stringify(filteredData, null, 2);
+
+      setFilteredValue(formattedResult);
+      setShowFilterEditor(true);
+      setFilterError(null);
+    } catch (error) {
+      console.error("jsonQuery 过滤错误:", error);
+      console.error("过滤表达式:", currentFilter);
+      setFilterError(
+        `过滤失败: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      setShowFilterEditor(false);
+    }
+  }, [jsonQueryFilter]);
+
+  // 处理 jsonQuery 输入变化
+  const handleJsonQueryChange = useCallback(
+    (value: string) => {
+      setJsonQueryFilter(value);
+
+      // 防抖处理
+      if (filterUpdateTimeoutRef.current) {
+        clearTimeout(filterUpdateTimeoutRef.current);
+      }
+
+      filterUpdateTimeoutRef.current = setTimeout(() => {
+        // 使用最新的过滤值进行过滤，避免闭包问题
+        if (value.trim()) {
+          handleJsonQueryFilter();
+        } else {
+          setShowFilterEditor(false);
+          setFilteredValue("");
+          setFilterError(null);
+        }
+      }, 300); // 减少防抖时间，提高响应速度
+    },
+    [handleJsonQueryFilter],
+  );
+
+  // jsonQuery 过滤器拖拽处理函数
+  const handleFilterDragStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      filterDragStartX.current = e.clientX;
+      filterDragStartWidth.current = filterLeftWidth;
+      setIsFilterDragging(true);
+    },
+    [filterLeftWidth],
+  );
+
+  const handleFilterMouseMove = useCallback(
+    (e: MouseEvent) => {
+      if (!isFilterDragging || !rootContainerRef.current) return;
+
+      requestAnimationFrame(() => {
+        if (!rootContainerRef.current) return;
+
+        const containerWidth = rootContainerRef.current.offsetWidth;
+        const deltaX = e.clientX - filterDragStartX.current;
+        const deltaPercentage = (deltaX / containerWidth) * 100;
+        let newWidth = filterDragStartWidth.current + deltaPercentage;
+
+        // 限制在最小和最大宽度之间
+        newWidth = Math.max(20, Math.min(80, newWidth));
+
+        setFilterLeftWidth(newWidth);
+      });
+    },
+    [isFilterDragging],
+  );
+
+  const handleFilterMouseUp = useCallback(() => {
+    setIsFilterDragging(false);
+  }, []);
+
+  // 添加防抖计时器引用
+  const filterUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 使用 ref 存储最新的过滤值，避免闭包问题
+  const latestFilterRef = useRef<string>("");
+
+  // 更新最新过滤值
+  useEffect(() => {
+    latestFilterRef.current = jsonQueryFilter;
+  }, [jsonQueryFilter]);
 
   // 处理AI提交
   const handleAiSubmit = async () => {
@@ -632,6 +766,44 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
   }, [urlDecoratorsEnabled]);
 
+  // 监听过滤结果变化，更新过滤编辑器内容
+  useEffect(() => {
+    try {
+      if (
+        filterEditorRef.current &&
+        filteredValue !== filterEditorRef.current.getValue()
+      ) {
+        if (filteredValue === null || filteredValue === undefined) {
+          filterEditorRef.current.setValue("null");
+
+          return;
+        }
+
+        filterEditorRef.current.setValue(filteredValue);
+      }
+    } catch (error) {
+      console.error("filterValueChange error", error);
+    }
+  }, [filteredValue]);
+
+  // 监听主题变化，更新过滤编辑器主题
+  useEffect(() => {
+    if (filterEditorRef.current) {
+      filterEditorRef.current.updateOptions({
+        theme: theme || "vs-light",
+      });
+    }
+  }, [theme]);
+
+  // 监听字体大小变化，更新过滤编辑器字体大小
+  useEffect(() => {
+    if (filterEditorRef.current) {
+      filterEditorRef.current.updateOptions({
+        fontSize: fontSize,
+      });
+    }
+  }, [fontSize]);
+
   // 验证编辑器内容
   const editorValueValidate = (val: string): boolean => {
     if (val.trim() === "") {
@@ -876,7 +1048,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     setAIPaneIsDragging(false);
   }, []);
 
-  // 添加/移除鼠标事件监听
+  // 添加/移除鼠标事件监听 - AI面板
   useEffect(() => {
     if (aiPanelIsDragging) {
       document.addEventListener("mousemove", handleMouseAIPanelMove);
@@ -897,6 +1069,28 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       document.body.style.cursor = "";
     };
   }, [aiPanelIsDragging, handleMouseAIPanelMove, handleMouseAIPanelUp]);
+
+  // 添加/移除鼠标事件监听 - jsonQuery 过滤器
+  useEffect(() => {
+    if (isFilterDragging) {
+      document.addEventListener("mousemove", handleFilterMouseMove);
+      document.addEventListener("mouseup", handleFilterMouseUp);
+      document.body.style.userSelect = "none";
+      document.body.style.cursor = "ew-resize";
+    } else {
+      document.removeEventListener("mousemove", handleFilterMouseMove);
+      document.removeEventListener("mouseup", handleFilterMouseUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    }
+
+    return () => {
+      document.removeEventListener("mousemove", handleFilterMouseMove);
+      document.removeEventListener("mouseup", handleFilterMouseUp);
+      document.body.style.userSelect = "";
+      document.body.style.cursor = "";
+    };
+  }, [isFilterDragging, handleFilterMouseMove, handleFilterMouseUp]);
 
   // 暴露给父组件的方法
   useImperativeHandle(ref, () => ({
@@ -1344,6 +1538,15 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
     return () => {
       clearTimeout(timeoutId);
+      // 清理过滤编辑器
+      if (filterEditorRef.current) {
+        filterEditorRef.current.dispose();
+        filterEditorRef.current = null;
+      }
+      // 清理防抖计时器
+      if (filterUpdateTimeoutRef.current) {
+        clearTimeout(filterUpdateTimeoutRef.current);
+      }
     };
   }, []); // 空依赖数组表示这个效果只在组件挂载和卸载时运行
 
@@ -1422,7 +1625,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       <div
         className={cn(
           "w-full h-full overflow-hidden",
-          showAiResponse ? "flex flex-row" : "",
+          showAiResponse || showFilterEditor ? "flex flex-row" : "",
         )}
         style={{ height: getEditorHeight() }}
       >
@@ -1468,11 +1671,147 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               </div>
             </div>
           </>
+        ) : showFilterEditor ? (
+          <>
+            {/* jsonQuery 过滤模式 - 双编辑器布局 */}
+            <div
+              className="h-full overflow-hidden border-r border-default-200 dark:border-default-100/20 monaco-editor-container"
+              style={{ width: `${filterLeftWidth}%` }}
+            >
+              <div ref={containerRef} className="h-full w-full" />
+            </div>
+
+            {/* jsonQuery 过滤器拖动条 */}
+            <div
+              className="w-2 h-full cursor-ew-resize bg-gradient-to-b from-green-50/80 via-emerald-50/80 to-green-50/80 dark:from-neutral-900/80 dark:via-neutral-800/80 dark:to-neutral-900/80 dark:border-neutral-800 backdrop-blur-sm flex items-center justify-center"
+              role="button"
+              style={{ touchAction: "none" }}
+              onMouseDown={handleFilterDragStart}
+            >
+              <div className="h-24 w-1 bg-green-400 dark:bg-green-600 rounded-full" />
+            </div>
+
+            {/* 右侧过滤结果编辑器 */}
+            <div
+              className="h-full overflow-hidden flex flex-col bg-white/95 dark:bg-neutral-900/95 filter-result-panel"
+              style={{ width: `${100 - filterLeftWidth}%` }}
+            >
+              {/* 过滤结果标题栏 */}
+              <div className="px-4 py-2 border-b border-default-200 dark:border-default-100/20 bg-green-50 dark:bg-green-900/20 flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Icon
+                    className="text-green-600 dark:text-green-400"
+                    icon="mdi:filter"
+                    width={16}
+                  />
+                  <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                    过滤结果
+                  </span>
+                  {jsonQueryFilter && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                      ({jsonQueryFilter})
+                    </span>
+                  )}
+                </div>
+                <Button
+                  color="default"
+                  size="sm"
+                  startContent={<Icon icon="mdi:close" width={16} />}
+                  variant="light"
+                  onPress={() => {
+                    setShowFilterEditor(false);
+                    setJsonQueryFilter("");
+                    setFilteredValue("");
+                  }}
+                >
+                  关闭
+                </Button>
+              </div>
+
+              {/* 过滤结果编辑器 */}
+              <div className="flex-1 h-full overflow-hidden">
+                <div
+                  ref={(el) => {
+                    if (el && !filterEditorRef.current) {
+                      const editor = monaco.editor.create(el, {
+                        value: filteredValue,
+                        language: "json",
+                        minimap: { enabled: false },
+                        fontSize: fontSize,
+                        theme: theme || "vs-light",
+                        readOnly: true,
+                        scrollBeyondLastLine: false,
+                        wordWrap: "on",
+                        automaticLayout: true,
+                      });
+
+                      filterEditorRef.current = editor;
+                    } else if (!el && filterEditorRef.current) {
+                      filterEditorRef.current.dispose();
+                      filterEditorRef.current = null;
+                    }
+                  }}
+                  className="h-full w-full"
+                />
+              </div>
+            </div>
+          </>
         ) : (
           // 普通模式：只显示一个编辑器
           <div ref={containerRef} className="w-full h-full" />
         )}
       </div>
+
+      {/* jsonQuery 过滤输入框 */}
+      {showJsonQueryFilter && (
+        <div className="px-3 py-2 border-t border-default-200 dark:border-default-100/20 bg-gray-50 dark:bg-gray-900/50 flex items-center space-x-3">
+          <div className="flex items-center space-x-2 flex-1">
+            <Icon
+              className="text-green-600 dark:text-green-400"
+              icon="mdi:filter"
+              width={16}
+            />
+            <Input
+              className="flex-1"
+              endContent={
+                jsonQueryFilter && (
+                  <Button
+                    isIconOnly
+                    className="min-w-6 w-6 h-6"
+                    size="sm"
+                    variant="light"
+                    onPress={() => {
+                      setJsonQueryFilter("");
+                      setShowFilterEditor(false);
+                      setFilteredValue("");
+                    }}
+                  >
+                    <Icon icon="mdi:close" width={14} />
+                  </Button>
+                )
+              }
+              placeholder="输入 jsonQuery 过滤表达式 例如: .posts | filter(.id == 102)"
+              size="sm"
+              startContent={
+                <Icon
+                  className="text-gray-400"
+                  icon="mdi:code-json"
+                  width={16}
+                />
+              }
+              value={jsonQueryFilter}
+              variant="bordered"
+              onChange={(e) => handleJsonQueryChange(e.target.value)}
+            />
+          </div>
+          {filterError && (
+            <div className="text-red-500 text-xs flex items-center space-x-1">
+              <Icon icon="mdi:alert-circle" width={14} />
+              <span>{filterError}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 可拖动悬浮菜单 */}
       {isMenu && editorRef.current && (

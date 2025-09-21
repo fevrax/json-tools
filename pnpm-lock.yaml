@@ -14,6 +14,9 @@ importers:
       '@iarna/toml':
         specifier: ^2.2.5
         version: 2.2.5
+      '@jsonquerylang/jsonquery':
+        specifier: ^5.0.4
+        version: 5.0.4
       '@monaco-editor/react':
         specifier: 4.7.0-rc.0
         version: 4.7.0-rc.0(monaco-editor@0.52.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -1166,6 +1169,10 @@ packages:
 
   '@jsonquerylang/jsonquery@4.1.1':
     resolution: {integrity: sha512-Rfyvq70Zrb561BqSuXLsl0rG0/1tz913EQDL/4zpkp+laFGUxXIVPSaJWcdREJwADXLZDkQyaWplzEaPQvh+7A==}
+    hasBin: true
+
+  '@jsonquerylang/jsonquery@5.0.4':
+    resolution: {integrity: sha512-QdgVkapeGRxUqOOJuh2svDutejKaCizhupEmO4ZKSsaLolD7w5QhgrjmBNuS1wMCM5TyNKifK4i1wBDfNzO9xQ==}
     hasBin: true
 
   '@lezer/common@1.2.3':
@@ -7237,6 +7244,8 @@ snapshots:
       jsep: 1.4.0
 
   '@jsonquerylang/jsonquery@4.1.1': {}
+
+  '@jsonquerylang/jsonquery@5.0.4': {}
 
   '@lezer/common@1.2.3': {}
 
