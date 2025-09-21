@@ -70,6 +70,7 @@ import PromptContainer, {
 } from "@/components/ai/PromptContainer";
 import { jsonQuickPrompts } from "@/components/ai/JsonQuickPrompts.tsx";
 import { useSettingsStore } from "@/store/useSettingsStore";
+import JsonQueryHelp from "@/components/monacoEditor/JsonQueryHelp";
 
 export interface MonacoJsonEditorProps {
   tabTitle?: string;
@@ -120,7 +121,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   minimap = false,
   customQuickPrompts,
   showTimestampDecorators = true, // 默认开启时间戳装饰器
-  showJsonQueryFilter = true, // 默认开启 jsonQuery 过滤功能
+  showJsonQueryFilter = false, // s开启 jsonQuery 过滤功能
   onUpdateValue,
   onMount,
   ref,
@@ -309,7 +310,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
     // 当显示 jsonQuery 过滤器时，减去过滤器高度
     if (showJsonQueryFilter) {
-      return `calc(${baseHeight} - 40px)`;
+      return `calc(${baseHeight} - 34px)`;
     }
 
     return baseHeight;
@@ -1683,12 +1684,12 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
             {/* jsonQuery 过滤器拖动条 */}
             <div
-              className="w-2 h-full cursor-ew-resize bg-gradient-to-b from-green-50/80 via-emerald-50/80 to-green-50/80 dark:from-neutral-900/80 dark:via-neutral-800/80 dark:to-neutral-900/80 dark:border-neutral-800 backdrop-blur-sm flex items-center justify-center"
+              className="w-2 h-full cursor-ew-resize bg-gradient-to-b from-indigo-50/80 via-emerald-50/80 to-indigo-50/80 dark:from-neutral-900/80 dark:via-neutral-800/80 dark:to-neutral-900/80 dark:border-neutral-800 backdrop-blur-sm flex items-center justify-center"
               role="button"
               style={{ touchAction: "none" }}
               onMouseDown={handleFilterDragStart}
             >
-              <div className="h-24 w-1 bg-green-400 dark:bg-green-600 rounded-full" />
+              <div className="h-24 w-1 bg-indigo-400 dark:bg-indigo-600 rounded-full" />
             </div>
 
             {/* 右侧过滤结果编辑器 */}
@@ -1697,14 +1698,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               style={{ width: `${100 - filterLeftWidth}%` }}
             >
               {/* 过滤结果标题栏 */}
-              <div className="px-4 py-2 border-b border-default-200 dark:border-default-100/20 bg-green-50 dark:bg-green-900/20 flex items-center justify-between">
+              <div className="px-4 py-2 border-b border-default-200 dark:border-default-100/20 bg-indigo-50 dark:bg-indigo-900/20 flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <Icon
-                    className="text-green-600 dark:text-green-400"
+                    className="text-indigo-600 dark:text-indigo-400"
                     icon="mdi:filter"
                     width={16}
                   />
-                  <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                  <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300">
                     过滤结果
                   </span>
                   {jsonQueryFilter && (
@@ -1764,43 +1765,35 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
       {/* jsonQuery 过滤输入框 */}
       {showJsonQueryFilter && (
-        <div className="px-3 py-2 border-t border-default-200 dark:border-default-100/20 bg-gray-50 dark:bg-gray-900/50 flex items-center space-x-3">
+        <div className="pl-3 pr-0.5 border-t  border-default-200 dark:border-default-100/20 flex items-center">
           <div className="flex items-center space-x-2 flex-1">
-            <Icon
-              className="text-green-600 dark:text-green-400"
-              icon="mdi:filter"
-              width={16}
-            />
+            <Icon className="text-indigo-500" icon="mdi:filter" width={16} />
             <Input
               className="flex-1"
               endContent={
-                jsonQueryFilter && (
-                  <Button
-                    isIconOnly
-                    className="min-w-6 w-6 h-6"
-                    size="sm"
-                    variant="light"
-                    onPress={() => {
-                      setJsonQueryFilter("");
-                      setShowFilterEditor(false);
-                      setFilteredValue("");
-                    }}
-                  >
-                    <Icon icon="mdi:close" width={14} />
-                  </Button>
-                )
+                <div className="flex items-center space-x-1">
+                  <JsonQueryHelp />
+                  {jsonQueryFilter && (
+                    <Button
+                      isIconOnly
+                      className="min-w-6 w-6 h-6 text-indigo-500"
+                      size="sm"
+                      variant="light"
+                      onPress={() => {
+                        setJsonQueryFilter("");
+                        setShowFilterEditor(false);
+                        setFilteredValue("");
+                      }}
+                    >
+                      <Icon icon="mdi:close" width={14} />
+                    </Button>
+                  )}
+                </div>
               }
-              placeholder="输入 jsonQuery 过滤表达式 例如: .posts | filter(.id == 102)"
+              placeholder="JsonQuery 表达式 例如: .posts | filter(.id == 102)"
+              radius="none"
               size="sm"
-              startContent={
-                <Icon
-                  className="text-gray-400"
-                  icon="mdi:code-json"
-                  width={16}
-                />
-              }
               value={jsonQueryFilter}
-              variant="bordered"
               onChange={(e) => handleJsonQueryChange(e.target.value)}
             />
           </div>

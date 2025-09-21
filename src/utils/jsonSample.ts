@@ -1,5 +1,4 @@
-export const JsonSample = `
-{
+export const JsonSample = `{
     "user": {
         "id": 1234567890,
         "name": "张三",

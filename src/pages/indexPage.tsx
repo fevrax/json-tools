@@ -4,16 +4,24 @@ import { useTheme } from "next-themes";
 import { Content } from "vanilla-jsoneditor-cn";
 
 import { useTabStore } from "@/store/useTabStore";
-import DynamicTabs, { DynamicTabsRef } from "@/components/dynamicTabs/DynamicTabs.tsx";
-import MonacoJsonEditor, { MonacoJsonEditorRef } from "@/components/monacoEditor/MonacoJsonEditor.tsx";
+import DynamicTabs, {
+  DynamicTabsRef,
+} from "@/components/dynamicTabs/DynamicTabs.tsx";
+import MonacoJsonEditor, {
+  MonacoJsonEditorRef,
+} from "@/components/monacoEditor/MonacoJsonEditor.tsx";
 import { useSidebarStore } from "@/store/useSidebarStore";
 // eslint-disable-next-line import/order
-import VanillaJsonEditor, { VanillaJsonEditorRef } from "@/components/vanillaJsonEditor/VanillaJsonEditor.tsx";
+import VanillaJsonEditor, {
+  VanillaJsonEditorRef,
+} from "@/components/vanillaJsonEditor/VanillaJsonEditor.tsx";
 
 import "vanilla-jsoneditor-cn/themes/jse-theme-dark.css";
-import MonacoDiffEditor, { MonacoDiffEditorRef } from "@/components/monacoEditor/MonacoDiffEditor.tsx";
+import MonacoDiffEditor, {
+  MonacoDiffEditorRef,
+} from "@/components/monacoEditor/MonacoDiffEditor.tsx";
 import MonacoDiffOperationBar, {
-  MonacoDiffOperationBarRef
+  MonacoDiffOperationBarRef,
 } from "@/components/monacoEditor/operationBar/MonacoDiffOperationBar.tsx";
 import MonacoOperationBar from "@/components/monacoEditor/operationBar/MonacoOperationBar.tsx";
 import { SettingsState } from "@/store/useSettingsStore";
@@ -21,7 +29,9 @@ import { storage } from "@/lib/indexedDBStore";
 
 import "@/styles/index.css";
 import { SidebarKeys } from "@/components/sidebar/Items.tsx";
-import JsonTableView, { JsonTableViewRef } from "@/components/jsonTable/JsonTableView.tsx";
+import JsonTableView, {
+  JsonTableViewRef,
+} from "@/components/jsonTable/JsonTableView.tsx";
 import clipboard from "@/utils/clipboard";
 import toast from "@/utils/toast";
 import UtoolsListener from "@/services/utoolsListener";
@@ -183,6 +193,7 @@ export default function IndexPage() {
                     language={tab.editorSettings?.language || "json"}
                     minimap={true}
                     showAi={true}
+                    showJsonQueryFilter={true}
                     tabKey={tab.key}
                     tabTitle={tab.title}
                     theme={theme === "dark" ? "vs-dark" : "vs-light"}
