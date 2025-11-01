@@ -209,6 +209,9 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const urlUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const urlCacheRef = useRef<Record<string, boolean>>({});
 
+  // 跟踪是否为首次粘贴状态（用于首次粘贴时自动格式化）
+  const [isFirstPaste, setIsFirstPaste] = useState(true);
+
   // 时间戳装饰器状态
   const timestampDecoratorState: TimestampDecoratorState = {
     editorRef: editorRef,
@@ -650,6 +653,11 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         forceMoveMarkers: true,
       },
     ]);
+
+    // 如果清空了编辑器，重置首次粘贴状态
+    if (jsonText === "") {
+      setIsFirstPaste(true);
+    }
   };
 
   // 监听时间戳装饰器状态变化
@@ -1369,7 +1377,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           readOnly: false, // 是否开启已读功能
           theme: theme || "vs-light", // 主题
           mouseWheelZoom: true, // 启用鼠标滚轮缩放
-          formatOnPaste: false, // 粘贴时自动格式化
+          formatOnPaste: true, // 粘贴时自动格式化
           formatOnType: false, // 输入时自动格式化
           wordBasedSuggestions: "allDocuments", // 启用基于单词的建议
           wordBasedSuggestionsOnlySameLanguage: true, // 仅在相同语言下启用基于单词的建议
@@ -1490,8 +1498,31 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           onUpdateValue(val);
         });
 
-        // 添加粘贴事件监听
-        editor.onDidPaste(() => {});
+        // 添加粘贴事件监听：首次粘贴时自动格式化
+        editor.onDidPaste(() => {
+          if (isFirstPaste && editorRef.current) {
+            const currentValue = editorRef.current.getValue();
+
+            // 检查是否为首次粘贴（编辑器为空或只有空白字符）
+            if (currentValue && currentValue.trim() !== "") {
+              // 延迟执行，等待内容完全粘贴并格式化
+              setTimeout(() => {
+                if (editorRef.current && isFirstPaste) {
+                  // 尝试验证并格式化
+                  const val = editorRef.current.getValue();
+                  const isValid = editorValueValidate(val);
+
+                  if (isValid) {
+                    // 验证成功后进行格式化
+                    editorFormat();
+                    // 设置为非首次粘贴状态，避免重复格式化
+                    setIsFirstPaste(false);
+                  }
+                }
+              }, 100);
+            }
+          }
+        });
 
         editorRef.current = editor;
 
