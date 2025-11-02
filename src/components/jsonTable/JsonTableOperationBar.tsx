@@ -78,7 +78,6 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
   onCustomView,
   onClear,
 }) => {
-  const [isCopyDropdownOpen, setIsCopyDropdownOpen] = useState(false);
   const [isViewDropdownOpen, setViewDropdownOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState<IconStatus>(IconStatus.Default);
   const [clearStatus, setClearStatus] = useState<IconStatus>(
@@ -101,32 +100,10 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
   }, [visibleButtons, hiddenButtons]);
 
   // 防止下拉菜单打开时，鼠标移开后立即关闭
-  var copyDropdownOpenTimeoutRef: NodeJS.Timeout;
   var viewDropdownOpenTimeoutRef: NodeJS.Timeout;
   var moreDropdownOpenTimeoutRef: NodeJS.Timeout;
 
   const dropdownTimeout = 300;
-
-  const handleCopy = (type?: "node" | "path") => {
-    onCopy(type);
-    setIsCopyDropdownOpen(false);
-  };
-
-  // 复制下拉菜单
-  const showCopyDropdown = () => {
-    if (copyDropdownOpenTimeoutRef) {
-      clearTimeout(copyDropdownOpenTimeoutRef);
-    }
-    setIsCopyDropdownOpen(true);
-  };
-  const unShowCopyDropdown = () => {
-    if (copyDropdownOpenTimeoutRef) {
-      clearTimeout(copyDropdownOpenTimeoutRef);
-    }
-    copyDropdownOpenTimeoutRef = setTimeout(() => {
-      setIsCopyDropdownOpen(false);
-    }, dropdownTimeout);
-  };
 
   // 视图选项下拉菜单
   const showViewDropdown = () => {
@@ -401,70 +378,15 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
     // 状态按钮
     if ("isStatusButton" in button && button.isStatusButton) {
       return (
-        <div key={button.key} className="flex">
-          <Tooltip content={button.tooltip} delay={300}>
-            <StatusButton
-              icon={button.icon}
-              status={button.status}
-              successText={button.successText}
-              text={button.text}
-              onClick={button.onClick}
-            />
-          </Tooltip>
-
-          {/* 复制按钮额外的下拉菜单 */}
-          {button.key === "copy" && (
-            <Dropdown
-              classNames={{
-                base: "before:bg-default-200",
-                content: "min-w-[140px] p-1",
-              }}
-              isOpen={isCopyDropdownOpen}
-              radius="sm"
-              onOpenChange={setIsCopyDropdownOpen}
-            >
-              <DropdownTrigger
-                onMouseEnter={showCopyDropdown}
-                onMouseLeave={unShowCopyDropdown}
-              >
-                <Button
-                  isIconOnly
-                  className="p-0 m-0 min-w-[22px] w-auto h-8 transition-colors hover:bg-default-200/50"
-                  startContent={<Icon icon="formkit:down" width={16} />}
-                  variant="light"
-                />
-              </DropdownTrigger>
-              <DropdownMenu
-                aria-label="复制选项"
-                onMouseEnter={showCopyDropdown}
-                onMouseLeave={unShowCopyDropdown}
-              >
-                <DropdownItem
-                  key="node"
-                  className="py-2 px-3 hover:bg-default-100 rounded-md"
-                  textValue="复制节点"
-                  onPress={() => handleCopy("node")}
-                >
-                  <div className="flex items-center space-x-2">
-                    <Icon icon="hugeicons:node-edit" width={16} />
-                    <span>复制节点</span>
-                  </div>
-                </DropdownItem>
-                <DropdownItem
-                  key="path"
-                  className="py-2 px-3 hover:bg-default-100 rounded-md"
-                  textValue="复制路径"
-                  onPress={() => handleCopy("path")}
-                >
-                  <div className="flex items-center space-x-2">
-                    <Icon icon="lsicon:path-filled" width={16} />
-                    <span>复制路径</span>
-                  </div>
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          )}
-        </div>
+        <Tooltip key={button.key} content={button.tooltip} delay={300}>
+          <StatusButton
+            icon={button.icon}
+            status={button.status}
+            successText={button.successText}
+            text={button.text}
+            onClick={button.onClick}
+          />
+        </Tooltip>
       );
     }
 

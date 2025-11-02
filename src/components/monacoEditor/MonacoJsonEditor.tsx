@@ -98,7 +98,9 @@ export interface MonacoJsonEditorProps {
 export interface MonacoJsonEditorRef {
   focus: () => void;
   layout: () => void;
-  copy: (type?: "default" | "compress" | "escape") => boolean;
+  copy: () => boolean;
+  compress: () => boolean;
+  escape: () => boolean;
   format: () => boolean;
   validate: () => boolean;
   clear: () => boolean;
@@ -693,7 +695,9 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     } else {
       // 禁用时清理装饰器
       if (base64DecorationManagerRef.current) {
-        base64DecorationManagerRef.current.clearAllDecorations(editorRef.current!);
+        base64DecorationManagerRef.current.clearAllDecorations(
+          editorRef.current!,
+        );
       }
     }
   }, [base64DecoratorsEnabled]);
@@ -717,7 +721,9 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     } else {
       // 禁用时清理装饰器
       if (unicodeDecorationManagerRef.current) {
-        unicodeDecorationManagerRef.current.clearAllDecorations(editorRef.current!);
+        unicodeDecorationManagerRef.current.clearAllDecorations(
+          editorRef.current!,
+        );
       }
     }
   }, [unicodeDecoratorsEnabled]);
@@ -1099,18 +1105,23 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
       return true;
     },
-    copy: (type) => {
+    copy: () => {
       if (!editorRef.current) {
         return false;
       }
 
       const val = editorRef.current.getValue();
 
-      if (!type || type === "default") {
-        copyText(val);
+      copyText(val);
 
-        return true;
+      return true;
+    },
+    compress: () => {
+      if (!editorRef.current) {
+        return false;
       }
+
+      const val = editorRef.current.getValue();
 
       if (val.trim() === "") {
         toast.warning("暂无内容");
@@ -1123,20 +1134,37 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       if (!isValid) {
         return false;
       }
-      switch (type) {
-        case "compress":
-          const compressed = stringifyJson(parseJson(val));
 
-          copyText(compressed);
-          setEditorValue(compressed);
-          break;
-        case "escape":
-          copyText(escapeJson(val));
-          break;
-        default:
-          copyText(val);
-          break;
+      const compressed = stringifyJson(parseJson(val));
+
+      setEditorValue(compressed);
+      toast.success("压缩成功");
+
+      return true;
+    },
+    escape: () => {
+      if (!editorRef.current) {
+        return false;
       }
+
+      const val = editorRef.current.getValue();
+
+      if (val.trim() === "") {
+        toast.warning("暂无内容");
+
+        return false;
+      }
+
+      const isValid = editorValueValidate(val);
+
+      if (!isValid) {
+        return false;
+      }
+
+      const escaped = escapeJson(val);
+
+      setEditorValue(escaped);
+      toast.success("转义成功");
 
       return true;
     },
@@ -1174,13 +1202,19 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
         // 清理装饰器管理器中的装饰器
         if (base64DecorationManagerRef.current) {
-          base64DecorationManagerRef.current.clearAllDecorations(editorRef.current);
+          base64DecorationManagerRef.current.clearAllDecorations(
+            editorRef.current,
+          );
         }
         if (unicodeDecorationManagerRef.current) {
-          unicodeDecorationManagerRef.current.clearAllDecorations(editorRef.current);
+          unicodeDecorationManagerRef.current.clearAllDecorations(
+            editorRef.current,
+          );
         }
         if (urlDecorationManagerRef.current) {
-          urlDecorationManagerRef.current.clearAllDecorations(editorRef.current);
+          urlDecorationManagerRef.current.clearAllDecorations(
+            editorRef.current,
+          );
         }
 
         return true;

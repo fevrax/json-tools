@@ -1,13 +1,7 @@
 import React, { useState, useRef } from "react";
 import {
-  Button,
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownTrigger,
   Tooltip,
 } from "@heroui/react";
-import { Icon } from "@iconify/react";
 
 import {
   ButtonConfig,
@@ -25,7 +19,9 @@ import StatusButton from "@/components/button/StatusButton.tsx";
 import toast from "@/utils/toast.tsx";
 
 interface MonacoOperationBarProps {
-  onCopy: (type?: "default" | "compress" | "escape") => boolean;
+  onCopy: (type?: "default") => boolean;
+  onCompress: () => boolean;
+  onEscape: () => boolean;
   onFormat: () => boolean;
   onClear: () => boolean;
   onFieldSort: (type: "asc" | "desc") => boolean;
@@ -39,6 +35,8 @@ export interface MonacoOperationBarRef {}
 
 const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
   onCopy,
+  onCompress,
+  onEscape,
   onFormat,
   onClear,
   onFieldSort,
@@ -46,7 +44,6 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
   onMore,
   onAiClick,
 }) => {
-  const [isCopyDropdownOpen, setIsCopyDropdownOpen] = useState(false);
   const [isSortDropdownOpen, setSortDropdownOpen] = useState(false);
   const [isMoreDropdownOpen, setMoreDropdownOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState<IconStatus>(IconStatus.Default);
@@ -57,31 +54,10 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
     IconStatus.Default,
   );
 
-  // 容器参考
   const containerRef = useRef<HTMLDivElement>(null);
 
   // 使用通用的下拉菜单超时管理hook
   const { createTimeout, clearTimeoutByKey } = useDropdownTimeout();
-
-  const handleCopy = (type?: "compress" | "escape") => {
-    onCopy(type);
-    setIsCopyDropdownOpen(false);
-  };
-
-  // 复制下拉菜单
-  const showCopyDropdown = () => {
-    setIsCopyDropdownOpen(true);
-  };
-  const unShowCopyDropdown = () => {
-    createTimeout(
-      "copy",
-      () => setIsCopyDropdownOpen(false),
-      DEFAULT_DROPDOWN_TIMEOUT,
-    );
-  };
-  const clearCopyDropdownTimeout = () => {
-    clearTimeoutByKey("copy");
-  };
 
   // 字段排序下拉菜单
   const showSortDropdown = () => {
@@ -247,12 +223,30 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
       key: "advanced",
       buttons: [
         {
+          key: "compress",
+          icon: "f7:rectangle-compress-vertical",
+          text: "压缩",
+          tooltip: "压缩当前JSON内容",
+          onClick: onCompress,
+          priority: 60,
+          width: 90,
+        },
+        {
+          key: "escape",
+          icon: "si:swap-horiz-line",
+          text: "转义",
+          tooltip: "转义当前JSON内容",
+          onClick: onEscape,
+          priority: 65,
+          width: 90,
+        },
+        {
           key: "unescape",
           icon: "iconoir:remove-link",
           text: "删除转义",
           tooltip: "删除JSON中的转义字符",
           onClick: () => handleAction("unescape"),
-          priority: 60,
+          priority: 70,
           width: 120,
         },
         {
@@ -291,70 +285,15 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
     // 状态按钮
     if ("isStatusButton" in button && button.isStatusButton) {
       return (
-        <div key={button.key} className="flex">
-          <Tooltip content={button.tooltip} delay={300}>
-            <StatusButton
-              icon={button.icon}
-              status={button.status}
-              successText={button.successText}
-              text={button.text}
-              onClick={button.onClick}
-            />
-          </Tooltip>
-
-          {/* 复制按钮额外的下拉菜单 */}
-          {button.key === "copy" && (
-            <Dropdown
-              classNames={{
-                base: "before:bg-default-200",
-                content: "min-w-[140px] p-1",
-              }}
-              isOpen={isCopyDropdownOpen}
-              radius="sm"
-              onOpenChange={setIsCopyDropdownOpen}
-            >
-              <DropdownTrigger
-                onMouseEnter={showCopyDropdown}
-                onMouseLeave={unShowCopyDropdown}
-              >
-                <Button
-                  isIconOnly
-                  className="p-0 m-0 min-w-[22px] w-auto h-8 transition-colors hover:bg-default-200/50"
-                  startContent={<Icon icon="formkit:down" width={16} />}
-                  variant="light"
-                />
-              </DropdownTrigger>
-              <DropdownMenu
-                aria-label="复制选项"
-                onMouseEnter={clearCopyDropdownTimeout}
-                onMouseLeave={unShowCopyDropdown}
-              >
-                <DropdownItem
-                  key="compress"
-                  className="py-2 px-3 hover:bg-default-100 rounded-md"
-                  textValue="压缩后复制"
-                  onPress={() => handleCopy("compress")}
-                >
-                  <div className="flex items-center space-x-2">
-                    <Icon icon="f7:rectangle-compress-vertical" width={16} />
-                    <span>压缩后复制</span>
-                  </div>
-                </DropdownItem>
-                <DropdownItem
-                  key="escape"
-                  className="py-2 px-3 hover:bg-default-100 rounded-md"
-                  textValue="转义后复制"
-                  onPress={() => handleCopy("escape")}
-                >
-                  <div className="flex items-center space-x-2">
-                    <Icon icon="si:swap-horiz-line" width={16} />
-                    <span>转义后复制</span>
-                  </div>
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          )}
-        </div>
+        <Tooltip key={button.key} content={button.tooltip} delay={300}>
+          <StatusButton
+            icon={button.icon}
+            status={button.status}
+            successText={button.successText}
+            text={button.text}
+            onClick={button.onClick}
+          />
+        </Tooltip>
       );
     }
 

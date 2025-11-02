@@ -142,6 +142,12 @@ export default function IndexPage() {
           onCopy={(type) => {
             return monacoJsonEditorRefs.current[activeTabKey].copy(type);
           }}
+          onCompress={() => {
+            return monacoJsonEditorRefs.current[activeTabKey].compress();
+          }}
+          onEscape={() => {
+            return monacoJsonEditorRefs.current[activeTabKey].escape();
+          }}
           onFieldSort={(type) => {
             return monacoJsonEditorRefs.current[activeTabKey].fieldSort(type);
           }}
