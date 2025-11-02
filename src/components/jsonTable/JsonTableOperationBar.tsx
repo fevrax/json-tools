@@ -378,15 +378,13 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
     // 状态按钮
     if ("isStatusButton" in button && button.isStatusButton) {
       return (
-        <Tooltip key={button.key} content={button.tooltip} delay={300}>
-          <StatusButton
-            icon={button.icon}
-            status={button.status}
-            successText={button.successText}
-            text={button.text}
-            onClick={button.onClick}
-          />
-        </Tooltip>
+        <StatusButton
+          icon={button.icon}
+          status={button.status}
+          successText={button.successText}
+          text={button.text}
+          onClick={button.onClick}
+        />
       );
     }
 
@@ -542,7 +540,7 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
   return (
     <div
       ref={containerRef}
-      className="h-10 flex items-center gap-2 px-2 bg-default-100 shadow-sm"
+      className="h-10 flex items-center gap-1 px-1 bg-default-100 shadow-sm"
     >
       {/* 复制按钮组 */}
       <div className="flex items-center gap-2">

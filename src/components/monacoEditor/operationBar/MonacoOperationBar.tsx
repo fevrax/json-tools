@@ -126,9 +126,8 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
           onClick: onAiClick || (() => {}),
           iconColor: "text-indigo-500",
           className:
-            "text-sm text-default-600 px-3 rounded-xl bg-indigo-50/50 dark:bg-indigo-50/10 hover:bg-indigo-100/70",
+            "text-xs text-default-600 px-2 rounded-xl bg-indigo-50/50 dark:bg-indigo-50/10 hover:bg-indigo-100/70",
           priority: 10,
-          width: 110,
         },
       ],
     },
@@ -140,11 +139,10 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
           isStatusButton: true,
           icon: "si:copy-line",
           text: "复制",
-          tooltip: "复制内容到剪贴板",
+          tooltip: "",
           status: copyStatus,
           successText: "已复制",
           priority: 20,
-          width: 90,
           onClick: () => {
             setTimeout(() => {
               setCopyStatus(IconStatus.Default);
@@ -157,10 +155,9 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
           isStatusButton: true,
           icon: "ph:magic-wand-light",
           text: "格式化",
-          tooltip: "格式化当前JSON",
+          tooltip: "",
           status: formatStatus,
           priority: 30,
-          width: 110,
           onClick: () => {
             setTimeout(() => {
               setFormatStatus(IconStatus.Default);
@@ -172,10 +169,9 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
           key: "sort",
           icon: "fluent:arrow-sort-24-regular",
           text: "字段排序",
-          tooltip: "对JSON字段进行排序",
+          tooltip: "",
           hasDropdown: true,
           priority: 40,
-          width: 120,
           onClick: showSortDropdown,
           dropdownItems: [
             {
@@ -205,11 +201,10 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
           isStatusButton: true,
           icon: "mynaui:trash",
           text: "清空",
-          tooltip: "清空编辑器内容",
+          tooltip: "",
           status: clearStatus,
           successText: "已清空",
           priority: 50,
-          width: 90,
           onClick: () => {
             setTimeout(() => {
               setClearStatus(IconStatus.Default);
@@ -229,16 +224,14 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
           tooltip: "压缩当前JSON内容",
           onClick: onCompress,
           priority: 60,
-          width: 90,
         },
         {
           key: "escape",
-          icon: "si:swap-horiz-line",
+          icon: "solar:link-round-line-duotone",
           text: "转义",
           tooltip: "转义当前JSON内容",
           onClick: onEscape,
           priority: 65,
-          width: 90,
         },
         {
           key: "unescape",
@@ -247,7 +240,6 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
           tooltip: "删除JSON中的转义字符",
           onClick: () => handleAction("unescape"),
           priority: 70,
-          width: 120,
         },
         {
           key: "del_comment",
@@ -256,7 +248,6 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
           tooltip: "删除JSON中的注释",
           onClick: () => handleAction("del_comment"),
           priority: 70,
-          width: 120,
         },
         {
           key: "save_file",
@@ -265,7 +256,6 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
           tooltip: "将当前内容保存为文件",
           onClick: () => handleAction("save_file"),
           priority: 80,
-          width: 120,
         },
       ],
     },
@@ -318,20 +308,20 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
   return (
     <div
       ref={containerRef}
-      className="h-10 flex items-center gap-2 px-2 bg-gradient-to-r from-default-50 to-default-100 border-b border-default-200 shadow-sm"
+      className="h-8 flex items-center gap-1 px-1.5 bg-gradient-to-r from-default-50 to-default-100 border-b border-default-200 shadow-sm"
     >
-      {/* 主要按钮组 */}
-      <div className="flex items-center gap-2">
+      {/* AI 按钮 */}
+      <div className="flex items-center gap-1">
         {actionGroups[0].buttons.map(renderButton)}
       </div>
 
-      {/* 分隔线 - 只在有主要按钮可见时显示 */}
+      {/* 分隔线 - 只在有AI 按钮可见时显示 */}
       {actionGroups[0].buttons.some((button) =>
         visibleButtons.includes(button.key),
-      ) && <div className="h-6 w-px bg-default-200" />}
+      ) && <div className="h-5 w-px bg-default-200 mx-0.5" />}
 
       {/* 编辑按钮组 */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         {actionGroups[1].buttons.map(renderButton)}
       </div>
 
@@ -341,10 +331,10 @@ const MonacoOperationBar: React.FC<MonacoOperationBarProps> = ({
       ) &&
         actionGroups[2].buttons.some((button) =>
           visibleButtons.includes(button.key),
-        ) && <div className="h-6 w-px bg-default-200" />}
+        ) && <div className="h-5 w-px bg-default-200 mx-0.5" />}
 
       {/* 高级按钮组 */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         {actionGroups[2].buttons.map(renderButton)}
 
         {/* 更多菜单 */}

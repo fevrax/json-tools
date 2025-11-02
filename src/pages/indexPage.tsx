@@ -139,8 +139,8 @@ export default function IndexPage() {
           onClear={() => {
             return monacoJsonEditorRefs.current[activeTabKey].clear();
           }}
-          onCopy={(type) => {
-            return monacoJsonEditorRefs.current[activeTabKey].copy(type);
+          onCopy={() => {
+            return monacoJsonEditorRefs.current[activeTabKey].copy();
           }}
           onCompress={() => {
             return monacoJsonEditorRefs.current[activeTabKey].compress();

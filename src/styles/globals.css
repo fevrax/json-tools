@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 禁用页面滚动 */
+html, body {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 确保根容器也不滚动 */
+#root {
+  height: 100vh;
+  overflow: hidden;
+}
+
 .Toastify__toast-container {
     width: 300px !important;
 }

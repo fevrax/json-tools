@@ -14,7 +14,7 @@ import { AIResultHeader } from "./AIResultHeader";
 
 import toast from "@/utils/toast";
 import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEntity";
-import { sortJson, parseJson } from "@/utils/json";
+import {sortJson, parseJson, stringifyJson} from "@/utils/json";
 import { useTabStore } from "@/store/useTabStore";
 import DraggableMenu from "@/components/monacoEditor/DraggableMenu.tsx";
 import AIPromptOverlay, { QuickPrompt } from "@/components/ai/AIPromptOverlay";
@@ -1117,7 +1117,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       // 如果解析成功，格式化并设置到左侧编辑器
       setEditorValue(
         originalEditorRef.current,
-        JSON.stringify(jsonObj, null, indentSize),
+        stringifyJson(jsonObj, indentSize),
       );
       toast.success("已应用代码到左侧编辑器");
     } catch {
@@ -1146,7 +1146,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       // 如果解析成功，格式化并设置到右侧编辑器
       setEditorValue(
         modifiedEditorRef.current,
-        JSON.stringify(jsonObj, null, indentSize),
+        stringifyJson(jsonObj, indentSize),
       );
       toast.success("已应用代码到右侧编辑器");
     } catch {

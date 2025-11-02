@@ -22,7 +22,6 @@ export interface BaseButtonConfig {
   iconColor?: string;
   className?: string;
   priority?: number; // 按钮显示优先级，数字越小优先级越高
-  width?: number; // 按钮的预估宽度，用于自适应计算
 }
 
 // 定义状态按钮接口
@@ -63,9 +62,9 @@ export enum IconStatus {
 }
 
 // 常量
-export const MORE_BUTTON_WIDTH = 90;
-export const SEPARATOR_WIDTH = 25;
-export const MIN_PADDING = 16;
+export const MORE_BUTTON_WIDTH = 70;
+export const SEPARATOR_WIDTH = 20;
+export const MIN_PADDING = 12;
 export { DEFAULT_DROPDOWN_TIMEOUT };
 
 // 自适应按钮显示计算逻辑
@@ -99,8 +98,8 @@ export const useAdaptiveButtons = (
       // 第一次遍历，检查是否所有按钮都能显示
       let totalButtonsWidth = 0;
 
-      for (const button of sortedButtons) {
-        totalButtonsWidth += button.width || 100; // 默认宽度100
+      for (const {} of sortedButtons) {
+        totalButtonsWidth += 75; // 默认宽度100
       }
 
       // 如果所有按钮的总宽度超过可用宽度，则需要"更多"按钮
@@ -112,7 +111,7 @@ export const useAdaptiveButtons = (
       let usedWidth = 0;
 
       for (const button of sortedButtons) {
-        const buttonWidth = button.width || 100; // 默认宽度100
+        const buttonWidth = 75; // 默认宽度100
 
         if (usedWidth + buttonWidth <= availableWidth) {
           visible.push(button.key);
@@ -154,7 +153,7 @@ export const renderStandardButton = (button: BaseButtonConfig) => {
     <Tooltip key={button.key} content={button.tooltip} delay={300}>
       <Button
         className={cn(
-          "pl-2 pr-2 h-8 gap-1 text-default-600 transition-colors",
+          "pl-1.5 pr-1.5 h-7 gap-1 text-default-600 transition-colors text-xs",
           button.className,
           "hover:bg-default-200/50",
         )}
@@ -163,7 +162,7 @@ export const renderStandardButton = (button: BaseButtonConfig) => {
           <Icon
             className={button.iconColor || ""}
             icon={button.icon}
-            width={18}
+            width={16}
           />
         }
         variant="light"
@@ -201,7 +200,7 @@ export const renderDropdownButton = (
       >
         <Button
           className={cn(
-            "pl-2 pr-2 h-8 gap-1 text-default-600 transition-colors text-sm",
+            "pl-1.5 pr-1.5 h-7 gap-1 text-default-600 transition-colors text-xs",
             button.className,
             "hover:bg-default-200/50",
           )}
@@ -210,7 +209,7 @@ export const renderDropdownButton = (
             <Icon
               className={button.iconColor || ""}
               icon={button.icon}
-              width={18}
+              width={16}
             />
           }
           variant="light"
@@ -273,8 +272,8 @@ export const renderMoreMenu = (
         onMouseLeave={unShowMoreDropdown}
       >
         <Button
-          className="pl-2 pr-2 h-8 gap-1 text-default-600 !min-w-16 hover:bg-default-200/50 transition-colors"
-          startContent={<Icon icon="mingcute:more-2-fill" width={20} />}
+          className="pl-1.5 pr-1.5 h-7 gap-1 text-default-600 !min-w-14 hover:bg-default-200/50 transition-colors text-xs"
+          startContent={<Icon icon="mingcute:more-2-fill" width={16} />}
           variant="light"
         >
           更多

@@ -55,7 +55,7 @@ export function escapeJson(input: string): string {
   // 否则，我们还必须用安全的转义序列替换有问题的字符。
   try {
     const parsedJson = parseJson(input);
-    const jsonString = JSON.stringify(parsedJson);
+    const jsonString = stringifyJson(parsedJson);
 
     rxEscapable.lastIndex = 0;
 

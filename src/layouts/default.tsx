@@ -220,7 +220,7 @@ function RootLayout({
       </SidebarDrawer>
 
       {/*  Settings Content */}
-      <div className="flex-1 text- overflow-auto min-w-16">{children}</div>
+      <div className="flex-1 overflow-hidden min-w-16">{children}</div>
     </div>
   );
 }
@@ -229,7 +229,6 @@ function RootLayout({
 function FontSizeLayout({ children }: { children: React.ReactNode }) {
   const { fontSize } = useSettingsStore();
   const fontSizeConfig = getFontSizeConfig(fontSize);
-  
   return (
     <div
       style={{

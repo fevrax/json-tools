@@ -135,9 +135,9 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           onClick: onAiClick || (() => {}),
           iconColor: "text-indigo-500",
           className:
-            "text-sm text-default-600 px-3 rounded-xl bg-indigo-50/50 dark:bg-indigo-50/10 hover:bg-indigo-100/70",
+            "text-xs text-default-600 px-2 rounded-xl bg-indigo-50/50 dark:bg-indigo-50/10 hover:bg-indigo-100/70",
           priority: 10,
-          width: 110,
+          width: 85,
         },
       ],
     },
@@ -150,7 +150,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           text: "复制",
           tooltip: "复制内容到剪贴板",
           priority: 20,
-          width: 90,
+          width: 70,
           hasDropdown: true,
           onClick: showCopyDropdown,
           dropdownItems: [
@@ -180,7 +180,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           text: "格式化",
           tooltip: "格式化JSON内容",
           priority: 30,
-          width: 110,
+          width: 85,
           hasDropdown: true,
           onClick: showFormatDropdown,
           dropdownItems: [
@@ -220,7 +220,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           tooltip: "对JSON字段进行排序",
           hasDropdown: true,
           priority: 40,
-          width: 120,
+          width: 90,
           onClick: showSortDropdown,
           dropdownItems: [
             {
@@ -267,7 +267,7 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           text: "清空",
           tooltip: "清空编辑器内容",
           priority: 50,
-          width: 90,
+          width: 70,
           hasDropdown: true,
           onClick: showClearDropdown,
           dropdownItems: [
@@ -364,20 +364,20 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
   return (
     <div
       ref={containerRef}
-      className="h-10 flex items-center gap-2 px-2 bg-gradient-to-r from-default-50 to-default-100 border-b border-default-200 shadow-sm"
+      className="h-8 flex items-center gap-1 px-1.5 bg-gradient-to-r from-default-50 to-default-100 border-b border-default-200 shadow-sm"
     >
       {/* 主要按钮组 */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         {actionGroups[0].buttons.map(renderButton)}
       </div>
 
       {/* 分隔线 - 只在有主要按钮可见时显示 */}
       {actionGroups[0].buttons.some((button) =>
         visibleButtons.includes(button.key),
-      ) && <div className="h-6 w-px bg-default-200" />}
+      ) && <div className="h-5 w-px bg-default-200 mx-0.5" />}
 
       {/* 编辑按钮组 */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         {actionGroups[1].buttons.map(renderButton)}
 
         {/* 更多菜单 */}

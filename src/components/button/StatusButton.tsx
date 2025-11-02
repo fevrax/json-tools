@@ -28,7 +28,7 @@ const StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>(
       successText,
       status,
       icon,
-      iconSize = 20,
+      iconSize = 16,
       onClick,
       endContent,
       className,
@@ -51,7 +51,7 @@ const StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>(
     return (
       <Button
         className={cn(
-          "px-1 gap-2 text-default-600 h-8",
+          "min-w-0 px-1.5 gap-1 text-default-600 h-7 text-xs",
           {
             "text-green-500": status === IconStatus.Success,
             "text-red-500": status === IconStatus.Error,

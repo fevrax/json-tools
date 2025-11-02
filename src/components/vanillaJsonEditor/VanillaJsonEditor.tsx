@@ -62,7 +62,7 @@ const VanillaJsonEditor: React.FC<VanillaJsonEditorProps> = ({
       // let jsonText = ''
       // if (content.json !== undefined) {
       //   console.log('当前 tree 模式更新数据', 'content.json', content.json)
-      //   jsonText = JSON.stringify(content.json, null, 2)
+      //   jsonText = stringifyJson(content.json, null, 2)
       // } else if (content.text !== undefined) {
       //   console.log('当前 text 模式更新数据', 'content.text', content.text)
       //   jsonText = content.text
