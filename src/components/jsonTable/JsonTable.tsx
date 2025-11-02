@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Icon } from "@iconify/react";
+import { isLosslessNumber } from "lossless-json";
 
 import JsonPathBar from "@/components/jsonTable/JsonPathBar.tsx";
 
@@ -184,14 +185,18 @@ const JsonTable: React.FC<JsonTableProps> = ({
 
   // 判断值是否为可展开的对象或数组
   const isExpandable = (value: any): boolean => {
-    return typeof value === "object" && value !== null;
+    return (
+      typeof value === "object" && value !== null && !isLosslessNumber(value)
+    );
   };
-
-  // 判断是否是对象数组
+  // 判断是否是对象数组 兼容 LosslessNumber
   const isObjectArray = (data: any[]): boolean => {
     return (
       data.length > 0 &&
-      data.every((item) => typeof item === "object" && item !== null)
+      data.every(
+        (item) =>
+          typeof item === "object" && item !== null && !isLosslessNumber(item),
+      )
     );
   };
 
@@ -206,6 +211,22 @@ const JsonTable: React.FC<JsonTableProps> = ({
     });
 
     return Array.from(keysSet);
+  };
+
+  // 根据数据类型渲染相应的嵌套表格
+  const renderNestedContent = (value: any, valuePath: string) => {
+    // 如果不是数组，直接渲染对象表格
+    if (!Array.isArray(value)) {
+      return renderObjectTable(value, valuePath);
+    }
+
+    // 如果是对象数组，渲染对象数组表格
+    if (isObjectArray(value)) {
+      return renderObjectsArrayTable(value, valuePath, true);
+    }
+
+    // 否则渲染普通数组表格
+    return renderArrayTable(value, valuePath, true);
   };
 
   // 渲染单元格内容
@@ -268,7 +289,9 @@ const JsonTable: React.FC<JsonTableProps> = ({
           }
         }}
       >
-        {typeof value === "string" ? (
+        {isLosslessNumber(value) ? (
+          <span className="text-blue-600">{value.toString()}</span>
+        ) : typeof value === "string" ? (
           <span
             className="text-green-600"
             style={
@@ -284,8 +307,8 @@ const JsonTable: React.FC<JsonTableProps> = ({
           >
             {value}
           </span>
-        ) : typeof value === "number" ? (
-          <span className="text-blue-600">{value}</span>
+        ) : typeof value === "number" || isLosslessNumber(value) ? (
+          <span className="text-blue-600">{String(value)}</span>
         ) : typeof value === "boolean" ? (
           <span className="text-purple-600">{String(value)}</span>
         ) : (
@@ -337,7 +360,6 @@ const JsonTable: React.FC<JsonTableProps> = ({
               if ((hideEmpty && value === "") || (hideNull && value === null)) {
                 return null;
               }
-
               const valuePath = path ? `${path}.${key}` : key;
               const isSelected = isPathSelected(valuePath);
               const isExpanded =
@@ -370,11 +392,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
                         }}
                       >
                         {shouldRenderContent &&
-                          (Array.isArray(value)
-                            ? isObjectArray(value)
-                              ? renderObjectsArrayTable(value, valuePath, true)
-                              : renderArrayTable(value, valuePath, true)
-                            : renderObjectTable(value, valuePath))}
+                          renderNestedContent(value, valuePath)}
                       </div>
                     )}
                   </td>
@@ -435,11 +453,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
                         }}
                       >
                         {shouldRenderContent &&
-                          (Array.isArray(item)
-                            ? isObjectArray(item)
-                              ? renderObjectsArrayTable(item, itemPath, true)
-                              : renderArrayTable(item, itemPath, true)
-                            : renderObjectTable(item, itemPath))}
+                          renderNestedContent(item, itemPath)}
                       </div>
                     )}
                   </td>
@@ -554,15 +568,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
                             }}
                           >
                             {shouldRenderContent &&
-                              (Array.isArray(value)
-                                ? isObjectArray(value)
-                                  ? renderObjectsArrayTable(
-                                      value,
-                                      cellPath,
-                                      true,
-                                    )
-                                  : renderArrayTable(value, cellPath, true)
-                                : renderObjectTable(value, cellPath))}
+                              renderNestedContent(value, cellPath)}
                           </div>
                         )}
                       </td>
