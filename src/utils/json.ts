@@ -5,6 +5,8 @@ import JSON5 from "json5";
 import {
   parse as losslessParse,
   stringify as losslessStringify,
+  isLosslessNumber,
+  compareLosslessNumber,
 } from "lossless-json";
 
 const rxEscapable =
@@ -20,8 +22,6 @@ const meta: { [key: string]: string } = {
   '"': '\\"',
   "\\": "\\\\",
 };
-
-
 
 /**
  * 使用 lossless-json 解析 JSON 字符串，保留长整数精度
@@ -270,10 +270,21 @@ export function sortJson(data: any, order: "asc" | "desc" = "asc"): string {
         if (typeof a === "number" && typeof b === "number") {
           return order === "asc" ? a - b : b - a;
         }
+        // LosslessNumber 排序
+        if (isLosslessNumber(a) && isLosslessNumber(b)) {
+          return order === "asc"
+            ? compareLosslessNumber(a, b)
+            : -compareLosslessNumber(a, b);
+        }
 
         return 0;
       });
     } else if (typeof value === "object" && value !== null) {
+      if (isLosslessNumber(value)) {
+        // 不需要处理
+        return value;
+      }
+
       return sortObject(value);
     }
 
