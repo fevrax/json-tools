@@ -95,7 +95,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     url: string;
   } | null>(null);
 
-  // 精确计算标签页滚动位置
+  // 精确计算标签页滚动位置 - 使用优化后的平滑滚动
   const scrollToActiveTab = () => {
     if (tabListRef.current && tabContainerRef.current) {
       const activeTabElement = tabListRef.current.querySelector(
@@ -128,22 +128,181 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
 
         scrollPosition = Math.min(scrollPosition, maxScrollPosition);
 
-        tabContainerRef.current.scrollTo({
-          left: scrollPosition,
-          behavior: "smooth",
-        });
+        // 使用优化的平滑滚动替代原生 scrollTo
+        smoothScroll(scrollPosition, 350);
       }
     }
   };
 
+  // 滚动相关状态和引用
+  const rafIdRef = useRef<number | null>(null);
+
+  // 获取滚动边界
+  const getScrollBounds = () => {
+    if (!tabContainerRef.current) return { min: 0, max: 0 };
+    const container = tabContainerRef.current;
+
+    return {
+      min: 0,
+      max: Math.max(0, container.scrollWidth - container.clientWidth),
+    };
+  };
+
+  // 直接设置滚动位置，无动画
+  const setScrollPosition = (scrollLeft: number) => {
+    if (!tabContainerRef.current) return;
+    const bounds = getScrollBounds();
+    const clampedScrollLeft = Math.max(
+      bounds.min,
+      Math.min(bounds.max, scrollLeft),
+    );
+
+    tabContainerRef.current.scrollLeft = clampedScrollLeft;
+
+    return clampedScrollLeft;
+  };
+
+  // 优化的平滑滚动函数 - 防止边界回弹
+  const smoothScroll = (targetScrollLeft: number, duration: number = 200) => {
+    if (!tabContainerRef.current) return;
+
+    // 取消所有进行中的动画
+    if (rafIdRef.current) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
+    }
+
+    // 确保目标位置在边界内
+    const bounds = getScrollBounds();
+
+    targetScrollLeft = Math.max(
+      bounds.min,
+      Math.min(bounds.max, targetScrollLeft),
+    );
+
+    const startScrollLeft = tabContainerRef.current.scrollLeft;
+    const distance = targetScrollLeft - startScrollLeft;
+
+    // 如果距离很小，直接设置位置
+    if (Math.abs(distance) < 1) {
+      setScrollPosition(targetScrollLeft);
+
+      return;
+    }
+
+    const startTime = performance.now();
+
+    const animateScroll = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // 使用更温和的缓动函数，减少回弹感
+      const easeOutQuad = 1 - Math.pow(1 - progress, 2);
+      const currentScrollLeft = startScrollLeft + distance * easeOutQuad;
+
+      // 设置滚动位置，但始终保持在边界内
+      const finalScrollLeft = setScrollPosition(currentScrollLeft);
+
+      // 检查是否已经到达边界，如果是则提前停止动画
+      if (
+        finalScrollLeft !== undefined &&
+        ((finalScrollLeft <= bounds.min && distance < 0) ||
+          (finalScrollLeft >= bounds.max && distance > 0))
+      ) {
+        rafIdRef.current = null;
+        setScrollPosition(finalScrollLeft);
+
+        return;
+      }
+
+      if (progress < 1) {
+        rafIdRef.current = requestAnimationFrame(animateScroll);
+      } else {
+        rafIdRef.current = null;
+        // 确保最终位置精确且在边界内
+        setScrollPosition(targetScrollLeft);
+      }
+    };
+
+    rafIdRef.current = requestAnimationFrame(animateScroll);
+  };
+
   // 处理鼠标滚轮滚动
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
-    if (tabContainerRef.current) {
-      e.preventDefault();
-      // 使用更平滑的滚动方式，可以调整滚动速度
-      const scrollAmount = e.deltaY > 0 ? 100 : -100;
+    if (!tabContainerRef.current) return;
 
-      tabContainerRef.current.scrollLeft += scrollAmount;
+    const currentScrollLeft = tabContainerRef.current.scrollLeft;
+    const bounds = getScrollBounds();
+
+    // 检测滚动方向
+    const scrollDelta = e.deltaY;
+    const scrollingLeft = scrollDelta < 0;
+    const scrollingRight = scrollDelta > 0;
+
+    // 边界检测：如果已经在边界，且试图继续向边界方向滚动，允许默认行为
+    if (
+      (currentScrollLeft <= bounds.min && scrollingLeft) ||
+      (currentScrollLeft >= bounds.max && scrollingRight)
+    ) {
+      return;
+    }
+
+    // 如果内容不需要滚动，允许默认行为
+    if (bounds.max <= bounds.min) {
+      return;
+    }
+
+    // 只在需要自定义滚动行为时才阻止默认行为
+    e.preventDefault();
+    e.stopPropagation();
+
+    // 检测是否为触控板滚动（增量较小且连续）
+    const isTouchpad = Math.abs(scrollDelta) < 8 && e.deltaMode === 0;
+
+    if (isTouchpad) {
+      // 触控板滚动：累积小增量，但要注意边界
+      const accumulatedDelta = scrollDelta * 0.4;
+      let targetScrollLeft = currentScrollLeft + accumulatedDelta;
+
+      // 在计算目标位置后立即进行边界检查
+      targetScrollLeft = Math.max(
+        bounds.min,
+        Math.min(bounds.max, targetScrollLeft),
+      );
+
+      // 只有当目标位置与当前位置不同时才滚动
+      if (Math.abs(targetScrollLeft - currentScrollLeft) > 0.5) {
+        smoothScroll(targetScrollLeft, 80);
+      }
+    } else {
+      // 鼠标滚轮滚动
+
+      // 根据滚动速度调整乘数
+      const speedMultiplier = Math.abs(scrollDelta) > 80 ? 1.0 : 0.6;
+      let scrollAmount = scrollDelta * speedMultiplier;
+
+      // 限制最大滚动量
+      const maxScrollAmount = 80;
+
+      scrollAmount = Math.max(
+        -maxScrollAmount,
+        Math.min(maxScrollAmount, scrollAmount),
+      );
+
+      let targetScrollLeft = currentScrollLeft + scrollAmount;
+
+      // 立即进行边界检查，防止超出
+      targetScrollLeft = Math.max(
+        bounds.min,
+        Math.min(bounds.max, targetScrollLeft),
+      );
+
+      // 只有当需要移动时才执行动画
+      if (Math.abs(targetScrollLeft - currentScrollLeft) > 0.5) {
+        const duration = Math.abs(scrollAmount) < 20 ? 100 : 150;
+
+        smoothScroll(targetScrollLeft, duration);
+      }
     }
   };
 
@@ -634,6 +793,52 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     );
   };
 
+  // 键盘水平滚动支持
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!tabContainerRef.current) return;
+
+      // 只在没有聚焦输入框时响应键盘滚动
+      const activeElement = document.activeElement;
+
+      if (
+        activeElement &&
+        (activeElement.tagName === "INPUT" ||
+          activeElement.tagName === "TEXTAREA" ||
+          (activeElement as HTMLElement).contentEditable === "true")
+      ) {
+        return;
+      }
+
+      let scrollAmount = 0;
+
+      switch (e.key) {
+        case "ArrowLeft":
+          scrollAmount = -150;
+          break;
+        case "ArrowRight":
+          scrollAmount = 150;
+          break;
+        default:
+          return;
+      }
+
+      if (scrollAmount !== 0 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        const currentScrollLeft = tabContainerRef.current.scrollLeft;
+        const targetScrollLeft = currentScrollLeft + scrollAmount;
+
+        smoothScroll(targetScrollLeft, 200);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   // 添加外部点击关闭菜单的处理
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -661,11 +866,16 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     };
   }, [contextMenuPosition, showAddMenu]);
 
-  // 清理定时器
+  // 清理定时器和动画
   useEffect(() => {
     return () => {
+      // 清理点击定时器
       if (clickTimeoutRef.current) {
         clearTimeout(clickTimeoutRef.current);
+      }
+      // 清理滚动动画
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
       }
     };
   }, []);
@@ -1136,7 +1346,15 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
 
         <div
           ref={tabContainerRef}
-          className="flex-grow h-10 overflow-x-auto scroll-smooth scrollbar-hide"
+          className="flex-grow h-10 overflow-x-auto scrollbar-hide"
+          style={{
+            scrollBehavior: "auto",
+            willChange: "scroll-position",
+            WebkitOverflowScrolling: "touch",
+            transform: "translateZ(0)", // 启用硬件加速
+            overflowX: "auto", // 确保水平滚动
+            overflowY: "hidden", // 禁用垂直滚动
+          }}
           onWheel={handleWheel}
         >
           <Tabs

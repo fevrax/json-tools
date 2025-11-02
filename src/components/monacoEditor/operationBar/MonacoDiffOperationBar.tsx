@@ -137,7 +137,6 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           className:
             "text-xs text-default-600 px-2 rounded-xl bg-indigo-50/50 dark:bg-indigo-50/10 hover:bg-indigo-100/70",
           priority: 10,
-          width: 85,
         },
       ],
     },
@@ -150,7 +149,6 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           text: "复制",
           tooltip: "复制内容到剪贴板",
           priority: 20,
-          width: 70,
           hasDropdown: true,
           onClick: showCopyDropdown,
           dropdownItems: [
@@ -180,7 +178,6 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           text: "格式化",
           tooltip: "格式化JSON内容",
           priority: 30,
-          width: 85,
           hasDropdown: true,
           onClick: showFormatDropdown,
           dropdownItems: [
@@ -220,7 +217,6 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           tooltip: "对JSON字段进行排序",
           hasDropdown: true,
           priority: 40,
-          width: 90,
           onClick: showSortDropdown,
           dropdownItems: [
             {
@@ -267,7 +263,6 @@ const MonacoDiffOperationBar: React.FC<MonacoDiffOperationBarProps> = ({
           text: "清空",
           tooltip: "清空编辑器内容",
           priority: 50,
-          width: 70,
           hasDropdown: true,
           onClick: showClearDropdown,
           dropdownItems: [
