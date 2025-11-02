@@ -1,3 +1,10 @@
+# [1.13.0](https://github.com/fevrax/json-tools/compare/v1.12.0...v1.13.0) (2025-11-01)
+
+
+### Features
+
+* auto format ([59d28bd](https://github.com/fevrax/json-tools/commit/59d28bd3000c6f4b1a0c97579b5eee900e8aca71))
+
 # [1.12.0](https://github.com/fevrax/json-tools/compare/v1.11.0...v1.12.0) (2025-09-21)
 
 
