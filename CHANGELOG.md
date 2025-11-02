@@ -1,3 +1,11 @@
+## [1.15.1](https://github.com/fevrax/json-tools/compare/v1.15.0...v1.15.1) (2025-11-02)
+
+
+### Bug Fixes
+
+* json table bigint ([4e7bc18](https://github.com/fevrax/json-tools/commit/4e7bc189aee9dfcfccefe1ccf9eb9f3a1fa8160f))
+* json table height ([d417787](https://github.com/fevrax/json-tools/commit/d4177877c13e1f74c852b22968ed048fe9eb66d0))
+
 # [1.15.0](https://github.com/fevrax/json-tools/compare/v1.14.0...v1.15.0) (2025-11-02)
 
 
