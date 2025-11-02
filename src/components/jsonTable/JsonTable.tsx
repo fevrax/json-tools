@@ -12,7 +12,7 @@ const animationStyles = {
     opacity: 0,
   },
   expanded: {
-    maxHeight: "1000px", // 足够大的值以容纳大多数内容
+    maxHeight: "none", // 移除高度限制，让内容完全展开
     opacity: 1,
   },
 };
@@ -617,7 +617,7 @@ const JsonTable: React.FC<JsonTableProps> = ({
         onCollapse={onCollapseAll}
         onExpand={onExpandAll}
       />
-      <div className="flex-grow overflow-auto p-2">{renderRootTable()}</div>
+      <div className="flex-auto overflow-auto p-2">{renderRootTable()}</div>
     </div>
   );
 };
