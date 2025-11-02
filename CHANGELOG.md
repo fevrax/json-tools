@@ -1,3 +1,17 @@
+# [1.15.0](https://github.com/fevrax/json-tools/compare/v1.14.0...v1.15.0) (2025-11-02)
+
+
+### Bug Fixes
+
+* operation button UI optimization ([6a18687](https://github.com/fevrax/json-tools/commit/6a18687101cebfd94afd189c8b1428fb6ef88348))
+* sort the json ([c896cef](https://github.com/fevrax/json-tools/commit/c896cef130bf30e3463e88d825ae35851e5dace7))
+* tab scroll ([b13cbea](https://github.com/fevrax/json-tools/commit/b13cbeaaa59a854d93ad05522db9c1a600acdbf1))
+
+
+### Features
+
+* operation button ([4b21eca](https://github.com/fevrax/json-tools/commit/4b21ecad36aff9b7a35b8e0961a32e8a7122a776))
+
 # [1.14.0](https://github.com/fevrax/json-tools/compare/v1.13.0...v1.14.0) (2025-11-02)
 
 
