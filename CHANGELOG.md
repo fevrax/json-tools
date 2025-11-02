@@ -1,3 +1,16 @@
+# [1.14.0](https://github.com/fevrax/json-tools/compare/v1.13.0...v1.14.0) (2025-11-02)
+
+
+### Bug Fixes
+
+* improve decoration performance ([2e4a572](https://github.com/fevrax/json-tools/commit/2e4a57241f7dceeb60bd20e1d6458d3ccfb5e5f2))
+* improve utools performance ([055abd8](https://github.com/fevrax/json-tools/commit/055abd82d98f6bd8583228f463b2169b3e43d492))
+
+
+### Features
+
+* json parse big integer ([eca7ba6](https://github.com/fevrax/json-tools/commit/eca7ba60f8e0a2bb3f4fb431cdc4cbbe96d90ad8))
+
 # [1.13.0](https://github.com/fevrax/json-tools/compare/v1.12.0...v1.13.0) (2025-11-01)
 
 
