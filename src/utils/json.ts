@@ -83,7 +83,8 @@ export interface JsonErrorInfo {
 // 解析JSON字符串并返回错误信息
 export function jsonParseError(jsonString: string): JsonErrorInfo | undefined {
   try {
-    parseJson(jsonString);
+    // 使用原生的 JSON.parse 进行解析，以便捕获错误信息
+    JSON.parse(jsonString);
 
     return undefined;
   } catch (error: unknown) {

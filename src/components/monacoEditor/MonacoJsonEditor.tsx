@@ -63,6 +63,14 @@ import {
   setUrlDecorationEnabled,
   setUrlProviderEnabled,
 } from "@/components/monacoEditor/decorations/urlDecoration.ts";
+import {
+  ImageDecoratorState,
+  updateImageDecorations,
+  handleImageContentChange,
+  setImageDecorationEnabled,
+  clearImageCache,
+  toggleImageDecorators,
+} from "@/components/monacoEditor/decorations/imageDecoration.ts";
 import { DecorationManager } from "@/components/monacoEditor/decorations/decorationManager.ts";
 
 import "@/styles/monaco.css";
@@ -114,6 +122,7 @@ export interface MonacoJsonEditorRef {
   toggleBase64Decorators: (enabled?: boolean) => boolean; // 切换Base64装饰器
   toggleUnicodeDecorators: (enabled?: boolean) => boolean; // 切换Unicode装饰器
   toggleUrlDecorators: (enabled?: boolean) => boolean; // 切换URL装饰器
+  toggleImageDecorators: (enabled?: boolean) => boolean; // 切换图片装饰器
 }
 
 const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
@@ -206,6 +215,12 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const urlUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const urlDecorationManagerRef = useRef<DecorationManager | null>(null);
 
+  // 图片装饰器相关引用
+  const imageUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const imageDecorationManagerRef = useRef<DecorationManager | null>(null);
+  const imageCacheRef = useRef<Record<string, boolean>>({});
+  const [imageDecoratorsEnabled, setImageDecoratorsEnabled] = useState(true); // 默认开启图片装饰器
+
   // 跟踪是否为首次粘贴状态（用于首次粘贴时自动格式化）
   const [isFirstPaste, setIsFirstPaste] = useState(true);
 
@@ -245,6 +260,17 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     updateTimeoutRef: urlUpdateTimeoutRef,
     decorationManagerRef: urlDecorationManagerRef,
     enabled: urlDecoratorsEnabled,
+  };
+
+  // 图片装饰器状态
+  const imageDecoratorState: ImageDecoratorState = {
+    editorRef: editorRef,
+    hoverProviderId: { current: null },
+    updateTimeoutRef: imageUpdateTimeoutRef,
+    decorationManagerRef: imageDecorationManagerRef,
+    cacheRef: imageCacheRef,
+    enabled: imageDecoratorsEnabled,
+    theme: theme == "vs-dark" ? "dark" : "light",
   };
 
   // 错误高亮装饰器状态
@@ -287,6 +313,11 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     onOpen: openJsonErrorDetailsModel,
     onClose: closeJsonErrorDetailsModel,
   } = useDisclosure();
+
+  // 当前编辑器内容状态（用于避免在渲染时访问ref）
+  const [currentEditorValue, setCurrentEditorValue] = useState<string>("");
+  // 编辑器是否准备就绪
+  const [isEditorReady, setIsEditorReady] = useState<boolean>(false);
 
   // 使用自定义快捷指令或默认快捷指令
   const finalQuickPrompts = customQuickPrompts || jsonQuickPrompts;
@@ -542,6 +573,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
   }, [theme]);
 
+  // 监听主题变化并更新图片装饰器
+  useEffect(() => {
+    if (editorRef.current && imageDecoratorsEnabled) {
+      updateImageDecorations(editorRef.current, imageDecoratorState);
+    }
+  }, [theme, imageDecoratorsEnabled]);
+
   // 字体大小和缩进大小变更监听
   useEffect(() => {
     if (editorRef.current) {
@@ -651,22 +689,65 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
   };
 
+  // 获取编辑器行数
+  const getEditorLineCount = (): number => {
+    if (!editorRef.current) {
+      return 0;
+    }
+
+    return editorRef.current.getModel()?.getLineCount() || 0;
+  };
+
+  // 清空所有装饰器
+  const clearAllDecorators = () => {
+    if (!editorRef.current) {
+      return;
+    }
+
+    // 清空时间戳装饰器
+    if (timestampDecorationsRef.current) {
+      timestampDecorationsRef.current.clear();
+    }
+
+    // 清空Base64装饰器
+    if (base64DecorationManagerRef.current) {
+      base64DecorationManagerRef.current.clearAllDecorations(editorRef.current);
+    }
+
+    // 清空Unicode装饰器
+    if (unicodeDecorationManagerRef.current) {
+      unicodeDecorationManagerRef.current.clearAllDecorations(
+        editorRef.current,
+      );
+    }
+
+    // 清空URL装饰器
+    if (urlDecorationManagerRef.current) {
+      urlDecorationManagerRef.current.clearAllDecorations(editorRef.current);
+    }
+  };
+
   // 监听时间戳装饰器状态变化
   useEffect(() => {
     // 更新状态对象中的启用状态
     timestampDecoratorState.enabled = timestampDecoratorsEnabled;
 
     if (timestampDecoratorsEnabled) {
-      // 清空缓存并更新装饰器
-      clearTimestampCache(timestampDecoratorState);
-      setTimeout(() => {
-        if (editorRef.current) {
-          updateTimestampDecorations(
-            editorRef.current,
-            timestampDecoratorState,
-          );
-        }
-      }, 0);
+      // 检查行数，小于3行时不启用装饰器
+      const lineCount = getEditorLineCount();
+
+      if (lineCount >= 3) {
+        // 清空缓存并更新装饰器
+        clearTimestampCache(timestampDecoratorState);
+        setTimeout(() => {
+          if (editorRef.current) {
+            updateTimestampDecorations(
+              editorRef.current,
+              timestampDecoratorState,
+            );
+          }
+        }, 0);
+      }
     } else {
       // 禁用时清理缓存和装饰器
       if (timestampDecorationsRef.current) {
@@ -686,12 +767,17 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     setBase64DecorationEnabled(base64DecoratorsEnabled);
 
     if (base64DecoratorsEnabled) {
-      // 更新装饰器
-      setTimeout(() => {
-        if (editorRef.current) {
-          updateBase64Decorations(editorRef.current, base64DecoratorState);
-        }
-      }, 0);
+      // 检查行数，小于3行时不启用装饰器
+      const lineCount = getEditorLineCount();
+
+      if (lineCount >= 3) {
+        // 更新装饰器
+        setTimeout(() => {
+          if (editorRef.current) {
+            updateBase64Decorations(editorRef.current, base64DecoratorState);
+          }
+        }, 0);
+      }
     } else {
       // 禁用时清理装饰器
       if (base64DecorationManagerRef.current) {
@@ -712,12 +798,17 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     setUnicodeDecorationEnabled(unicodeDecoratorsEnabled);
 
     if (unicodeDecoratorsEnabled) {
-      // 清空缓存并更新装饰器
-      setTimeout(() => {
-        if (editorRef.current) {
-          updateUnicodeDecorations(editorRef.current, unicodeDecoratorState);
-        }
-      }, 0);
+      // 检查行数，小于3行时不启用装饰器
+      const lineCount = getEditorLineCount();
+
+      if (lineCount >= 3) {
+        // 清空缓存并更新装饰器
+        setTimeout(() => {
+          if (editorRef.current) {
+            updateUnicodeDecorations(editorRef.current, unicodeDecoratorState);
+          }
+        }, 0);
+      }
     } else {
       // 禁用时清理装饰器
       if (unicodeDecorationManagerRef.current) {
@@ -738,12 +829,17 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     setUrlDecorationEnabled(urlDecoratorsEnabled);
 
     if (urlDecoratorsEnabled) {
-      // 更新装饰器
-      setTimeout(() => {
-        if (editorRef.current) {
-          updateUrlDecorations(editorRef.current, urlDecoratorState);
-        }
-      }, 0);
+      // 检查行数，小于3行时不启用装饰器
+      const lineCount = getEditorLineCount();
+
+      if (lineCount >= 3) {
+        // 更新装饰器
+        setTimeout(() => {
+          if (editorRef.current) {
+            updateUrlDecorations(editorRef.current, urlDecoratorState);
+          }
+        }, 0);
+      }
     } else {
       // 禁用时清理装饰器
       if (urlDecorationManagerRef.current) {
@@ -751,6 +847,18 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       }
     }
   }, [urlDecoratorsEnabled]);
+
+  // 监听图片装饰器启用状态变化
+  useEffect(() => {
+    // 使用toggle函数管理装饰器状态
+    if (editorRef.current) {
+      toggleImageDecorators(
+        editorRef.current,
+        imageDecoratorState,
+        imageDecoratorsEnabled,
+      );
+    }
+  }, [imageDecoratorsEnabled]);
 
   // 监听过滤结果变化，更新过滤编辑器内容
   useEffect(() => {
@@ -851,6 +959,15 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       return false;
     }
 
+    // 检查行数，少于3行时不格式化
+    const lineCount = getEditorLineCount();
+
+    if (lineCount < 3) {
+      toast.default("内容少于3行，跳过格式化");
+
+      return false;
+    }
+
     // 如果是 JSON5 格式，使用 JSON5 格式化
     if (language === "json5") {
       try {
@@ -926,8 +1043,12 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   };
 
   // 复制到剪贴板
-  const copyText = (text: string) => {
-    navigator.clipboard.writeText(text);
+  const copyText = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (err) {
+      console.error("复制失败:", err);
+    }
   };
 
   // 解码 JSON 处理转义
@@ -936,7 +1057,10 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     if (jsonText === "") {
       return "暂无数据";
     }
-    const jsonStr = `"${jsonText}"`;
+    jsonText = jsonText.trim();
+    // 检查 jsonText 是否已经被双引号包裹
+    const isQuoted = jsonText.startsWith('"') && jsonText.endsWith('"');
+    const jsonStr = isQuoted ? jsonText : `"${jsonText}"`;
 
     try {
       // 第一次将解析结果为去除转移后字符串
@@ -948,6 +1072,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       if (!isArrayOrObject(unescapedJsonObject)) {
         return "不是有效的 JSON 数据，无法进行解码操作";
       }
+
       setEditorValue(stringifyJson(unescapedJsonObject, indentSize));
     } catch (error) {
       console.error("formatModelByUnEscapeJson", error);
@@ -1337,6 +1462,15 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
       return true;
     },
+    toggleImageDecorators: (enabled?: boolean) => {
+      const newState =
+        enabled !== undefined ? enabled : !imageDecoratorsEnabled;
+
+      // 更新本地状态
+      setImageDecoratorsEnabled(newState);
+
+      return true;
+    },
   }));
 
   // 修改初始化编辑器的函数并调用
@@ -1363,7 +1497,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           readOnly: false, // 是否开启已读功能
           theme: theme || "vs-light", // 主题
           mouseWheelZoom: true, // 启用鼠标滚轮缩放
-          formatOnPaste: true, // 粘贴时自动格式化
+          formatOnPaste: false, // 粘贴时不自动格式化，使用自定义逻辑
           formatOnType: false, // 输入时自动格式化
           wordBasedSuggestions: "allDocuments", // 启用基于单词的建议
           wordBasedSuggestionsOnlySameLanguage: true, // 仅在相同语言下启用基于单词的建议
@@ -1379,7 +1513,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           cursorStyle: "line", //  光标样式
           cursorSurroundingLines: 0, // 光标环绕行数 当文字输入超过屏幕时 可以看见右侧滚动条中光标所处位置是在滚动条中间还是顶部还是底部 即光标环绕行数 环绕行数越大 光标在滚动条中位置越居中
           cursorSurroundingLinesStyle: "all", // "default" | "all" 光标环绕样式
-          links: true, // 是否点击链接
+          links: false, // 是否点击链接
           folding: true, // 启用代码折叠功能
           tabSize: indentSize, // 设置制表符大小为当前缩进大小
         });
@@ -1446,6 +1580,16 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               updateUrlDecorations(editorRef.current, urlDecoratorState);
             }
           }, 200);
+
+          if (imageUpdateTimeoutRef.current) {
+            clearTimeout(imageUpdateTimeoutRef.current);
+          }
+
+          imageUpdateTimeoutRef.current = setTimeout(() => {
+            if (editorRef.current) {
+              updateImageDecorations(editorRef.current, imageDecoratorState);
+            }
+          }, 300);
         });
 
         // 监听内容变化
@@ -1460,29 +1604,43 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
             // 自动验证 JSON 内容
             parseJsonErrorTimeoutRef.current = setTimeout(() => {
               editorValueValidate(val);
-            }, 1000);
+            }, 500);
 
-            // 更新时间戳装饰器
-            if (timestampDecoratorsEnabled) {
-              handleTimestampContentChange(e, timestampDecoratorState);
-            }
+            // 根据行数控制装饰器
+            const lineCount = getEditorLineCount();
 
-            // 更新 Base64 下划线装饰器
-            if (base64DecoratorsEnabled) {
-              handleBase64ContentChange(e, base64DecoratorState);
-            }
+            if (lineCount < 3) {
+              // 小于3行时，清空所有装饰器
+              clearAllDecorators();
+            } else {
+              // 更新时间戳装饰器
+              if (timestampDecoratorsEnabled) {
+                handleTimestampContentChange(e, timestampDecoratorState);
+              }
 
-            // 更新 Unicode 下划线装饰器
-            if (unicodeDecoratorsEnabled) {
-              handleUnicodeContentChange(e, unicodeDecoratorState);
-            }
+              // 更新 Base64 下划线装饰器
+              if (base64DecoratorsEnabled) {
+                handleBase64ContentChange(e, base64DecoratorState);
+              }
 
-            // 更新 URL 下划线装饰器
-            if (urlDecoratorsEnabled) {
-              handleUrlContentChange(e, urlDecoratorState);
+              // 更新 Unicode 下划线装饰器
+              if (unicodeDecoratorsEnabled) {
+                handleUnicodeContentChange(e, unicodeDecoratorState);
+              }
+
+              // 更新 URL 下划线装饰器
+              if (urlDecoratorsEnabled) {
+                handleUrlContentChange(e, urlDecoratorState);
+              }
+
+              // 更新图片装饰器
+              if (imageDecoratorsEnabled) {
+                handleImageContentChange(e, imageDecoratorState);
+              }
             }
           }
           onUpdateValue(val);
+          setCurrentEditorValue(val);
         });
 
         // 添加粘贴事件监听：首次粘贴时自动格式化
@@ -1500,8 +1658,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
                   const isValid = editorValueValidate(val);
 
                   if (isValid) {
-                    // 验证成功后进行格式化
-                    editorFormat();
+                    // 检查行数，少于3行时不格式化
+                    const lineCount =
+                      editorRef.current.getModel()?.getLineCount() || 0;
+
+                    if (lineCount >= 3) {
+                      // 验证成功后进行格式化
+                      editorFormat();
+                    }
                     // 设置为非首次粘贴状态，避免重复格式化
                     setIsFirstPaste(false);
                   }
@@ -1512,43 +1676,59 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         });
 
         editorRef.current = editor;
+        setIsEditorReady(true);
 
         // 初始化装饰器
         setTimeout(() => {
           if (editorRef.current) {
-            // 初始化时间戳装饰器
-            if (timestampDecoratorsEnabled) {
-              updateTimestampDecorations(
-                editorRef.current,
-                timestampDecoratorState,
-              );
-            }
+            // 检查行数，小于3行时不启用装饰器
+            const lineCount = getEditorLineCount();
 
-            // 初始化Base64装饰器
-            if (base64DecoratorsEnabled) {
-              // 确保全局状态与本地状态同步
-              setBase64ProviderEnabled(base64DecoratorsEnabled);
-              setBase64DecorationEnabled(base64DecoratorsEnabled);
-              updateBase64Decorations(editorRef.current, base64DecoratorState);
-            }
+            if (lineCount >= 3) {
+              // 初始化时间戳装饰器
+              if (timestampDecoratorsEnabled) {
+                updateTimestampDecorations(
+                  editorRef.current,
+                  timestampDecoratorState,
+                );
+              }
 
-            // 初始化Unicode装饰器
-            if (unicodeDecoratorsEnabled) {
-              // 确保全局状态与本地状态同步
-              setUnicodeProviderEnabled(unicodeDecoratorsEnabled);
-              setUnicodeDecorationEnabled(unicodeDecoratorsEnabled);
-              updateUnicodeDecorations(
-                editorRef.current,
-                unicodeDecoratorState,
-              );
-            }
+              // 初始化Base64装饰器
+              if (base64DecoratorsEnabled) {
+                // 确保全局状态与本地状态同步
+                setBase64ProviderEnabled(base64DecoratorsEnabled);
+                setBase64DecorationEnabled(base64DecoratorsEnabled);
+                updateBase64Decorations(
+                  editorRef.current,
+                  base64DecoratorState,
+                );
+              }
 
-            // 初始化URL装饰器
-            if (urlDecoratorsEnabled) {
-              // 确保全局状态与本地状态同步
-              setUrlProviderEnabled(urlDecoratorsEnabled);
-              setUrlDecorationEnabled(urlDecoratorsEnabled);
-              updateUrlDecorations(editorRef.current, urlDecoratorState);
+              // 初始化Unicode装饰器
+              if (unicodeDecoratorsEnabled) {
+                // 确保全局状态与本地状态同步
+                setUnicodeProviderEnabled(unicodeDecoratorsEnabled);
+                setUnicodeDecorationEnabled(unicodeDecoratorsEnabled);
+                updateUnicodeDecorations(
+                  editorRef.current,
+                  unicodeDecoratorState,
+                );
+              }
+
+              // 初始化URL装饰器
+              if (urlDecoratorsEnabled) {
+                // 确保全局状态与本地状态同步
+                setUrlProviderEnabled(urlDecoratorsEnabled);
+                setUrlDecorationEnabled(urlDecoratorsEnabled);
+                updateUrlDecorations(editorRef.current, urlDecoratorState);
+              }
+
+              // 初始化图片装饰器
+              if (imageDecoratorsEnabled && lineCount >= 1) {
+                // 确保全局状态与本地状态同步
+                setImageDecorationEnabled(imageDecoratorsEnabled);
+                updateImageDecorations(editorRef.current, imageDecoratorState);
+              }
             }
           }
         }, 300);
@@ -1596,8 +1776,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     if (editorRef.current) {
       setBase64DecorationEnabled(base64DecoderEnabled);
       setBase64ProviderEnabled(base64DecoderEnabled);
-      // 更新装饰
-      updateBase64Decorations(editorRef.current, base64DecoratorState);
+      // 检查行数，小于3行时不更新装饰器
+      const lineCount = getEditorLineCount();
+
+      if (lineCount >= 3) {
+        // 更新装饰
+        updateBase64Decorations(editorRef.current, base64DecoratorState);
+      }
     }
   }, [base64DecoderEnabled]);
 
@@ -1608,8 +1793,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     if (editorRef.current) {
       setUnicodeDecorationEnabled(unicodeDecoderEnabled);
       setUnicodeProviderEnabled(unicodeDecoderEnabled);
-      // 更新装饰
-      updateUnicodeDecorations(editorRef.current, unicodeDecoratorState);
+      // 检查行数，小于3行时不更新装饰器
+      const lineCount = getEditorLineCount();
+
+      if (lineCount >= 3) {
+        // 更新装饰
+        updateUnicodeDecorations(editorRef.current, unicodeDecoratorState);
+      }
     }
   }, [unicodeDecoderEnabled]);
 
@@ -1620,10 +1810,25 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     if (editorRef.current) {
       setUrlDecorationEnabled(urlDecoderEnabled);
       setUrlProviderEnabled(urlDecoderEnabled);
-      // 更新装饰
-      updateUrlDecorations(editorRef.current, urlDecoratorState);
+      // 检查行数，小于3行时不更新装饰器
+      const lineCount = getEditorLineCount();
+
+      if (lineCount >= 3) {
+        // 更新装饰
+        updateUrlDecorations(editorRef.current, urlDecoratorState);
+      }
     }
   }, [urlDecoderEnabled]);
+
+  // 图片装饰器清理useEffect
+  useEffect(() => {
+    return () => {
+      // 组件卸载时清理图片装饰器缓存
+      if (imageDecorationManagerRef.current && editorRef.current) {
+        clearImageCache(imageDecoratorState);
+      }
+    };
+  }, [imageDecoratorState]);
 
   return (
     <div
@@ -1663,6 +1868,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               className="w-2 h-full cursor-ew-resize bg-gradient-to-b from-blue-50/80 via-indigo-50/80 to-blue-50/80 dark:from-neutral-900/80 dark:via-neutral-800/80 dark:to-neutral-900/80 dark:border-neutral-800 backdrop-blur-sm flex items-center justify-center"
               role="button"
               style={{ touchAction: "none" }}
+              tabIndex={-1}
               onMouseDown={handleDragStart}
             >
               <div className="h-24 w-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
@@ -1681,7 +1887,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
                 <PromptContainer
                   ref={promptContainerRef}
                   className="h-full"
-                  editorContent={editorRef.current?.getValue() || ""}
+                  editorContent={currentEditorValue}
                   initialMessages={aiMessages}
                   showAttachButtons={false}
                   useDirectApi={true}
@@ -1705,6 +1911,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               className="w-2 h-full cursor-ew-resize bg-gradient-to-b from-indigo-50/80 via-emerald-50/80 to-indigo-50/80 dark:from-neutral-900/80 dark:via-neutral-800/80 dark:to-neutral-900/80 dark:border-neutral-800 backdrop-blur-sm flex items-center justify-center"
               role="button"
               style={{ touchAction: "none" }}
+              tabIndex={-1}
               onMouseDown={handleFilterDragStart}
             >
               <div className="h-24 w-1 bg-indigo-400 dark:bg-indigo-600 rounded-full" />
@@ -1752,7 +1959,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
                 <div
                   ref={(el) => {
                     if (el && !filterEditorRef.current) {
-                      const editor = monaco.editor.create(el, {
+                      filterEditorRef.current = monaco.editor.create(el, {
                         value: filteredValue,
                         language: "json",
                         minimap: { enabled: false },
@@ -1763,8 +1970,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
                         wordWrap: "on",
                         automaticLayout: true,
                       });
-
-                      filterEditorRef.current = editor;
                     } else if (!el && filterEditorRef.current) {
                       filterEditorRef.current.dispose();
                       filterEditorRef.current = null;
@@ -1825,7 +2030,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       )}
 
       {/* 可拖动悬浮菜单 */}
-      {isMenu && editorRef.current && (
+      {isMenu && isEditorReady && (
         <DraggableMenu
           containerRef={rootContainerRef}
           currentFontSize={fontSize}
@@ -1854,13 +2059,12 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         className={cn(
           "flex justify-between items-center px-3 text-white text-base transition-all duration-300 z-50",
           {
-            "h-0 opacity-0 invisible": !parseJsonError,
-            [`h-[${errorBottomHeight}px] opacity-100 visible`]: parseJsonError,
+            "opacity-100 visible": parseJsonError,
+            "opacity-0 invisible h-0": !parseJsonError,
           },
         )}
         style={{
-          height:
-            parseJsonError && parseJsonError.line > 0 ? errorBottomHeight : 0,
+          height: parseJsonError ? errorBottomHeight : 0,
           backgroundColor: "#ED5241",
           overflow: "hidden",
           position: "sticky",

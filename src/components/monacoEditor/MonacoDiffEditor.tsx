@@ -14,7 +14,7 @@ import { AIResultHeader } from "./AIResultHeader";
 
 import toast from "@/utils/toast";
 import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEntity";
-import {sortJson, parseJson, stringifyJson} from "@/utils/json";
+import { sortJson, parseJson, stringifyJson } from "@/utils/json";
 import { useTabStore } from "@/store/useTabStore";
 import DraggableMenu from "@/components/monacoEditor/DraggableMenu.tsx";
 import AIPromptOverlay, { QuickPrompt } from "@/components/ai/AIPromptOverlay";
@@ -230,24 +230,34 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
 
   // Base64下划线装饰器相关引用 - 添加空的引用以兼容现有代码
   const originalBase64UpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const originalBase64DecorationManagerRef = useRef<DecorationManager | null>(null);
+  const originalBase64DecorationManagerRef = useRef<DecorationManager | null>(
+    null,
+  );
   const modifiedBase64UpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const modifiedBase64DecorationManagerRef = useRef<DecorationManager | null>(null);
+  const modifiedBase64DecorationManagerRef = useRef<DecorationManager | null>(
+    null,
+  );
 
   // Unicode下划线装饰器相关引用
   const originalUnicodeUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const originalUnicodeDecorationManagerRef = useRef<DecorationManager | null>(null);
+  const originalUnicodeDecorationManagerRef = useRef<DecorationManager | null>(
+    null,
+  );
 
   const modifiedUnicodeUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const modifiedUnicodeDecorationManagerRef = useRef<DecorationManager | null>(null);
-
+  const modifiedUnicodeDecorationManagerRef = useRef<DecorationManager | null>(
+    null,
+  );
 
   // URL下划线装饰器相关引用
   const originalUrlUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const originalUrlDecorationManagerRef = useRef<DecorationManager | null>(null);
+  const originalUrlDecorationManagerRef = useRef<DecorationManager | null>(
+    null,
+  );
   const modifiedUrlUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const modifiedUrlDecorationManagerRef = useRef<DecorationManager | null>(null);
-
+  const modifiedUrlDecorationManagerRef = useRef<DecorationManager | null>(
+    null,
+  );
 
   // Base64下划线装饰器状态
   const originalBase64DecoratorState: Base64DecoratorState = {
@@ -310,23 +320,35 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     modifiedTimestampDecoratorState.enabled = timestampDecoratorsEnabled;
 
     if (timestampDecoratorsEnabled) {
-      // 清空缓存并更新装饰器
-      clearTimestampCache(originalTimestampDecoratorState);
-      clearTimestampCache(modifiedTimestampDecoratorState);
-      setTimeout(() => {
-        if (originalEditorRef.current) {
-          updateTimestampDecorations(
-            originalEditorRef.current,
-            originalTimestampDecoratorState,
-          );
-        }
-        if (modifiedEditorRef.current) {
-          updateTimestampDecorations(
-            modifiedEditorRef.current,
-            modifiedTimestampDecoratorState,
-          );
-        }
-      }, 0);
+      // 检查行数，小于3行时不启用装饰器
+      const originalLineCount = getEditorLineCount(originalEditorRef.current);
+      const modifiedLineCount = getEditorLineCount(modifiedEditorRef.current);
+
+      if (originalLineCount >= 3) {
+        // 清空缓存并更新装饰器
+        clearTimestampCache(originalTimestampDecoratorState);
+        setTimeout(() => {
+          if (originalEditorRef.current) {
+            updateTimestampDecorations(
+              originalEditorRef.current,
+              originalTimestampDecoratorState,
+            );
+          }
+        }, 0);
+      }
+
+      if (modifiedLineCount >= 3) {
+        // 清空缓存并更新装饰器
+        clearTimestampCache(modifiedTimestampDecoratorState);
+        setTimeout(() => {
+          if (modifiedEditorRef.current) {
+            updateTimestampDecorations(
+              modifiedEditorRef.current,
+              modifiedTimestampDecoratorState,
+            );
+          }
+        }, 0);
+      }
     } else {
       // 禁用时清理缓存和装饰器
       if (originalTimestampDecorationsRef.current) {
@@ -351,20 +373,57 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     setBase64DecorationEnabled(base64DecoratorsEnabled);
 
     if (base64DecoratorsEnabled) {
-      setTimeout(() => {
-        if (originalEditorRef.current) {
-          updateBase64Decorations(
-            originalEditorRef.current,
-            originalBase64DecoratorState,
-          );
-        }
-        if (modifiedEditorRef.current) {
-          updateBase64Decorations(
-            modifiedEditorRef.current,
-            modifiedBase64DecoratorState,
-          );
-        }
-      }, 0);
+      // 初始化装饰器管理器（如果尚未初始化）
+      if (
+        !originalBase64DecorationManagerRef.current &&
+        originalEditorRef.current
+      ) {
+        originalBase64DecorationManagerRef.current = new DecorationManager();
+      }
+      if (
+        !modifiedBase64DecorationManagerRef.current &&
+        modifiedEditorRef.current
+      ) {
+        modifiedBase64DecorationManagerRef.current = new DecorationManager();
+      }
+
+      // 检查行数，小于3行时不启用装饰器
+      const originalLineCount = getEditorLineCount(originalEditorRef.current);
+      const modifiedLineCount = getEditorLineCount(modifiedEditorRef.current);
+
+      if (originalLineCount >= 3) {
+        setTimeout(() => {
+          if (originalEditorRef.current) {
+            updateBase64Decorations(
+              originalEditorRef.current,
+              originalBase64DecoratorState,
+            );
+          }
+        }, 0);
+      }
+
+      if (modifiedLineCount >= 3) {
+        setTimeout(() => {
+          if (modifiedEditorRef.current) {
+            updateBase64Decorations(
+              modifiedEditorRef.current,
+              modifiedBase64DecoratorState,
+            );
+          }
+        }, 0);
+      }
+    } else {
+      // 禁用时清理装饰器
+      if (originalBase64DecorationManagerRef.current) {
+        originalBase64DecorationManagerRef.current.clearAllDecorations(
+          originalEditorRef.current!,
+        );
+      }
+      if (modifiedBase64DecorationManagerRef.current) {
+        modifiedBase64DecorationManagerRef.current.clearAllDecorations(
+          modifiedEditorRef.current!,
+        );
+      }
     }
   }, [base64DecoratorsEnabled]);
 
@@ -379,20 +438,57 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     setUnicodeDecorationEnabled(unicodeDecoratorsEnabled);
 
     if (unicodeDecoratorsEnabled) {
-      setTimeout(() => {
-        if (originalEditorRef.current) {
-          updateUnicodeDecorations(
-            originalEditorRef.current,
-            originalUnicodeDecoratorState,
-          );
-        }
-        if (modifiedEditorRef.current) {
-          updateUnicodeDecorations(
-            modifiedEditorRef.current,
-            modifiedUnicodeDecoratorState,
-          );
-        }
-      }, 0);
+      // 初始化装饰器管理器（如果尚未初始化）
+      if (
+        !originalUnicodeDecorationManagerRef.current &&
+        originalEditorRef.current
+      ) {
+        originalUnicodeDecorationManagerRef.current = new DecorationManager();
+      }
+      if (
+        !modifiedUnicodeDecorationManagerRef.current &&
+        modifiedEditorRef.current
+      ) {
+        modifiedUnicodeDecorationManagerRef.current = new DecorationManager();
+      }
+
+      // 检查行数，小于3行时不启用装饰器
+      const originalLineCount = getEditorLineCount(originalEditorRef.current);
+      const modifiedLineCount = getEditorLineCount(modifiedEditorRef.current);
+
+      if (originalLineCount >= 3) {
+        setTimeout(() => {
+          if (originalEditorRef.current) {
+            updateUnicodeDecorations(
+              originalEditorRef.current,
+              originalUnicodeDecoratorState,
+            );
+          }
+        }, 0);
+      }
+
+      if (modifiedLineCount >= 3) {
+        setTimeout(() => {
+          if (modifiedEditorRef.current) {
+            updateUnicodeDecorations(
+              modifiedEditorRef.current,
+              modifiedUnicodeDecoratorState,
+            );
+          }
+        }, 0);
+      }
+    } else {
+      // 禁用时清理装饰器
+      if (originalUnicodeDecorationManagerRef.current) {
+        originalUnicodeDecorationManagerRef.current.clearAllDecorations(
+          originalEditorRef.current!,
+        );
+      }
+      if (modifiedUnicodeDecorationManagerRef.current) {
+        modifiedUnicodeDecorationManagerRef.current.clearAllDecorations(
+          modifiedEditorRef.current!,
+        );
+      }
     }
   }, [unicodeDecoratorsEnabled]);
 
@@ -407,20 +503,57 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     setUrlDecorationEnabled(urlDecoratorsEnabled);
 
     if (urlDecoratorsEnabled) {
-      setTimeout(() => {
-        if (originalEditorRef.current) {
-          updateUrlDecorations(
-            originalEditorRef.current,
-            originalUrlDecoratorState,
-          );
-        }
-        if (modifiedEditorRef.current) {
-          updateUrlDecorations(
-            modifiedEditorRef.current,
-            modifiedUrlDecoratorState,
-          );
-        }
-      }, 0);
+      // 初始化装饰器管理器（如果尚未初始化）
+      if (
+        !originalUrlDecorationManagerRef.current &&
+        originalEditorRef.current
+      ) {
+        originalUrlDecorationManagerRef.current = new DecorationManager();
+      }
+      if (
+        !modifiedUrlDecorationManagerRef.current &&
+        modifiedEditorRef.current
+      ) {
+        modifiedUrlDecorationManagerRef.current = new DecorationManager();
+      }
+
+      // 检查行数，小于3行时不启用装饰器
+      const originalLineCount = getEditorLineCount(originalEditorRef.current);
+      const modifiedLineCount = getEditorLineCount(modifiedEditorRef.current);
+
+      if (originalLineCount >= 3) {
+        setTimeout(() => {
+          if (originalEditorRef.current) {
+            updateUrlDecorations(
+              originalEditorRef.current,
+              originalUrlDecoratorState,
+            );
+          }
+        }, 0);
+      }
+
+      if (modifiedLineCount >= 3) {
+        setTimeout(() => {
+          if (modifiedEditorRef.current) {
+            updateUrlDecorations(
+              modifiedEditorRef.current,
+              modifiedUrlDecoratorState,
+            );
+          }
+        }, 0);
+      }
+    } else {
+      // 禁用时清理装饰器
+      if (originalUrlDecorationManagerRef.current) {
+        originalUrlDecorationManagerRef.current.clearAllDecorations(
+          originalEditorRef.current!,
+        );
+      }
+      if (modifiedUrlDecorationManagerRef.current) {
+        modifiedUrlDecorationManagerRef.current.clearAllDecorations(
+          modifiedEditorRef.current!,
+        );
+      }
     }
   }, [urlDecoratorsEnabled]);
 
@@ -640,7 +773,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
             cursorStyle: "line", //  光标样式
             cursorSurroundingLines: 0, // 光标环绕行数 当文字输入超过屏幕时 可以看见右侧滚动条中光标所处位置是在滚动条中间还是顶部还是底部 即光标环绕行数 环绕行数越大 光标在滚动条中位置越居中
             cursorSurroundingLinesStyle: "all", // "default" | "all" 光标环绕样式
-            links: true, // 是否点击链接
+            links: false, // 是否点击链接
             diffAlgorithm: "advanced",
           },
         );
@@ -680,24 +813,32 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
             );
           }
 
-          // 更新时间戳装饰器
-          if (timestampDecoratorsEnabled) {
-            handleTimestampContentChange(e, originalTimestampDecoratorState);
-          }
+          // 根据行数控制装饰器
+          const lineCount = getEditorLineCount(originalEditorRef.current);
 
-          // 更新Base64下划线装饰器
-          if (base64DecoratorsEnabled) {
-            handleBase64ContentChange(e, originalBase64DecoratorState);
-          }
+          if (lineCount < 3) {
+            // 小于3行时，清空原始编辑器的所有装饰器
+            clearEditorDecorators(originalEditorRef.current, "original");
+          } else {
+            // 更新时间戳装饰器
+            if (timestampDecoratorsEnabled) {
+              handleTimestampContentChange(e, originalTimestampDecoratorState);
+            }
 
-          // Unicode下划线装饰器
-          if (unicodeDecoratorsEnabled) {
-            handleUnicodeContentChange(e, originalUnicodeDecoratorState);
-          }
+            // 更新Base64下划线装饰器
+            if (base64DecoratorsEnabled) {
+              handleBase64ContentChange(e, originalBase64DecoratorState);
+            }
 
-          // URL下划线装饰器
-          if (urlDecoratorsEnabled) {
-            handleUrlContentChange(e, originalUrlDecoratorState);
+            // Unicode下划线装饰器
+            if (unicodeDecoratorsEnabled) {
+              handleUnicodeContentChange(e, originalUnicodeDecoratorState);
+            }
+
+            // URL下划线装饰器
+            if (urlDecoratorsEnabled) {
+              handleUrlContentChange(e, originalUrlDecoratorState);
+            }
           }
         });
 
@@ -716,24 +857,32 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
             );
           }
 
-          // 更新时间戳装饰器
-          if (timestampDecoratorsEnabled) {
-            handleTimestampContentChange(e, modifiedTimestampDecoratorState);
-          }
+          // 根据行数控制装饰器
+          const lineCount = getEditorLineCount(modifiedEditorRef.current);
 
-          // 更新Base64下划线装饰器
-          if (base64DecoratorsEnabled) {
-            handleBase64ContentChange(e, modifiedBase64DecoratorState);
-          }
+          if (lineCount < 3) {
+            // 小于3行时，清空修改编辑器的所有装饰器
+            clearEditorDecorators(modifiedEditorRef.current, "modified");
+          } else {
+            // 更新时间戳装饰器
+            if (timestampDecoratorsEnabled) {
+              handleTimestampContentChange(e, modifiedTimestampDecoratorState);
+            }
 
-          // Unicode下划线装饰器
-          if (unicodeDecoratorsEnabled) {
-            handleUnicodeContentChange(e, modifiedUnicodeDecoratorState);
-          }
+            // 更新Base64下划线装饰器
+            if (base64DecoratorsEnabled) {
+              handleBase64ContentChange(e, modifiedBase64DecoratorState);
+            }
 
-          // URL下划线装饰器
-          if (urlDecoratorsEnabled) {
-            handleUrlContentChange(e, modifiedUrlDecoratorState);
+            // Unicode下划线装饰器
+            if (unicodeDecoratorsEnabled) {
+              handleUnicodeContentChange(e, modifiedUnicodeDecoratorState);
+            }
+
+            // URL下划线装饰器
+            if (urlDecoratorsEnabled) {
+              handleUrlContentChange(e, modifiedUrlDecoratorState);
+            }
           }
         });
 
@@ -849,16 +998,28 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
         // 初始化完成后更新时间戳装饰器
         setTimeout(() => {
           if (originalEditorRef.current && modifiedEditorRef.current) {
+            // 检查行数，小于3行时不启用装饰器
+            const originalLineCount = getEditorLineCount(
+              originalEditorRef.current,
+            );
+            const modifiedLineCount = getEditorLineCount(
+              modifiedEditorRef.current,
+            );
+
             if (timestampDecoratorsEnabled) {
               // 初始化时间戳装饰器
-              updateTimestampDecorations(
-                originalEditorRef.current,
-                originalTimestampDecoratorState,
-              );
-              updateTimestampDecorations(
-                modifiedEditorRef.current,
-                modifiedTimestampDecoratorState,
-              );
+              if (originalLineCount >= 3) {
+                updateTimestampDecorations(
+                  originalEditorRef.current,
+                  originalTimestampDecoratorState,
+                );
+              }
+              if (modifiedLineCount >= 3) {
+                updateTimestampDecorations(
+                  modifiedEditorRef.current,
+                  modifiedTimestampDecoratorState,
+                );
+              }
             }
 
             // 初始化Base64下划线装饰器
@@ -866,14 +1027,35 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
               // 确保全局状态与本地状态同步
               setBase64ProviderEnabled(base64DecoratorsEnabled);
               setBase64DecorationEnabled(base64DecoratorsEnabled);
-              updateBase64Decorations(
-                originalEditorRef.current,
-                originalBase64DecoratorState,
-              );
-              updateBase64Decorations(
-                modifiedEditorRef.current,
-                modifiedBase64DecoratorState,
-              );
+
+              // 初始化装饰器管理器
+              if (
+                !originalBase64DecorationManagerRef.current &&
+                originalEditorRef.current
+              ) {
+                originalBase64DecorationManagerRef.current =
+                  new DecorationManager();
+              }
+              if (
+                !modifiedBase64DecorationManagerRef.current &&
+                modifiedEditorRef.current
+              ) {
+                modifiedBase64DecorationManagerRef.current =
+                  new DecorationManager();
+              }
+
+              if (originalLineCount >= 3) {
+                updateBase64Decorations(
+                  originalEditorRef.current,
+                  originalBase64DecoratorState,
+                );
+              }
+              if (modifiedLineCount >= 3) {
+                updateBase64Decorations(
+                  modifiedEditorRef.current,
+                  modifiedBase64DecoratorState,
+                );
+              }
             }
 
             // 初始化Unicode装饰器
@@ -881,14 +1063,35 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
               // 确保全局状态与本地状态同步
               setUnicodeProviderEnabled(unicodeDecoratorsEnabled);
               setUnicodeDecorationEnabled(unicodeDecoratorsEnabled);
-              updateUnicodeDecorations(
-                originalEditorRef.current,
-                originalUnicodeDecoratorState,
-              );
-              updateUnicodeDecorations(
-                modifiedEditorRef.current,
-                modifiedUnicodeDecoratorState,
-              );
+
+              // 初始化装饰器管理器
+              if (
+                !originalUnicodeDecorationManagerRef.current &&
+                originalEditorRef.current
+              ) {
+                originalUnicodeDecorationManagerRef.current =
+                  new DecorationManager();
+              }
+              if (
+                !modifiedUnicodeDecorationManagerRef.current &&
+                modifiedEditorRef.current
+              ) {
+                modifiedUnicodeDecorationManagerRef.current =
+                  new DecorationManager();
+              }
+
+              if (originalLineCount >= 3) {
+                updateUnicodeDecorations(
+                  originalEditorRef.current,
+                  originalUnicodeDecoratorState,
+                );
+              }
+              if (modifiedLineCount >= 3) {
+                updateUnicodeDecorations(
+                  modifiedEditorRef.current,
+                  modifiedUnicodeDecoratorState,
+                );
+              }
             }
 
             // 初始化URL装饰器
@@ -896,14 +1099,35 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
               // 确保全局状态与本地状态同步
               setUrlProviderEnabled(urlDecoratorsEnabled);
               setUrlDecorationEnabled(urlDecoratorsEnabled);
-              updateUrlDecorations(
-                originalEditorRef.current,
-                originalUrlDecoratorState,
-              );
-              updateUrlDecorations(
-                modifiedEditorRef.current,
-                modifiedUrlDecoratorState,
-              );
+
+              // 初始化装饰器管理器
+              if (
+                !originalUrlDecorationManagerRef.current &&
+                originalEditorRef.current
+              ) {
+                originalUrlDecorationManagerRef.current =
+                  new DecorationManager();
+              }
+              if (
+                !modifiedUrlDecorationManagerRef.current &&
+                modifiedEditorRef.current
+              ) {
+                modifiedUrlDecorationManagerRef.current =
+                  new DecorationManager();
+              }
+
+              if (originalLineCount >= 3) {
+                updateUrlDecorations(
+                  originalEditorRef.current,
+                  originalUrlDecoratorState,
+                );
+              }
+              if (modifiedLineCount >= 3) {
+                updateUrlDecorations(
+                  modifiedEditorRef.current,
+                  modifiedUrlDecoratorState,
+                );
+              }
             }
           }
         }, 300);
@@ -958,15 +1182,25 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     if (originalEditorRef.current && modifiedEditorRef.current) {
       setBase64ProviderEnabled(base64DecoderEnabled);
       setBase64DecorationEnabled(base64DecoderEnabled);
-      // 更新装饰
-      updateBase64Decorations(
-        originalEditorRef.current,
-        originalBase64DecoratorState,
-      );
-      updateBase64Decorations(
-        modifiedEditorRef.current,
-        modifiedBase64DecoratorState,
-      );
+      // 检查行数，小于3行时不更新装饰器
+      const originalLineCount = getEditorLineCount(originalEditorRef.current);
+      const modifiedLineCount = getEditorLineCount(modifiedEditorRef.current);
+
+      if (originalLineCount >= 3) {
+        // 更新装饰
+        updateBase64Decorations(
+          originalEditorRef.current,
+          originalBase64DecoratorState,
+        );
+      }
+
+      if (modifiedLineCount >= 3) {
+        // 更新装饰
+        updateBase64Decorations(
+          modifiedEditorRef.current,
+          modifiedBase64DecoratorState,
+        );
+      }
     }
   }, [base64DecoderEnabled]);
 
@@ -977,15 +1211,25 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     if (originalEditorRef.current && modifiedEditorRef.current) {
       setUnicodeProviderEnabled(unicodeDecoderEnabled);
       setUnicodeDecorationEnabled(unicodeDecoderEnabled);
-      // 更新装饰
-      updateUnicodeDecorations(
-        originalEditorRef.current,
-        originalUnicodeDecoratorState,
-      );
-      updateUnicodeDecorations(
-        modifiedEditorRef.current,
-        modifiedUnicodeDecoratorState,
-      );
+      // 检查行数，小于3行时不更新装饰器
+      const originalLineCount = getEditorLineCount(originalEditorRef.current);
+      const modifiedLineCount = getEditorLineCount(modifiedEditorRef.current);
+
+      if (originalLineCount >= 3) {
+        // 更新装饰
+        updateUnicodeDecorations(
+          originalEditorRef.current,
+          originalUnicodeDecoratorState,
+        );
+      }
+
+      if (modifiedLineCount >= 3) {
+        // 更新装饰
+        updateUnicodeDecorations(
+          modifiedEditorRef.current,
+          modifiedUnicodeDecoratorState,
+        );
+      }
     }
   }, [unicodeDecoderEnabled]);
 
@@ -996,15 +1240,25 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     if (originalEditorRef.current && modifiedEditorRef.current) {
       setUrlProviderEnabled(urlDecoderEnabled);
       setUrlDecorationEnabled(urlDecoderEnabled);
-      // 更新装饰
-      updateUrlDecorations(
-        originalEditorRef.current,
-        originalUrlDecoratorState,
-      );
-      updateUrlDecorations(
-        modifiedEditorRef.current,
-        modifiedUrlDecoratorState,
-      );
+      // 检查行数，小于3行时不更新装饰器
+      const originalLineCount = getEditorLineCount(originalEditorRef.current);
+      const modifiedLineCount = getEditorLineCount(modifiedEditorRef.current);
+
+      if (originalLineCount >= 3) {
+        // 更新装饰
+        updateUrlDecorations(
+          originalEditorRef.current,
+          originalUrlDecoratorState,
+        );
+      }
+
+      if (modifiedLineCount >= 3) {
+        // 更新装饰
+        updateUrlDecorations(
+          modifiedEditorRef.current,
+          modifiedUrlDecoratorState,
+        );
+      }
     }
   }, [urlDecoderEnabled]);
 
@@ -1225,6 +1479,72 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
       },
     ]);
   };
+
+  // 获取编辑器行数
+  const getEditorLineCount = (
+    editor: editor.IStandaloneCodeEditor | null,
+  ): number => {
+    if (!editor) {
+      return 0;
+    }
+
+    return editor.getModel()?.getLineCount() || 0;
+  };
+
+  // 清空指定编辑器的所有装饰器
+  const clearEditorDecorators = (
+    editor: editor.IStandaloneCodeEditor | null,
+    editorType: "original" | "modified",
+  ) => {
+    if (!editor) {
+      return;
+    }
+
+    // 清空时间戳装饰器
+    if (editorType === "original") {
+      if (originalTimestampDecorationsRef.current) {
+        originalTimestampDecorationsRef.current.clear();
+      }
+    } else {
+      if (modifiedTimestampDecorationsRef.current) {
+        modifiedTimestampDecorationsRef.current.clear();
+      }
+    }
+
+    // 清空Base64装饰器
+    if (editorType === "original") {
+      if (originalBase64DecorationManagerRef.current) {
+        originalBase64DecorationManagerRef.current.clearAllDecorations(editor);
+      }
+    } else {
+      if (modifiedBase64DecorationManagerRef.current) {
+        modifiedBase64DecorationManagerRef.current.clearAllDecorations(editor);
+      }
+    }
+
+    // 清空Unicode装饰器
+    if (editorType === "original") {
+      if (originalUnicodeDecorationManagerRef.current) {
+        originalUnicodeDecorationManagerRef.current.clearAllDecorations(editor);
+      }
+    } else {
+      if (modifiedUnicodeDecorationManagerRef.current) {
+        modifiedUnicodeDecorationManagerRef.current.clearAllDecorations(editor);
+      }
+    }
+
+    // 清空URL装饰器
+    if (editorType === "original") {
+      if (originalUrlDecorationManagerRef.current) {
+        originalUrlDecorationManagerRef.current.clearAllDecorations(editor);
+      }
+    } else {
+      if (modifiedUrlDecorationManagerRef.current) {
+        modifiedUrlDecorationManagerRef.current.clearAllDecorations(editor);
+      }
+    }
+  };
+
   const clearEditor = (
     editorRef: React.MutableRefObject<editor.IStandaloneCodeEditor | null>,
     editorType: "original" | "modified" | "both",
