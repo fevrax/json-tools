@@ -1,7 +1,7 @@
 import * as monaco from "monaco-editor";
 import { editor } from "monaco-editor";
 
-import { removeJsonComments } from "@/utils/json.ts";
+import { removeJsonComments, parseJson } from "@/utils/json.ts";
 
 /**
  * 更新代码折叠区域的装饰器，显示折叠区域内包含的元素数量
@@ -150,7 +150,7 @@ export function calculateFoldingElementCount(
   // 根据类型计算元素数量
   if (isObject) {
     try {
-      const jsonObj = JSON.parse(`{${cleanContent}}`);
+      const jsonObj = parseJson(`{${cleanContent}}`);
 
       result.type = 1;
       result.count = Object.keys(jsonObj).length;
@@ -163,7 +163,7 @@ export function calculateFoldingElementCount(
     }
   } else if (isArray) {
     try {
-      const jsonObj = JSON.parse(`[${cleanContent}]`);
+      const jsonObj = parseJson(`[${cleanContent}]`);
 
       result.type = 2;
       result.count = jsonObj.length;

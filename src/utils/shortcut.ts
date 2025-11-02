@@ -2,6 +2,7 @@
  * 快捷键工具类
  * 用于处理键盘快捷键的解析和监听
  */
+import { parseJson, stringifyJson } from "@/utils/json";
 
 export interface ShortcutConfig {
   key: string;
@@ -111,8 +112,8 @@ export class ShortcutListener {
    */
   addListener(shortcutString: string, callback: (event: KeyboardEvent) => void, options?: { global?: boolean }): void {
     const config = parseShortcut(shortcutString);
-    const key = JSON.stringify(config);
-    
+    const key = stringifyJson(config);
+
     if (options?.global) {
       this.globalShortcuts.add(key);
     }
@@ -129,8 +130,8 @@ export class ShortcutListener {
    */
   removeListener(shortcutString: string, callback: (event: KeyboardEvent) => void, options?: { global?: boolean }): void {
     const config = parseShortcut(shortcutString);
-    const key = JSON.stringify(config);
-    
+    const key = stringifyJson(config);
+
     if (options?.global) {
       this.globalShortcuts.delete(key);
     }
@@ -159,7 +160,7 @@ export class ShortcutListener {
     
     // 遍历所有监听器，检查是否匹配
     for (const [key, callbacks] of this.listeners) {
-      const config: ShortcutConfig = JSON.parse(key);
+      const config: ShortcutConfig = parseJson(key);
       if (matchesShortcut(event, config)) {
         // 检查是否在编辑器中
         const target = event.target as HTMLElement;

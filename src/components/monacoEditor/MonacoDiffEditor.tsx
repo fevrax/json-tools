@@ -14,7 +14,7 @@ import { AIResultHeader } from "./AIResultHeader";
 
 import toast from "@/utils/toast";
 import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEntity";
-import { sortJson } from "@/utils/json";
+import { sortJson, parseJson } from "@/utils/json";
 import { useTabStore } from "@/store/useTabStore";
 import DraggableMenu from "@/components/monacoEditor/DraggableMenu.tsx";
 import AIPromptOverlay, { QuickPrompt } from "@/components/ai/AIPromptOverlay";
@@ -1204,7 +1204,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
 
     try {
       // 尝试解析JSON，确保是有效的JSON
-      const jsonObj = JSON.parse(code);
+      const jsonObj = parseJson(code);
 
       // 如果解析成功，格式化并设置到左侧编辑器
       setEditorValue(
@@ -1233,7 +1233,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
 
     try {
       // 尝试解析JSON，确保是有效的JSON
-      const jsonObj = JSON.parse(code);
+      const jsonObj = parseJson(code);
 
       // 如果解析成功，格式化并设置到右侧编辑器
       setEditorValue(
@@ -1422,7 +1422,7 @@ const MonacoDiffEditor: React.FC<MonacoDiffEditorProps> = ({
     }
 
     try {
-      const jsonObj = JSON.parse(val);
+      const jsonObj = parseJson(val);
 
       setEditorValue(editorRef.current, sortJson(jsonObj, sort));
 

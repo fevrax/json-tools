@@ -28,6 +28,7 @@ import AIPromptOverlay, {
   QuickPrompt,
 } from "@/components/ai/AIPromptOverlay.tsx";
 import { useOpenAIConfigStore } from "@/store/useOpenAIConfigStore";
+import { parseJson, stringifyJson } from "@/utils/json";
 import { openAIService } from "@/services/openAIService";
 
 // 支持的数据格式
@@ -138,7 +139,7 @@ export default function DataFormatConverterPage() {
       try {
         switch (inputFormat) {
           case "json":
-            jsonData = JSON.parse(inputValue);
+            jsonData = parseJson(inputValue);
             break;
           case "json5":
             jsonData = JSON5.parse(inputValue);
@@ -171,7 +172,7 @@ export default function DataFormatConverterPage() {
       try {
         switch (outputFormat) {
           case "json":
-            result = JSON.stringify(jsonData, null, 2);
+            result = stringifyJson(jsonData, 2);
             break;
           case "json5":
             result = JSON5.stringify(jsonData, { space: 2 });
@@ -266,9 +267,9 @@ export default function DataFormatConverterPage() {
 
       switch (outputFormat) {
         case "json":
-          const jsonObj = JSON.parse(outputValue);
+          const jsonObj = parseJson(outputValue);
 
-          formattedOutput = JSON.stringify(jsonObj, null, 2);
+          formattedOutput = stringifyJson(jsonObj, 2);
           break;
         case "json5":
           const json5Obj = JSON5.parse(outputValue);

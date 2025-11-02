@@ -6,6 +6,7 @@ import { Content, JSONContent, Mode, TextContent } from "vanilla-jsoneditor-cn";
 import { useSettingsStore } from "./useSettingsStore";
 
 import { storage } from "@/lib/indexedDBStore";
+import { parseJson, stringifyJson } from "@/utils/json";
 
 export interface TabItem {
   key: string;
@@ -406,7 +407,7 @@ export const useTabStore = create<TabStore>()(
             try {
               if (isJSONContent(vanilla)) {
                 const indentSize = activeTab.editorSettings.indentSize || 2;
-                activeTab.content = JSON.stringify(vanilla.json, null, indentSize);
+                activeTab.content = stringifyJson(vanilla.json, indentSize);
 
                 // 处理JSON内容
                 return {
@@ -449,7 +450,7 @@ export const useTabStore = create<TabStore>()(
 
             try {
               // 尝试解析 JSON
-              const parsedJson = JSON.parse(activeTab.content);
+              const parsedJson = parseJson(activeTab.content);
 
               activeTab.vanilla = { json: parsedJson };
               activeTab.vanillaMode = Mode.tree;

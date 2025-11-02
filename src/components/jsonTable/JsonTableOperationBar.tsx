@@ -19,6 +19,7 @@ import { Icon } from "@iconify/react";
 
 import StatusButton, { IconStatus } from "@/components/button/StatusButton.tsx";
 import toast from "@/utils/toast";
+import { stringifyJson } from "@/utils/json";
 
 interface JsonTableOperationBarProps {
   onCopy: (type?: "default" | "node" | "path") => boolean;
@@ -348,8 +349,8 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
     }
 
     // 只有在数据真正发生变化时才更新状态 - 使用ref替代直接依赖
-    const visibleKeysString = JSON.stringify(visible.sort());
-    const currentKeysString = JSON.stringify(
+    const visibleKeysString = stringifyJson(visible.sort());
+    const currentKeysString = stringifyJson(
       [...visibleButtonsRef.current].sort(),
     );
 

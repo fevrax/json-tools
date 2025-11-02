@@ -15,6 +15,7 @@ import toast from "@/utils/toast";
 import clipboard from "@/utils/clipboard";
 import { useSidebarStore } from "@/store/useSidebarStore";
 import { SidebarKeys } from "@/components/sidebar/Items.tsx";
+import { parseJson, stringifyJson } from "@/utils/json";
 
 export interface JsonTableViewRef {
   focus: () => void;
@@ -88,7 +89,7 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
 
         // 尝试解析JSON
         try {
-          JSON.parse(text);
+          parseJson(text);
 
           // 解析成功，更新数据
           if (onDataUpdate) {
@@ -153,7 +154,7 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
     }
 
     try {
-      const parsed = JSON.parse(data);
+      const parsed = parseJson(data);
 
       setJsonData(parsed);
       setLastValidJsonData(parsed);
@@ -641,7 +642,7 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
               // 处理不同类型的值，确保CSV格式正确
               if (value === null || value === undefined) return "";
               if (typeof value === "object")
-                return JSON.stringify(value)
+                return stringifyJson(value)
                   .replace(/,/g, ";")
                   .replace(/"/g, '""');
               if (typeof value === "string")
@@ -662,7 +663,7 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
           const values = Object.values(dataToExport).map((value) => {
             if (value === null || value === undefined) return "";
             if (typeof value === "object")
-              return JSON.stringify(value)
+              return stringifyJson(value)
                 .replace(/,/g, ";")
                 .replace(/"/g, '""');
             if (typeof value === "string")
@@ -679,7 +680,7 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
           const values = dataToExport.map((value) => {
             if (value === null || value === undefined) return "";
             if (typeof value === "object")
-              return JSON.stringify(value)
+              return stringifyJson(value)
                 .replace(/,/g, ";")
                 .replace(/"/g, '""');
             if (typeof value === "string")

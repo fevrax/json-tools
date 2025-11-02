@@ -22,6 +22,7 @@ import { JsonSample } from "@/utils/jsonSample.ts";
 import { useSettingsStore } from "@/store/useSettingsStore.ts";
 import { globalShortcutListener } from "@/utils/shortcut.ts";
 import { getFontSizeConfig } from "@/styles/fontSize.ts";
+import { parseJson } from "@/utils/json";
 
 export interface DynamicTabsRef {
   getPositionTop: () => number;
@@ -396,7 +397,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
 
       try {
         // 尝试解析为JSON
-        JSON.parse(responseText);
+        parseJson(responseText);
 
         // 确保JSON文件名有正确后缀
         if (!fileName.toLowerCase().endsWith(".json")) {

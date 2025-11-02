@@ -18,6 +18,7 @@ import MonacoEditor, {
   MonacoJsonEditorRef,
 } from "@/components/monacoEditor/MonacoJsonEditor.tsx";
 import ToolboxPageTemplate from "@/layouts/toolboxPageTemplate";
+import { parseJson, stringifyJson } from "@/utils/json";
 
 interface JwtPayload {
   exp?: number;
@@ -237,16 +238,15 @@ export default function JwtParsePage() {
   const [headerJson, setHeaderJson] = useState<string>("");
   const [payloadJson, setPayloadJson] = useState<string>("");
   const [encodeHeaderJson, setEncodeHeaderJson] = useState<string>(
-    JSON.stringify({ alg: "HS256", typ: "JWT" }, null, 2),
+    stringifyJson({ alg: "HS256", typ: "JWT" }, 2),
   );
   const [encodePayloadJson, setEncodePayloadJson] = useState<string>(
-    JSON.stringify(
+    stringifyJson(
       {
         sub: "1234567890",
         name: "示例用户",
         iat: Math.floor(Date.now() / 1000),
       },
-      null,
       2,
     ),
   );
@@ -279,8 +279,8 @@ export default function JwtParsePage() {
       }
 
       // 更新编辑器内容
-      const formattedHeader = JSON.stringify(header, null, 2);
-      const formattedPayload = JSON.stringify(payload, null, 2);
+      const formattedHeader = stringifyJson(header, 2);
+      const formattedPayload = stringifyJson(payload, 2);
 
       setHeaderJson(formattedHeader);
       setPayloadJson(formattedPayload);
@@ -398,8 +398,8 @@ export default function JwtParsePage() {
       let header, payload;
 
       try {
-        header = JSON.parse(useHeaderJson);
-        payload = JSON.parse(usePayloadJson);
+        header = parseJson(useHeaderJson);
+        payload = parseJson(usePayloadJson);
       } catch (e) {
         const errorMsg =
           e && typeof e === "object" && "message" in e
@@ -464,8 +464,8 @@ export default function JwtParsePage() {
 
         if (parsedHeader && parsedPayload) {
           // 更新编辑器内容
-          const formattedHeader = JSON.stringify(parsedHeader, null, 2);
-          const formattedPayload = JSON.stringify(parsedPayload, null, 2);
+          const formattedHeader = stringifyJson(parsedHeader, 2);
+          const formattedPayload = stringifyJson(parsedPayload, 2);
 
           setHeaderJson(formattedHeader);
           setPayloadJson(formattedPayload);
@@ -518,18 +518,16 @@ export default function JwtParsePage() {
     payloadEditorRef.current?.updateValue("");
 
     // 重置编码区域为默认值
-    const defaultHeader = JSON.stringify(
+    const defaultHeader = stringifyJson(
       { alg: selectedAlgorithm, typ: "JWT" },
-      null,
       2,
     );
-    const defaultPayload = JSON.stringify(
+    const defaultPayload = stringifyJson(
       {
         sub: "1234567890",
         name: "示例用户",
         iat: Math.floor(Date.now() / 1000),
       },
-      null,
       2,
     );
 
@@ -590,8 +588,8 @@ export default function JwtParsePage() {
     setSecret(sampleSecret);
 
     // 更新编辑器内容
-    const headerStr = JSON.stringify(header, null, 2);
-    const payloadStr = JSON.stringify(payload, null, 2);
+    const headerStr = stringifyJson(header, 2);
+    const payloadStr = stringifyJson(payload, 2);
 
     setEncodeHeaderJson(headerStr);
     setEncodePayloadJson(payloadStr);
@@ -609,8 +607,8 @@ export default function JwtParsePage() {
           decodeJwt(token);
 
         if (parsedHeader && parsedPayload) {
-          const formattedHeader = JSON.stringify(parsedHeader, null, 2);
-          const formattedPayload = JSON.stringify(parsedPayload, null, 2);
+          const formattedHeader = stringifyJson(parsedHeader, 2);
+          const formattedPayload = stringifyJson(parsedPayload, 2);
 
           setHeaderJson(formattedHeader);
           setPayloadJson(formattedPayload);
@@ -768,10 +766,10 @@ export default function JwtParsePage() {
                     setSelectedAlgorithm(e.target.value);
                     // 更新 header 中的 alg 字段
                     try {
-                      const header = JSON.parse(encodeHeaderJson);
+                      const header = parseJson(encodeHeaderJson);
 
                       header.alg = e.target.value;
-                      const updatedHeader = JSON.stringify(header, null, 2);
+                      const updatedHeader = stringifyJson(header, 2);
 
                       setEncodeHeaderJson(updatedHeader);
                       encodeHeaderEditorRef.current?.updateValue(updatedHeader);

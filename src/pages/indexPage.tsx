@@ -34,6 +34,7 @@ import JsonTableView, {
 } from "@/components/jsonTable/JsonTableView.tsx";
 import clipboard from "@/utils/clipboard";
 import toast from "@/utils/toast";
+import { stringifyJson } from "@/utils/json";
 import UtoolsListener from "@/services/utoolsListener";
 
 export default function IndexPage() {
@@ -634,7 +635,7 @@ export default function IndexPage() {
                               ].getSelectedNode();
 
                             if (selectedNode) {
-                              content = JSON.stringify(selectedNode, null, 2);
+                              content = stringifyJson(selectedNode, 2);
                               clipboard.copy(content, "已复制选中节点");
 
                               return true;

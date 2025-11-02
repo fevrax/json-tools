@@ -15,6 +15,7 @@ import { MonacoDiffEditorEditorType } from "@/components/monacoEditor/monacoEnti
 import { useOpenAIConfigStore } from "@/store/useOpenAIConfigStore";
 import ToolboxPageTemplate from "@/layouts/toolboxPageTemplate";
 import { openAIService } from "@/services/openAIService.ts";
+import { parseJson, stringifyJson } from "@/utils/json";
 
 export default function JsonAIRepairPage() {
   const { theme } = useTheme();
@@ -135,8 +136,8 @@ ${originalValue}
               .trim();
 
             // 如果是有效的 JSON 则格式化
-            const parsedJson = JSON.parse(finalJson);
-            const formattedJson = JSON.stringify(parsedJson, null, 2);
+            const parsedJson = parseJson(finalJson);
+            const formattedJson = stringifyJson(parsedJson, 2);
 
             editorRef.current?.updateModifiedValue(formattedJson);
             setFixedValue(formattedJson);

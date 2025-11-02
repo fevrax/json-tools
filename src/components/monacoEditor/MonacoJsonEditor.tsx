@@ -26,6 +26,8 @@ import {
   jsonParseError,
   removeJsonComments,
   sortJson,
+  parseJson,
+  stringifyJson,
 } from "@/utils/json";
 import { updateFoldingDecorations } from "@/components/monacoEditor/decorations/foldingDecoration.ts";
 import {
@@ -342,13 +344,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
     try {
       // 解析 JSON 数据
-      const jsonData = JSON.parse(editorValue);
+      const jsonData = parseJson(editorValue);
 
       // 使用 jsonQuery 进行过滤
       const filteredData = jsonquery(jsonData, currentFilter);
 
       // 格式化过滤后的数据
-      const formattedResult = JSON.stringify(filteredData, null, 2);
+      const formattedResult = stringifyJson(filteredData, 2);
 
       setFilteredValue(formattedResult);
       setShowFilterEditor(true);
@@ -510,10 +512,10 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
     try {
       // 尝试解析JSON，确保是有效的JSON
-      const jsonObj = JSON.parse(code);
+      const jsonObj = parseJson(code);
 
       // 如果解析成功，格式化并设置到编辑器
-      setEditorValue(JSON.stringify(jsonObj, null, indentSize));
+      setEditorValue(stringifyJson(jsonObj, indentSize));
       toast.success("已应用代码到编辑器");
     } catch {
       // 如果解析失败，尝试直接设置文本
@@ -963,15 +965,15 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
     try {
       // 第一次将解析结果为去除转移后字符串
-      const unescapedJson = JSON.parse(jsonStr);
+      const unescapedJson = parseJson(jsonStr);
       // 去除转义后的字符串解析为对象
-      const unescapedJsonObject = JSON.parse(unescapedJson);
+      const unescapedJsonObject = parseJson(unescapedJson);
 
       // 判断是否为对象或数组
       if (!isArrayOrObject(unescapedJsonObject)) {
         return "不是有效的 JSON 数据，无法进行解码操作";
       }
-      setEditorValue(JSON.stringify(unescapedJsonObject, null, indentSize));
+      setEditorValue(stringifyJson(unescapedJsonObject, indentSize));
     } catch (error) {
       console.error("formatModelByUnEscapeJson", error);
       if (error instanceof SyntaxError) {
@@ -1154,7 +1156,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       }
       switch (type) {
         case "compress":
-          const compressed = JSON.stringify(JSON.parse(val));
+          const compressed = stringifyJson(parseJson(val));
 
           copyText(compressed);
           setEditorValue(compressed);
@@ -1246,7 +1248,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       if (!isValid) {
         return false;
       }
-      const jsonObj = JSON.parse(val);
+      const jsonObj = parseJson(val);
 
       if (type === "asc") {
         setEditorValue(sortJson(jsonObj, "asc"));

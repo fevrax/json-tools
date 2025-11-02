@@ -2,6 +2,10 @@
 
 // eslint-disable-next-line no-control-regex,no-misleading-character-class
 import JSON5 from "json5";
+import {
+  parse as losslessParse,
+  stringify as losslessStringify,
+} from "lossless-json";
 
 const rxEscapable =
   /[\\"\u0000-\u001F\u007F-\u009F\u00AD\u0600-\u0604\u070F\u17B4\u17B5\u200C-\u200F\u2028-\u202F\u2060-\u206F\uFEFF\uFFF0-\uFFFF]/g;
@@ -17,12 +21,40 @@ const meta: { [key: string]: string } = {
   "\\": "\\\\",
 };
 
+
+
+/**
+ * 使用 lossless-json 解析 JSON 字符串，保留长整数精度
+ * @param jsonString JSON 字符串
+ * @returns 解析后的对象（BigInt 类型）
+ */
+export function parseJson(jsonString: string): any {
+  return losslessParse(jsonString);
+}
+
+/**
+ * 使用 lossless-json 序列化对象为 JSON 字符串
+ * @param value 要序列化的对象
+ * @param space 缩进空格数
+ * @returns JSON 字符串
+ */
+export function stringifyJson(value: any, space?: number): string {
+  // 先将 BigInt 转换为 lossless number
+  const result = losslessStringify(value, null, space);
+
+  if (result === undefined) {
+    throw new Error("序列化失败");
+  }
+
+  return result;
+}
+
 export function escapeJson(input: string): string {
   // 如果字符串不包含控制字符、引号字符和反斜杠字符，
   // 那么我们可以安全地在其周围加上引号。
   // 否则，我们还必须用安全的转义序列替换有问题的字符。
   try {
-    const parsedJson = JSON.parse(input);
+    const parsedJson = parseJson(input);
     const jsonString = JSON.stringify(parsedJson);
 
     rxEscapable.lastIndex = 0;
@@ -51,7 +83,7 @@ export interface JsonErrorInfo {
 // 解析JSON字符串并返回错误信息
 export function jsonParseError(jsonString: string): JsonErrorInfo | undefined {
   try {
-    JSON.parse(jsonString);
+    parseJson(jsonString);
 
     return undefined;
   } catch (error: unknown) {
@@ -264,7 +296,7 @@ export function sortJson(data: any, order: "asc" | "desc" = "asc"): string {
 
   const sortedResult = sortValue(data);
 
-  return JSON.stringify(sortedResult, null, 4);
+  return stringifyJson(sortedResult, 4);
 }
 
 /**
@@ -294,4 +326,3 @@ export function removeJsonComments(jsonText: string): string {
 
   return jsonText;
 }
-

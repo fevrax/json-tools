@@ -2,11 +2,12 @@ import React, { useState } from "react";
 import { Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
+import { stringifyJson } from "@/utils/json";
 import MonacoJsonEditor from "@/components/monacoEditor/MonacoJsonEditor";
 
 const JsonQueryFilterDemo: React.FC = () => {
   const [editorValue, setEditorValue] = useState<string>(
-    JSON.stringify(
+    stringifyJson(
       {
         users: [
           {
@@ -49,7 +50,6 @@ const JsonQueryFilterDemo: React.FC = () => {
           lastUpdated: "2024-01-15T10:30:00Z",
         },
       },
-      null,
       2,
     ),
   );

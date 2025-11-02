@@ -25,6 +25,7 @@ import AIPromptOverlay, {
 } from "@/components/ai/AIPromptOverlay.tsx";
 import { useOpenAIConfigStore } from "@/store/useOpenAIConfigStore";
 import { openAIService } from "@/services/openAIService";
+import { parseJson } from "@/utils/json";
 
 // 支持的目标语言列表
 const TARGET_LANGUAGES = [
@@ -195,7 +196,7 @@ export default function JsonTypeConverterPage() {
 
       // 验证JSON格式是否有效
       try {
-        JSON.parse(jsonInput);
+        parseJson(jsonInput);
       } catch {
         toast.error("无效的JSON格式");
         setIsProcessing(false);
