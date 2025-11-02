@@ -16,6 +16,7 @@ import { jsonquery } from "@jsonquerylang/jsonquery";
 
 import { AIResultHeader } from "./AIResultHeader";
 
+import UtoolsListener from "@/services/utoolsListener";
 import toast from "@/utils/toast";
 import { useTabStore } from "@/store/useTabStore";
 import {
@@ -1390,7 +1391,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           wordWrap: "on", // 自动换行
           autoSurround: "never", // 是否应自动环绕选择
           cursorBlinking: "smooth", // 光标动画样式
-          cursorSmoothCaretAnimation: "on", // 是否启用光标平滑插入动画  当你在快速输入文字的时候 光标是直接平滑的移动还是直接"闪现"到当前文字所处位置
+          cursorSmoothCaretAnimation:
+            UtoolsListener.getInstance().isListenerInitialized() ? "off" : "on", // 是否启用光标平滑插入动画, utools 插件中关闭
           cursorStyle: "line", //  光标样式
           cursorSurroundingLines: 0, // 光标环绕行数 当文字输入超过屏幕时 可以看见右侧滚动条中光标所处位置是在滚动条中间还是顶部还是底部 即光标环绕行数 环绕行数越大 光标在滚动条中位置越居中
           cursorSurroundingLinesStyle: "all", // "default" | "all" 光标环绕样式
