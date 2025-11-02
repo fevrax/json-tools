@@ -2,6 +2,8 @@ import * as monaco from "monaco-editor";
 import { editor } from "monaco-editor";
 import { RefObject } from "react";
 
+import { DecorationManager } from "./decorationManager.ts";
+
 // URL编码正则表达式 - 匹配%xx形式的编码
 export const URL_REGEX = /%(?:[0-9a-fA-F]{2})+/g;
 // 匹配 ": "{urlencode内容}" 格式的正则表达式
@@ -23,11 +25,9 @@ export const decodeUrl = (text: string): string | null => {
 // 定义URL下划线装饰器接口
 export interface UrlDecoratorState {
   editorRef: RefObject<editor.IStandaloneCodeEditor | null>;
-  decorationsRef: RefObject<monaco.editor.IEditorDecorationsCollection | null>;
-  decorationIdsRef: RefObject<Record<string, string[]>>;
   hoverProviderId: RefObject<monaco.IDisposable | null>;
-  cacheRef: RefObject<Record<string, boolean>>;
   updateTimeoutRef: RefObject<NodeJS.Timeout | null>;
+  decorationManagerRef: RefObject<DecorationManager | null>;
   enabled: boolean;
 }
 
@@ -111,12 +111,18 @@ export const updateUrlDecorations = (
 ): void => {
   // 如果全局状态或组件状态禁用，则清除装饰器并退出
   if (!editor || !state.enabled || !isUrlDecorationEnabled) {
-    if (state.decorationsRef.current) {
-      state.decorationsRef.current.clear();
+    if (state.decorationManagerRef.current) {
+      state.decorationManagerRef.current.clearAllDecorations(editor);
     }
-
     return;
   }
+
+  // 初始化装饰器管理器
+  if (!state.decorationManagerRef.current) {
+    state.decorationManagerRef.current = new DecorationManager(3000);
+  }
+
+  const decorationManager = state.decorationManagerRef.current;
 
   // 获取可见范围内的文本
   const visibleRanges = editor.getVisibleRanges();
@@ -127,11 +133,8 @@ export const updateUrlDecorations = (
 
   if (!model) return;
 
-  const cache = state.cacheRef.current;
-
-  if (!state.decorationsRef.current) {
-    state.decorationsRef.current = editor.createDecorationsCollection();
-  }
+  // 定期清理过期缓存
+  decorationManager.cleanupExpiredCache();
 
   // 遍历可见范围内的每一行
   for (const range of visibleRanges) {
@@ -142,17 +145,13 @@ export const updateUrlDecorations = (
     ) {
       const lineContent = model.getLineContent(lineNumber);
 
-      // 当前行已处理则跳过
-      if (cache[lineNumber]) {
+      // 使用装饰器管理器检查是否需要处理此行
+      if (!decorationManager.shouldProcessLine(lineNumber, lineContent, 1000)) {
         continue;
-      } else {
-        cache[lineNumber] = true;
       }
 
-      // 超过长度的代码跳过以提高性能
-      if (lineContent.length > 1000) {
-        continue;
-      }
+      // 更新内容缓存
+      decorationManager.updateContentCache(lineNumber, lineContent);
 
       // 复位正则表达式的lastIndex
       URL_REGEX.lastIndex = 0;
@@ -241,29 +240,11 @@ export const updateUrlDecorations = (
         decorations.push(decoration);
       }
 
+      // 清理旧行装饰器并应用新装饰器
+      decorationManager.clearLineDecorations(editor, lineNumber);
+
       if (decorations.length > 0) {
-        let lineDecorations =
-          state.editorRef.current?.getLineDecorations(lineNumber);
-
-        // 删除之前的装饰器
-        if (lineDecorations) {
-          for (let i = lineDecorations.length - 1; i >= 0; i--) {
-            let lineDecoration = lineDecorations[i];
-
-            if (lineDecoration.options.zIndex === 3000) {
-              state.editorRef.current?.removeDecorations([lineDecoration.id]);
-            }
-          }
-        }
-
-        let ids = state.decorationIdsRef.current[lineNumber];
-
-        if (ids && ids.length > 0) {
-          state.editorRef.current?.removeDecorations(ids);
-        }
-
-        state.decorationIdsRef.current[lineNumber] =
-          state.decorationsRef.current?.append(decorations);
+        decorationManager.applyDecorations(editor, decorations);
       }
     }
   }
@@ -288,34 +269,62 @@ export const handleUrlContentChange = (
   }
 
   state.updateTimeoutRef.current = setTimeout(() => {
-    // 内容发生变化时需要重新计算
-    if (e.changes && e.changes.length > 0) {
-      const regex = new RegExp(e.eol, "g");
+    if (!state.editorRef.current || !state.decorationManagerRef.current) {
+      return;
+    }
 
-      for (let i = 0; i < e.changes.length; i++) {
-        let startLineNumber = e.changes[i].range.startLineNumber;
-        let endLineNumber = e.changes[i].range.endLineNumber;
+    const editor = state.editorRef.current;
+    const decorationManager = state.decorationManagerRef.current;
 
-        // 当只有变化一行时，判断一下更新的内容是否有 \n
-        if (endLineNumber - startLineNumber == 0) {
-          const matches = e.changes[i].text.match(regex);
+    // 检查是否为完全替换
+    const model = editor.getModel();
+    const isFullReplacement = model && e.changes.some(change =>
+      change.range.startLineNumber === 1 &&
+      change.range.endLineNumber >= model.getLineCount()
+    );
 
-          if (matches) {
-            endLineNumber = endLineNumber + matches?.length;
+    if (isFullReplacement) {
+      // 完全替换：清理所有装饰器
+      decorationManager.clearAllDecorations(editor);
+    } else {
+      // 增量更新：只清理受影响的行
+      if (e.changes && e.changes.length > 0) {
+        const regex = new RegExp(e.eol, "g");
+
+        for (let i = 0; i < e.changes.length; i++) {
+          let startLineNumber = e.changes[i].range.startLineNumber;
+          let endLineNumber = e.changes[i].range.endLineNumber;
+
+          // 当只有变化一行时，判断一下更新的内容是否有 \n
+          if (endLineNumber - startLineNumber == 0) {
+            const matches = e.changes[i].text.match(regex);
+
+            if (matches) {
+              endLineNumber = endLineNumber + matches?.length;
+            }
           }
-        }
 
-        for (let sLine = startLineNumber; sLine <= endLineNumber; sLine++) {
-          // 设置行需要重新检测
-          state.cacheRef.current[sLine] = false;
+          // 清理受影响范围的装饰器
+          decorationManager.clearRangeDecorations(editor, startLineNumber, endLineNumber);
+
+          // 装饰器管理器会自动处理缓存失效，无需手动设置
         }
       }
     }
 
-    if (state.editorRef.current) {
-      updateUrlDecorations(state.editorRef.current, state);
-    }
+    updateUrlDecorations(editor, state);
   }, 200);
+};
+
+/**
+ * 清理URL装饰器缓存
+ * @param state URL下划线装饰器状态
+ */
+export const clearUrlCache = (state: UrlDecoratorState): void => {
+  // 使用装饰器管理器清理装饰器
+  if (state.editorRef.current && state.decorationManagerRef.current) {
+    state.decorationManagerRef.current.clearAllDecorations(state.editorRef.current);
+  }
 };
 
 /**

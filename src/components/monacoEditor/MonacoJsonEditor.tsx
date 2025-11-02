@@ -63,6 +63,7 @@ import {
   setUrlDecorationEnabled,
   setUrlProviderEnabled,
 } from "@/components/monacoEditor/decorations/urlDecoration.ts";
+import { DecorationManager } from "@/components/monacoEditor/decorations/decorationManager.ts";
 
 import "@/styles/monaco.css";
 import ErrorModal from "@/components/monacoEditor/ErrorModal.tsx";
@@ -192,25 +193,16 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     useState(urlDecoderEnabled);
 
   // Base64下划线装饰器相关引用
-  const base64DecorationsRef =
-    useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
-  const base64DecorationIdsRef = useRef<Record<string, string[]>>({});
   const base64UpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const base64CacheRef = useRef<Record<string, boolean>>({});
+  const base64DecorationManagerRef = useRef<DecorationManager | null>(null);
 
   // Unicode下划线装饰器相关引用
-  const unicodeDecorationsRef =
-    useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
-  const unicodeDecorationIdsRef = useRef<Record<string, string[]>>({});
   const unicodeUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const unicodeCacheRef = useRef<Record<string, boolean>>({});
+  const unicodeDecorationManagerRef = useRef<DecorationManager | null>(null);
 
   // URL下划线装饰器相关引用
-  const urlDecorationsRef =
-    useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
-  const urlDecorationIdsRef = useRef<Record<string, string[]>>({});
   const urlUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const urlCacheRef = useRef<Record<string, boolean>>({});
+  const urlDecorationManagerRef = useRef<DecorationManager | null>(null);
 
   // 跟踪是否为首次粘贴状态（用于首次粘贴时自动格式化）
   const [isFirstPaste, setIsFirstPaste] = useState(true);
@@ -229,33 +221,27 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   // Base64下划线装饰器状态
   const base64DecoratorState: Base64DecoratorState = {
     editorRef: editorRef,
-    decorationsRef: base64DecorationsRef,
-    decorationIdsRef: base64DecorationIdsRef,
     hoverProviderId: { current: null },
-    cacheRef: base64CacheRef,
     updateTimeoutRef: base64UpdateTimeoutRef,
+    decorationManagerRef: base64DecorationManagerRef,
     enabled: base64DecoratorsEnabled,
   };
 
   // Unicode下划线装饰器状态
   const unicodeDecoratorState: UnicodeDecoratorState = {
     editorRef: editorRef,
-    decorationsRef: unicodeDecorationsRef,
-    decorationIdsRef: unicodeDecorationIdsRef,
     hoverProviderId: { current: null },
-    cacheRef: unicodeCacheRef,
     updateTimeoutRef: unicodeUpdateTimeoutRef,
+    decorationManagerRef: unicodeDecorationManagerRef,
     enabled: unicodeDecoratorsEnabled,
   };
 
   // URL下划线装饰器状态
   const urlDecoratorState: UrlDecoratorState = {
     editorRef: editorRef,
-    decorationsRef: urlDecorationsRef,
-    decorationIdsRef: urlDecorationIdsRef,
     hoverProviderId: { current: null },
-    cacheRef: urlCacheRef,
     updateTimeoutRef: urlUpdateTimeoutRef,
+    decorationManagerRef: urlDecorationManagerRef,
     enabled: urlDecoratorsEnabled,
   };
 
@@ -698,10 +684,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     setBase64DecorationEnabled(base64DecoratorsEnabled);
 
     if (base64DecoratorsEnabled) {
-      // 清空缓存并更新装饰器
-      if (base64CacheRef.current) {
-        base64CacheRef.current = {};
-      }
+      // 更新装饰器
       setTimeout(() => {
         if (editorRef.current) {
           updateBase64Decorations(editorRef.current, base64DecoratorState);
@@ -709,11 +692,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       }, 0);
     } else {
       // 禁用时清理装饰器
-      if (base64DecorationsRef.current) {
-        base64DecorationsRef.current.clear();
-      }
-      if (base64CacheRef.current) {
-        base64CacheRef.current = {};
+      if (base64DecorationManagerRef.current) {
+        base64DecorationManagerRef.current.clearAllDecorations(editorRef.current!);
       }
     }
   }, [base64DecoratorsEnabled]);
@@ -729,9 +709,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
     if (unicodeDecoratorsEnabled) {
       // 清空缓存并更新装饰器
-      if (unicodeCacheRef.current) {
-        unicodeCacheRef.current = {};
-      }
       setTimeout(() => {
         if (editorRef.current) {
           updateUnicodeDecorations(editorRef.current, unicodeDecoratorState);
@@ -739,11 +716,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       }, 0);
     } else {
       // 禁用时清理装饰器
-      if (unicodeDecorationsRef.current) {
-        unicodeDecorationsRef.current.clear();
-      }
-      if (unicodeCacheRef.current) {
-        unicodeCacheRef.current = {};
+      if (unicodeDecorationManagerRef.current) {
+        unicodeDecorationManagerRef.current.clearAllDecorations(editorRef.current!);
       }
     }
   }, [unicodeDecoratorsEnabled]);
@@ -758,10 +732,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     setUrlDecorationEnabled(urlDecoratorsEnabled);
 
     if (urlDecoratorsEnabled) {
-      // 清空缓存并更新装饰器
-      if (urlCacheRef.current) {
-        urlCacheRef.current = {};
-      }
+      // 更新装饰器
       setTimeout(() => {
         if (editorRef.current) {
           updateUrlDecorations(editorRef.current, urlDecoratorState);
@@ -769,11 +740,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       }, 0);
     } else {
       // 禁用时清理装饰器
-      if (urlDecorationsRef.current) {
-        urlDecorationsRef.current.clear();
-      }
-      if (urlCacheRef.current) {
-        urlCacheRef.current = {};
+      if (urlDecorationManagerRef.current) {
+        urlDecorationManagerRef.current.clearAllDecorations(editorRef.current!);
       }
     }
   }, [urlDecoratorsEnabled]);
@@ -1204,34 +1172,15 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           timestampDecorationIdsRef.current = {};
         }
 
-        if (base64DecorationsRef.current) {
-          base64DecorationsRef.current.clear();
+        // 清理装饰器管理器中的装饰器
+        if (base64DecorationManagerRef.current) {
+          base64DecorationManagerRef.current.clearAllDecorations(editorRef.current);
         }
-        if (base64CacheRef.current) {
-          base64CacheRef.current = {};
+        if (unicodeDecorationManagerRef.current) {
+          unicodeDecorationManagerRef.current.clearAllDecorations(editorRef.current);
         }
-        if (base64DecorationIdsRef.current) {
-          base64DecorationIdsRef.current = {};
-        }
-
-        if (unicodeDecorationsRef.current) {
-          unicodeDecorationsRef.current.clear();
-        }
-        if (unicodeCacheRef.current) {
-          unicodeCacheRef.current = {};
-        }
-        if (unicodeDecorationIdsRef.current) {
-          unicodeDecorationIdsRef.current = {};
-        }
-
-        if (urlDecorationsRef.current) {
-          urlDecorationsRef.current.clear();
-        }
-        if (urlCacheRef.current) {
-          urlCacheRef.current = {};
-        }
-        if (urlDecorationIdsRef.current) {
-          urlDecorationIdsRef.current = {};
+        if (urlDecorationManagerRef.current) {
+          urlDecorationManagerRef.current.clearAllDecorations(editorRef.current);
         }
 
         return true;
