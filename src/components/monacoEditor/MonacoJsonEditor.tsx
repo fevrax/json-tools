@@ -271,6 +271,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     cacheRef: imageCacheRef,
     enabled: imageDecoratorsEnabled,
     theme: theme == "vs-dark" ? "dark" : "light",
+    editorPrefix: "normal"
   };
 
   // 错误高亮装饰器状态
