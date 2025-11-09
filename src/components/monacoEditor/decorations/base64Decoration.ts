@@ -27,7 +27,6 @@ export const registerBase64HoverProvider = () => {
     provideHover: (model, position) => {
       // 如果提供者被禁用，直接返回null
       if (!isBase64ProviderEnabled) return null;
-
       const lineContent = model.getLineContent(position.lineNumber);
       const wordInfo = model?.getWordAtPosition(position);
 
@@ -91,9 +90,18 @@ export const updateBase64Decorations = (
 
   if (!visibleRanges.length) return;
 
+  // 检查行数，少于3行时清空装饰器
   const model = editor.getModel();
 
-  if (!model) return;
+  if (!model) {
+    return;
+  }
+  // 检查行数，少于3行时清空装饰器，
+  if (model.getLineCount() < 3) {
+    clearBase64Cache(state);
+
+    return;
+  }
 
   // 定期清理过期缓存
   decorationManager.cleanupExpiredCache();
@@ -210,8 +218,20 @@ export const handleBase64ContentChange = (
     const editor = state.editorRef.current;
     const decorationManager = state.decorationManagerRef.current;
 
-    // 检查是否为完全替换
+    // 检查行数，少于3行时清空装饰器
     const model = editor.getModel();
+
+    if (!model) {
+      return;
+    }
+    // 检查行数，少于3行时清空装饰器，
+    if (model.getLineCount() < 3) {
+      clearBase64Cache(state);
+
+      return;
+    }
+
+    // 检查是否为完全替换
     const isFullReplacement =
       model &&
       e.changes.some(

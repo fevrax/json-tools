@@ -926,7 +926,8 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
                 isSelected={imageDecoratorsEnabled ?? true}
                 size="sm"
                 onChange={() =>
-                  onImageDecoratorsChange && onImageDecoratorsChange(!(imageDecoratorsEnabled ?? true))
+                  onImageDecoratorsChange &&
+                  onImageDecoratorsChange(!(imageDecoratorsEnabled ?? true))
                 }
               />
             </div>

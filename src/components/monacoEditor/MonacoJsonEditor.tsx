@@ -37,6 +37,7 @@ import {
   toggleTimestampDecorators,
   updateTimestampDecorations,
   handleTimestampContentChange,
+  setTimestampDecorationEnabled,
 } from "@/components/monacoEditor/decorations/timestampDecoration.ts";
 import {
   ErrorDecoratorState,
@@ -271,7 +272,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     cacheRef: imageCacheRef,
     enabled: imageDecoratorsEnabled,
     theme: theme == "vs-dark" ? "dark" : "light",
-    editorPrefix: "normal"
+    editorPrefix: "normal",
   };
 
   // 错误高亮装饰器状态
@@ -726,6 +727,11 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     if (urlDecorationManagerRef.current) {
       urlDecorationManagerRef.current.clearAllDecorations(editorRef.current);
     }
+
+    // 清空图片装饰器
+    if (imageDecorationManagerRef.current) {
+      imageDecorationManagerRef.current.clearAllDecorations(editorRef.current);
+    }
   };
 
   // 监听时间戳装饰器状态变化
@@ -956,15 +962,6 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
     if (editorRef.current.getValue() === "") {
       toast.error("暂无内容!");
-
-      return false;
-    }
-
-    // 检查行数，少于3行时不格式化
-    const lineCount = getEditorLineCount();
-
-    if (lineCount < 3) {
-      toast.default("内容少于3行，跳过格式化");
 
       return false;
     }
@@ -1659,14 +1656,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
                   const isValid = editorValueValidate(val);
 
                   if (isValid) {
-                    // 检查行数，少于3行时不格式化
-                    const lineCount =
-                      editorRef.current.getModel()?.getLineCount() || 0;
-
-                    if (lineCount >= 3) {
-                      // 验证成功后进行格式化
-                      editorFormat();
-                    }
+                    // 验证成功后进行格式化
+                    editorFormat();
                     // 设置为非首次粘贴状态，避免重复格式化
                     setIsFirstPaste(false);
                   }
@@ -1679,60 +1670,75 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         editorRef.current = editor;
         setIsEditorReady(true);
 
-        // 初始化装饰器
-        setTimeout(() => {
-          if (editorRef.current) {
-            // 检查行数，小于3行时不启用装饰器
-            const lineCount = getEditorLineCount();
+        // 统一初始化所有装饰器
+        // 使用 onDidLayoutChange 确保编辑器布局完成后再初始化装饰器
+        let hasInitializedDecorations = false;
 
-            if (lineCount >= 3) {
-              // 初始化时间戳装饰器
-              if (timestampDecoratorsEnabled) {
-                updateTimestampDecorations(
-                  editorRef.current,
-                  timestampDecoratorState,
-                );
-              }
-
-              // 初始化Base64装饰器
-              if (base64DecoratorsEnabled) {
-                // 确保全局状态与本地状态同步
-                setBase64ProviderEnabled(base64DecoratorsEnabled);
-                setBase64DecorationEnabled(base64DecoratorsEnabled);
-                updateBase64Decorations(
-                  editorRef.current,
-                  base64DecoratorState,
-                );
-              }
-
-              // 初始化Unicode装饰器
-              if (unicodeDecoratorsEnabled) {
-                // 确保全局状态与本地状态同步
-                setUnicodeProviderEnabled(unicodeDecoratorsEnabled);
-                setUnicodeDecorationEnabled(unicodeDecoratorsEnabled);
-                updateUnicodeDecorations(
-                  editorRef.current,
-                  unicodeDecoratorState,
-                );
-              }
-
-              // 初始化URL装饰器
-              if (urlDecoratorsEnabled) {
-                // 确保全局状态与本地状态同步
-                setUrlProviderEnabled(urlDecoratorsEnabled);
-                setUrlDecorationEnabled(urlDecoratorsEnabled);
-                updateUrlDecorations(editorRef.current, urlDecoratorState);
-              }
-
-              // 初始化图片装饰器
-              if (imageDecoratorsEnabled && lineCount >= 1) {
-                // 确保全局状态与本地状态同步
-                setImageDecorationEnabled(imageDecoratorsEnabled);
-                updateImageDecorations(editorRef.current, imageDecoratorState);
-              }
-            }
+        const initializeDecorations = () => {
+          // 防止重复初始化
+          if (hasInitializedDecorations || !editorRef.current) {
+            return;
           }
-        }, 300);
+
+          hasInitializedDecorations = true;
+
+          // 检查行数，少于3行时不启用装饰器（图片装饰器除外）
+          const lineCount = getEditorLineCount();
+
+          if (lineCount < 3) {
+            return;
+          }
+
+          // 统一初始化时间戳装饰器 - 先设置状态再更新
+          if (timestampDecoratorsEnabled) {
+            // 确保全局状态与本地状态同步
+            setTimestampDecorationEnabled(timestampDecoratorsEnabled);
+            updateTimestampDecorations(
+              editorRef.current,
+              timestampDecoratorState,
+            );
+          }
+
+          // 统一初始化Base64装饰器 - 先设置状态再更新
+          if (base64DecoratorsEnabled) {
+            // 确保全局状态与本地状态同步
+            setBase64ProviderEnabled(base64DecoratorsEnabled);
+            setBase64DecorationEnabled(base64DecoratorsEnabled);
+            updateBase64Decorations(editorRef.current, base64DecoratorState);
+          }
+
+          // 统一初始化Unicode装饰器 - 先设置状态再更新
+          if (unicodeDecoratorsEnabled) {
+            // 确保全局状态与本地状态同步
+            setUnicodeProviderEnabled(unicodeDecoratorsEnabled);
+            setUnicodeDecorationEnabled(unicodeDecoratorsEnabled);
+            updateUnicodeDecorations(editorRef.current, unicodeDecoratorState);
+          }
+
+          // 统一初始化URL装饰器 - 先设置状态再更新
+          if (urlDecoratorsEnabled) {
+            // 确保全局状态与本地状态同步
+            setUrlProviderEnabled(urlDecoratorsEnabled);
+            setUrlDecorationEnabled(urlDecoratorsEnabled);
+            updateUrlDecorations(editorRef.current, urlDecoratorState);
+          }
+
+          // 初始化图片装饰器 - 图片装饰器对行数没有严格要求
+          if (imageDecoratorsEnabled) {
+            // 确保全局状态与本地状态同步
+            setImageDecorationEnabled(imageDecoratorsEnabled);
+            updateImageDecorations(editorRef.current, imageDecoratorState);
+          }
+        };
+
+        // utools 加载慢，延迟初始化
+        setTimeout(() => {
+          if (!hasInitializedDecorations) {
+            initializeDecorations();
+
+            return;
+          }
+        }, 1000);
       }
     }, 0);
 
