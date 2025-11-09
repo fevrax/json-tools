@@ -16,10 +16,6 @@ import {
   setUrlDecorationEnabled,
   setUrlProviderEnabled,
 } from "@/components/monacoEditor/decorations/urlDecoration.ts";
-import {
-  setImageDecorationEnabled,
-  setImageProviderEnabled,
-} from "@/components/monacoEditor/decorations/imageDecoration.ts";
 
 // 定义菜单位置类型
 interface MenuPosition {
@@ -93,13 +89,7 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   tabKey,
   timestampDecoratorsEnabled,
   onTimestampDecoratorsChange,
-  base64DecoratorsEnabled,
-  unicodeDecoratorsEnabled,
-  urlDecoratorsEnabled,
   imageDecoratorsEnabled,
-  onBase64DecoratorsChange,
-  onUnicodeDecoratorsChange,
-  onUrlDecoratorsChange,
   onImageDecoratorsChange,
 }) => {
   const { updateEditorSettings, activeTab, activeTabKey } = useTabStore();
