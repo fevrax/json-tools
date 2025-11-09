@@ -538,7 +538,17 @@ export const updateImageDecorations = (
 
   const model = editor.getModel();
 
-  if (!model) return;
+  if (!model) {
+    return;
+  }
+  // 检查行数，少于3行时清空装饰器，
+  const lineCount = model.getLineCount();
+
+  if (lineCount < 3) {
+    clearImageCache(state);
+
+    return;
+  }
 
   // 定期清理过期缓存
   decorationManager.cleanupExpiredCache();
@@ -666,6 +676,18 @@ export const handleImageContentChange = (
     const editor = state.editorRef.current;
     const decorationManager = state.decorationManagerRef.current;
     const model = editor.getModel();
+
+    if (!model) {
+      return;
+    }
+    // 检查行数，少于3行时清空装饰器，
+    const lineCount = model.getLineCount();
+
+    if (lineCount < 3) {
+      clearImageCache(state);
+
+      return;
+    }
 
     // 检查是否为完全替换
     const isFullReplacement =

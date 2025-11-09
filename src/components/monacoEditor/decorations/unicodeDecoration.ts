@@ -2,8 +2,9 @@ import * as monaco from "monaco-editor";
 import { editor } from "monaco-editor";
 import { RefObject } from "react";
 
-import { decodeUnicode, UNICODE_STRING_REGEX } from "@/utils/unicode.ts";
 import { DecorationManager } from "./decorationManager.ts";
+
+import { decodeUnicode, UNICODE_STRING_REGEX } from "@/utils/unicode.ts";
 
 // 定义Unicode下划线装饰器接口
 export interface UnicodeDecoratorState {
@@ -99,6 +100,7 @@ export const updateUnicodeDecorations = (
     if (state.decorationManagerRef.current) {
       state.decorationManagerRef.current.clearAllDecorations(editor);
     }
+
     return;
   }
 
@@ -117,6 +119,13 @@ export const updateUnicodeDecorations = (
   const model = editor.getModel();
 
   if (!model) return;
+  const lineCount = model.getLineCount();
+
+  if (lineCount < 3) {
+    clearUnicodeCache(state);
+
+    return;
+  }
 
   // 定期清理过期缓存
   decorationManager.cleanupExpiredCache();
@@ -233,12 +242,28 @@ export const handleUnicodeContentChange = (
     const editor = state.editorRef.current;
     const decorationManager = state.decorationManagerRef.current;
 
-    // 检查是否为完全替换
+    // 检查行数，少于3行时清空装饰器
     const model = editor.getModel();
-    const isFullReplacement = model && e.changes.some(change =>
-      change.range.startLineNumber === 1 &&
-      change.range.endLineNumber >= model.getLineCount()
-    );
+
+    if (!model) {
+      return;
+    }
+    const lineCount = model.getLineCount();
+
+    if (lineCount < 3) {
+      clearUnicodeCache(state);
+
+      return;
+    }
+
+    // 检查是否为完全替换
+    const isFullReplacement =
+      model &&
+      e.changes.some(
+        (change) =>
+          change.range.startLineNumber === 1 &&
+          change.range.endLineNumber >= model.getLineCount(),
+      );
 
     if (isFullReplacement) {
       // 完全替换：清理所有装饰器
@@ -262,7 +287,11 @@ export const handleUnicodeContentChange = (
           }
 
           // 清理受影响范围的装饰器
-          decorationManager.clearRangeDecorations(editor, startLineNumber, endLineNumber);
+          decorationManager.clearRangeDecorations(
+            editor,
+            startLineNumber,
+            endLineNumber,
+          );
 
           // 装饰器管理器会自动处理缓存失效，无需手动设置
         }
@@ -280,7 +309,9 @@ export const handleUnicodeContentChange = (
 export const clearUnicodeCache = (state: UnicodeDecoratorState): void => {
   // 使用装饰器管理器清理装饰器
   if (state.editorRef.current && state.decorationManagerRef.current) {
-    state.decorationManagerRef.current.clearAllDecorations(state.editorRef.current);
+    state.decorationManagerRef.current.clearAllDecorations(
+      state.editorRef.current,
+    );
   }
 };
 

@@ -114,6 +114,7 @@ export const updateUrlDecorations = (
     if (state.decorationManagerRef.current) {
       state.decorationManagerRef.current.clearAllDecorations(editor);
     }
+
     return;
   }
 
@@ -129,9 +130,18 @@ export const updateUrlDecorations = (
 
   if (!visibleRanges.length) return;
 
+  // 检查行数，少于3行时清空装饰器
   const model = editor.getModel();
 
-  if (!model) return;
+  if (!model) {
+    return;
+  }
+  // 检查行数，少于3行时清空装饰器，
+  if (model.getLineCount() < 3) {
+    clearUrlCache(state);
+
+    return;
+  }
 
   // 定期清理过期缓存
   decorationManager.cleanupExpiredCache();
@@ -276,12 +286,27 @@ export const handleUrlContentChange = (
     const editor = state.editorRef.current;
     const decorationManager = state.decorationManagerRef.current;
 
-    // 检查是否为完全替换
+    // 检查行数，少于3行时清空装饰器
     const model = editor.getModel();
-    const isFullReplacement = model && e.changes.some(change =>
-      change.range.startLineNumber === 1 &&
-      change.range.endLineNumber >= model.getLineCount()
-    );
+
+    if (!model) {
+      return;
+    }
+    // 检查行数，少于3行时清空装饰器，
+    if (model.getLineCount() < 3) {
+      clearUrlCache(state);
+
+      return;
+    }
+
+    // 检查是否为完全替换
+    const isFullReplacement =
+      model &&
+      e.changes.some(
+        (change) =>
+          change.range.startLineNumber === 1 &&
+          change.range.endLineNumber >= model.getLineCount(),
+      );
 
     if (isFullReplacement) {
       // 完全替换：清理所有装饰器
@@ -305,7 +330,11 @@ export const handleUrlContentChange = (
           }
 
           // 清理受影响范围的装饰器
-          decorationManager.clearRangeDecorations(editor, startLineNumber, endLineNumber);
+          decorationManager.clearRangeDecorations(
+            editor,
+            startLineNumber,
+            endLineNumber,
+          );
 
           // 装饰器管理器会自动处理缓存失效，无需手动设置
         }
@@ -323,7 +352,9 @@ export const handleUrlContentChange = (
 export const clearUrlCache = (state: UrlDecoratorState): void => {
   // 使用装饰器管理器清理装饰器
   if (state.editorRef.current && state.decorationManagerRef.current) {
-    state.decorationManagerRef.current.clearAllDecorations(state.editorRef.current);
+    state.decorationManagerRef.current.clearAllDecorations(
+      state.editorRef.current,
+    );
   }
 };
 
