@@ -1,3 +1,13 @@
+## [1.15.2](https://github.com/fevrax/json-tools/compare/v1.15.1...v1.15.2) (2025-11-09)
+
+
+### Bug Fixes
+
+* delete unused reference ([a494978](https://github.com/fevrax/json-tools/commit/a4949789489ebfc48fc3e845ad78dadb0c08ce3e))
+* diff json image preview ([276afc4](https://github.com/fevrax/json-tools/commit/276afc49eaf1b7ab00543486bc577b2a274b0953))
+* format fix ([498f2dd](https://github.com/fevrax/json-tools/commit/498f2dd67ecb3c3d46d6bce88b67651e5a3fcc3c))
+* image preview ([5a22b2c](https://github.com/fevrax/json-tools/commit/5a22b2c51715b2fd9027648bc7364347d393924a))
+
 # [1.15.0](https://github.com/fevrax/json-tools/compare/v1.14.0...v1.15.0) (2025-11-02)
 
 
