@@ -16,6 +16,10 @@ import {
   setUrlDecorationEnabled,
   setUrlProviderEnabled,
 } from "@/components/monacoEditor/decorations/urlDecoration.ts";
+import {
+  setImageDecorationEnabled,
+  setImageProviderEnabled,
+} from "@/components/monacoEditor/decorations/imageDecoration.ts";
 
 // 定义菜单位置类型
 interface MenuPosition {
@@ -70,9 +74,11 @@ interface DraggableMenuProps {
   base64DecoratorsEnabled?: boolean; // 添加Base64装饰器状态
   unicodeDecoratorsEnabled?: boolean; // 添加Unicode装饰器状态
   urlDecoratorsEnabled?: boolean; // 添加URL装饰器状态
+  imageDecoratorsEnabled?: boolean; // 添加图片装饰器状态
   onBase64DecoratorsChange?: (enabled: boolean) => void; // 添加Base64装饰器状态变更函数
   onUnicodeDecoratorsChange?: (enabled: boolean) => void; // 添加Unicode装饰器状态变更函数
   onUrlDecoratorsChange?: (enabled: boolean) => void; // 添加URL装饰器状态变更函数
+  onImageDecoratorsChange?: (enabled: boolean) => void; // 添加图片装饰器状态变更函数
 }
 
 const DraggableMenu: React.FC<DraggableMenuProps> = ({
@@ -87,6 +93,14 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
   tabKey,
   timestampDecoratorsEnabled,
   onTimestampDecoratorsChange,
+  base64DecoratorsEnabled,
+  unicodeDecoratorsEnabled,
+  urlDecoratorsEnabled,
+  imageDecoratorsEnabled,
+  onBase64DecoratorsChange,
+  onUnicodeDecoratorsChange,
+  onUrlDecoratorsChange,
+  onImageDecoratorsChange,
 }) => {
   const { updateEditorSettings, activeTab, activeTabKey } = useTabStore();
   const {
@@ -900,6 +914,33 @@ const DraggableMenu: React.FC<DraggableMenuProps> = ({
               onChange={() => handleUrlDecodersChange(!urlDecoderEnabled)}
             />
           </div>
+
+          {/* 图片预览装饰器开关 */}
+          {onImageDecoratorsChange && (
+            <div className="flex items-center justify-between px-1">
+              <div className="space-y-1">
+                <label
+                  className="text-xs uppercase tracking-wide font-semibold text-gray-600 dark:text-gray-300"
+                  htmlFor="image-decoration-switch"
+                >
+                  图片预览装饰器
+                </label>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  自动识别图片URL并显示预览按钮
+                </p>
+              </div>
+              <Switch
+                aria-label="图片预览装饰器开关"
+                color="primary"
+                id="image-decoration-switch"
+                isSelected={imageDecoratorsEnabled ?? true}
+                size="sm"
+                onChange={() =>
+                  onImageDecoratorsChange && onImageDecoratorsChange(!(imageDecoratorsEnabled ?? true))
+                }
+              />
+            </div>
+          )}
 
           {/* 分隔线 */}
           <div className="h-px bg-gray-200 dark:bg-gray-700/40" />

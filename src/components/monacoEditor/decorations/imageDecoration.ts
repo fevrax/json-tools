@@ -31,63 +31,31 @@ const getCurrentTheme = (): string => {
   return document.documentElement.classList.contains("dark") ? "dark" : "light";
 };
 
+// 获取当前主题对应的样式
+const getThemeStyles = (theme?: string) => {
+  const currentTheme = theme || getCurrentTheme();
+  const isDark = currentTheme === "dark";
+
+  return {
+    linkBgColor: isDark ? "#374151" : "#f3f4f6",
+    linkTextColor: isDark ? "#9ca3af" : "#6b7280",
+    linkBorderColor: isDark ? "#4b5563" : "#e5e7eb",
+    hoverBgColor: isDark ? "#4b5563" : "#e5e7eb",
+    successBgColor: isDark ? "#065f46" : "#10b981",
+    successBorderColor: isDark ? "#047857" : "#059669",
+  };
+};
+
 // 全局启用状态控制
 let isImageDecorationEnabled = true; // 下划线装饰器全局启用状态
-let isImageProviderEnabled = true; // 全局图片悬停提供者启用状态
-
-/**
- * 注册全局图片悬停提供者
- */
-export const registerImageHoverProvider = () => {
-  monaco.languages.registerHoverProvider(["json", "json5"], {
-    provideHover: (model, position) => {
-      // 如果提供者被禁用，直接返回null
-      if (!isImageProviderEnabled) return null;
-
-      const lineContent = model.getLineContent(position.lineNumber);
-      const wordInfo = model?.getWordAtPosition(position);
-
-      if (!wordInfo) return null;
-
-      // 检查当前位置是否在图片URL中
-      IMAGE_URL_REGEX.lastIndex = 0;
-      const match = IMAGE_URL_REGEX.exec(lineContent);
-
-      if (!match) return null;
-
-      const imageUrl = match[0];
-      const urlStart = match.index;
-      const urlEnd = urlStart + imageUrl.length;
-
-      // 检查光标位置是否在URL范围内
-      const cursorPos = wordInfo.startColumn;
-
-      if (cursorPos < urlStart + 1 || cursorPos > urlEnd) {
-        return null;
-      }
-
-      // 返回悬停信息
-      return {
-        contents: [
-          { value: "**图片预览**" },
-          { value: "![图片](<点此在新窗口中打开>)\n\n" + imageUrl },
-        ],
-        range: new monaco.Range(
-          position.lineNumber,
-          urlStart + 1,
-          position.lineNumber,
-          urlEnd,
-        ),
-      };
-    },
-  });
-};
+let isImageProviderEnabled = false; // 全局图片悬停提供者启用状态（已禁用）
 
 // 图片预览弹窗管理器
 class ImagePreviewManager {
   private static instance: ImagePreviewManager;
   private currentPreview: HTMLElement | null = null;
   private themeObserver: MutationObserver | null = null;
+  private copyTimeout: NodeJS.Timeout | null = null; // 跟踪复制超时
 
   static getInstance(): ImagePreviewManager {
     if (!ImagePreviewManager.instance) {
@@ -126,6 +94,11 @@ class ImagePreviewManager {
               }
             }
           }
+          // 清除复制超时
+          if (this.copyTimeout) {
+            clearTimeout(this.copyTimeout);
+            this.copyTimeout = null;
+          }
         }
       });
     });
@@ -158,13 +131,13 @@ class ImagePreviewManager {
       position: fixed;
       background: ${isDarkMode ? "#1f2937" : "#ffffff"};
       border: 1px solid ${isDarkMode ? "#374151" : "#e5e7eb"};
-      border-radius: 16px;
+      border-radius: 12px;
       box-shadow: 0 4px 6px -1px ${isDarkMode ? "rgba(0, 0, 0, 0.3)" : "rgba(0, 0, 0, 0.1)"},
                   0 2px 4px -1px ${isDarkMode ? "rgba(0, 0, 0, 0.2)" : "rgba(0, 0, 0, 0.06)"};
-      padding: 16px;
+      padding: 12px;
       z-index: 100000;
-      max-width: min(90vw, 650px);
-      max-height: 85vh;
+      max-width: min(80vw, 500px);
+      max-height: 70vh;
       overflow: hidden;
       cursor: pointer;
       backdrop-filter: blur(20px);
@@ -177,41 +150,58 @@ class ImagePreviewManager {
     img.src = imageUrl;
     img.style.cssText = `
       max-width: 100%;
-      max-height: 50vh;
-      min-height: 120px;
-      display: block;
-      border-radius: 12px;
+      max-height: 35vh;
+      min-height: 80px;
+      display: none;
+      border-radius: 8px;
       object-fit: contain;
     `;
 
-    const loading = document.createElement("div");
-
-    const loadingBgColor = isDarkMode ? "#374151" : "#e5e7eb";
+    // 统一的状态容器样式(加载中和错误都使用这个)
+    const statusBgColor = isDarkMode ? "#1f2937" : "#f9fafb";
+    const statusTextColor = isDarkMode ? "#9ca3af" : "#6b7280";
+    const statusBorderColor = isDarkMode ? "#374151" : "#e5e7eb";
+    const statusIconColor = isDarkMode ? "#6b7280" : "#9ca3af";
     const loadingAccentColor = isDarkMode ? "#60a5fa" : "#3b82f6";
+    const loadingBgColor = isDarkMode ? "#374151" : "#e5e7eb";
 
-    loading.innerHTML = `
-      <div class="loading-content" style="display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 60px 30px; color: ${isDarkMode ? "#9ca3af" : "#6b7280"};">
+    const statusContainer = document.createElement("div");
+
+    statusContainer.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      padding: 60px 30px;
+      color: ${statusTextColor};
+      background: ${statusBgColor};
+      border-radius: 12px;
+      margin: 8px 0;
+      border: 1px solid ${statusBorderColor};
+    `;
+
+    // 加载中的内容
+    statusContainer.innerHTML = `
+      <div style="
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: conic-gradient(from 0deg, ${loadingAccentColor} 0deg 90deg, ${loadingBgColor} 90deg);
+        animation: spin 1s linear infinite;
+        position: relative;
+      ">
         <div style="
-          width: 40px;
-          height: 40px;
+          width: 24px;
+          height: 24px;
           border-radius: 50%;
-          background: conic-gradient(from 0deg, ${loadingAccentColor} 0deg 90deg, ${loadingBgColor} 90deg);
-          animation: spin 1s linear infinite;
-          position: relative;
-        ">
-          <div style="
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            background: ${isDarkMode ? "#1f2937" : "#ffffff"};
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-          "></div>
-        </div>
-        <div style="font-size: 16px; font-weight: 500;">加载图片中...</div>
+          background: ${isDarkMode ? "#1f2937" : "#ffffff"};
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+        "></div>
       </div>
+      <div style="font-size: 16px; font-weight: 500;">加载图片中...</div>
       <style>
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
         @keyframes fadeInScale { 0% { opacity: 0; transform: scale(0.9); } 100% { opacity: 1; transform: scale(1); } }
@@ -227,11 +217,11 @@ class ImagePreviewManager {
       </svg>
     `;
     closeBtn.style.cssText = `
-      position: absolute; top: 12px; right: 12px; width: 28px; height: 28px;
+      position: absolute; top: 8px; right: 8px; width: 24px; height: 24px;
       background: ${isDarkMode ? "rgba(239, 68, 68, 0.9)" : "rgba(220, 38, 38, 0.9)"};
       color: white; border-radius: 50%;
       display: flex; align-items: center; justify-content: center; cursor: pointer;
-      font-size: 12px; font-weight: bold; transition: all 0.2s ease; z-index: 10;
+      font-size: 10px; font-weight: bold; transition: all 0.2s ease; z-index: 10;
       backdrop-filter: blur(10px); border: 1px solid ${isDarkMode ? "rgba(239, 68, 68, 0.3)" : "rgba(220, 38, 38, 0.3)"};
     `;
 
@@ -242,55 +232,67 @@ class ImagePreviewManager {
 
     const linkInfo = document.createElement("div");
 
-    const linkBgColor = isDarkMode ? "#374151" : "#f3f4f6";
-    const linkTextColor = isDarkMode ? "#9ca3af" : "#6b7280";
-    const linkBorderColor = isDarkMode ? "#4b5563" : "#e5e7eb";
+    // 使用 getThemeStyles 获取样式
+    const themeStyles = getThemeStyles(theme);
 
-    linkInfo.innerHTML = `
-      <div style="margin-top: 16px; padding: 12px 16px; background: ${linkBgColor}; border-radius: 8px; font-size: 12px; color: ${linkTextColor}; word-break: break-all; font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace; cursor: pointer; transition: all 0.2s ease; border: 1px solid ${linkBorderColor};" title="${imageUrl}">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="flex: 1;">${displayUrl}</span>
-        </div>
-      </div>
+    // 创建链接信息容器
+    const linkInfoWrapper = document.createElement("div");
+
+    linkInfoWrapper.style.cssText = `
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: ${themeStyles.linkBgColor};
+      border-radius: 8px;
+      font-size: 12px;
+      color: ${themeStyles.linkTextColor};
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid ${themeStyles.linkBorderColor};
     `;
+    linkInfoWrapper.title = imageUrl;
+
+    const linkInfoContent = document.createElement("div");
+
+    linkInfoContent.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    `;
+
+    const linkInfoText = document.createElement("span");
+
+    linkInfoText.style.cssText = `
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    `;
+    linkInfoText.textContent = displayUrl;
+
+    linkInfoContent.appendChild(linkInfoText);
+    linkInfoWrapper.appendChild(linkInfoContent);
+    linkInfo.appendChild(linkInfoWrapper);
 
     img.onerror = () => {
       img.style.display = "none";
 
-      // 隐藏加载提示，但保留链接信息在底部
-      const loadingContent = loading.querySelector(
-        ".loading-content",
-      ) as HTMLElement;
-
-      if (loadingContent) {
-        loadingContent.style.display = "none";
-      }
-
-      // 在loading容器内添加错误提示，这样不会影响底部链接的位置
-      const errorText = document.createElement("div");
-
-      const errorBgColor = isDarkMode ? "#1f2937" : "#f9fafb";
-      const errorTextColor = isDarkMode ? "#9ca3af" : "#6b7280";
-      const errorBorderColor = isDarkMode ? "#374151" : "#e5e7eb";
-      const errorIconColor = isDarkMode ? "#6b7280" : "#9ca3af";
-
-      errorText.innerHTML = `
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 60px 30px; color: ${errorTextColor}; background: ${errorBgColor}; border-radius: 12px; margin: 8px 0; border: 1px solid ${errorBorderColor};">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="${errorIconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <line x1="15" y1="9" x2="9" y2="15"></line>
-            <line x1="9" y1="9" x2="15" y2="15"></line>
-          </svg>
-          <div style="font-size: 16px; font-weight: 500;">图片加载失败</div>
-          <div style="font-size: 14px; opacity: 0.7;">请检查图片链接是否有效</div>
-        </div>
+      // 替换状态容器内容为错误状态,保持容器样式不变
+      statusContainer.innerHTML = `
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="${statusIconColor}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="15" y1="9" x2="9" y2="15"></line>
+          <line x1="9" y1="9" x2="15" y2="15"></line>
+        </svg>
+        <div style="font-size: 16px; font-weight: 500;">图片加载失败</div>
+        <div style="font-size: 14px; opacity: 0.7;">请检查图片链接是否有效</div>
       `;
-
-      // 将错误提示添加到loading容器中，确保链接信息保持在底部
-      loading.appendChild(errorText);
     };
 
-    preview.appendChild(loading);
+    preview.appendChild(statusContainer);
     preview.appendChild(img);
     preview.appendChild(closeBtn);
     preview.appendChild(linkInfo);
@@ -331,14 +333,7 @@ class ImagePreviewManager {
     };
 
     img.onload = () => {
-      // 隐藏加载提示内容
-      const loadingContent = loading.querySelector(
-        ".loading-content",
-      ) as HTMLElement;
-
-      if (loadingContent) {
-        loadingContent.style.display = "none";
-      }
+      statusContainer.style.display = "none";
       img.style.display = "block";
 
       const previewRect = preview.getBoundingClientRect();
@@ -353,56 +348,76 @@ class ImagePreviewManager {
       }
     };
 
-    const linkInfoElement = linkInfo.querySelector("div");
+    // 为链接信息元素添加点击和悬停事件
+    linkInfoWrapper.onclick = async (e) => {
+      e.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(imageUrl);
+        const originalContent = linkInfoContent.innerHTML;
 
-    if (linkInfoElement) {
-      linkInfoElement.onclick = async (e) => {
-        e.stopPropagation();
-        try {
-          await navigator.clipboard.writeText(imageUrl);
-          const originalText = linkInfoElement.innerHTML;
+        // 复制成功的绿色背景颜色
+        const currentThemeStyles = getThemeStyles();
 
-          linkInfoElement.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg>
-              <span style="flex: 1;">已复制到剪贴板</span>
-            </div>
-          `;
-          linkInfoElement.style.background = isDarkMode ? "#065f46" : "#10b981";
-          linkInfoElement.style.color = "white";
-          linkInfoElement.style.borderColor = isDarkMode
-            ? "#047857"
-            : "#059669";
-          setTimeout(() => {
-            linkInfoElement.innerHTML = originalText;
-            linkInfoElement.style.background = isDarkMode
-              ? "#374151"
-              : "#f3f4f6";
-            linkInfoElement.style.color = isDarkMode ? "#9ca3af" : "#6b7280";
-            linkInfoElement.style.borderColor = isDarkMode
-              ? "#4b5563"
-              : "#e5e7eb";
-          }, 2000);
-        } catch (err) {
-          console.error("复制失败:", err);
+        linkInfoContent.innerHTML = `
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          <span style="flex: 1;">已复制到剪贴板</span>
+        `;
+        linkInfoWrapper.style.background = currentThemeStyles.successBgColor;
+        linkInfoWrapper.style.color = "white";
+        linkInfoWrapper.style.borderColor =
+          currentThemeStyles.successBorderColor;
+        linkInfoWrapper.setAttribute("data-copy-success", "true");
+
+        // 清除之前的超时
+        if (this.copyTimeout) {
+          clearTimeout(this.copyTimeout);
         }
-      };
 
-      // 添加悬停效果
-      linkInfoElement.onmouseenter = () => {
-        linkInfoElement.style.background = isDarkMode ? "#4b5563" : "#e5e7eb";
-        linkInfoElement.style.transform = "translateY(-1px)";
-      };
+        // 设置新的超时
+        this.copyTimeout = setTimeout(() => {
+          if (
+            linkInfoWrapper &&
+            linkInfoWrapper.getAttribute("data-copy-success") === "true"
+          ) {
+            linkInfoWrapper.removeAttribute("data-copy-success");
+            linkInfoContent.innerHTML = originalContent;
+            // 使用当前主题的样式进行恢复
+            const themeStylesNow = getThemeStyles();
 
-      linkInfoElement.onmouseleave = () => {
-        if (!linkInfoElement.innerHTML.includes("已复制")) {
-          linkInfoElement.style.background = isDarkMode ? "#374151" : "#f3f4f6";
-          linkInfoElement.style.transform = "translateY(0)";
-        }
-      };
-    }
+            linkInfoWrapper.style.background = themeStylesNow.linkBgColor;
+
+            linkInfoWrapper.style.color = themeStylesNow.linkTextColor;
+            linkInfoWrapper.style.borderColor = themeStylesNow.linkBorderColor;
+          }
+        }, 2000);
+      } catch (err) {
+        console.error("复制失败:", err);
+      }
+    };
+
+    // 添加悬停效果
+    linkInfoWrapper.onmouseenter = () => {
+      if (!linkInfoWrapper.getAttribute("data-copy-success")) {
+        const currentThemeStyles = getThemeStyles();
+
+        linkInfoWrapper.style.background = currentThemeStyles.hoverBgColor;
+        linkInfoWrapper.style.transform = "translateY(-1px)";
+      }
+    };
+
+    linkInfoWrapper.onmouseleave = () => {
+      if (!linkInfoWrapper.getAttribute("data-copy-success")) {
+        const currentThemeStyles = getThemeStyles();
+
+        linkInfoWrapper.style.background = currentThemeStyles.linkBgColor;
+
+        linkInfoWrapper.style.color = currentThemeStyles.linkTextColor;
+        linkInfoWrapper.style.borderColor = currentThemeStyles.linkBorderColor;
+        linkInfoWrapper.style.transform = "translateY(0)";
+      }
+    };
 
     // 设置图片为可点击状态
     img.style.cursor = "zoom-in";
@@ -446,6 +461,11 @@ class ImagePreviewManager {
       document.body.removeChild(this.currentPreview);
       this.currentPreview = null;
     }
+    // 清除复制超时
+    if (this.copyTimeout) {
+      clearTimeout(this.copyTimeout);
+      this.copyTimeout = null;
+    }
   }
 }
 
@@ -475,7 +495,7 @@ export function addImageButtonStyles(
       opacity: 0.8; transition: all 0.2s ease; color: transparent !important;
       font-size: 0 !important; line-height: 0 !important;
     }
-    .${prefixedClassName}:hover { opacity: 1; background-color: rgba(16, 185, 129, 0.15); transform: scale(1.1); }
+    .${prefixedClassName}:hover { opacity: 1; background-color: rgba(16, 185, 129, 0.15);}
     .monaco-editor.vs-dark .${prefixedClassName}, .monaco-editor.hc-black .${prefixedClassName} {
       background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="%2334d399" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>');
     }
@@ -760,11 +780,12 @@ export const setImageDecorationEnabled = (enabled: boolean): void => {
 };
 
 /**
- * 设置图片悬停提供者的启用状态
- * @param enabled 是否启用
+ * 设置图片悬停提供者的启用状态（已禁用）
+ * @param _enabled 是否启用（已忽略，始终保持禁用状态）
  */
-export const setImageProviderEnabled = (enabled: boolean) => {
-  isImageProviderEnabled = enabled;
+export const setImageProviderEnabled = (_enabled?: boolean) => {
+  // 图片悬停提供者始终保持禁用状态
+  isImageProviderEnabled = false;
 };
 
 /**
