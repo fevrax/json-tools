@@ -1,3 +1,10 @@
+## [1.15.3](https://github.com/fevrax/json-tools/compare/v1.15.2...v1.15.3) (2025-11-09)
+
+
+### Bug Fixes
+
+* format fix ([ed6b801](https://github.com/fevrax/json-tools/commit/ed6b801360dafcef8405d612f6ac0c23432fc7f9))
+
 ## [1.15.2](https://github.com/fevrax/json-tools/compare/v1.15.1...v1.15.2) (2025-11-09)
 
 
