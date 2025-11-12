@@ -1,12 +1,12 @@
 // useTabStore.ts
 import { create } from "zustand";
 import { devtools, subscribeWithSelector } from "zustand/middleware";
-import { Content, JSONContent, Mode, TextContent } from "vanilla-jsoneditor-cn";
+import { Content, JSONContent, Mode, TextContent } from "vanilla-jsoneditor";
 
 import { useSettingsStore } from "./useSettingsStore";
 
 import { storage } from "@/lib/indexedDBStore";
-import { parseJson, stringifyJson } from "@/utils/json";
+import { stringifyJson } from "@/utils/json";
 
 export interface TabItem {
   key: string;
@@ -454,7 +454,7 @@ export const useTabStore = create<TabStore>()(
 
             try {
               // 尝试解析 JSON
-              const parsedJson = parseJson(activeTab.content);
+              const parsedJson = JSON.parse(activeTab.content);
 
               activeTab.vanilla = { json: parsedJson };
               activeTab.vanillaMode = Mode.tree;
