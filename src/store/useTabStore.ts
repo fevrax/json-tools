@@ -454,7 +454,7 @@ export const useTabStore = create<TabStore>()(
 
             try {
               // 尝试解析 JSON
-              const parsedJson = parseJson(activeTab.content);
+              const parsedJson = JSON.parse(activeTab.content);
 
               activeTab.vanilla = { json: parsedJson };
               activeTab.vanillaMode = Mode.tree;
