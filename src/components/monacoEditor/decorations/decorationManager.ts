@@ -162,7 +162,6 @@ export class DecorationManager {
       return [];
     }
 
-    // 添加zIndex配置（如果未指定）
     const enrichedDecorations = decorations.map((decoration) => ({
       ...decoration,
       options: {
@@ -171,8 +170,9 @@ export class DecorationManager {
       },
     }));
 
-    // 使用新的API替代已废弃的deltaDecorations
-    const decorationIds = editor.createDecorationsCollection().set(enrichedDecorations);
+    const decorationIds = editor
+      .createDecorationsCollection()
+      .set(enrichedDecorations);
 
     // 注册装饰器到管理器
     decorationIds.forEach((id, index) => {

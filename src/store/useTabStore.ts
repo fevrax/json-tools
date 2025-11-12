@@ -26,6 +26,7 @@ export interface TabItem {
     base64DecoratorsEnabled?: boolean; // Base64装饰器设置
     unicodeDecoratorsEnabled?: boolean; // Unicode装饰器设置
     urlDecoratorsEnabled?: boolean; // URL装饰器设置
+    imageDecoratorsEnabled?: boolean; // 图片装饰器设置
   };
   extraData?: Record<string, any>;
 }
@@ -105,6 +106,7 @@ export const useTabStore = create<TabStore>()(
                 base64DecoratorsEnabled: true,
                 unicodeDecoratorsEnabled: true,
                 urlDecoratorsEnabled: true,
+                imageDecoratorsEnabled: true,
               },
             };
 
@@ -134,6 +136,7 @@ export const useTabStore = create<TabStore>()(
                   base64DecoratorsEnabled: true,
                   unicodeDecoratorsEnabled: true,
                   urlDecoratorsEnabled: true,
+                  imageDecoratorsEnabled: true,
                 },
               },
             ];
@@ -371,6 +374,7 @@ export const useTabStore = create<TabStore>()(
                   base64DecoratorsEnabled: true,
                   unicodeDecoratorsEnabled: true,
                   urlDecoratorsEnabled: true,
+                  imageDecoratorsEnabled: true,
                 },
               },
             ];

@@ -12,7 +12,8 @@ import { registerUrlHoverProvider } from "@/components/monacoEditor/decorations/
  * 这个模块负责Monaco编辑器的全局初始化，包括：
  * 1. Monaco编辑器核心初始化
  * 2. JSON5语言支持注册
- * 3. Base64、Unicode和URL悬停提供者的全局注册
+ * 3. Base64、Unicode、URL悬停提供者的全局注册
+ * 4. 图片URL正则表达式定义（供其他模块使用）
  *
  * 通过集中管理这些初始化逻辑，避免了在每个编辑器实例创建时重复注册，
  * 提高了性能并减少了内存占用。
@@ -55,7 +56,7 @@ export const initMonacoGlobally = async () => {
 };
 
 /**
- * 注册Base64、Unicode和URL全局悬停提供者
+ * 注册Base64、Unicode、URL全局悬停提供者
  * 这些提供者将在所有JSON和JSON5编辑器中共享使用
  */
 export const registerGlobalBase64Provider = () => {
@@ -72,4 +73,3 @@ export const registerGlobalBase64Provider = () => {
 
   baseProviderRegistered = true;
 };
-
