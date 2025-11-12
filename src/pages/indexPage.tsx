@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@heroui/react";
 import { useTheme } from "next-themes";
-import { Content } from "vanilla-jsoneditor-cn";
+import { Content } from "vanilla-jsoneditor";
 
 import { useTabStore } from "@/store/useTabStore";
 import DynamicTabs, {
@@ -16,7 +16,7 @@ import VanillaJsonEditor, {
   VanillaJsonEditorRef,
 } from "@/components/vanillaJsonEditor/VanillaJsonEditor.tsx";
 
-import "vanilla-jsoneditor-cn/themes/jse-theme-dark.css";
+import "vanilla-jsoneditor/themes/jse-theme-dark.css";
 import MonacoDiffEditor, {
   MonacoDiffEditorRef,
 } from "@/components/monacoEditor/MonacoDiffEditor.tsx";

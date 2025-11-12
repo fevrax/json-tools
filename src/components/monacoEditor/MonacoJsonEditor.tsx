@@ -333,7 +333,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
     try {
       // 解析 JSON 数据
-      const jsonData = parseJson(editorValue);
+      const jsonData = JSON.parse(editorValue);
 
       // 使用 jsonQuery 进行过滤
       const filteredData = jsonquery(jsonData, currentFilter);

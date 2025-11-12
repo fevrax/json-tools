@@ -1,7 +1,7 @@
 // useTabStore.ts
 import { create } from "zustand";
 import { devtools, subscribeWithSelector } from "zustand/middleware";
-import { Content, JSONContent, Mode, TextContent } from "vanilla-jsoneditor-cn";
+import { Content, JSONContent, Mode, TextContent } from "vanilla-jsoneditor";
 
 import { useSettingsStore } from "./useSettingsStore";
 
