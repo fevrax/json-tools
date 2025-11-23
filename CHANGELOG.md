@@ -1,3 +1,10 @@
+## [1.16.1](https://github.com/fevrax/json-tools/compare/v1.16.0...v1.16.1) (2025-11-23)
+
+
+### Bug Fixes
+
+* content cannot be sent to AI. ([0da2536](https://github.com/fevrax/json-tools/commit/0da253627c64c31bebde3c154c49b8e3653ac8be))
+
 # [1.16.0](https://github.com/fevrax/json-tools/compare/v1.15.3...v1.16.0) (2025-11-23)
 
 
