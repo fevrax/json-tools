@@ -76,6 +76,9 @@ class UtoolsListener {
 
             if (editorRef && editorRef.updateValue) {
               editorRef.updateValue(data.payload);
+              setTimeout(() => {
+                editorRef.format();
+              }, 300);
             }
             console.log("Utools 数据已更新到 tab1:", data.payload);
           } else {
