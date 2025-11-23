@@ -330,14 +330,21 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     let baseHeight =
       typeof height === "number" ? `${height}px` : height || "100%";
 
+    let totalDeduction = 0;
+
     // 当显示错误信息时，减去错误栏高度
     if (parseJsonError) {
-      return `calc(${baseHeight} - ${errorBottomHeight}px)`;
+      totalDeduction += errorBottomHeight;
     }
 
     // 当显示 jsonQuery 过滤器时，减去过滤器高度
     if (showJsonQueryFilter) {
-      return `calc(${baseHeight} - 34px)`;
+      totalDeduction += 34; // JSON Query过滤器高度
+    }
+
+    // 如果有需要扣除的高度
+    if (totalDeduction > 0) {
+      return `calc(${baseHeight} - ${totalDeduction}px)`;
     }
 
     return baseHeight;
@@ -2064,22 +2071,15 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         />
       )}
 
-      <div
-        className={cn(
-          "flex justify-between items-center px-3 text-white text-base transition-all duration-300 z-50",
-          {
-            "opacity-100 visible": parseJsonError,
-            "opacity-0 invisible h-0": !parseJsonError,
-          },
-        )}
-        style={{
-          height: parseJsonError ? errorBottomHeight : 0,
-          backgroundColor: "#ED5241",
-          overflow: "hidden",
-          position: "sticky",
-          bottom: 0,
-        }}
-      >
+      {parseJsonError && (
+        <div
+          className="flex justify-between items-center px-3 text-white text-base transition-all duration-300 shadow-lg"
+          style={{
+            height: errorBottomHeight,
+            backgroundColor: "#ED5241",
+            overflow: "hidden",
+          }}
+        >
         <div className="flex items-center space-x-3">
           <Icon icon="fluent:warning-28-filled" width={24} />
           <p className="">
@@ -2117,6 +2117,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           </Button>
         </div>
       </div>
+      )}
       <ErrorModal
         isOpen={jsonErrorDetailsModel}
         parseJsonError={parseJsonError}
