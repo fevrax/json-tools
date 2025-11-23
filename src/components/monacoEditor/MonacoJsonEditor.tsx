@@ -365,11 +365,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
 
     try {
-      // 解析 JSON 数据
-      const jsonData = parseJson(editorValue);
+      // 解析 JSON 数据, 不支持 lossless-json 语法
+      const jsonData = JSON.parse(editorValue);
 
       // 使用 jsonQuery 进行过滤
       const filteredData = jsonquery(jsonData, currentFilter);
+
+      console.log("jq", currentFilter, jsonData, filteredData);
 
       // 格式化过滤后的数据
       const formattedResult = stringifyJson(filteredData, 2);
