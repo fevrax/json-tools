@@ -372,15 +372,11 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
 
     try {
-      // 解析 JSON 数据, 不支持 lossless-json 语法
+      // 不支持 lossless-json 语法
       const jsonData = JSON.parse(editorValue);
 
-      // 使用 jsonQuery 进行过滤
       const filteredData = jsonquery(jsonData, currentFilter);
 
-      console.log("jq", currentFilter, jsonData, filteredData);
-
-      // 格式化过滤后的数据
       const formattedResult = stringifyJson(filteredData, 2);
 
       setFilteredValue(formattedResult);
@@ -1233,6 +1229,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
         return false;
       }
+
+      setCurrentEditorValue(val);
       setShowAiPrompt(true);
 
       return true;
@@ -2080,43 +2078,43 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
             overflow: "hidden",
           }}
         >
-        <div className="flex items-center space-x-3">
-          <Icon icon="fluent:warning-28-filled" width={24} />
-          <p className="">
-            第 {parseJsonError?.line || 0} 行，第 {parseJsonError?.column || 0}{" "}
-            列错误， {parseJsonError?.message}
-          </p>
+          <div className="flex items-center space-x-3">
+            <Icon icon="fluent:warning-28-filled" width={24} />
+            <p className="">
+              第 {parseJsonError?.line || 0} 行，第{" "}
+              {parseJsonError?.column || 0} 列错误， {parseJsonError?.message}
+            </p>
+          </div>
+          <div className={"flex items-center space-x-2"}>
+            <Button
+              className="bg-white/20"
+              color="primary"
+              size="sm"
+              startContent={<Icon icon="hugeicons:view" width={16} />}
+              onPress={openJsonErrorDetailsModel}
+            >
+              查看详情
+            </Button>
+            <Button
+              className="bg-white/20"
+              color="primary"
+              size="sm"
+              startContent={<Icon icon="mynaui:tool" width={16} />}
+              onPress={autoFix}
+            >
+              自动修复
+            </Button>
+            <Button
+              className="bg-white/20"
+              color="primary"
+              size="sm"
+              startContent={<Icon icon="mingcute:location-line" width={16} />}
+              onPress={goToErrorLine}
+            >
+              一键定位
+            </Button>
+          </div>
         </div>
-        <div className={"flex items-center space-x-2"}>
-          <Button
-            className="bg-white/20"
-            color="primary"
-            size="sm"
-            startContent={<Icon icon="hugeicons:view" width={16} />}
-            onPress={openJsonErrorDetailsModel}
-          >
-            查看详情
-          </Button>
-          <Button
-            className="bg-white/20"
-            color="primary"
-            size="sm"
-            startContent={<Icon icon="mynaui:tool" width={16} />}
-            onPress={autoFix}
-          >
-            自动修复
-          </Button>
-          <Button
-            className="bg-white/20"
-            color="primary"
-            size="sm"
-            startContent={<Icon icon="mingcute:location-line" width={16} />}
-            onPress={goToErrorLine}
-          >
-            一键定位
-          </Button>
-        </div>
-      </div>
       )}
       <ErrorModal
         isOpen={jsonErrorDetailsModel}
