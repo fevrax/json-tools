@@ -330,14 +330,21 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     let baseHeight =
       typeof height === "number" ? `${height}px` : height || "100%";
 
+    let totalDeduction = 0;
+
     // 当显示错误信息时，减去错误栏高度
     if (parseJsonError) {
-      return `calc(${baseHeight} - ${errorBottomHeight}px)`;
+      totalDeduction += errorBottomHeight;
     }
 
     // 当显示 jsonQuery 过滤器时，减去过滤器高度
     if (showJsonQueryFilter) {
-      return `calc(${baseHeight} - 34px)`;
+      totalDeduction += 34; // JSON Query过滤器高度
+    }
+
+    // 如果有需要扣除的高度
+    if (totalDeduction > 0) {
+      return `calc(${baseHeight} - ${totalDeduction}px)`;
     }
 
     return baseHeight;
@@ -365,7 +372,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
 
     try {
-      // 解析 JSON 数据
+      // 不支持 lossless-json 语法 解析 JSON 数据
       const jsonData = JSON.parse(editorValue);
 
       // 使用 jsonQuery 进行过滤
@@ -1224,6 +1231,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
         return false;
       }
+
+      setCurrentEditorValue(val);
       setShowAiPrompt(true);
 
       return true;
@@ -2062,59 +2071,53 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         />
       )}
 
-      <div
-        className={cn(
-          "flex justify-between items-center px-3 text-white text-base transition-all duration-300 z-50",
-          {
-            "opacity-100 visible": parseJsonError,
-            "opacity-0 invisible h-0": !parseJsonError,
-          },
-        )}
-        style={{
-          height: parseJsonError ? errorBottomHeight : 0,
-          backgroundColor: "#ED5241",
-          overflow: "hidden",
-          position: "sticky",
-          bottom: 0,
-        }}
-      >
-        <div className="flex items-center space-x-3">
-          <Icon icon="fluent:warning-28-filled" width={24} />
-          <p className="">
-            第 {parseJsonError?.line || 0} 行，第 {parseJsonError?.column || 0}{" "}
-            列错误， {parseJsonError?.message}
-          </p>
+      {parseJsonError && (
+        <div
+          className="flex justify-between items-center px-3 text-white text-base transition-all duration-300 shadow-lg"
+          style={{
+            height: errorBottomHeight,
+            backgroundColor: "#ED5241",
+            overflow: "hidden",
+          }}
+        >
+          <div className="flex items-center space-x-3">
+            <Icon icon="fluent:warning-28-filled" width={24} />
+            <p className="">
+              第 {parseJsonError?.line || 0} 行，第{" "}
+              {parseJsonError?.column || 0} 列错误， {parseJsonError?.message}
+            </p>
+          </div>
+          <div className={"flex items-center space-x-2"}>
+            <Button
+              className="bg-white/20"
+              color="primary"
+              size="sm"
+              startContent={<Icon icon="hugeicons:view" width={16} />}
+              onPress={openJsonErrorDetailsModel}
+            >
+              查看详情
+            </Button>
+            <Button
+              className="bg-white/20"
+              color="primary"
+              size="sm"
+              startContent={<Icon icon="mynaui:tool" width={16} />}
+              onPress={autoFix}
+            >
+              自动修复
+            </Button>
+            <Button
+              className="bg-white/20"
+              color="primary"
+              size="sm"
+              startContent={<Icon icon="mingcute:location-line" width={16} />}
+              onPress={goToErrorLine}
+            >
+              一键定位
+            </Button>
+          </div>
         </div>
-        <div className={"flex items-center space-x-2"}>
-          <Button
-            className="bg-white/20"
-            color="primary"
-            size="sm"
-            startContent={<Icon icon="hugeicons:view" width={16} />}
-            onPress={openJsonErrorDetailsModel}
-          >
-            查看详情
-          </Button>
-          <Button
-            className="bg-white/20"
-            color="primary"
-            size="sm"
-            startContent={<Icon icon="mynaui:tool" width={16} />}
-            onPress={autoFix}
-          >
-            自动修复
-          </Button>
-          <Button
-            className="bg-white/20"
-            color="primary"
-            size="sm"
-            startContent={<Icon icon="mingcute:location-line" width={16} />}
-            onPress={goToErrorLine}
-          >
-            一键定位
-          </Button>
-        </div>
-      </div>
+      )}
       <ErrorModal
         isOpen={jsonErrorDetailsModel}
         parseJsonError={parseJsonError}

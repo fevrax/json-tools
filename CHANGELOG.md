@@ -1,3 +1,23 @@
+## [1.16.1](https://github.com/fevrax/json-tools/compare/v1.16.0...v1.16.1) (2025-11-23)
+
+
+### Bug Fixes
+
+* content cannot be sent to AI. ([0da2536](https://github.com/fevrax/json-tools/commit/0da253627c64c31bebde3c154c49b8e3653ac8be))
+
+# [1.16.0](https://github.com/fevrax/json-tools/compare/v1.15.3...v1.16.0) (2025-11-23)
+
+
+### Bug Fixes
+
+* Fix json prompt ui error ([bb4a24d](https://github.com/fevrax/json-tools/commit/bb4a24dc6e95092b91878a17598b6c91eef99d99))
+* json query lossless-json ([1b639e0](https://github.com/fevrax/json-tools/commit/1b639e02b7c5e3d73538fb368109cee75d70c255))
+
+
+### Features
+
+* utools input json automatic formatting ([58f38d8](https://github.com/fevrax/json-tools/commit/58f38d85e8551b98c163766c274f5532f0907630))
+
 ## [1.15.3](https://github.com/fevrax/json-tools/compare/v1.15.2...v1.15.3) (2025-11-09)
 
 

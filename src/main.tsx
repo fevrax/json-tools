@@ -30,8 +30,8 @@ const initializeUtoolsListener = () => {
 };
 
 // 监听应用加载完成事件
-if (typeof window !== 'undefined') {
-  window.addEventListener('load', initializeUtoolsListener);
+if (typeof window !== "undefined") {
+  window.addEventListener("load", initializeUtoolsListener);
 } else {
   // 在开发环境中直接初始化
   initializeUtoolsListener();
