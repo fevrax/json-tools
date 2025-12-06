@@ -84,7 +84,7 @@ function RootLayout({
   }, []);
 
   return (
-    <div className="relative flex h-dvh w-full">
+    <div className="relative flex h-dvh w-full border-t border-default-200">
       {/* Sidebar */}
       <SidebarDrawer
         className={cn("shrink-0", {
