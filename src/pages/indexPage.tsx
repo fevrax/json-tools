@@ -36,6 +36,7 @@ import clipboard from "@/utils/clipboard";
 import toast from "@/utils/toast";
 import { stringifyJson } from "@/utils/json";
 import UtoolsListener from "@/services/utoolsListener";
+import ChromeExtensionListener from "@/services/chromeExtensionListener";
 
 export default function IndexPage() {
   const { theme } = useTheme();
@@ -508,6 +509,14 @@ export default function IndexPage() {
       if (settings?.editDataSaveLocal) {
         await syncTabStore();
       }
+
+      // 初始化 ChromeExtensionListener
+      ChromeExtensionListener.getInstance().initialize();
+      
+      // 通知Chrome扩展页面已准备就绪
+      setTimeout(() => {
+        ChromeExtensionListener.getInstance().notifyPageReady();
+      }, 1000);
     };
 
     init();
@@ -516,6 +525,9 @@ export default function IndexPage() {
   useEffect(() => {
     // 设置 UtoolsListener 的编辑器引用
     UtoolsListener.getInstance().setEditorRefs(monacoJsonEditorRefs.current);
+    
+    // 设置 ChromeExtensionListener 的编辑器引用
+    ChromeExtensionListener.getInstance().setEditorRefs(monacoJsonEditorRefs.current);
   }, [monacoJsonEditorRefs]);
 
   useEffect(() => {

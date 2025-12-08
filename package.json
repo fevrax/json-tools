@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:extension": "node chrome-extension/build.js",
+    "test:extension": "node chrome-extension/test-extension.js",
+    "create:extension-icons": "node chrome-extension/create-icons.js",
     "lint": "eslint -c .eslintrc.json ./src/**/**/*.{ts,tsx} --fix",
     "preview": "vite preview",
     "semantic-release": "semantic-release"
@@ -52,6 +55,7 @@
     "zustand": "^5.0.5"
   },
   "devDependencies": {
+    "@types/chrome": "^0.0.332",
     "@iconify/react": "^5.2.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
