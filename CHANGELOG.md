@@ -1,3 +1,10 @@
+# [1.17.0](https://github.com/fevrax/json-tools/compare/v1.16.1...v1.17.0) (2025-12-07)
+
+
+### Features
+
+* pwa install ([a291c57](https://github.com/fevrax/json-tools/commit/a291c5721e6aa67a112b8b5c44988901a20a4446))
+
 ## [1.16.1](https://github.com/fevrax/json-tools/compare/v1.16.0...v1.16.1) (2025-11-23)
 
 
