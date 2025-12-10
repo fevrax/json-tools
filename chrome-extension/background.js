@@ -62,8 +62,8 @@ class ChromeExtensionListener {
         const jsonData = await this.extractJsonFromPage(tabId);
         
         if (jsonData) {
-          // 打开JSON Tools页面并传递数据
-          await this.openJsonToolsWithJson(jsonData, tab.url);
+          // 在当前标签页中打开JSON Tools页面并传递数据
+          await this.openJsonToolsWithJson(jsonData, tab.url, tabId);
         }
       }
     } catch (error) {
@@ -168,56 +168,32 @@ class ChromeExtensionListener {
   }
 
   /**
-   * 打开JSON Tools页面并传递数据
+   * 在当前标签页中打开JSON Tools页面并传递数据
    */
-  async openJsonToolsWithJson(jsonData, sourceUrl) {
+  async openJsonToolsWithJson(jsonData, sourceUrl, tabId) {
     try {
-      // 检查是否已经有JSON Tools标签页打开
-      const tabs = await chrome.tabs.query({});
-      const existingTab = tabs.find(tab => 
-        tab.url && (tab.url.includes('json-tools') || tab.url.includes(this.jsonToolsUrl))
-      );
-
       const jsonString = typeof jsonData.data === 'string' 
         ? jsonData.data 
         : JSON.stringify(jsonData.data, null, 2);
 
-      if (existingTab) {
-        // 如果已存在，激活该标签页并更新内容
-        await chrome.tabs.update(existingTab.id, { active: true });
-        
-        // 向content script发送消息更新数据
-        setTimeout(() => {
-          chrome.tabs.sendMessage(existingTab.id, {
-            type: 'UPDATE_JSON_DATA',
-            payload: {
-              type: 'regex',
-              payload: jsonString,
-              sourceUrl: sourceUrl,
-              title: jsonData.title
-            }
-          });
-        }, 1000);
-      } else {
-        // 打开项目主页（dist目录下的index.html）
-        const newTab = await chrome.tabs.create({
-          url: chrome.runtime.getURL('index.html'), // 扩展目录下的index.html
-          active: true
-        });
+      // 直接在当前标签页中打开JSON Tools页面
+      await chrome.tabs.update(tabId, {
+        url: chrome.runtime.getURL('index.html'),
+        active: true
+      });
 
-        // 等待页面加载完成后发送数据
-        setTimeout(() => {
-          chrome.tabs.sendMessage(newTab.id, {
-            type: 'UPDATE_JSON_DATA',
-            payload: {
-              type: 'regex',
-              payload: jsonString,
-              sourceUrl: sourceUrl,
-              title: jsonData.title
-            }
-          });
-        }, 2000);
-      }
+      // 等待页面加载完成后发送数据
+      setTimeout(() => {
+        chrome.tabs.sendMessage(tabId, {
+          type: 'UPDATE_JSON_DATA',
+          payload: {
+            type: 'regex',
+            payload: jsonString,
+            sourceUrl: sourceUrl,
+            title: jsonData.title
+          }
+        });
+      }, 2000);
     } catch (error) {
       console.error('打开JSON Tools页面时发生错误:', error);
     }
@@ -296,7 +272,7 @@ class ChromeExtensionListener {
         if (hasJson) {
           const jsonData = await this.extractJsonFromPage(sender.tab.id);
           if (jsonData) {
-            await this.openJsonToolsWithJson(jsonData, sender.tab.url);
+            await this.openJsonToolsWithJson(jsonData, sender.tab.url, sender.tab.id);
             sendResponse({ success: true, message: 'JSON数据已加载到JSON Tools' });
           } else {
             sendResponse({ success: false, message: '无法解析JSON数据' });
