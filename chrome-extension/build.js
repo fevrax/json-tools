@@ -31,16 +31,20 @@ class ChromeExtensionBuilder {
       // 1. 构建主应用
       console.log('步骤1: 构建主应用...');
       await this.buildMainApp();
+      
+      // 2. 清空dist目录
+      console.log('步骤0: 清空dist目录...');
+      await this.cleanDistDir();
 
-      // 2. 复制构建产物到扩展目录
+      // 3. 复制构建产物到扩展目录
       console.log('步骤2: 复制构建产物...');
       await this.copyBuildAssets();
 
-      // 3. 创建扩展特定的文件
+      // 4. 创建扩展特定的文件
       console.log('步骤3: 创建扩展特定文件...');
       await this.createExtensionFiles();
 
-      // 4. 更新manifest.json
+      // 5. 更新manifest.json
       console.log('步骤4: 更新manifest.json...');
       await this.updateManifest();
 
@@ -51,6 +55,38 @@ class ChromeExtensionBuilder {
     } catch (error) {
       console.error('❌ 构建失败:', error);
       process.exit(1);
+    }
+  }
+
+  /**
+   * 清空dist目录
+   */
+  async cleanDistDir() {
+    if (fs.existsSync(this.distDir)) {
+      console.log(`清空目录: ${this.distDir}`);
+      await this.removeDirectory(this.distDir);
+    }
+  }
+
+  /**
+   * 递归删除目录
+   */
+  async removeDirectory(dir) {
+    if (fs.existsSync(dir)) {
+      const items = fs.readdirSync(dir);
+      
+      for (const item of items) {
+        const itemPath = path.join(dir, item);
+        const stat = fs.statSync(itemPath);
+        
+        if (stat.isDirectory()) {
+          await this.removeDirectory(itemPath);
+        } else {
+          fs.unlinkSync(itemPath);
+        }
+      }
+      
+      fs.rmdirSync(dir);
     }
   }
 
@@ -115,17 +151,6 @@ class ChromeExtensionBuilder {
       if (fs.existsSync(sourcePath)) {
         fs.copyFileSync(sourcePath, targetPath);
       }
-    }
-
-    // 复制图标文件
-    const sourceIconsDir = path.join(this.extensionDir, 'icons');
-    const targetIconsDir = path.join(this.distDir, 'icons');
-    
-    if (fs.existsSync(sourceIconsDir)) {
-      if (!fs.existsSync(targetIconsDir)) {
-        fs.mkdirSync(targetIconsDir);
-      }
-      await this.copyDirectory(sourceIconsDir, targetIconsDir);
     }
 
     console.log('扩展特定文件创建完成');
