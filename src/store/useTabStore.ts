@@ -4,6 +4,7 @@ import { devtools, subscribeWithSelector } from "zustand/middleware";
 import { Content, JSONContent, Mode, TextContent } from "vanilla-jsoneditor-cn";
 
 import { useSettingsStore } from "./useSettingsStore";
+import { useHistoryStore } from "./useHistoryStore";
 
 import { storage } from "@/lib/indexedDBStore";
 import { parseJson, stringifyJson } from "@/utils/json";
@@ -269,6 +270,15 @@ export const useTabStore = create<TabStore>()(
             return;
           }
 
+          // 在关闭前保存 tab 到历史记录
+          const tabToClose = get().tabs.find((tab) => tab.key === keyToRemove);
+          if (tabToClose && useSettingsStore.getState().editDataSaveLocal) {
+            // 异步保存到历史记录，不阻塞关闭操作
+            setTimeout(() => {
+              useHistoryStore.getState().addHistory(tabToClose);
+            }, 0);
+          }
+
           set((state) => {
             const tabIndex = state.tabs.findIndex(
               (tab) => tab.key === keyToRemove,
@@ -296,9 +306,18 @@ export const useTabStore = create<TabStore>()(
         closeOtherTabs: (currentKey): Array<string> => {
           const currentTab = get().tabs.find((tab) => tab.key === currentKey);
           // 将被关闭的key 保存
-          const closedKeys = get()
-            .tabs.filter((tab) => tab.key !== currentKey)
-            .map((tab) => tab.key);
+          const closedTabs = get()
+            .tabs.filter((tab) => tab.key !== currentKey);
+
+          const closedKeys = closedTabs.map((tab) => tab.key);
+
+          // 异步保存到历史记录
+          if (useSettingsStore.getState().editDataSaveLocal) {
+            setTimeout(() => {
+              const historyStore = useHistoryStore.getState();
+              closedTabs.forEach((tab) => historyStore.addHistory(tab));
+            }, 0);
+          }
 
           console.log("closedKeys", closedKeys);
 
@@ -317,8 +336,17 @@ export const useTabStore = create<TabStore>()(
           const tabs = get().tabs;
           const currentIndex = tabs.findIndex((tab) => tab.key === currentKey);
           // 将被关闭的key 保存
-          const closedKeys = tabs.slice(0, currentIndex).map((tab) => tab.key);
+          const closedTabs = tabs.slice(0, currentIndex);
+          const closedKeys = closedTabs.map((tab) => tab.key);
           const updatedTabs = tabs.slice(currentIndex);
+
+          // 异步保存到历史记录
+          if (useSettingsStore.getState().editDataSaveLocal) {
+            setTimeout(() => {
+              const historyStore = useHistoryStore.getState();
+              closedTabs.forEach((tab) => historyStore.addHistory(tab));
+            }, 0);
+          }
 
           set(() => {
             return {
@@ -335,9 +363,18 @@ export const useTabStore = create<TabStore>()(
           const tabs = get().tabs;
           const currentIndex = tabs.findIndex((tab) => tab.key === currentKey);
           // 将被关闭的key 保存
-          const closedKeys = tabs.slice(currentIndex + 1).map((tab) => tab.key);
+          const closedTabs = tabs.slice(currentIndex + 1);
+          const closedKeys = closedTabs.map((tab) => tab.key);
 
           const updatedTabs = tabs.slice(0, currentIndex + 1);
+
+          // 异步保存到历史记录
+          if (useSettingsStore.getState().editDataSaveLocal) {
+            setTimeout(() => {
+              const historyStore = useHistoryStore.getState();
+              closedTabs.forEach((tab) => historyStore.addHistory(tab));
+            }, 0);
+          }
 
           set(() => {
             return {
@@ -351,9 +388,16 @@ export const useTabStore = create<TabStore>()(
         // 关闭所有标签页，默认保留第一个标签页
         closeAllTabs: (): Array<string> => {
           // 将被关闭的key 保存, 保留key = 1 的标签页
-          const closedKeys = get()
-            .tabs.filter((tab) => tab.key !== "1")
-            .map((tab) => tab.key);
+          const closedTabs = get().tabs.filter((tab) => tab.key !== "1");
+          const closedKeys = closedTabs.map((tab) => tab.key);
+
+          // 异步保存到历史记录
+          if (useSettingsStore.getState().editDataSaveLocal) {
+            setTimeout(() => {
+              const historyStore = useHistoryStore.getState();
+              closedTabs.forEach((tab) => historyStore.addHistory(tab));
+            }, 0);
+          }
 
           set(() => {
             const settings = useSettingsStore.getState();
