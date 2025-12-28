@@ -14,7 +14,7 @@ const historyStorage = localforage.createInstance({
   storeName: 'histories',
 });
 
-const MAX_HISTORIES = 50; // 最大历史记录数量
+const MAX_HISTORIES = 200; // 最大历史记录数量
 
 /**
  * 历史记录存储管理类
