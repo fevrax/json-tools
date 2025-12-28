@@ -1,3 +1,10 @@
+## [1.17.1](https://github.com/fevrax/json-tools/compare/v1.17.0...v1.17.1) (2025-12-28)
+
+
+### Bug Fixes
+
+* save bug when setting ([e3a3610](https://github.com/fevrax/json-tools/commit/e3a36106eeaeeb5d1f16c2b9d4494122d923eaa7))
+
 # [1.17.0](https://github.com/fevrax/json-tools/compare/v1.16.1...v1.17.0) (2025-12-07)
 
 
