@@ -16,8 +16,7 @@ import Sidebar from "@/components/sidebar/Sidebar.tsx";
 import { items, SidebarKeys } from "@/components/sidebar/Items.tsx";
 import { ThemeSwitch } from "@/components/button/ThemeSwitch.tsx";
 import { useSidebarStore } from "@/store/useSidebarStore";
-import { SettingsState, useSettingsStore } from "@/store/useSettingsStore";
-import { storage } from "@/lib/indexedDBStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 import { useTabStore } from "@/store/useTabStore";
 import { getFontSizeConfig } from "@/styles/fontSize";
 
@@ -27,7 +26,6 @@ function RootLayout({
   children: React.ReactNode;
 }) {
   const sidebarStore = useSidebarStore();
-  const { setSettings } = useSettingsStore();
   const { initTab } = useTabStore();
   const navigate = useNavigate();
   const location = useLocation();
@@ -64,18 +62,19 @@ function RootLayout({
 
   useEffect(() => {
     const init = async () => {
-      const settings = await storage.getItem<SettingsState>("settings");
+      // 先同步设置数据到 store（如果有的话）
+      await useSettingsStore.getState().syncSettingsStore();
 
-      if (!settings) {
-        initTab();
+      // 获取同步后的设置状态
+      const editDataSaveLocal = useSettingsStore.getState().editDataSaveLocal;
+      const expandSidebar = useSettingsStore.getState().expandSidebar;
 
-        return;
-      }
-      setSettings(settings);
-      if (settings.editDataSaveLocal) {
-        setIsCollapsed(!settings.expandSidebar);
+      if (editDataSaveLocal) {
+        // 如果启用了本地存储，同步侧边栏状态
+        setIsCollapsed(!expandSidebar);
         await sidebarStore.syncSidebarStore();
       } else {
+        // 如果未启用本地存储，初始化默认标签页
         initTab();
       }
     };

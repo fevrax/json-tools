@@ -1,6 +1,6 @@
-// src/store/settingsStore.ts
+// useSettingsStore.ts
 import { create } from "zustand";
-import { devtools } from "zustand/middleware";
+import { devtools, subscribeWithSelector } from "zustand/middleware";
 
 import { storage } from "@/lib/indexedDBStore";
 
@@ -10,11 +10,18 @@ export type ChatStyle = "bubble" | "document";
 // 定义字体大小类型
 export type FontSize = "small" | "medium" | "large";
 
-// 全局设置状态接口，包含解码器配置
+// 定义 Monaco 编辑器 CDN 类型
+export type MonacoEditorCDN = "local" | "cdn";
+
+// 全局设置状态接口
 export interface SettingsState {
+  // 数据持久化设置
   editDataSaveLocal: boolean;
+  // 侧边栏展开状态
   expandSidebar: boolean;
-  monacoEditorCDN: "local" | "cdn";
+  // Monaco 编辑器 CDN 配置
+  monacoEditorCDN: MonacoEditorCDN;
+  // 聊天窗口样式
   chatStyle: ChatStyle;
   // 字体大小设置
   fontSize: FontSize;
@@ -28,92 +35,90 @@ export interface SettingsState {
   // 快捷键设置
   newTabShortcut: string;
   closeTabShortcut: string;
+
+  // Actions
   setEditDataSaveLocal: (value: boolean) => void;
   setExpandSidebar: (value: boolean) => void;
-  setMonacoEditorCDN: (value: "local" | "cdn") => void;
+  setMonacoEditorCDN: (value: MonacoEditorCDN) => void;
   setChatStyle: (value: ChatStyle) => void;
-  // 字体大小setter方法
   setFontSize: (value: FontSize) => void;
-  // 解码器setter方法
   setTimestampDecoderEnabled: (value: boolean) => void;
   setBase64DecoderEnabled: (value: boolean) => void;
   setUnicodeDecoderEnabled: (value: boolean) => void;
   setUrlDecoderEnabled: (value: boolean) => void;
-  // 编辑器默认设置setter方法
   setDefaultIndentSize: (value: number) => void;
-  // 快捷键setter方法
   setNewTabShortcut: (value: string) => void;
   setCloseTabShortcut: (value: string) => void;
-  setSettings: (settings: SettingsState) => void;
+  setSettings: (settings: Partial<SettingsState>) => void;
+  syncSettingsStore: () => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>()(
-  devtools(
-    (set) => ({
-      // 初始状态
-      editDataSaveLocal: true,
-      expandSidebar: false,
-      monacoEditorCDN: "local",
-      chatStyle: "bubble",
-      // 字体大小设置
-      fontSize: "medium",
-      // 解码器默认启用
-      timestampDecoderEnabled: true,
-      base64DecoderEnabled: true,
-      unicodeDecoderEnabled: true,
-      urlDecoderEnabled: true,
-      // 编辑器默认设置
-      defaultIndentSize: 4,
-      // 快捷键默认设置
-      newTabShortcut: "Ctrl+Shift+T",
-      closeTabShortcut: "Ctrl+Shift+W",
+  subscribeWithSelector(
+    devtools(
+      (set) => ({
+        // 初始状态
+        editDataSaveLocal: true,
+        expandSidebar: false,
+        monacoEditorCDN: "local",
+        chatStyle: "bubble",
+        fontSize: "medium",
+        timestampDecoderEnabled: true,
+        base64DecoderEnabled: true,
+        unicodeDecoderEnabled: true,
+        urlDecoderEnabled: true,
+        defaultIndentSize: 4,
+        newTabShortcut: "Ctrl+Shift+T",
+        closeTabShortcut: "Ctrl+Shift+W",
 
-      // actions
-      setEditDataSaveLocal: (value) => set({ editDataSaveLocal: value }),
-      setExpandSidebar: (value) => set({ expandSidebar: value }),
-      setMonacoEditorCDN: (value) => set({ monacoEditorCDN: value }),
-      setChatStyle: (value) => set({ chatStyle: value }),
-      // 字体大小setter实现
-      setFontSize: (value) => set({ fontSize: value }),
-      // 解码器setter实现
-      setTimestampDecoderEnabled: (value) => set({ timestampDecoderEnabled: value }),
-      setBase64DecoderEnabled: (value) => set({ base64DecoderEnabled: value }),
-      setUnicodeDecoderEnabled: (value) => set({ unicodeDecoderEnabled: value }),
-      setUrlDecoderEnabled: (value) => set({ urlDecoderEnabled: value }),
-      // 编辑器默认设置setter实现
-      setDefaultIndentSize: (value) => set({ defaultIndentSize: value }),
-      // 快捷键setter实现
-      setNewTabShortcut: (value) => set({ newTabShortcut: value }),
-      setCloseTabShortcut: (value) => set({ closeTabShortcut: value }),
-      setSettings: (settings) => {
-        set(settings);
-      },
-    }),
-    {
-      name: "settingsStore", // 调试工具的key名
-    },
+        // Actions 实现
+        setEditDataSaveLocal: (value: boolean) =>
+          set({ editDataSaveLocal: value }),
+        setExpandSidebar: (value: boolean) => set({ expandSidebar: value }),
+        setMonacoEditorCDN: (value: MonacoEditorCDN) =>
+          set({ monacoEditorCDN: value }),
+        setChatStyle: (value: ChatStyle) => set({ chatStyle: value }),
+        setFontSize: (value: FontSize) => set({ fontSize: value }),
+        setTimestampDecoderEnabled: (value: boolean) =>
+          set({ timestampDecoderEnabled: value }),
+        setBase64DecoderEnabled: (value: boolean) =>
+          set({ base64DecoderEnabled: value }),
+        setUnicodeDecoderEnabled: (value: boolean) =>
+          set({ unicodeDecoderEnabled: value }),
+        setUrlDecoderEnabled: (value: boolean) =>
+          set({ urlDecoderEnabled: value }),
+        setDefaultIndentSize: (value: number) =>
+          set({ defaultIndentSize: value }),
+        setNewTabShortcut: (value: string) => set({ newTabShortcut: value }),
+        setCloseTabShortcut: (value: string) =>
+          set({ closeTabShortcut: value }),
+        setSettings: (settings: Partial<SettingsState>) => set(settings),
+        // 从 IndexedDB 同步设置数据
+        syncSettingsStore: async () => {
+          const settings = await storage.getItem<SettingsState>(DB_SETTINGS);
+
+          if (settings) {
+            set(settings);
+          }
+        },
+      }),
+      { name: "settingsStore", enabled: true },
+    ),
   ),
 );
 
-useSettingsStore.subscribe((state) => {
-  const data = {
-    editDataSaveLocal: state.editDataSaveLocal,
-    expandSidebar: state.expandSidebar,
-    monacoEditorCDN: state.monacoEditorCDN,
-    chatStyle: state.chatStyle,
-    // 保存字体大小设置
-    fontSize: state.fontSize,
-    // 保存解码器设置
-    timestampDecoderEnabled: state.timestampDecoderEnabled,
-    base64DecoderEnabled: state.base64DecoderEnabled,
-    unicodeDecoderEnabled: state.unicodeDecoderEnabled,
-    urlDecoderEnabled: state.urlDecoderEnabled,
-    // 保存编辑器默认设置
-    defaultIndentSize: state.defaultIndentSize,
-    // 保存快捷键设置
-    newTabShortcut: state.newTabShortcut,
-    closeTabShortcut: state.closeTabShortcut,
-  };
+const DB_SETTINGS = "settings";
 
-  storage.setItem("settings", data);
-});
+// 防抖保存设置到 IndexedDB
+let settingsSaveTimeout: NodeJS.Timeout;
+const timeout = 1000;
+
+useSettingsStore.subscribe(
+  (state) => state,
+  (settings) => {
+    clearTimeout(settingsSaveTimeout);
+    settingsSaveTimeout = setTimeout(() => {
+      storage.setItem(DB_SETTINGS, settings);
+    }, timeout);
+  },
+);
