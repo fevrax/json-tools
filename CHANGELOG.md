@@ -1,3 +1,18 @@
+# [1.18.0](https://github.com/fevrax/json-tools/compare/v1.17.1...v1.18.0) (2025-12-28)
+
+
+### Features
+
+* automatically save historical data ([09e2e83](https://github.com/fevrax/json-tools/commit/09e2e837b0808854ee3651200df677f6d0b598ae))
+* show history ([b2a05e2](https://github.com/fevrax/json-tools/commit/b2a05e258a31713d7e1110abe1a980564124ccf5))
+
+## [1.17.1](https://github.com/fevrax/json-tools/compare/v1.17.0...v1.17.1) (2025-12-28)
+
+
+### Bug Fixes
+
+* save bug when setting ([e3a3610](https://github.com/fevrax/json-tools/commit/e3a36106eeaeeb5d1f16c2b9d4494122d923eaa7))
+
 # [1.17.0](https://github.com/fevrax/json-tools/compare/v1.16.1...v1.17.0) (2025-12-07)
 
 

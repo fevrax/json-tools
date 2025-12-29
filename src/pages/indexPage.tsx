@@ -11,6 +11,7 @@ import MonacoJsonEditor, {
   MonacoJsonEditorRef,
 } from "@/components/monacoEditor/MonacoJsonEditor.tsx";
 import { useSidebarStore } from "@/store/useSidebarStore";
+import { useSettingsStore } from "@/store/useSettingsStore";
 // eslint-disable-next-line import/order
 import VanillaJsonEditor, {
   VanillaJsonEditorRef,
@@ -24,9 +25,6 @@ import MonacoDiffOperationBar, {
   MonacoDiffOperationBarRef,
 } from "@/components/monacoEditor/operationBar/MonacoDiffOperationBar.tsx";
 import MonacoOperationBar from "@/components/monacoEditor/operationBar/MonacoOperationBar.tsx";
-import { SettingsState } from "@/store/useSettingsStore";
-import { storage } from "@/lib/indexedDBStore";
-
 import "@/styles/index.css";
 import { SidebarKeys } from "@/components/sidebar/Items.tsx";
 import JsonTableView, {
@@ -504,9 +502,12 @@ export default function IndexPage() {
 
   useLayoutEffect(() => {
     const init = async () => {
-      const settings = await storage.getItem<SettingsState>("settings");
+      // 先同步设置数据到 store
+      await useSettingsStore.getState().syncSettingsStore();
 
-      if (settings?.editDataSaveLocal) {
+      // 然后检查是否需要同步标签页数据
+      // 使用 getState() 获取最新状态，确保使用同步后的值
+      if (useSettingsStore.getState().editDataSaveLocal) {
         await syncTabStore();
       }
 
