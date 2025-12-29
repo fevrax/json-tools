@@ -2,7 +2,7 @@
  * 历史记录相关类型定义
  */
 
-import { Content } from "vanilla-jsoneditor-cn";
+import { Content } from "vanilla-jsoneditor";
 
 import { TabItem } from "@/store/useTabStore";
 

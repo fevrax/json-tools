@@ -372,11 +372,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
 
     try {
-      // 不支持 lossless-json 语法
+      // 不支持 lossless-json 语法 解析 JSON 数据
       const jsonData = JSON.parse(editorValue);
 
+      // 使用 jsonQuery 进行过滤
       const filteredData = jsonquery(jsonData, currentFilter);
 
+      // 格式化过滤后的数据
       const formattedResult = stringifyJson(filteredData, 2);
 
       setFilteredValue(formattedResult);
