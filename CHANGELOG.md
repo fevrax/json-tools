@@ -1,3 +1,10 @@
+## [1.18.1](https://github.com/fevrax/json-tools/compare/v1.18.0...v1.18.1) (2025-12-30)
+
+
+### Bug Fixes
+
+* build docker ([2cd3edd](https://github.com/fevrax/json-tools/commit/2cd3edd2083fe9be6ce2960533e991056b83ff3c))
+
 # [1.18.0](https://github.com/fevrax/json-tools/compare/v1.17.1...v1.18.0) (2025-12-28)
 
 
