@@ -40,10 +40,31 @@ export const useHistoryStore = create<HistoryStore>()(
 
       /**
        * 添加历史记录
+       * 当同一个Tab内容发生变化时新增一条记录，内容未变化时跳过
        */
       addHistory: async (tab) => {
         try {
-          // 生成历史记录唯一 key（使用 tab.uuid 确保唯一性）
+          // 检查是否已存在相同 Tab 的最新历史记录
+          const existingHistory = get().histories.find(
+            (h) => h.tabUuid === tab.uuid,
+          );
+
+          // 如果存在最新历史记录，检查内容是否真的变化了
+          if (existingHistory) {
+            const contentChanged = existingHistory.content !== tab.content;
+            const titleChanged = existingHistory.title !== tab.title;
+            const monacoVersionChanged = existingHistory.monacoVersion !== tab.monacoVersion;
+            const vanillaVersionChanged = existingHistory.vanillaVersion !== tab.vanillaVersion;
+
+            // 如果内容和版本号都没有变化，跳过保存
+            if (!contentChanged && !titleChanged &&
+                !monacoVersionChanged && !vanillaVersionChanged) {
+              console.log('历史记录内容未变化，跳过保存');
+              return;
+            }
+          }
+
+          // 生成新的历史记录唯一 key
           const historyKey = `history_${Date.now()}_${tab.uuid}`;
 
           // 确定编辑器类型
@@ -66,7 +87,7 @@ export const useHistoryStore = create<HistoryStore>()(
           // 保存到 IndexedDB
           await HistoryStorageManager.addHistory(historyItem);
 
-          // 更新状态
+          // 更新状态：新增历史记录到列表顶部
           set((state) => {
             const newHistories = [historyItem, ...state.histories];
             const stats = get().calculateStats(newHistories);
@@ -80,7 +101,7 @@ export const useHistoryStore = create<HistoryStore>()(
 
       /**
        * 通过 UUID 更新历史记录（用于定时同步）
-       * 只有当版本号更新时才进行同步，避免不必要的 I/O 操作
+       * 检查内容是否有实质变化，有变化才新增历史记录
        */
       updateHistoryByUuid: async (tabUuid, tab) => {
         try {
@@ -89,14 +110,13 @@ export const useHistoryStore = create<HistoryStore>()(
             (h) => h.tabUuid === tabUuid,
           );
 
+          // 如果不存在，创建新的历史记录
           if (!existingHistory) {
-            // 如果不存在，创建新的历史记录
             await get().addHistory(tab);
-
             return;
           }
 
-          // 版本号比较：只有当任一版本号大于历史记录中的版本号时才更新
+          // 检查版本号是否更新
           const shouldUpdate =
             tab.monacoVersion > existingHistory.monacoVersion ||
             tab.vanillaVersion > existingHistory.vanillaVersion;
@@ -106,32 +126,8 @@ export const useHistoryStore = create<HistoryStore>()(
             return;
           }
 
-          // 确定编辑器类型
-          const type = tab.vanilla ? "vanilla" : "monaco";
-          const updatedHistory: HistoryItem = {
-            ...existingHistory,
-            title: tab.title,
-            content: tab.content,
-            vanilla: tab.vanilla,
-            editorSettings: tab.editorSettings,
-            timestamp: Date.now(),
-            type,
-            monacoVersion: tab.monacoVersion,
-            vanillaVersion: tab.vanillaVersion,
-          };
-
-          // 更新 IndexedDB
-          await HistoryStorageManager.addHistory(updatedHistory);
-
-          // 更新状态
-          set((state) => {
-            const newHistories = state.histories.map((h) =>
-              h.tabUuid === tabUuid ? updatedHistory : h,
-            );
-            const stats = get().calculateStats(newHistories);
-
-            return { histories: newHistories, stats };
-          });
+          // 版本号更新了，新增一条历史记录
+          await get().addHistory(tab);
         } catch (error) {
           console.error("更新历史记录失败:", error);
         }

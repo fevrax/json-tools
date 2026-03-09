@@ -40,11 +40,9 @@ const isUtoolsAvailable = typeof window !== "undefined" && "utools" in window;
 
 export default function SettingsPage() {
   const {
-    editDataSaveLocal,
     expandSidebar,
     chatStyle,
     // monacoEditorCDN,
-    setEditDataSaveLocal,
     setExpandSidebar,
     setChatStyle,
     setMonacoEditorCDN,
@@ -173,12 +171,6 @@ export default function SettingsPage() {
 
   const handleSettingChange = (key: string, value: any) => {
     switch (key) {
-      case "editDataSaveLocal":
-        setEditDataSaveLocal(value);
-        if (!value) {
-          removeStore();
-        }
-        break;
       case "expandSidebar":
         setExpandSidebar(value);
         break;
@@ -341,7 +333,6 @@ export default function SettingsPage() {
 
     // 重置 Zustand stores 到默认状态
     useSettingsStore.setState({
-      editDataSaveLocal: false,
       expandSidebar: false,
       monacoEditorCDN: "local",
       chatStyle: "bubble",
@@ -557,15 +548,6 @@ export default function SettingsPage() {
       icon: "solar:moon-bold",
       isSelected: theme === "dark",
       onChange: (value: boolean) => setTheme(value ? "dark" : "light"),
-    },
-    {
-      id: "localStorage",
-      title: "本地存储",
-      description: "将编辑器数据存储在本地，关闭后刷新页面数据将丢失",
-      icon: "solar:database-bold",
-      isSelected: editDataSaveLocal,
-      onChange: (value: boolean) =>
-        handleSettingChange("editDataSaveLocal", value),
     },
     {
       id: "expandTab",

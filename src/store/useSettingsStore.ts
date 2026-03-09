@@ -2,7 +2,9 @@
 import { create } from "zustand";
 import { devtools, subscribeWithSelector } from "zustand/middleware";
 
-import { storage } from "@/lib/indexedDBStore";
+import { StorageManager } from "@/lib/storage/StorageManager";
+
+const storageManager = new StorageManager();
 
 // 定义聊天窗口样式类型
 export type ChatStyle = "bubble" | "document";
@@ -15,8 +17,6 @@ export type MonacoEditorCDN = "local" | "cdn";
 
 // 全局设置状态接口
 export interface SettingsState {
-  // 数据持久化设置
-  editDataSaveLocal: boolean;
   // 侧边栏展开状态
   expandSidebar: boolean;
   // Monaco 编辑器 CDN 配置
@@ -37,7 +37,6 @@ export interface SettingsState {
   closeTabShortcut: string;
 
   // Actions
-  setEditDataSaveLocal: (value: boolean) => void;
   setExpandSidebar: (value: boolean) => void;
   setMonacoEditorCDN: (value: MonacoEditorCDN) => void;
   setChatStyle: (value: ChatStyle) => void;
@@ -58,7 +57,6 @@ export const useSettingsStore = create<SettingsState>()(
     devtools(
       (set) => ({
         // 初始状态
-        editDataSaveLocal: true,
         expandSidebar: false,
         monacoEditorCDN: "local",
         chatStyle: "bubble",
@@ -72,8 +70,6 @@ export const useSettingsStore = create<SettingsState>()(
         closeTabShortcut: "Ctrl+Shift+W",
 
         // Actions 实现
-        setEditDataSaveLocal: (value: boolean) =>
-          set({ editDataSaveLocal: value }),
         setExpandSidebar: (value: boolean) => set({ expandSidebar: value }),
         setMonacoEditorCDN: (value: MonacoEditorCDN) =>
           set({ monacoEditorCDN: value }),
@@ -93,9 +89,9 @@ export const useSettingsStore = create<SettingsState>()(
         setCloseTabShortcut: (value: string) =>
           set({ closeTabShortcut: value }),
         setSettings: (settings: Partial<SettingsState>) => set(settings),
-        // 从 IndexedDB 同步设置数据
+        // 从存储同步设置数据
         syncSettingsStore: async () => {
-          const settings = await storage.getItem<SettingsState>(DB_SETTINGS);
+          const settings = await storageManager.get<SettingsState>(DB_SETTINGS);
 
           if (settings) {
             set(settings);
@@ -109,7 +105,7 @@ export const useSettingsStore = create<SettingsState>()(
 
 const DB_SETTINGS = "settings";
 
-// 防抖保存设置到 IndexedDB
+// 防抖保存设置到存储
 let settingsSaveTimeout: NodeJS.Timeout;
 const timeout = 1000;
 
@@ -117,8 +113,8 @@ useSettingsStore.subscribe(
   (state) => state,
   (settings) => {
     clearTimeout(settingsSaveTimeout);
-    settingsSaveTimeout = setTimeout(() => {
-      storage.setItem(DB_SETTINGS, settings);
+    settingsSaveTimeout = setTimeout(async () => {
+      await storageManager.set(DB_SETTINGS, settings);
     }, timeout);
   },
 );
