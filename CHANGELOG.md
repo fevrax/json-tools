@@ -1,3 +1,10 @@
+# [1.19.0](https://github.com/fevrax/json-tools/compare/v1.18.1...v1.19.0) (2026-03-10)
+
+
+### Features
+
+* refactor local storage ([eebdbe4](https://github.com/fevrax/json-tools/commit/eebdbe49390427ff0e7877bda5b358e810c7a764))
+
 ## [1.18.1](https://github.com/fevrax/json-tools/compare/v1.18.0...v1.18.1) (2025-12-30)
 
 
