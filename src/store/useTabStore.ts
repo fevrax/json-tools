@@ -1,14 +1,14 @@
 // useTabStore.ts
 import { create } from "zustand";
 import { devtools, subscribeWithSelector } from "zustand/middleware";
-import { Content, Mode, JSONContent, TextContent } from "vanilla-jsoneditor-cn";
+import { Content, JSONContent, Mode, TextContent } from "vanilla-jsoneditor";
 
 import { useSettingsStore } from "./useSettingsStore";
 import { useHistoryStore } from "./useHistoryStore";
 
 import { StorageManager } from "@/lib/storage/StorageManager";
 import { getSyncManager } from "@/lib/storage/MultiWindowSyncManager";
-import { parseJson, stringifyJson } from "@/utils/json";
+import { stringifyJson } from "@/utils/json";
 import { generateUUID } from "@/utils/uuid";
 
 // 存储管理器实例
@@ -518,7 +518,7 @@ export const useTabStore = create<TabStore>()(
 
             try {
               // 尝试解析 JSON
-              const parsedJson = parseJson(activeTab.content);
+              const parsedJson = JSON.parse(activeTab.content);
 
               activeTab.vanilla = { json: parsedJson };
               activeTab.vanillaMode = Mode.tree;

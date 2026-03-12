@@ -18,8 +18,8 @@ importers:
         specifier: ^5.0.4
         version: 5.0.4
       '@monaco-editor/react':
-        specifier: 4.7.0-rc.0
-        version: 4.7.0-rc.0(monaco-editor@0.52.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+        specifier: 4.8.0-rc.0
+        version: 4.8.0-rc.0(monaco-editor@0.52.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       '@react-aria/visually-hidden':
         specifier: 3.8.19
         version: 3.8.19(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -119,9 +119,9 @@ importers:
       validator:
         specifier: ^13.15.15
         version: 13.15.15
-      vanilla-jsoneditor-cn:
-        specifier: ^2.2.3
-        version: 2.2.3
+      vanilla-jsoneditor:
+        specifier: ^3.1.0
+        version: 3.10.0
       xml-js:
         specifier: ^1.6.11
         version: 1.6.11
@@ -138,6 +138,9 @@ importers:
       '@semantic-release/git':
         specifier: ^10.0.1
         version: 10.0.1(semantic-release@23.1.1(typescript@5.6.3))
+      '@types/chrome':
+        specifier: ^0.0.332
+        version: 0.0.332
       '@types/js-yaml':
         specifier: ^4.0.9
         version: 4.0.9
@@ -1750,10 +1753,6 @@ packages:
     peerDependencies:
       jsep: ^0.4.0||^1.0.0
 
-  '@jsonquerylang/jsonquery@4.1.1':
-    resolution: {integrity: sha512-Rfyvq70Zrb561BqSuXLsl0rG0/1tz913EQDL/4zpkp+laFGUxXIVPSaJWcdREJwADXLZDkQyaWplzEaPQvh+7A==}
-    hasBin: true
-
   '@jsonquerylang/jsonquery@5.0.4':
     resolution: {integrity: sha512-QdgVkapeGRxUqOOJuh2svDutejKaCizhupEmO4ZKSsaLolD7w5QhgrjmBNuS1wMCM5TyNKifK4i1wBDfNzO9xQ==}
     hasBin: true
@@ -1773,11 +1772,11 @@ packages:
   '@marijn/find-cluster-break@1.0.2':
     resolution: {integrity: sha512-l0h88YhZFyKdXIFNfSWpyjStDjGHwZ/U7iobcK1cQQD8sejsONdQtTVU+1wVN1PBw40PiiHB1vA5S7VTfQiP9g==}
 
-  '@monaco-editor/loader@1.5.0':
-    resolution: {integrity: sha512-hKoGSM+7aAc7eRTRjpqAZucPmoNOC4UUbknb/VNoTkEIkCPhqV8LfbsgM1webRM7S/z21eHEx9Fkwx8Z/C/+Xw==}
+  '@monaco-editor/loader@1.6.1':
+    resolution: {integrity: sha512-w3tEnj9HYEC73wtjdpR089AqkUPskFRcdkxsiSFt3SoUc3OHpmu+leP94CXBm4mHfefmhsdfI0ZQu6qJ0wgtPg==}
 
-  '@monaco-editor/react@4.7.0-rc.0':
-    resolution: {integrity: sha512-YfjXkDK0bcwS0zo8PXptvQdCQfOPPtzGsAzmIv7PnoUGFdIohsR+NVDyjbajMddF+3cWUm/3q9NzP/DUke9a+w==}
+  '@monaco-editor/react@4.8.0-rc.0':
+    resolution: {integrity: sha512-8XmP088nzZByuhgMh52iaT3TV1/6rVblmkZZMI3T7aWFUdaqWU9CdYj8mcTZ5l8Lc2YvLw0hbF8JfTP4fTW/Bg==}
     peerDependencies:
       monaco-editor: '>= 0.25.0 < 1'
       react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -1878,36 +1877,42 @@ packages:
     engines: {node: '>= 10.0.0'}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@parcel/watcher-linux-arm-musl@2.5.1':
     resolution: {integrity: sha512-6E+m/Mm1t1yhB8X412stiKFG3XykmgdIOqhjWj+VL8oHkKABfu/gjFj8DvLrYVHSBNC+/u5PeNrujiSQ1zwd1Q==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm]
     os: [linux]
+    libc: [musl]
 
   '@parcel/watcher-linux-arm64-glibc@2.5.1':
     resolution: {integrity: sha512-LrGp+f02yU3BN9A+DGuY3v3bmnFUggAITBGriZHUREfNEzZh/GO06FF5u2kx8x+GBEUYfyTGamol4j3m9ANe8w==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@parcel/watcher-linux-arm64-musl@2.5.1':
     resolution: {integrity: sha512-cFOjABi92pMYRXS7AcQv9/M1YuKRw8SZniCDw0ssQb/noPkRzA+HBDkwmyOJYp5wXcsTrhxO0zq1U11cK9jsFg==}
     engines: {node: '>= 10.0.0'}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@parcel/watcher-linux-x64-glibc@2.5.1':
     resolution: {integrity: sha512-GcESn8NZySmfwlTsIur+49yDqSny2IhPeZfXunQi48DMugKeZ7uy1FX83pO0X22sHntJ4Ub+9k34XQCX+oHt2A==}
     engines: {node: '>= 10.0.0'}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@parcel/watcher-linux-x64-musl@2.5.1':
     resolution: {integrity: sha512-n0E2EQbatQ3bXhcH2D1XIAANAcTZkQICBPVaxMeaCVBtOpBZpWJuf7LwyWPSBDITb7In8mqQgJ7gH8CILCURXg==}
     engines: {node: '>= 10.0.0'}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@parcel/watcher-win32-arm64@2.5.1':
     resolution: {integrity: sha512-RFzklRvmc3PkjKjry3hLF9wD7ppR4AKcWNzH7kXR7GUe0Igb3Nz8fyPwtZCSquGrhU5HhUNDr/mKBqj7tqA2Vw==}
@@ -2528,56 +2533,67 @@ packages:
     resolution: {integrity: sha512-x+e/Z9H0RAWckn4V2OZZl6EmV0L2diuX3QB0uM1r6BvhUIv6xBPL5mrAX2E3e8N8rEHVPwFfz/ETUbV4oW9+lQ==}
     cpu: [arm]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm-musleabihf@4.44.0':
     resolution: {integrity: sha512-1exwiBFf4PU/8HvI8s80icyCcnAIB86MCBdst51fwFmH5dyeoWVPVgmQPcKrMtBQ0W5pAs7jBCWuRXgEpRzSCg==}
     cpu: [arm]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-arm64-gnu@4.44.0':
     resolution: {integrity: sha512-ZTR2mxBHb4tK4wGf9b8SYg0Y6KQPjGpR4UWwTFdnmjB4qRtoATZ5dWn3KsDwGa5Z2ZBOE7K52L36J9LueKBdOQ==}
     cpu: [arm64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-arm64-musl@4.44.0':
     resolution: {integrity: sha512-GFWfAhVhWGd4r6UxmnKRTBwP1qmModHtd5gkraeW2G490BpFOZkFtem8yuX2NyafIP/mGpRJgTJ2PwohQkUY/Q==}
     cpu: [arm64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-loongarch64-gnu@4.44.0':
     resolution: {integrity: sha512-xw+FTGcov/ejdusVOqKgMGW3c4+AgqrfvzWEVXcNP6zq2ue+lsYUgJ+5Rtn/OTJf7e2CbgTFvzLW2j0YAtj0Gg==}
     cpu: [loong64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-powerpc64le-gnu@4.44.0':
     resolution: {integrity: sha512-bKGibTr9IdF0zr21kMvkZT4K6NV+jjRnBoVMt2uNMG0BYWm3qOVmYnXKzx7UhwrviKnmK46IKMByMgvpdQlyJQ==}
     cpu: [ppc64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-gnu@4.44.0':
     resolution: {integrity: sha512-vV3cL48U5kDaKZtXrti12YRa7TyxgKAIDoYdqSIOMOFBXqFj2XbChHAtXquEn2+n78ciFgr4KIqEbydEGPxXgA==}
     cpu: [riscv64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-riscv64-musl@4.44.0':
     resolution: {integrity: sha512-TDKO8KlHJuvTEdfw5YYFBjhFts2TR0VpZsnLLSYmB7AaohJhM8ctDSdDnUGq77hUh4m/djRafw+9zQpkOanE2Q==}
     cpu: [riscv64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-linux-s390x-gnu@4.44.0':
     resolution: {integrity: sha512-8541GEyktXaw4lvnGp9m84KENcxInhAt6vPWJ9RodsB/iGjHoMB2Pp5MVBCiKIRxrxzJhGCxmNzdu+oDQ7kwRA==}
     cpu: [s390x]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-gnu@4.44.0':
     resolution: {integrity: sha512-iUVJc3c0o8l9Sa/qlDL2Z9UP92UZZW1+EmQ4xfjTc1akr0iUFZNfxrXJ/R1T90h/ILm9iXEY6+iPrmYB3pXKjw==}
     cpu: [x64]
     os: [linux]
+    libc: [glibc]
 
   '@rollup/rollup-linux-x64-musl@4.44.0':
     resolution: {integrity: sha512-PQUobbhLTQT5yz/SPg116VJBgz+XOtXt8D1ck+sfJJhuEsMj2jSej5yTdp8CvWBSceu+WW+ibVL6dm0ptG5fcA==}
     cpu: [x64]
     os: [linux]
+    libc: [musl]
 
   '@rollup/rollup-win32-arm64-msvc@4.44.0':
     resolution: {integrity: sha512-M0CpcHf8TWn+4oTxJfh7LQuTuaYeXGbk0eageVjQCKzYLsajWS/lFC94qlRqOlyC2KvRT90ZrfXULYmukeIy7w==}
@@ -2691,6 +2707,9 @@ packages:
   '@types/babel__traverse@7.20.7':
     resolution: {integrity: sha512-dkO5fhS7+/oos4ciWxyEyjWe48zmG6wbCheo/G2ZnHx4fs3EU6YC6UM8rk56gAjNJ9P3MTH2jo5jb92/K6wbng==}
 
+  '@types/chrome@0.0.332':
+    resolution: {integrity: sha512-Fl4luF9q/iroXMKbL1LQyr/nCKhKwkwkZQ9qeeePFECW/8SP/Lrx2kJ26wnpTpr0iAznkENoO8g924CP4mfNxw==}
+
   '@types/debug@4.1.12':
     resolution: {integrity: sha512-vIChWdVG3LG1SMxEvI/AK+FWJthlrqlTu7fbrlywTkkaONwk/UAGaULXRlf8vkzFBLVm0zkMdCquhL5aOjhXPQ==}
 
@@ -2708,6 +2727,15 @@ packages:
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
+
+  '@types/filesystem@0.0.36':
+    resolution: {integrity: sha512-vPDXOZuannb9FZdxgHnqSwAG/jvdGM8Wq+6N4D/d80z+D4HWH+bItqsZaVRQykAn6WEVeEkLm2oQigyHtgb0RA==}
+
+  '@types/filewriter@0.0.33':
+    resolution: {integrity: sha512-xFU8ZXTw4gd358lb2jw25nxY9QAgqn2+bKKjKOYfNCzN4DKCFetK7sPtrlpg66Ywe3vWY9FNxprZawAh9wfJ3g==}
+
+  '@types/har-format@1.2.16':
+    resolution: {integrity: sha512-fluxdy7ryD3MV6h8pTfTYpy/xQzCFC7m89nOH9y94cNqJ1mDIDPut7MnRHI3F6qRmh/cT2fUjG1MLdCNb4hE9A==}
 
   '@types/hast@2.3.10':
     resolution: {integrity: sha512-McWspRw8xx8J9HurkVBfYj0xKoE25tOFlHGdx4MJ5xORQrMGZNqJhVQWaIbm6Oyla5kYOXtDiopzKRJzEOkwJw==}
@@ -6523,8 +6551,8 @@ packages:
     resolution: {integrity: sha512-BgWVbCI72aIQy937xbawcs+hrVaN/CZ2UwutgaJ36hGqRrLNM+f5LUT/YPRbo8IV/ASeFzXszezV+y2+rq3l8A==}
     engines: {node: '>= 0.10'}
 
-  vanilla-jsoneditor-cn@2.2.3:
-    resolution: {integrity: sha512-fq1ObO3f2a0ACK0uOr5A8pYmYck6MfyS2Eyu73PW6KEwTAtqfD7pQT6kUOcwsPREZy8zDu54afs7N900Zci+ug==}
+  vanilla-jsoneditor@3.10.0:
+    resolution: {integrity: sha512-AiI8vDEqUhc63rA8JykuhyOBse5xu/yZXL1B3iij59Y0zWb53Z5cOBgiFwh4pa4fAqOfDsp9flezqNZdDWk9lQ==}
 
   vanilla-picker@2.12.3:
     resolution: {integrity: sha512-qVkT1E7yMbUsB2mmJNFmaXMWE2hF8ffqzMMwe9zdAikd8u2VfnsVY2HQcOUi2F38bgbxzlJBEdS1UUhOXdF9GQ==}
@@ -8934,8 +8962,6 @@ snapshots:
     dependencies:
       jsep: 1.4.0
 
-  '@jsonquerylang/jsonquery@4.1.1': {}
-
   '@jsonquerylang/jsonquery@5.0.4': {}
 
   '@lezer/common@1.2.3': {}
@@ -8956,13 +8982,13 @@ snapshots:
 
   '@marijn/find-cluster-break@1.0.2': {}
 
-  '@monaco-editor/loader@1.5.0':
+  '@monaco-editor/loader@1.6.1':
     dependencies:
       state-local: 1.0.7
 
-  '@monaco-editor/react@4.7.0-rc.0(monaco-editor@0.52.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
+  '@monaco-editor/react@4.8.0-rc.0(monaco-editor@0.52.2)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)':
     dependencies:
-      '@monaco-editor/loader': 1.5.0
+      '@monaco-editor/loader': 1.6.1
       monaco-editor: 0.52.2
       react: 19.1.0
       react-dom: 19.1.0(react@19.1.0)
@@ -10205,6 +10231,11 @@ snapshots:
     dependencies:
       '@babel/types': 7.27.6
 
+  '@types/chrome@0.0.332':
+    dependencies:
+      '@types/filesystem': 0.0.36
+      '@types/har-format': 1.2.16
+
   '@types/debug@4.1.12':
     dependencies:
       '@types/ms': 2.1.0
@@ -10226,6 +10257,14 @@ snapshots:
   '@types/estree@0.0.39': {}
 
   '@types/estree@1.0.8': {}
+
+  '@types/filesystem@0.0.36':
+    dependencies:
+      '@types/filewriter': 0.0.33
+
+  '@types/filewriter@0.0.33': {}
+
+  '@types/har-format@1.2.16': {}
 
   '@types/hast@2.3.10':
     dependencies:
@@ -11074,7 +11113,7 @@ snapshots:
     dependencies:
       cipher-base: 1.0.6
       inherits: 2.0.4
-      ripemd160: 2.0.1
+      ripemd160: 2.0.2
       sha.js: 2.4.11
 
   create-hash@1.2.0:
@@ -14684,7 +14723,7 @@ snapshots:
 
   validator@13.15.15: {}
 
-  vanilla-jsoneditor-cn@2.2.3:
+  vanilla-jsoneditor@3.10.0:
     dependencies:
       '@codemirror/autocomplete': 6.18.6
       '@codemirror/commands': 6.8.1
@@ -14696,7 +14735,7 @@ snapshots:
       '@codemirror/view': 6.37.2
       '@fortawesome/free-regular-svg-icons': 6.7.2
       '@fortawesome/free-solid-svg-icons': 6.7.2
-      '@jsonquerylang/jsonquery': 4.1.1
+      '@jsonquerylang/jsonquery': 5.0.4
       '@lezer/highlight': 1.2.1
       '@replit/codemirror-indentation-markers': 6.5.3(@codemirror/language@6.11.1)(@codemirror/state@6.5.2)(@codemirror/view@6.37.2)
       ajv: 8.17.1
