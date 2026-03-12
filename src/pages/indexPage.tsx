@@ -505,11 +505,8 @@ export default function IndexPage() {
       // 先同步设置数据到 store
       await useSettingsStore.getState().syncSettingsStore();
 
-      // 然后检查是否需要同步标签页数据
-      // 使用 getState() 获取最新状态，确保使用同步后的值
-      if (useSettingsStore.getState().editDataSaveLocal) {
-        await syncTabStore();
-      }
+      // 同步标签页数据
+      await syncTabStore();
 
       // 初始化 ChromeExtensionListener
       ChromeExtensionListener.getInstance().initialize();

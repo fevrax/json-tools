@@ -6,9 +6,14 @@ import { Content, JSONContent, Mode, TextContent } from "vanilla-jsoneditor";
 import { useSettingsStore } from "./useSettingsStore";
 import { useHistoryStore } from "./useHistoryStore";
 
-import { storage } from "@/lib/indexedDBStore";
+import { StorageManager } from "@/lib/storage/StorageManager";
+import { getSyncManager } from "@/lib/storage/MultiWindowSyncManager";
 import { stringifyJson } from "@/utils/json";
 import { generateUUID } from "@/utils/uuid";
+
+// 存储管理器实例
+const storageManager = new StorageManager();
+const syncManager = getSyncManager();
 
 export interface TabItem {
   key: string;
@@ -116,11 +121,9 @@ export const useTabStore = create<TabStore>()(
             };
 
             // 立即同步到历史记录（异步执行，不阻塞 Tab 创建）
-            if (settings.editDataSaveLocal) {
-              setTimeout(() => {
-                useHistoryStore.getState().addHistory(newTab);
-              }, 0);
-            }
+            setTimeout(() => {
+              useHistoryStore.getState().addHistory(newTab);
+            }, 0);
 
             return {
               tabs: [...state.tabs, newTab],
@@ -154,11 +157,9 @@ export const useTabStore = create<TabStore>()(
             const tabs = [defaultTab];
 
             // 立即同步到历史记录（异步执行，不阻塞 Tab 初始化）
-            if (settings.editDataSaveLocal) {
-              setTimeout(() => {
-                useHistoryStore.getState().addHistory(defaultTab);
-              }, 0);
-            }
+            setTimeout(() => {
+              useHistoryStore.getState().addHistory(defaultTab);
+            }, 0);
 
             return {
               ...state,
@@ -248,11 +249,11 @@ export const useTabStore = create<TabStore>()(
 
             return { tabs: updatedTabs };
           }),
-        // 从 IndexedDB 同步数据
+        // 从存储同步数据
         syncTabStore: async () => {
-          const tabs = await storage.getItem<TabItem[]>(DB_TABS);
-          const activeTabKey = await storage.getItem<string>(DB_TAB_ACTIVE_KEY);
-          const nextKey = await storage.getItem<number>(DB_TAB_NEXT_KEY);
+          const tabs = await storageManager.get<TabItem[]>('tabs');
+          const activeTabKey = await storageManager.get<string>('tabs_active_key');
+          const nextKey = await storageManager.get<number>('tabs_next_key');
           const data: Record<string, any> = {};
 
           if (tabs) {
@@ -291,7 +292,7 @@ export const useTabStore = create<TabStore>()(
           // 在关闭前保存 tab 到历史记录
           const tabToClose = get().tabs.find((tab) => tab.key === keyToRemove);
 
-          if (tabToClose && useSettingsStore.getState().editDataSaveLocal) {
+          if (tabToClose) {
             // 异步保存到历史记录，不阻塞关闭操作
             setTimeout(() => {
               useHistoryStore.getState().addHistory(tabToClose);
@@ -330,13 +331,11 @@ export const useTabStore = create<TabStore>()(
           const closedKeys = closedTabs.map((tab) => tab.key);
 
           // 异步保存到历史记录
-          if (useSettingsStore.getState().editDataSaveLocal) {
-            setTimeout(() => {
-              const historyStore = useHistoryStore.getState();
+          setTimeout(() => {
+            const historyStore = useHistoryStore.getState();
 
-              closedTabs.forEach((tab) => historyStore.addHistory(tab));
-            }, 0);
-          }
+            closedTabs.forEach((tab) => historyStore.addHistory(tab));
+          }, 0);
 
           console.log("closedKeys", closedKeys);
 
@@ -360,13 +359,11 @@ export const useTabStore = create<TabStore>()(
           const updatedTabs = tabs.slice(currentIndex);
 
           // 异步保存到历史记录
-          if (useSettingsStore.getState().editDataSaveLocal) {
-            setTimeout(() => {
-              const historyStore = useHistoryStore.getState();
+          setTimeout(() => {
+            const historyStore = useHistoryStore.getState();
 
-              closedTabs.forEach((tab) => historyStore.addHistory(tab));
-            }, 0);
-          }
+            closedTabs.forEach((tab) => historyStore.addHistory(tab));
+          }, 0);
 
           set(() => {
             return {
@@ -389,13 +386,11 @@ export const useTabStore = create<TabStore>()(
           const updatedTabs = tabs.slice(0, currentIndex + 1);
 
           // 异步保存到历史记录
-          if (useSettingsStore.getState().editDataSaveLocal) {
-            setTimeout(() => {
-              const historyStore = useHistoryStore.getState();
+          setTimeout(() => {
+            const historyStore = useHistoryStore.getState();
 
-              closedTabs.forEach((tab) => historyStore.addHistory(tab));
-            }, 0);
-          }
+            closedTabs.forEach((tab) => historyStore.addHistory(tab));
+          }, 0);
 
           set(() => {
             return {
@@ -413,13 +408,11 @@ export const useTabStore = create<TabStore>()(
           const closedKeys = closedTabs.map((tab) => tab.key);
 
           // 异步保存到历史记录
-          if (useSettingsStore.getState().editDataSaveLocal) {
-            setTimeout(() => {
-              const historyStore = useHistoryStore.getState();
+          setTimeout(() => {
+            const historyStore = useHistoryStore.getState();
 
-              closedTabs.forEach((tab) => historyStore.addHistory(tab));
-            }, 0);
-          }
+            closedTabs.forEach((tab) => historyStore.addHistory(tab));
+          }, 0);
 
           set(() => {
             const settings = useSettingsStore.getState();
@@ -445,11 +438,9 @@ export const useTabStore = create<TabStore>()(
             };
 
             // 立即同步到历史记录（异步执行，不阻塞 Tab 创建）
-            if (settings.editDataSaveLocal) {
-              setTimeout(() => {
-                useHistoryStore.getState().addHistory(defaultTab);
-              }, 0);
-            }
+            setTimeout(() => {
+              useHistoryStore.getState().addHistory(defaultTab);
+            }, 0);
 
             return {
               tabs: [defaultTab],
@@ -583,12 +574,6 @@ const DB_TABS = "tabs";
 const DB_TAB_ACTIVE_KEY = "tabs_active_key";
 const DB_TAB_NEXT_KEY = "tabs_next_key";
 
-// useTabStore.subscribe((state) => {
-//   storage.setItem(DB_TABS, state.tabs);
-//   storage.setItem(DB_TAB_ACTIVE_KEY, state.activeTabKey);
-//   storage.setItem(DB_TAB_NEXT_KEY, state.nextKey);
-// });
-
 let tabsSaveTimeout: NodeJS.Timeout;
 let tabActiveSaveTimeout: NodeJS.Timeout;
 const timeout = 2000;
@@ -596,25 +581,25 @@ const timeout = 2000;
 useTabStore.subscribe(
   (state) => state.tabs,
   (tabs) => {
-    if (useSettingsStore.getState().editDataSaveLocal) {
-      clearTimeout(tabsSaveTimeout);
-      tabsSaveTimeout = setTimeout(() => {
-        storage.setItem(DB_TABS, tabs);
-      }, timeout);
-    }
+    clearTimeout(tabsSaveTimeout);
+    tabsSaveTimeout = setTimeout(async () => {
+      await storageManager.set(DB_TABS, tabs);
+      syncManager.broadcastUpdate(DB_TABS, tabs);
+    }, timeout);
   },
 );
 
 useTabStore.subscribe(
   (state) => [state.activeTabKey, state.nextKey],
   (arr) => {
-    if (useSettingsStore.getState().editDataSaveLocal) {
-      clearTimeout(tabActiveSaveTimeout);
-      tabActiveSaveTimeout = setTimeout(() => {
-        storage.setItem(DB_TAB_ACTIVE_KEY, arr[0]);
-        storage.setItem(DB_TAB_NEXT_KEY, arr[1]);
-      }, timeout);
-    }
+    clearTimeout(tabActiveSaveTimeout);
+    tabActiveSaveTimeout = setTimeout(async () => {
+      await storageManager.transaction([
+        { type: 'set', key: DB_TAB_ACTIVE_KEY, value: arr[0] },
+        { type: 'set', key: DB_TAB_NEXT_KEY, value: arr[1] },
+      ]);
+      syncManager.broadcastUpdate('tabs_meta', { activeTabKey: arr[0], nextKey: arr[1] });
+    }, timeout);
   },
 );
 
@@ -626,11 +611,6 @@ const startHistorySync = () => {
   // 清除现有的定时器
   if (syncInterval) {
     clearInterval(syncInterval);
-  }
-
-  // 只在启用本地保存时启动定时器
-  if (!useSettingsStore.getState().editDataSaveLocal) {
-    return;
   }
 
   // 每 15 秒同步一次
@@ -668,18 +648,37 @@ const startHistorySync = () => {
   }, 15000); // 15 秒间隔
 };
 
-// 监听设置变化，启动或停止定时器
-useSettingsStore.subscribe(
-  (state) => state.editDataSaveLocal,
-  (editDataSaveLocal) => {
-    if (editDataSaveLocal) {
-      startHistorySync();
-    } else if (syncInterval) {
-      clearInterval(syncInterval);
-      syncInterval = null;
-    }
-  },
-);
-
 // 启动定时器
 startHistorySync();
+
+// 多窗口同步：监听来自其他窗口的更新
+syncManager.onUpdate(DB_TABS, (data) => {
+  if (data && Array.isArray(data)) {
+    const store = useTabStore.getState();
+    // 这里可以添加冲突解决逻辑
+    // 目前简单使用最后写入优先（LWW）
+    store.tabs = data;
+  }
+});
+
+syncManager.onUpdate('tabs_meta', (data) => {
+  if (data && data.activeTabKey) {
+    const store = useTabStore.getState();
+    store.activeTabKey = data.activeTabKey;
+    store.nextKey = data.nextKey;
+  }
+});
+
+// 页面关闭前强制保存
+if (typeof window !== "undefined") {
+  window.addEventListener('beforeunload', async () => {
+    await storageManager.flush();
+  });
+
+  // 页面隐藏时也保存（移动端友好）
+  document.addEventListener('visibilitychange', async () => {
+    if (document.hidden) {
+      await storageManager.flush();
+    }
+  });
+}

@@ -93,7 +93,7 @@ JSON Tools Next 是一个多功能的JSON工具集，提供了直观的界面和
 # 构建并启动容器
 docker-compose up -d
 
-# 访问 http://localhost:3300 即可使用
+# 访问 http://localhost:3300
 ```
 
 ### 使用 Docker 命令
@@ -105,7 +105,7 @@ docker build -t json-tools-next .
 # 运行容器
 docker run -d -p 3300:80 --name json-tools json-tools-next
 
-# 访问 http://localhost:3300 即可使用
+# 访问 http://localhost:3300
 ```
 
 ## 🚀 快速开始
