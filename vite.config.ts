@@ -78,7 +78,7 @@ export default defineConfig({
         ],
       },
       devOptions: {
-        enabled: true, // 在开发环境中启用 PWA
+        enabled: false, // 在开发环境中禁用 PWA
         type: "module",
       },
       manifest: {
