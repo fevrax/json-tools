@@ -30,6 +30,7 @@ import { SidebarKeys } from "@/components/sidebar/Items.tsx";
 import JsonTableView, {
   JsonTableViewRef,
 } from "@/components/jsonTable/JsonTableView.tsx";
+import TabHistoryModal from "@/components/tabHistory/TabHistoryModal.tsx";
 import clipboard from "@/utils/clipboard";
 import toast from "@/utils/toast";
 import { stringifyJson } from "@/utils/json";
@@ -45,6 +46,9 @@ export default function IndexPage() {
   // 添加JsonTableView的引用
   const jsonTableViewRefs = useRef<Record<string, JsonTableViewRef>>({});
 
+  // 历史记录弹窗状态
+  const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+
   const {
     tabs,
     activeTabKey,
@@ -59,6 +63,9 @@ export default function IndexPage() {
     setMonacoVersion,
     setVanillaVersion,
     jsonContent2VanillaContent,
+    restoreTabHistory,
+    deleteTabHistory,
+    clearTabHistory,
   } = useTabStore();
 
   const sidebarStore = useSidebarStore();
@@ -158,6 +165,7 @@ export default function IndexPage() {
           onSaveFile={() => {
             return monacoJsonEditorRefs.current[activeTabKey].saveFile();
           }}
+          onShowHistory={handleShowHistory}
         />
         <div className="editor-container flex-grow overflow-hidden">
           {tabs.map((tab) => {
@@ -584,6 +592,63 @@ export default function IndexPage() {
     sidebarStore.switchActiveKey();
   }, [sidebarStore.clickSwitchKey]);
 
+  // 历史记录处理函数
+  const handleShowHistory = () => {
+    setIsHistoryModalOpen(true);
+  };
+
+  const handleRestoreHistory = (historyKey: string) => {
+    const currentTab = activeTab();
+    if (!currentTab) return;
+
+    restoreTabHistory(currentTab.key, historyKey);
+    toast.success("历史记录已恢复");
+
+    // 更新编辑器显示（使用 requestAnimationFrame 确保状态已更新）
+    requestAnimationFrame(() => {
+      const updatedTab = getTabByKey(currentTab.key);
+      if (!updatedTab) return;
+
+      console.log('[历史记录] 更新编辑器内容:', updatedTab.key);
+
+      switch (sidebarStore.activeKey) {
+        case SidebarKeys.textView:
+          monacoJsonEditorRefs.current[currentTab.key]?.updateValue(
+            updatedTab.content,
+          );
+          break;
+        case SidebarKeys.diffView:
+          monacoDiffEditorRefs.current[currentTab.key]?.updateOriginalValue(
+            updatedTab.content,
+          );
+          break;
+        case SidebarKeys.treeView:
+          if (updatedTab.vanilla) {
+            vanillaJsonEditorRefs.current[
+              currentTab.key
+            ]?.updateEditorContentAndMode(updatedTab.vanillaMode, updatedTab.vanilla);
+          }
+          break;
+      }
+    });
+  };
+
+  const handleDeleteHistory = (historyKey: string) => {
+    const currentTab = activeTab();
+    if (!currentTab) return;
+
+    deleteTabHistory(currentTab.key, historyKey);
+    toast.success("历史记录已删除");
+  };
+
+  const handleClearHistory = () => {
+    const currentTab = activeTab();
+    if (!currentTab) return;
+
+    clearTabHistory(currentTab.key);
+    toast.success("历史记录已清空");
+  };
+
   // 添加renderJsonTableView函数
   const renderJsonTableView = () => {
     return (
@@ -707,6 +772,17 @@ export default function IndexPage() {
       <div className="flex-grow h-0 overflow-hidden flex flex-col">
         {renderEditor()}
       </div>
+
+      {/* 历史记录弹窗 */}
+      <TabHistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={() => setIsHistoryModalOpen(false)}
+        currentContent={activeTab()?.content || ""}
+        historyItems={activeTab()?.history || []}
+        onRestore={handleRestoreHistory}
+        onDelete={handleDeleteHistory}
+        onClear={handleClearHistory}
+      />
     </div>
   );
 }

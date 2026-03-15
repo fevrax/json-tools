@@ -4,12 +4,23 @@ import { devtools, subscribeWithSelector } from "zustand/middleware";
 import { Content, Mode, JSONContent, TextContent } from "vanilla-jsoneditor-cn";
 
 import { useSettingsStore } from "./useSettingsStore";
-import { useHistoryStore } from "./useHistoryStore";
 
 import { StorageManager } from "@/lib/storage/StorageManager";
 import { getSyncManager } from "@/lib/storage/MultiWindowSyncManager";
 import { parseJson, stringifyJson } from "@/utils/json";
 import { generateUUID } from "@/utils/uuid";
+
+/**
+ * Tab 历史记录项
+ */
+export interface TabHistoryItem {
+  key: string; // 历史记录唯一标识
+  timestamp: number; // 时间戳
+  title: string; // 标题快照
+  content: string; // 内容快照
+  monacoVersion: number; // 版本号
+  vanilla?: Content; // vanilla 内容快照（可选）
+}
 
 // 存储管理器实例 - 使用共享的 syncManager
 const syncManager = getSyncManager();
@@ -26,6 +37,7 @@ export interface TabItem {
   vanillaVersion: number;
   vanillaMode: Mode;
   closable?: boolean;
+  history: TabHistoryItem[]; // Tab 历史记录
   editorSettings: {
     fontSize: number;
     language: string;
@@ -72,6 +84,11 @@ interface TabStore {
     key: string,
     settings: TabItem["editorSettings"],
   ) => void;
+  // 历史记录相关方法
+  addTabHistory: (key: string) => void;
+  restoreTabHistory: (tabKey: string, historyKey: string) => void;
+  deleteTabHistory: (tabKey: string, historyKey: string) => void;
+  clearTabHistory: (tabKey: string) => void;
 }
 
 export const useTabStore = create<TabStore>()(
@@ -107,6 +124,7 @@ export const useTabStore = create<TabStore>()(
               closable: true,
               vanillaVersion: 0,
               monacoVersion: 1,
+              history: [],
               extraData: extraData,
               editorSettings: {
                 fontSize: 14,
@@ -119,11 +137,6 @@ export const useTabStore = create<TabStore>()(
                 imageDecoratorsEnabled: true,
               },
             };
-
-            // 立即同步到历史记录（异步执行，不阻塞 Tab 创建）
-            setTimeout(() => {
-              useHistoryStore.getState().addHistory(newTab);
-            }, 0);
 
             return {
               tabs: [...state.tabs, newTab],
@@ -143,6 +156,7 @@ export const useTabStore = create<TabStore>()(
               vanillaMode: Mode.text,
               vanillaVersion: 0,
               monacoVersion: 0,
+              history: [],
               editorSettings: {
                 fontSize: 14,
                 language: "json",
@@ -155,11 +169,6 @@ export const useTabStore = create<TabStore>()(
               },
             };
             const tabs = [defaultTab];
-
-            // 立即同步到历史记录（异步执行，不阻塞 Tab 初始化）
-            setTimeout(() => {
-              useHistoryStore.getState().addHistory(defaultTab);
-            }, 0);
 
             return {
               ...state,
@@ -195,21 +204,41 @@ export const useTabStore = create<TabStore>()(
           }),
         setTabContent: (key, content) =>
           set((state) => {
-            const updatedTabs = state.tabs.map((tab) =>
-              tab.key === key
-                ? { ...tab, content, monacoVersion: ++tab.monacoVersion }
-                : tab,
-            );
+            const updatedTabs = state.tabs.map((tab) => {
+              if (tab.key === key) {
+                const updatedTab = {
+                  ...tab,
+                  content,
+                  monacoVersion: tab.monacoVersion + 1,
+                };
+
+                // 触发历史记录（不阻塞状态更新）
+                setTimeout(() => recordTabHistory(updatedTab), 0);
+
+                return updatedTab;
+              }
+              return tab;
+            });
 
             return { tabs: updatedTabs };
           }),
         updateTabContent: (key, content) =>
           set((state) => {
-            const updatedTabs = state.tabs.map((tab) =>
-              tab.key === key
-                ? { ...tab, content, monacoVersion: ++tab.monacoVersion }
-                : tab,
-            );
+            const updatedTabs = state.tabs.map((tab) => {
+              if (tab.key === key) {
+                const updatedTab = {
+                  ...tab,
+                  content,
+                  monacoVersion: tab.monacoVersion + 1,
+                };
+
+                // 触发历史记录（不阻塞状态更新）
+                setTimeout(() => recordTabHistory(updatedTab), 0);
+
+                return updatedTab;
+              }
+              return tab;
+            });
 
             return { tabs: updatedTabs };
           }),
@@ -229,15 +258,21 @@ export const useTabStore = create<TabStore>()(
           }),
         setTabVanillaContent: (key: string, content: Content) =>
           set((state) => {
-            const updatedTabs = state.tabs.map((tab) =>
-              tab.key === key
-                ? {
-                    ...tab,
-                    vanilla: content,
-                    vanillaVersion: ++tab.vanillaVersion,
-                  }
-                : tab,
-            );
+            const updatedTabs = state.tabs.map((tab) => {
+              if (tab.key === key) {
+                const updatedTab = {
+                  ...tab,
+                  vanilla: content,
+                  vanillaVersion: tab.vanillaVersion + 1,
+                };
+
+                // 触发历史记录（不阻塞状态更新）
+                setTimeout(() => recordTabHistory(updatedTab), 0);
+
+                return updatedTab;
+              }
+              return tab;
+            });
 
             return { tabs: updatedTabs };
           }),
@@ -289,16 +324,6 @@ export const useTabStore = create<TabStore>()(
             return;
           }
 
-          // 在关闭前保存 tab 到历史记录
-          const tabToClose = get().tabs.find((tab) => tab.key === keyToRemove);
-
-          if (tabToClose) {
-            // 异步保存到历史记录，不阻塞关闭操作
-            setTimeout(() => {
-              useHistoryStore.getState().addHistory(tabToClose);
-            }, 0);
-          }
-
           set((state) => {
             const tabIndex = state.tabs.findIndex(
               (tab) => tab.key === keyToRemove,
@@ -330,15 +355,6 @@ export const useTabStore = create<TabStore>()(
 
           const closedKeys = closedTabs.map((tab) => tab.key);
 
-          // 异步保存到历史记录
-          setTimeout(() => {
-            const historyStore = useHistoryStore.getState();
-
-            closedTabs.forEach((tab) => historyStore.addHistory(tab));
-          }, 0);
-
-          console.log("closedKeys", closedKeys);
-
           set(() => {
             return {
               tabs: currentTab ? [currentTab] : [],
@@ -357,13 +373,6 @@ export const useTabStore = create<TabStore>()(
           const closedTabs = tabs.slice(0, currentIndex);
           const closedKeys = closedTabs.map((tab) => tab.key);
           const updatedTabs = tabs.slice(currentIndex);
-
-          // 异步保存到历史记录
-          setTimeout(() => {
-            const historyStore = useHistoryStore.getState();
-
-            closedTabs.forEach((tab) => historyStore.addHistory(tab));
-          }, 0);
 
           set(() => {
             return {
@@ -385,13 +394,6 @@ export const useTabStore = create<TabStore>()(
 
           const updatedTabs = tabs.slice(0, currentIndex + 1);
 
-          // 异步保存到历史记录
-          setTimeout(() => {
-            const historyStore = useHistoryStore.getState();
-
-            closedTabs.forEach((tab) => historyStore.addHistory(tab));
-          }, 0);
-
           set(() => {
             return {
               tabs: updatedTabs,
@@ -407,13 +409,6 @@ export const useTabStore = create<TabStore>()(
           const closedTabs = get().tabs.filter((tab) => tab.key !== "1");
           const closedKeys = closedTabs.map((tab) => tab.key);
 
-          // 异步保存到历史记录
-          setTimeout(() => {
-            const historyStore = useHistoryStore.getState();
-
-            closedTabs.forEach((tab) => historyStore.addHistory(tab));
-          }, 0);
-
           set(() => {
             const settings = useSettingsStore.getState();
             const defaultTab = {
@@ -425,6 +420,7 @@ export const useTabStore = create<TabStore>()(
               closable: true,
               monacoVersion: 0,
               vanillaVersion: 0,
+              history: [],
               editorSettings: {
                 fontSize: 14,
                 language: "json",
@@ -436,11 +432,6 @@ export const useTabStore = create<TabStore>()(
                 imageDecoratorsEnabled: true,
               },
             };
-
-            // 立即同步到历史记录（异步执行，不阻塞 Tab 创建）
-            setTimeout(() => {
-              useHistoryStore.getState().addHistory(defaultTab);
-            }, 0);
 
             return {
               tabs: [defaultTab],
@@ -564,6 +555,90 @@ export const useTabStore = create<TabStore>()(
 
             return { tabs: updatedTabs };
           }),
+        // 添加历史记录（手动触发）
+        addTabHistory: (key: string) => {
+          const tab = get().getTabByKey(key);
+          if (!tab) return;
+
+          recordTabHistory(tab);
+        },
+        // 恢复历史记录
+        restoreTabHistory: (tabKey: string, historyKey: string) => {
+          const tab = get().getTabByKey(tabKey);
+          if (!tab) {
+            console.error('[历史记录] Tab 不存在:', tabKey);
+            return;
+          }
+
+          const historyItem = tab.history.find((h) => h.key === historyKey);
+          if (!historyItem) {
+            console.error('[历史记录] 历史记录不存在:', historyKey);
+            return;
+          }
+
+          console.log('[历史记录] 恢复历史:', {
+            tabKey,
+            historyKey,
+            currentTitle: tab.title,
+            historyTitle: historyItem.title,
+            currentMonacoVersion: tab.monacoVersion,
+            historyMonacoVersion: historyItem.monacoVersion,
+          });
+
+          set((state) => {
+            // 检查是否有重复的 tab.key
+            const duplicateKeys = state.tabs
+              .map(t => t.key)
+              .filter((k, i, arr) => arr.indexOf(k) !== i);
+
+            if (duplicateKeys.length > 0) {
+              console.error('[历史记录] 发现重复的 tab.key:', duplicateKeys);
+            }
+
+            return {
+              tabs: state.tabs.map((t) => {
+                if (t.key === tabKey) {
+                  // 保持当前版本号，只恢复内容，避免版本号回退导致问题
+                  return {
+                    ...t,
+                    title: historyItem.title,
+                    content: historyItem.content,
+                    // 不恢复 monacoVersion 和 vanillaVersion，保持当前版本号
+                    vanilla: historyItem.vanilla,
+                  };
+                }
+                return t;
+              }),
+            };
+          });
+
+          console.log('[历史记录] 恢复完成，新的 tabs:', get().tabs.map(t => ({ key: t.key, title: t.title })));
+        },
+        // 删除指定历史记录
+        deleteTabHistory: (tabKey: string, historyKey: string) => {
+          set((state) => ({
+            tabs: state.tabs.map((t) => {
+              if (t.key === tabKey) {
+                return {
+                  ...t,
+                  history: t.history.filter((h) => h.key !== historyKey),
+                };
+              }
+              return t;
+            }),
+          }));
+        },
+        // 清空 Tab 的所有历史记录
+        clearTabHistory: (tabKey: string) => {
+          set((state) => ({
+            tabs: state.tabs.map((t) => {
+              if (t.key === tabKey) {
+                return { ...t, history: [] };
+              }
+              return t;
+            }),
+          }));
+        },
       }),
       { name: "tabStore", enabled: true },
     ),
@@ -577,6 +652,71 @@ const DB_TAB_NEXT_KEY = "tabs_next_key";
 let tabsSaveTimeout: NodeJS.Timeout;
 let tabActiveSaveTimeout: NodeJS.Timeout;
 const timeout = 2000;
+
+// 历史记录最大保存数量
+const MAX_HISTORY_COUNT = 50;
+
+// 历史记录防抖
+const historyRecordTimeouts: Record<string, NodeJS.Timeout> = {};
+
+// 记录历史的辅助函数
+const recordTabHistory = (tab: TabItem) => {
+  console.log('[历史记录] 准备记录历史:', tab.key, tab.title);
+
+  // 清除之前的定时器
+  if (historyRecordTimeouts[tab.key]) {
+    clearTimeout(historyRecordTimeouts[tab.key]);
+  }
+
+  // 延迟记录，避免频繁记录
+  historyRecordTimeouts[tab.key] = setTimeout(() => {
+    const currentTab = useTabStore.getState().getTabByKey(tab.key);
+    if (!currentTab) {
+      console.log('[历史记录] Tab 不存在，跳过记录');
+      return;
+    }
+
+    // 检查最新历史记录，避免重复
+    const latestHistory = currentTab.history[0];
+    if (latestHistory) {
+      const contentChanged = latestHistory.content !== currentTab.content;
+      const titleChanged = latestHistory.title !== currentTab.title;
+
+      // 如果内容和标题都没变化，不记录
+      if (!contentChanged && !titleChanged) {
+        console.log('[历史记录] 内容未变化，跳过记录');
+        return;
+      }
+    }
+
+    console.log('[历史记录] 记录新的历史:', currentTab.key, currentTab.history.length + 1);
+
+    // 创建新的历史记录（使用更精确的时间戳确保唯一性）
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 9);
+    const newHistoryItem: TabHistoryItem = {
+      key: `history_${timestamp}_${randomSuffix}_${currentTab.uuid}`,
+      timestamp: timestamp,
+      title: currentTab.title,
+      content: currentTab.content,
+      monacoVersion: currentTab.monacoVersion,
+      vanilla: currentTab.vanilla,
+    };
+
+    // 更新 tab 的历史记录
+    useTabStore.setState((state) => ({
+      tabs: state.tabs.map((t) => {
+        if (t.key === currentTab.key) {
+          // 限制历史记录数量，最多保存50条
+          const history = [newHistoryItem, ...t.history].slice(0, MAX_HISTORY_COUNT);
+          console.log('[历史记录] 历史记录已保存，总数:', history.length);
+          return { ...t, history };
+        }
+        return t;
+      }),
+    }));
+  }, 1000); // 延迟 1 秒记录
+};
 
 useTabStore.subscribe(
   (state) => state.tabs,
@@ -608,54 +748,6 @@ useTabStore.subscribe(
     }, timeout);
   },
 );
-
-// 定时同步当前 Tab 到历史记录（15 秒间隔）
-// 使用 requestIdleCallback 或 setTimeout 确保不影响性能
-let syncInterval: NodeJS.Timeout | null = null;
-
-const startHistorySync = () => {
-  // 清除现有的定时器
-  if (syncInterval) {
-    clearInterval(syncInterval);
-  }
-
-  // 每 15 秒同步一次
-  syncInterval = setInterval(() => {
-    // 使用 requestIdleCallback 在浏览器空闲时执行，避免影响性能
-    if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-      (window as any).requestIdleCallback(
-        () => {
-          const state = useTabStore.getState();
-          const activeTab = state.activeTab();
-
-          if (activeTab && activeTab.uuid) {
-            // 通过 UUID 更新历史记录
-            useHistoryStore
-              .getState()
-              .updateHistoryByUuid(activeTab.uuid, activeTab);
-          }
-        },
-        { timeout: 2000 }, // 最多等待 2 秒
-      );
-    } else {
-      // 降级方案：使用 setTimeout 延迟执行
-      setTimeout(() => {
-        const state = useTabStore.getState();
-        const activeTab = state.activeTab();
-
-        if (activeTab && activeTab.uuid) {
-          // 通过 UUID 更新历史记录
-          useHistoryStore
-            .getState()
-            .updateHistoryByUuid(activeTab.uuid, activeTab);
-        }
-      }, 100);
-    }
-  }, 15000); // 15 秒间隔
-};
-
-// 启动定时器
-startHistorySync();
 
 // 多窗口同步：监听来自其他窗口的更新
 // 使用标志位防止循环触发
