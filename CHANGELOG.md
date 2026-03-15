@@ -1,3 +1,17 @@
+# [1.20.0](https://github.com/fevrax/json-tools/compare/v1.19.0...v1.20.0) (2026-03-15)
+
+
+### Bug Fixes
+
+* dev disable pwa ([9ba444c](https://github.com/fevrax/json-tools/commit/9ba444cb27221501dbdbcbf0295228b5615c1ab6))
+* history list title change ([69c428f](https://github.com/fevrax/json-tools/commit/69c428f453bfa2f5467834e56d447244ad5f92a0))
+* multiple window synchronization issue ([f094c90](https://github.com/fevrax/json-tools/commit/f094c902aa55ef7d7a8db274c2174e1bd9b70102))
+
+
+### Features
+
+* tab history ([47b881d](https://github.com/fevrax/json-tools/commit/47b881db282c848643777e6f5d48fb5f7063a379))
+
 # [1.19.0](https://github.com/fevrax/json-tools/compare/v1.18.1...v1.19.0) (2026-03-10)
 
 
