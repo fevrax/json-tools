@@ -1780,6 +1780,38 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     updateEditorSettings,
   ]);
 
+  // 监听外部 value prop 变化并更新编辑器内容
+  // 用于支持多窗口同步等场景
+  useEffect(() => {
+    if (!editorRef.current || !isEditorReady) {
+      return;
+    }
+
+    const currentValue = editorRef.current.getValue();
+
+    // 只有当外部 value 与编辑器当前值不同时才更新
+    // 避免循环更新和不必要的渲染
+    if (value !== undefined && value !== currentValue) {
+      console.log('[MonacoJsonEditor] 外部 value 变化，更新编辑器内容', {
+        tabKey,
+        oldValueLength: currentValue?.length,
+        newValueLength: value?.length,
+      });
+
+      // 使用 executeEdits 保留撤销历史
+      const model = editorRef.current.getModel();
+      if (model) {
+        editorRef.current.executeEdits("external-update", [
+          {
+            range: model.getFullModelRange(),
+            text: value,
+            forceMoveMarkers: true,
+          },
+        ]);
+      }
+    }
+  }, [value, isEditorReady, tabKey]);
+
   // 添加对全局状态变化的监听，并更新相关函数调用
 
   // 使用useSettingsStore的state更新

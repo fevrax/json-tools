@@ -11,9 +11,9 @@ import { getSyncManager } from "@/lib/storage/MultiWindowSyncManager";
 import { parseJson, stringifyJson } from "@/utils/json";
 import { generateUUID } from "@/utils/uuid";
 
-// 存储管理器实例
-const storageManager = new StorageManager();
+// 存储管理器实例 - 使用共享的 syncManager
 const syncManager = getSyncManager();
+const storageManager = new StorageManager(syncManager);
 
 export interface TabItem {
   key: string;
@@ -581,10 +581,13 @@ const timeout = 2000;
 useTabStore.subscribe(
   (state) => state.tabs,
   (tabs) => {
+    // 如果是远程更新,不重复广播
+    if (isRemoteTabUpdate) return;
+
     clearTimeout(tabsSaveTimeout);
     tabsSaveTimeout = setTimeout(async () => {
       await storageManager.set(DB_TABS, tabs);
-      syncManager.broadcastUpdate(DB_TABS, tabs);
+      // storageManager 内部会自动广播,无需手动调用
     }, timeout);
   },
 );
@@ -592,13 +595,16 @@ useTabStore.subscribe(
 useTabStore.subscribe(
   (state) => [state.activeTabKey, state.nextKey],
   (arr) => {
+    // 如果是远程更新,不重复广播
+    if (isRemoteTabUpdate) return;
+
     clearTimeout(tabActiveSaveTimeout);
     tabActiveSaveTimeout = setTimeout(async () => {
       await storageManager.transaction([
         { type: 'set', key: DB_TAB_ACTIVE_KEY, value: arr[0] },
         { type: 'set', key: DB_TAB_NEXT_KEY, value: arr[1] },
       ]);
-      syncManager.broadcastUpdate('tabs_meta', { activeTabKey: arr[0], nextKey: arr[1] });
+      // storageManager 内部会自动广播,无需手动调用
     }, timeout);
   },
 );
@@ -652,20 +658,43 @@ const startHistorySync = () => {
 startHistorySync();
 
 // 多窗口同步：监听来自其他窗口的更新
+// 使用标志位防止循环触发
+let isRemoteTabUpdate = false;
+
 syncManager.onUpdate(DB_TABS, (data) => {
-  if (data && Array.isArray(data)) {
-    const store = useTabStore.getState();
-    // 这里可以添加冲突解决逻辑
-    // 目前简单使用最后写入优先（LWW）
-    store.tabs = data;
+  if (data && Array.isArray(data) && !isRemoteTabUpdate) {
+    isRemoteTabUpdate = true;
+
+    // 使用 setState 方法正确更新状态,触发响应式更新
+    useTabStore.setState({ tabs: data });
+
+    // 持久化到本地存储
+    storageManager.set(DB_TABS, data, { sync: false });
+
+    setTimeout(() => {
+      isRemoteTabUpdate = false;
+    }, 100);
   }
 });
 
 syncManager.onUpdate('tabs_meta', (data) => {
-  if (data && data.activeTabKey) {
-    const store = useTabStore.getState();
-    store.activeTabKey = data.activeTabKey;
-    store.nextKey = data.nextKey;
+  if (data && data.activeTabKey && !isRemoteTabUpdate) {
+    isRemoteTabUpdate = true;
+
+    useTabStore.setState({
+      activeTabKey: data.activeTabKey,
+      nextKey: data.nextKey
+    });
+
+    // 持久化到本地存储
+    storageManager.transaction([
+      { type: 'set', key: DB_TAB_ACTIVE_KEY, value: data.activeTabKey },
+      { type: 'set', key: DB_TAB_NEXT_KEY, value: data.nextKey }
+    ], { sync: false });
+
+    setTimeout(() => {
+      isRemoteTabUpdate = false;
+    }, 100);
   }
 });
 
