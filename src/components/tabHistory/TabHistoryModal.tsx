@@ -91,13 +91,19 @@ const TabHistoryModal: React.FC<TabHistoryModalProps> = ({
           {previewMode && selectedHistory ? (
             <div className="flex flex-col gap-4 h-full">
               {/* 历史记录信息 */}
-              <div className="flex flex-col">
-                <span className="text-small font-medium">
-                  {selectedHistory.title}
-                </span>
-                <span className="text-tiny text-default-400">
-                  {formatDate(selectedHistory.timestamp)}
-                </span>
+              <div className="flex items-center gap-3">
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <span className="text-small font-semibold text-default-700">
+                      版本 #{selectedHistory.monacoVersion}
+                    </span>
+                    <Chip size="sm" variant="flat" className="h-5 px-1.5">
+                      <span className="text-tiny text-default-500">
+                        {formatDate(selectedHistory.timestamp)}
+                      </span>
+                    </Chip>
+                  </div>
+                </div>
               </div>
 
               <Divider />
@@ -150,8 +156,8 @@ const TabHistoryModal: React.FC<TabHistoryModalProps> = ({
                       onClick={() => handleSelectHistory(item)}
                     >
                       <div className="flex flex-col flex-1">
-                        <span className="text-small font-medium">
-                          {item.title}
+                        <span className="text-small font-semibold text-default-700">
+                          版本 #{item.monacoVersion}
                         </span>
                         <span className="text-tiny text-default-400">
                           {formatDate(item.timestamp)}
