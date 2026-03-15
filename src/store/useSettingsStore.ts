@@ -35,6 +35,8 @@ export interface SettingsState {
   // 快捷键设置
   newTabShortcut: string;
   closeTabShortcut: string;
+  // 本地数据持久化开关
+  persistentDataEnabled: boolean;
 
   // Actions
   setExpandSidebar: (value: boolean) => void;
@@ -48,6 +50,7 @@ export interface SettingsState {
   setDefaultIndentSize: (value: number) => void;
   setNewTabShortcut: (value: string) => void;
   setCloseTabShortcut: (value: string) => void;
+  setPersistentDataEnabled: (value: boolean) => void;
   setSettings: (settings: Partial<SettingsState>) => void;
   syncSettingsStore: () => Promise<void>;
 }
@@ -68,6 +71,7 @@ export const useSettingsStore = create<SettingsState>()(
         defaultIndentSize: 4,
         newTabShortcut: "Ctrl+Shift+T",
         closeTabShortcut: "Ctrl+Shift+W",
+        persistentDataEnabled: true,
 
         // Actions 实现
         setExpandSidebar: (value: boolean) => set({ expandSidebar: value }),
@@ -88,6 +92,8 @@ export const useSettingsStore = create<SettingsState>()(
         setNewTabShortcut: (value: string) => set({ newTabShortcut: value }),
         setCloseTabShortcut: (value: string) =>
           set({ closeTabShortcut: value }),
+        setPersistentDataEnabled: (value: boolean) =>
+          set({ persistentDataEnabled: value }),
         setSettings: (settings: Partial<SettingsState>) => set(settings),
         // 从存储同步设置数据
         syncSettingsStore: async () => {
@@ -114,7 +120,9 @@ useSettingsStore.subscribe(
   (settings) => {
     clearTimeout(settingsSaveTimeout);
     settingsSaveTimeout = setTimeout(async () => {
-      await storageManager.set(DB_SETTINGS, settings);
+      // 只保存数据字段，排除函数（actions）
+      const { setExpandSidebar, setMonacoEditorCDN, setChatStyle, setFontSize, setTimestampDecoderEnabled, setBase64DecoderEnabled, setUnicodeDecoderEnabled, setUrlDecoderEnabled, setDefaultIndentSize, setNewTabShortcut, setCloseTabShortcut, setPersistentDataEnabled, setSettings, syncSettingsStore, ...dataToSave } = settings;
+      await storageManager.set(DB_SETTINGS, dataToSave);
     }, timeout);
   },
 );

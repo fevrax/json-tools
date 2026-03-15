@@ -89,6 +89,7 @@ interface TabStore {
   restoreTabHistory: (tabKey: string, historyKey: string) => void;
   deleteTabHistory: (tabKey: string, historyKey: string) => void;
   clearTabHistory: (tabKey: string) => void;
+  clearUserData: () => Promise<void>;
 }
 
 export const useTabStore = create<TabStore>()(
@@ -286,6 +287,14 @@ export const useTabStore = create<TabStore>()(
           }),
         // 从存储同步数据
         syncTabStore: async () => {
+          // 检查是否启用了数据持久化
+          const settings = useSettingsStore.getState();
+          if (!settings.persistentDataEnabled) {
+            // 如果禁用了持久化，初始化干净的标签页
+            get().initTab();
+            return;
+          }
+
           const tabs = await storageManager.get<TabItem[]>('tabs');
           const activeTabKey = await storageManager.get<string>('tabs_active_key');
           const nextKey = await storageManager.get<number>('tabs_next_key');
@@ -639,6 +648,20 @@ export const useTabStore = create<TabStore>()(
             }),
           }));
         },
+        // 清除用户数据
+        clearUserData: async () => {
+          try {
+            // 清除用户数据相关的存储键
+            await storageManager.remove(DB_TABS);
+            await storageManager.remove(DB_TAB_ACTIVE_KEY);
+            await storageManager.remove(DB_TAB_NEXT_KEY);
+
+            console.log('用户数据已清除');
+          } catch (error) {
+            console.error('清除用户数据失败:', error);
+            throw error;
+          }
+        },
       }),
       { name: "tabStore", enabled: true },
     ),
@@ -724,6 +747,13 @@ useTabStore.subscribe(
     // 如果是远程更新,不重复广播
     if (isRemoteTabUpdate) return;
 
+    // 检查是否启用了数据持久化
+    const persistentDataEnabled = useSettingsStore.getState().persistentDataEnabled;
+    if (!persistentDataEnabled) {
+      // 如果禁用了持久化，不保存数据
+      return;
+    }
+
     clearTimeout(tabsSaveTimeout);
     tabsSaveTimeout = setTimeout(async () => {
       await storageManager.set(DB_TABS, tabs);
@@ -737,6 +767,13 @@ useTabStore.subscribe(
   (arr) => {
     // 如果是远程更新,不重复广播
     if (isRemoteTabUpdate) return;
+
+    // 检查是否启用了数据持久化
+    const persistentDataEnabled = useSettingsStore.getState().persistentDataEnabled;
+    if (!persistentDataEnabled) {
+      // 如果禁用了持久化，不保存数据
+      return;
+    }
 
     clearTimeout(tabActiveSaveTimeout);
     tabActiveSaveTimeout = setTimeout(async () => {
