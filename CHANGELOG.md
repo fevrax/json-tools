@@ -1,3 +1,12 @@
+## [1.20.1](https://github.com/fevrax/json-tools/compare/v1.20.0...v1.20.1) (2026-03-15)
+
+
+### Bug Fixes
+
+* local storage fix ([bf0bce8](https://github.com/fevrax/json-tools/commit/bf0bce84d00e75d85aadf9d32295317a703a1e9d))
+* optimize Sidebar Style ([53973d6](https://github.com/fevrax/json-tools/commit/53973d631885f7cc2ac8222ee4f18709c6af8758))
+* package.json ([fddfd5e](https://github.com/fevrax/json-tools/commit/fddfd5e909d8ae542581f7872ac151903f4ef734))
+
 # [1.20.0](https://github.com/fevrax/json-tools/compare/v1.19.0...v1.20.0) (2026-03-15)
 
 
