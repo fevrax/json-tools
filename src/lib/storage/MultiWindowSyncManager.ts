@@ -76,6 +76,7 @@ export class MultiWindowSyncManager {
   private handleUpdate(message: SyncMessage): void {
     if (!message.key) return;
 
+    // 通知特定 key 的处理器
     const handlers = this.updateHandlers.get(message.key);
 
     if (handlers) {
@@ -84,6 +85,23 @@ export class MultiWindowSyncManager {
           handler(message.data);
         } catch (error) {
           console.error("执行更新处理器失败:", error);
+        }
+      });
+    }
+
+    // 同时通知统一的 storage_update 处理器
+    const universalHandlers = this.updateHandlers.get("storage_update");
+
+    if (universalHandlers) {
+      universalHandlers.forEach((handler) => {
+        try {
+          handler({
+            key: message.key,
+            value: message.data,
+            version: message.version,
+          });
+        } catch (error) {
+          console.error("执行统一更新处理器失败:", error);
         }
       });
     }
@@ -116,6 +134,7 @@ export class MultiWindowSyncManager {
 
     try {
       this.channel.postMessage(message);
+      console.log(`广播更新: ${key}`, data);
     } catch (error) {
       console.error("广播更新失败:", error);
     }

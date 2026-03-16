@@ -1,3 +1,31 @@
+# [1.21.0](https://github.com/fevrax/json-tools/compare/v1.20.0...v1.21.0) (2026-03-15)
+
+
+### Bug Fixes
+
+* local storage fix ([bf0bce8](https://github.com/fevrax/json-tools/commit/bf0bce84d00e75d85aadf9d32295317a703a1e9d))
+* optimize Sidebar Style ([53973d6](https://github.com/fevrax/json-tools/commit/53973d631885f7cc2ac8222ee4f18709c6af8758))
+* package.json ([fddfd5e](https://github.com/fevrax/json-tools/commit/fddfd5e909d8ae542581f7872ac151903f4ef734))
+
+
+### Features
+
+* add linux/arm64 docker build ([f5a20a1](https://github.com/fevrax/json-tools/commit/f5a20a11a6c973085c873b013ba804b292ce138c))
+
+# [1.20.0](https://github.com/fevrax/json-tools/compare/v1.19.0...v1.20.0) (2026-03-15)
+
+
+### Bug Fixes
+
+* dev disable pwa ([9ba444c](https://github.com/fevrax/json-tools/commit/9ba444cb27221501dbdbcbf0295228b5615c1ab6))
+* history list title change ([69c428f](https://github.com/fevrax/json-tools/commit/69c428f453bfa2f5467834e56d447244ad5f92a0))
+* multiple window synchronization issue ([f094c90](https://github.com/fevrax/json-tools/commit/f094c902aa55ef7d7a8db274c2174e1bd9b70102))
+
+
+### Features
+
+* tab history ([47b881d](https://github.com/fevrax/json-tools/commit/47b881db282c848643777e6f5d48fb5f7063a379))
+
 # [1.19.0](https://github.com/fevrax/json-tools/compare/v1.18.1...v1.19.0) (2026-03-10)
 
 

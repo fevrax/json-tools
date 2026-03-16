@@ -1,6 +1,6 @@
 /**
  * 存储管理器
- * 提供统一的存储接口，支持事务、WAL、重试等功能
+ * 提供统一的存储接口，支持事务、WAL、重试、多窗口同步等功能
  */
 
 import localforage from "localforage";
@@ -13,6 +13,7 @@ import {
   VersionVector,
 } from "./types";
 import { WALManager } from "./WALManager";
+import { MultiWindowSyncManager } from "./MultiWindowSyncManager";
 
 import { generateUUID } from "@/utils/uuid";
 
@@ -35,12 +36,16 @@ const DEFAULT_OPTIONS: StorageOptions = {
 
 export class StorageManager {
   private walManager: WALManager;
+  private syncManager: MultiWindowSyncManager;
   private windowId: string;
   private isFlushing = false;
+  private isRemoteUpdate = false; // 标志位: 防止循环同步
 
-  constructor() {
+  constructor(syncManager?: MultiWindowSyncManager) {
     this.walManager = new WALManager();
+    this.syncManager = syncManager || new MultiWindowSyncManager();
     this.windowId = this.generateWindowId();
+    this.setupSyncListeners();
   }
 
   /**
@@ -48,6 +53,46 @@ export class StorageManager {
    */
   private generateWindowId(): string {
     return `window_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * 设置多窗口同步监听器
+   */
+  private setupSyncListeners(): void {
+    // 监听来自其他窗口的更新
+    this.syncManager.onUpdate("storage_update", (data) => {
+      this.handleRemoteUpdate(data);
+    });
+  }
+
+  /**
+   * 处理来自其他窗口的远程更新
+   */
+  private async handleRemoteUpdate(data: {
+    key: string;
+    value: any;
+    version: VersionVector;
+  }): Promise<void> {
+    try {
+      this.isRemoteUpdate = true;
+
+      // 直接更新内存缓存和持久化存储,不广播
+      const versionedData: VersionedData<any> = {
+        data: data.value,
+        version: data.version,
+        timestamp: Date.now(),
+        windowId: data.version ? Object.keys(data.version)[0] : "unknown",
+      };
+
+      memoryCache.set(data.key, versionedData);
+      await mainStorage.setItem(data.key, versionedData);
+
+      console.log(`已同步远程更新: ${data.key}`);
+    } catch (error) {
+      console.error("处理远程更新失败:", error);
+    } finally {
+      this.isRemoteUpdate = false;
+    }
   }
 
   /**
@@ -152,6 +197,11 @@ export class StorageManager {
       // 清理 WAL（如果使用）
       if (options.immediate) {
         // 注意：这里需要 transactionId，简化处理暂时跳过
+      }
+
+      // 多窗口同步: 仅在非远程更新时广播
+      if (options.sync !== false && !this.isRemoteUpdate) {
+        this.syncManager.broadcastUpdate(key, value, versionedData.version);
       }
     } catch (error) {
       console.error(`设置 ${key} 失败:`, error);
@@ -377,5 +427,19 @@ export class StorageManager {
   clearCache(): void {
     memoryCache.clear();
     console.log("已清理内存缓存");
+  }
+
+  /**
+   * 获取同步管理器实例
+   */
+  getSyncManager(): MultiWindowSyncManager {
+    return this.syncManager;
+  }
+
+  /**
+   * 获取窗口 ID
+   */
+  getWindowId(): string {
+    return this.windowId;
   }
 }
