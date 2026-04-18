@@ -158,6 +158,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
   const foldingDecorationsRef =
     useRef<monaco.editor.IEditorDecorationsCollection | null>(null);
+  const cursorSelectionDisposableRef = useRef<monaco.IDisposable | null>(null);
 
   // 从 store 获取当前 tab 的设置
   const currentTab = getTabByKey(tabKey);
@@ -320,6 +321,12 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   const [currentEditorValue, setCurrentEditorValue] = useState<string>("");
   // 编辑器是否准备就绪
   const [isEditorReady, setIsEditorReady] = useState<boolean>(false);
+  // 编辑器统计信息（字符数、行数、选区字符数）
+  const [editorStats, setEditorStats] = useState<{
+    chars: number;
+    lines: number;
+    selectedChars: number;
+  }>({ chars: 0, lines: 0, selectedChars: 0 });
 
   // 使用自定义快捷指令或默认快捷指令
   const finalQuickPrompts = customQuickPrompts || jsonQuickPrompts;
@@ -704,6 +711,20 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
     return editorRef.current.getModel()?.getLineCount() || 0;
   };
+
+  // 更新编辑器统计信息（字符数、行数、选区字符数）
+  const updateEditorStats = useCallback(() => {
+    if (!editorRef.current) return;
+    const model = editorRef.current.getModel();
+    const selection = editorRef.current.getSelection();
+    const chars = model?.getValueLength() ?? 0;
+    const lines = model?.getLineCount() ?? 0;
+    let selectedChars = 0;
+    if (selection && !selection.isEmpty()) {
+      selectedChars = model?.getValueLengthInRange(selection) ?? 0;
+    }
+    setEditorStats({ chars, lines, selectedChars });
+  }, []);
 
   // 清空所有装饰器
   const clearAllDecorators = () => {
@@ -1646,7 +1667,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           }
           onUpdateValue(val);
           setCurrentEditorValue(val);
+          updateEditorStats();
         });
+
+        // 监听选区变化，更新选中字符数
+        cursorSelectionDisposableRef.current =
+          editor.onDidChangeCursorSelection(() => {
+            updateEditorStats();
+          });
 
         // 添加粘贴事件监听：首次粘贴时自动格式化
         editor.onDidPaste(() => {
@@ -1676,6 +1704,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
         editorRef.current = editor;
         setIsEditorReady(true);
+        updateEditorStats();
 
         // 统一初始化所有装饰器
         // 使用 onDidLayoutChange 确保编辑器布局完成后再初始化装饰器
@@ -1760,6 +1789,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
       if (filterUpdateTimeoutRef.current) {
         clearTimeout(filterUpdateTimeoutRef.current);
       }
+      // 清理选区变化监听
+      cursorSelectionDisposableRef.current?.dispose();
     };
   }, []); // 空依赖数组表示这个效果只在组件挂载和卸载时运行
 
@@ -1906,7 +1937,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               className="h-full overflow-hidden border-r border-default-200 dark:border-default-100/20 monaco-editor-container"
               style={{ width: `calc(60% - ${aiPanelWidth}px)` }}
             >
-              <div ref={containerRef} className="h-full w-full" />
+              <div className="relative h-full w-full">
+                <div ref={containerRef} className="h-full w-full" />
+                <div className="absolute bottom-0 right-2 pointer-events-none select-none z-10 text-[11px] leading-tight font-mono text-gray-400/70 dark:text-gray-500/70 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-sm rounded-t px-1.5 py-0.5">
+                  {editorStats.chars} 字符 · {editorStats.lines} 行
+                  {editorStats.selectedChars > 0 &&
+                    ` · ${editorStats.selectedChars} 选中`}
+                </div>
+              </div>
             </div>
 
             {/* 拖动条 */}
@@ -1949,7 +1987,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               className="h-full overflow-hidden border-r border-default-200 dark:border-default-100/20 monaco-editor-container"
               style={{ width: `${filterLeftWidth}%` }}
             >
-              <div ref={containerRef} className="h-full w-full" />
+              <div className="relative h-full w-full">
+                <div ref={containerRef} className="h-full w-full" />
+                <div className="absolute bottom-0 right-2 pointer-events-none select-none z-10 text-[11px] leading-tight font-mono text-gray-400/70 dark:text-gray-500/70 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-sm rounded-t px-1.5 py-0.5">
+                  {editorStats.chars} 字符 · {editorStats.lines} 行
+                  {editorStats.selectedChars > 0 &&
+                    ` · ${editorStats.selectedChars} 选中`}
+                </div>
+              </div>
             </div>
 
             {/* jsonQuery 过滤器拖动条 */}
@@ -2028,7 +2073,14 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           </>
         ) : (
           // 普通模式：只显示一个编辑器
-          <div ref={containerRef} className="w-full h-full" />
+          <div className="relative w-full h-full">
+            <div ref={containerRef} className="w-full h-full" />
+            <div className="absolute bottom-0 right-2 pointer-events-none select-none z-10 text-[11px] leading-tight font-mono text-gray-400/70 dark:text-gray-500/70 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-sm rounded-t px-1.5 py-0.5">
+              {editorStats.chars} 字符 · {editorStats.lines} 行
+              {editorStats.selectedChars > 0 &&
+                ` · ${editorStats.selectedChars} 选中`}
+            </div>
+          </div>
         )}
       </div>
 
