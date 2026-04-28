@@ -798,7 +798,7 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
                 innerWrapper: "relative",
                 input: cn(
                   "pt-3 px-5 pb-12 text-medium max-h-[120px] focus:outline-none focus:ring-0 dark:bg-transparent border-none",
-                ),
+                ) || "",
               }}
               endContent={
                 <div className="absolute bottom-3 right-3 flex items-center gap-3">

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON测试页面</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .json-preview {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 3px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        button {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+    </style>
+</head>
+<body>
+    <h1>Chrome扩展JSON测试页面</h1>
+    
+    <div class="test-section">
+        <h2>测试1: 直接JSON响应</h2>
+        <p>这个页面包含直接的JSON数据，扩展应该能自动检测到。</p>
+        <button onclick="loadJson()">加载JSON数据</button>
+        <div id="json-content"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>测试2: API响应模拟</h2>
+        <p>模拟API返回的JSON数据。</p>
+        <button onclick="simulateApiResponse()">模拟API响应</button>
+        <div id="api-response"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>测试3: 复杂嵌套JSON</h2>
+        <p>测试复杂嵌套结构的JSON数据。</p>
+        <button onclick="loadComplexJson()">加载复杂JSON</button>
+        <div id="complex-json"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>测试4: 错误JSON</h2>
+        <p>测试格式错误的JSON（扩展应该忽略）。</p>
+        <button onclick="loadInvalidJson()">加载无效JSON</button>
+        <div id="invalid-json"></div>
+    </div>
+
+    <script>
+        function loadJson() {
+            const jsonData = {
+                "status": "success",
+                "message": "这是一个测试JSON",
+                "data": {
+                    "users": ["张三", "李四", "王五"],
+                    "count": 3
+                },
+                "timestamp": new Date().toISOString()
+            };
+            
+            document.getElementById('json-content').innerHTML = 
+                '<pre class="json-preview">' + JSON.stringify(jsonData, null, 2) + '</pre>';
+            
+            // 更新整个页面内容以触发扩展检测
+            setTimeout(() => {
+                document.body.innerHTML = '<pre>' + JSON.stringify(jsonData, null, 2) + '</pre>';
+            }, 1000);
+        }
+
+        function simulateApiResponse() {
+            const apiData = {
+                "api_version": "v1",
+                "endpoint": "/api/users",
+                "method": "GET",
+                "response": {
+                    "success": true,
+                    "data": [
+                        {"id": 1, "name": "Alice", "role": "admin"},
+                        {"id": 2, "name": "Bob", "role": "user"},
+                        {"id": 3, "name": "Charlie", "role": "moderator"}
+                    ],
+                    "meta": {
+                        "total": 3,
+                        "page": 1,
+                        "per_page": 10
+                    }
+                },
+                "request_id": "req_" + Math.random().toString(36).substr(2, 9)
+            };
+            
+            document.getElementById('api-response').innerHTML = 
+                '<pre class="json-preview">' + JSON.stringify(apiData, null, 2) + '</pre>';
+            
+            setTimeout(() => {
+                document.body.innerHTML = '<pre>' + JSON.stringify(apiData, null, 2) + '</pre>';
+            }, 1000);
+        }
+
+        function loadComplexJson() {
+            const complexData = {
+                "application": {
+                    "name": "JSON Tools Test",
+                    "version": "2.0.0",
+                    "config": {
+                        "database": {
+                            "host": "localhost",
+                            "port": 5432,
+                            "credentials": {
+                                "username": "admin",
+                                "password": "***hidden***"
+                            },
+                            "tables": ["users", "posts", "comments", "likes"]
+                        },
+                        "cache": {
+                            "type": "redis",
+                            "ttl": 3600,
+                            "clusters": [
+                                {"host": "cache1.example.com", "port": 6379},
+                                {"host": "cache2.example.com", "port": 6379}
+                            ]
+                        }
+                    },
+                    "features": {
+                        "authentication": true,
+                        "logging": {
+                            "level": "info",
+                            "destinations": ["console", "file", "remote"]
+                        },
+                        "monitoring": {
+                            "enabled": true,
+                            "metrics": ["cpu", "memory", "requests", "errors"]
+                        }
+                    }
+                }
+            };
+            
+            document.getElementById('complex-json').innerHTML = 
+                '<pre class="json-preview">' + JSON.stringify(complexData, null, 2) + '</pre>';
+            
+            setTimeout(() => {
+                document.body.innerHTML = '<pre>' + JSON.stringify(complexData, null, 2) + '</pre>';
+            }, 1000);
+        }
+
+        function loadInvalidJson() {
+            const invalidJson = `{
+                "status": "error",
+                "message": "This is invalid JSON
+                "missing_quotes": value,
+                "trailing_comma": "test",
+            }`;
+            
+            document.getElementById('invalid-json').innerHTML = 
+                '<pre class="json-preview" style="color: red;">' + invalidJson + '</pre>';
+            
+            setTimeout(() => {
+                document.body.innerHTML = '<pre style="color: red;">' + invalidJson + '</pre>';
+            }, 1000);
+        }
+
+        // 页面加载时显示说明
+        window.addEventListener('load', function() {
+            console.log('JSON测试页面已加载');
+            console.log('使用说明：');
+            console.log('1. 点击各个按钮测试不同类型的JSON数据');
+            console.log('2. 安装Chrome扩展后，扩展应该能自动检测到JSON数据');
+            console.log('3. 扩展会在检测到JSON时自动打开JSON Tools');
+        });
+    </script>
+</body>
+</html>

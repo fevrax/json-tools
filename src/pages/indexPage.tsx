@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@heroui/react";
 import { useTheme } from "next-themes";
-import { Content } from "vanilla-jsoneditor-cn";
+import { Content } from "vanilla-jsoneditor";
 
 import { useTabStore } from "@/store/useTabStore";
 import DynamicTabs, {
@@ -17,7 +17,7 @@ import VanillaJsonEditor, {
   VanillaJsonEditorRef,
 } from "@/components/vanillaJsonEditor/VanillaJsonEditor.tsx";
 
-import "vanilla-jsoneditor-cn/themes/jse-theme-dark.css";
+import "vanilla-jsoneditor/themes/jse-theme-dark.css";
 import MonacoDiffEditor, {
   MonacoDiffEditorRef,
 } from "@/components/monacoEditor/MonacoDiffEditor.tsx";
@@ -35,6 +35,7 @@ import clipboard from "@/utils/clipboard";
 import toast from "@/utils/toast";
 import { stringifyJson } from "@/utils/json";
 import UtoolsListener from "@/services/utoolsListener";
+import ChromeExtensionListener from "@/services/chromeExtensionListener";
 
 export default function IndexPage() {
   const { theme } = useTheme();
@@ -514,6 +515,14 @@ export default function IndexPage() {
 
       // 同步标签页数据
       await syncTabStore();
+
+      // 初始化 ChromeExtensionListener
+      ChromeExtensionListener.getInstance().initialize();
+      
+      // 通知Chrome扩展页面已准备就绪
+      setTimeout(() => {
+        ChromeExtensionListener.getInstance().notifyPageReady();
+      }, 1000);
     };
 
     init();
@@ -522,6 +531,9 @@ export default function IndexPage() {
   useEffect(() => {
     // 设置 UtoolsListener 的编辑器引用
     UtoolsListener.getInstance().setEditorRefs(monacoJsonEditorRefs.current);
+    
+    // 设置 ChromeExtensionListener 的编辑器引用
+    ChromeExtensionListener.getInstance().setEditorRefs(monacoJsonEditorRefs.current);
   }, [monacoJsonEditorRefs]);
 
   useEffect(() => {
