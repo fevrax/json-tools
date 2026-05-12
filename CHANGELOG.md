@@ -1,3 +1,10 @@
+# [1.24.0](https://github.com/fevrax/json-tools/compare/v1.23.0...v1.24.0) (2026-05-12)
+
+
+### Features
+
+* add snake_case field conversion and update default model to DeepSeek V4 Pro ([2294dc1](https://github.com/fevrax/json-tools/commit/2294dc163977247360dbe1811e56b74fda5b09b9))
+
 # [1.23.0](https://github.com/fevrax/json-tools/compare/v1.22.0...v1.23.0) (2026-05-12)
 
 
