@@ -18,7 +18,7 @@
     "@react-aria/visually-hidden": "3.8.19",
     "@react-types/shared": "3.26.0",
     "@types/validator": "^13.15.10",
-    "axios": "^1.15.0",
+    "axios": "^1.16.0",
     "clsx": "2.1.1",
     "framer-motion": "11.15.0",
     "js-base64": "^3.7.8",
@@ -33,8 +33,8 @@
     "next-themes": "^0.4.6",
     "openai": "^4.104.0",
     "quicktype-core": "23.0.171",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^6.30.3",
     "react-syntax-highlighter": "^15.6.6",
@@ -47,9 +47,9 @@
     "tailwindcss": "^3.4.19",
     "toml": "^3.0.0",
     "validator": "^13.15.35",
-    "vanilla-jsoneditor-cn": "^2.2.3",
+    "vanilla-jsoneditor-cn": "^3.12.2",
     "xml-js": "^1.6.11",
-    "zustand": "^5.0.12"
+    "zustand": "^5.0.13"
   },
   "devDependencies": {
     "@iconify/react": "^5.2.1",
@@ -61,8 +61,8 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "@typescript-eslint/eslint-plugin": "^8.58.2",
-    "@typescript-eslint/parser": "^8.58.2",
+    "@typescript-eslint/eslint-plugin": "^8.59.3",
+    "@typescript-eslint/parser": "^8.59.3",
     "@vite-pwa/assets-generator": "^1.0.2",
     "@vitejs/plugin-react": "^4.7.0",
     "autoprefixer": "10.4.19",
@@ -84,9 +84,9 @@
     "vite": "^5.4.21",
     "vite-plugin-monaco-editor-esm": "^2.0.2",
     "vite-plugin-node-polyfills": "^0.23.0",
-    "vite-plugin-pwa": "^1.2.0",
+    "vite-plugin-pwa": "^1.3.0",
     "vite-tsconfig-paths": "^4.3.2",
-    "workbox-window": "^7.4.0"
+    "workbox-window": "^7.4.1"
   },
   "packageManager": "pnpm@9.12.2+sha512.22721b3a11f81661ae1ec68ce1a7b879425a1ca5b991c975b074ac220b187ce56c708fe5db69f4c962c989452eee76c82877f4ee80f474cebd61ee13461b6228",
   "release": {
