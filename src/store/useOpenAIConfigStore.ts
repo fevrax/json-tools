@@ -68,13 +68,13 @@ const defaultOpenAIConfig: OpenAIConfig = {
   },
   ssooaiRoute: {
     apiKey: "",
-    model: "gpt-4.1",
+    model: "deepseek-v4-pro",
     proxyUrl: "https://api.ssooai.com/v1",
     temperature: 0.7,
   },
   customRoute: {
     apiKey: "",
-    model: "gpt-4.1",
+    model: "deepseek-v4-pro",
     proxyUrl: "https://api.ssooai.com/v1",
     temperature: 0.7,
   },

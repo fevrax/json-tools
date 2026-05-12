@@ -141,8 +141,8 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
       case "default":
         return [
           {
-            value: "gpt-4.1",
-            label: "GPT-4.1",
+            value: "deepseek-v4-pro",
+            label: "DeepSeek V4 Pro",
             tag: { text: "免费", type: "free" },
           },
         ];
@@ -173,8 +173,8 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
 
         return [
           {
-            value: "gpt-4.1",
-            label: "GPT-4.1",
+            value: "deepseek-v4-pro",
+            label: "DeepSeek V4 Pro",
             tag: { text: "付费", type: "paid" },
           },
         ];
@@ -189,8 +189,8 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
 
         return [
           {
-            value: "gpt-4.1",
-            label: "GPT-4.1",
+            value: "deepseek-v4-pro",
+            label: "DeepSeek V4 Pro",
             tag: { text: "付费", type: "paid" },
           },
         ];
@@ -266,7 +266,7 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
       fetchSsooaiModels();
       // 设置默认SSOOAI模型
       const defaultSsooaiModel =
-        ssooaiModels.length > 0 ? ssooaiModels[0].value : "gpt-4.1";
+        ssooaiModels.length > 0 ? ssooaiModels[0].value : "deepseek-v4-pro";
 
       updateSsooaiRouteConfig({ model: defaultSsooaiModel });
     }
@@ -280,14 +280,14 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
       fetchCustomModels();
     }
 
-    // 如果切换到私有线路，设置默认模型为gpt-4.1
+    // 如果切换到私有线路，设置默认模型
     if (newRouteType === "custom") {
-      updateCustomRouteConfig({ model: "gpt-4.1" });
+      updateCustomRouteConfig({ model: "deepseek-v4-pro" });
     }
 
     // 如果切换到默认线路，设置默认模型
     if (newRouteType === "default") {
-      updateDefaultRouteConfig({ model: "gpt-4.1" });
+      updateDefaultRouteConfig({ model: "deepseek-v4-pro" });
     }
 
     updateConfig({ routeType: newRouteType });
@@ -524,7 +524,7 @@ const AIPromptOverlay: React.FC<AIPromptOverlayProps> = ({
             {routeType === "default" ? (
               <div className="flex items-center gap-2">
                 <div className="text-xs bg-blue-100/50 dark:bg-blue-900/30 px-3 py-1 rounded-md text-blue-700 dark:text-blue-400">
-                  GPT 4.1
+                  DeepSeek V4 Pro
                 </div>
                 <span className="text-xs px-1.5 py-0.5 bg-success/20 text-success-700 rounded-full whitespace-nowrap">
                   <a

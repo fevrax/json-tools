@@ -114,8 +114,8 @@ export default function SettingsPage() {
 
   // 增加状态来保存要测试的模型
   const [testModelUtools, setTestModelUtools] = useState<string>("");
-  const [testModelSsooai, setTestModelSsooai] = useState<string>("gpt-4.1");
-  const [testModelCustom, setTestModelCustom] = useState<string>("gpt-4.1");
+  const [testModelSsooai, setTestModelSsooai] = useState<string>("deepseek-v4-pro");
+  const [testModelCustom, setTestModelCustom] = useState<string>("deepseek-v4-pro");
 
   // 添加状态跟踪当前正在配置的线路类型
   const [configuringRoute, setConfiguringRoute] = useState<AIRouteType | null>(
@@ -1155,7 +1155,7 @@ export default function SettingsPage() {
                   icon="solar:star-bold"
                   width={18}
                 />
-                默认模型: <span className="font-medium">GPT 4.1</span>{" "}
+                默认模型: <span className="font-medium">DeepSeek V4 Pro</span>{" "}
                 <span className="text-xs text-primary">
                   (由{" "}
                   <a

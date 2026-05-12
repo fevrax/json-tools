@@ -36,6 +36,13 @@ export const jsonQuickPrompts: QuickPrompt[] = [
     prompt: "请检查这个JSON是否有逻辑错误或格式问题",
     color: "danger",
   },
+  {
+    id: "convert_to_snake_case",
+    label: "字段转蛇形命名",
+    icon: "mdi:format-text",
+    prompt: "将所有字段名转换为 snake_case",
+    color: "secondary",
+  },
 ];
 
 // 定义适合JSON差异比较的快捷指令

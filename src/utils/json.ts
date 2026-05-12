@@ -312,6 +312,43 @@ export function sortJson(data: any, order: "asc" | "desc" = "asc"): string {
 }
 
 /**
+ * 将驼峰/帕斯卡/短横线命名转为 snake_case
+ */
+function toSnakeCase(str: string): string {
+  return str
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/([A-Z])([A-Z][a-z])/g, "$1_$2")
+    .replace(/[-\s]+/g, "_")
+    .toLowerCase();
+}
+
+/**
+ * 递归转换 JSON 对象的所有键名为 snake_case
+ */
+function convertKeysToSnakeCaseDeep<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value.map(convertKeysToSnakeCaseDeep) as T;
+  }
+  if (value !== null && typeof value === "object" && !isLosslessNumber(value)) {
+    const result: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value)) {
+      result[toSnakeCase(k)] = convertKeysToSnakeCaseDeep(v);
+    }
+    return result as T;
+  }
+  return value;
+}
+
+/**
+ * 将 JSON 文本中的所有字段名转换为 snake_case
+ */
+export function convertKeysToSnakeCase(jsonString: string): string {
+  const parsed = parseJson(jsonString);
+  const converted = convertKeysToSnakeCaseDeep(parsed);
+  return stringifyJson(converted, 4);
+}
+
+/**
  * 删除 JSON 文本中的注释
  * @param jsonText 包含注释的 JSON 文本
  * @returns 删除注释后的 JSON 文本

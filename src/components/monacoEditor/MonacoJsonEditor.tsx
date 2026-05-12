@@ -29,6 +29,7 @@ import {
   sortJson,
   parseJson,
   stringifyJson,
+  convertKeysToSnakeCase,
 } from "@/utils/json";
 import { updateFoldingDecorations } from "@/components/monacoEditor/decorations/foldingDecoration.ts";
 import {
@@ -1951,6 +1952,22 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
         onClose={() => setShowAiPrompt(false)}
         onPromptChange={setAiPrompt}
         onSubmit={handleAiSubmit}
+        onQuickPromptClick={(qp) => {
+          if (qp.id === "convert_to_snake_case") {
+            try {
+              const editorValue = editorRef.current?.getValue() || "";
+              const converted = convertKeysToSnakeCase(editorValue);
+              editorRef.current?.setValue(converted);
+              setShowAiPrompt(false);
+              toast.success("已将所有字段名转换为 snake_case");
+            } catch {
+              toast.error("转换失败，请检查 JSON 格式是否正确");
+            }
+            return;
+          }
+          // 其他按钮走默认行为：填充 AI 提示
+          setAiPrompt(qp.prompt);
+        }}
       />
 
       <div
