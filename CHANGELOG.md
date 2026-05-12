@@ -1,3 +1,10 @@
+# [1.23.0](https://github.com/fevrax/json-tools/compare/v1.22.0...v1.23.0) (2026-05-12)
+
+
+### Features
+
+* update package.json ([9f20140](https://github.com/fevrax/json-tools/commit/9f20140d9b7747734924dda4cecb7fa37354453c))
+
 # [1.22.0](https://github.com/fevrax/json-tools/compare/v1.21.0...v1.22.0) (2026-05-03)
 
 
