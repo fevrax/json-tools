@@ -1,3 +1,10 @@
+## [1.24.1](https://github.com/fevrax/json-tools/compare/v1.24.0...v1.24.1) (2026-05-14)
+
+
+### Bug Fixes
+
+* resolve table view crash caused by TDZ and missing React key ([e1da7da](https://github.com/fevrax/json-tools/commit/e1da7dad41e5fc7ef4e3a2d64e3a0c2814cf22fb))
+
 # [1.24.0](https://github.com/fevrax/json-tools/compare/v1.23.0...v1.24.0) (2026-05-12)
 
 
