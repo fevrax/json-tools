@@ -79,6 +79,30 @@ const JsonTable: React.FC<JsonTableProps> = ({
     new Map(),
   );
 
+  // 判断是否是对象数组 兼容 LosslessNumber
+  const isObjectArray = (data: any[]): boolean => {
+    return (
+      data.length > 0 &&
+      data.every(
+        (item) =>
+          typeof item === "object" && item !== null && !isLosslessNumber(item),
+      )
+    );
+  };
+
+  // 获取所有对象字段的集合
+  const getAllObjectKeys = (objects: object[]): string[] => {
+    const keysSet = new Set<string>();
+
+    objects.forEach((obj) => {
+      if (obj && typeof obj === "object") {
+        Object.keys(obj).forEach((key) => keysSet.add(key));
+      }
+    });
+
+    return Array.from(keysSet);
+  };
+
   // 预计算对象数组表格的去重值（用于列筛选 Popover）
   const { allKeys, columnUniqueValues } = useMemo(() => {
     if (!Array.isArray(data) || !isObjectArray(data)) {
@@ -247,29 +271,6 @@ const JsonTable: React.FC<JsonTableProps> = ({
     return (
       typeof value === "object" && value !== null && !isLosslessNumber(value)
     );
-  };
-  // 判断是否是对象数组 兼容 LosslessNumber
-  const isObjectArray = (data: any[]): boolean => {
-    return (
-      data.length > 0 &&
-      data.every(
-        (item) =>
-          typeof item === "object" && item !== null && !isLosslessNumber(item),
-      )
-    );
-  };
-
-  // 获取所有对象字段的集合
-  const getAllObjectKeys = (objects: object[]): string[] => {
-    const keysSet = new Set<string>();
-
-    objects.forEach((obj) => {
-      if (obj && typeof obj === "object") {
-        Object.keys(obj).forEach((key) => keysSet.add(key));
-      }
-    });
-
-    return Array.from(keysSet);
   };
 
   // 根据数据类型渲染相应的嵌套表格

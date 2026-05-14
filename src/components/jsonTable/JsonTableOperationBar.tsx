@@ -413,6 +413,7 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
     if ("isStatusButton" in button && button.isStatusButton) {
       return (
         <StatusButton
+          key={button.key}
           icon={button.icon}
           status={button.status}
           successText={button.successText}
