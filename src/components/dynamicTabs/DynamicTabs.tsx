@@ -997,8 +997,18 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
   const toggleAddMenu = () => {
     if (addButtonRef.current) {
       const buttonRect = addButtonRef.current.getBoundingClientRect();
+      const menuMaxWidth = Math.min(520, window.innerWidth - 32);
+      let x = buttonRect.left - 8;
+
+      // 防止菜单超出视口右侧
+      if (x + menuMaxWidth > window.innerWidth - 16) {
+        x = window.innerWidth - menuMaxWidth - 16;
+      }
+      // 防止菜单超出视口左侧
+      x = Math.max(8, x);
+
       const newPosition = {
-        x: buttonRect.left - 8,
+        x,
         y: buttonRect.bottom + 8,
       };
 
@@ -1016,9 +1026,16 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
     const updateAddMenuPosition = () => {
       if (addButtonRef.current) {
         const buttonRect = addButtonRef.current.getBoundingClientRect();
+        const menuMaxWidth = Math.min(520, window.innerWidth - 32);
+        let x = buttonRect.left - 10;
+
+        if (x + menuMaxWidth > window.innerWidth - 16) {
+          x = window.innerWidth - menuMaxWidth - 16;
+        }
+        x = Math.max(8, x);
 
         setAddMenuPosition({
-          x: buttonRect.left - 10,
+          x,
           y: buttonRect.bottom + 8,
         });
       }
@@ -1066,11 +1083,16 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
           style={{
             left: addMenuPosition.x,
             top: addMenuPosition.y,
-            minWidth: "480px",
+            width: "min(520px, calc(100vw - 32px))",
             transformOrigin: "top left",
           }}
         >
-          <div className="p-5">
+          <div
+            className="p-5 overflow-y-auto"
+            style={{
+              maxHeight: "calc(100vh - 80px)",
+            }}
+          >
             <div className="mb-5">
               <h3 className="text-sm font-semibold mb-3 flex items-center gap-2 text-default-700">
                 <Icon
@@ -1080,9 +1102,9 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                 快速创建
               </h3>
               <div className="border-b border-divider pb-5">
-                <div className="flex gap-3 w-full">
+                <div className="flex flex-col sm:flex-row gap-3 w-full">
                   <Button
-                    className="flex-1 h-28 flex-col px-3 py-2 transition-all hover:scale-[1.02] bg-gradient-to-br from-default-50 to-default-100 hover:bg-gradient-to-br hover:from-primary-50/30 hover:to-default-100 hover:shadow-sm hover:border-primary-100 justify-center items-center"
+                    className="flex-1 h-20 sm:h-28 flex-col px-3 py-2 transition-all hover:scale-[1.02] bg-gradient-to-br from-default-50 to-default-100 hover:bg-gradient-to-br hover:from-primary-50/30 hover:to-default-100 hover:shadow-sm hover:border-primary-100 justify-center items-center"
                     startContent={
                       <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center">
                         <Icon
@@ -1118,7 +1140,7 @@ const DynamicTabs: React.FC<DynamicTabsProps> = ({
                     </div>
                   </Button>
                   <Button
-                    className="flex-1 h-28 flex-col px-3 py-2 transition-all hover:scale-[1.02] bg-gradient-to-br from-default-50 to-default-100 hover:bg-gradient-to-br hover:from-primary-50/30 hover:to-default-100 hover:shadow-sm hover:border-primary-100 justify-center items-center"
+                    className="flex-1 h-20 sm:h-28 flex-col px-3 py-2 transition-all hover:scale-[1.02] bg-gradient-to-br from-default-50 to-default-100 hover:bg-gradient-to-br hover:from-primary-50/30 hover:to-default-100 hover:shadow-sm hover:border-primary-100 justify-center items-center"
                     startContent={
                       <div className="w-10 h-10 rounded-full bg-primary-50 flex items-center justify-center">
                         <Icon
