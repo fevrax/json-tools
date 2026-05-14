@@ -145,7 +145,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
   onMount,
   ref,
 }) => {
-  const { getTabByKey, updateEditorSettings } = useTabStore();
+  const getTabByKey = useTabStore.getState().getTabByKey;
+  const updateEditorSettings = useTabStore.getState().updateEditorSettings;
   const errorBottomHeight = 45; // 底部错误详情弹窗的高度
   const containerRef = useRef<HTMLDivElement>(null);
   const rootContainerRef = useRef<HTMLDivElement>(null); // 根容器引用
@@ -165,6 +166,9 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
   // Monaco 资源生命周期管理器，统一管理所有事件监听器和 timeout
   const disposableStore = useRef(new DisposableStore());
+
+  // 本地编辑时间戳，用于防止外部更新覆盖正在输入的内容
+  const lastLocalEditTimeRef = useRef(0);
 
   // 从 store 获取当前 tab 的设置
   const currentTab = getTabByKey(tabKey);
@@ -1681,6 +1685,7 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
               }
             }
           }
+          lastLocalEditTimeRef.current = Date.now();
           onUpdateValue(val);
           setCurrentEditorValue(val);
           updateEditorStats();
@@ -1854,6 +1859,13 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     // 只有当外部 value 与编辑器当前值不同时才更新
     // 避免循环更新和不必要的渲染
     if (value !== undefined && value !== currentValue) {
+      // 脏标记守卫：如果用户最近编辑过（500ms 内），跳过外部更新
+      // 防止防抖期间 store 中的旧值覆盖编辑器最新内容
+      const timeSinceLastEdit = Date.now() - lastLocalEditTimeRef.current;
+      if (timeSinceLastEdit < 500) {
+        return;
+      }
+
       console.log('[MonacoJsonEditor] 外部 value 变化，更新编辑器内容', {
         tabKey,
         oldValueLength: currentValue?.length,

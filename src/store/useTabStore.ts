@@ -794,11 +794,29 @@ syncManager.onUpdate(DB_TABS, (data) => {
   if (data && Array.isArray(data) && !isRemoteTabUpdate) {
     isRemoteTabUpdate = true;
 
-    // 使用 setState 方法正确更新状态,触发响应式更新
-    useTabStore.setState({ tabs: data });
+    // 合并远程 tabs 时保留活动 tab 的本地内容
+    // 防止远程更新覆盖本地正在编辑的最新输入
+    const localState = useTabStore.getState();
+    const mergedTabs = data.map((remoteTab: TabItem) => {
+      if (remoteTab.key === localState.activeTabKey) {
+        const localTab = localState.getTabByKey(remoteTab.key);
+        if (localTab) {
+          return {
+            ...remoteTab,
+            content: localTab.content,
+            monacoVersion: localTab.monacoVersion,
+            vanillaVersion: localTab.vanillaVersion,
+            vanilla: localTab.vanilla,
+          };
+        }
+      }
+      return remoteTab;
+    });
+
+    useTabStore.setState({ tabs: mergedTabs });
 
     // 持久化到本地存储
-    storageManager.set(DB_TABS, data, { sync: false });
+    storageManager.set(DB_TABS, mergedTabs, { sync: false });
 
     setTimeout(() => {
       isRemoteTabUpdate = false;
