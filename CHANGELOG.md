@@ -1,3 +1,11 @@
+## [1.24.3](https://github.com/fevrax/json-tools/compare/v1.24.2...v1.24.3) (2026-05-14)
+
+
+### Bug Fixes
+
+* add responsive design for new tab creation menu ([6a9966c](https://github.com/fevrax/json-tools/commit/6a9966ce44052a8ceb1c7432ab84784d9fb62dd7))
+* redesign table view welcome/error states for responsive layout ([826df66](https://github.com/fevrax/json-tools/commit/826df6660b6a522cbd8ccb2a5cc72ed1505b848c))
+
 ## [1.24.2](https://github.com/fevrax/json-tools/compare/v1.24.1...v1.24.2) (2026-05-14)
 
 
