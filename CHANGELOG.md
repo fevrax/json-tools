@@ -1,3 +1,11 @@
+## [1.24.2](https://github.com/fevrax/json-tools/compare/v1.24.1...v1.24.2) (2026-05-14)
+
+
+### Bug Fixes
+
+* remove duplicate manifest link to resolve PWA syntax error ([e36b666](https://github.com/fevrax/json-tools/commit/e36b6666cb8f1ffe05cf2160f38dd859fccb3f33))
+* resolve Monaco editor content rollback during typing ([575541f](https://github.com/fevrax/json-tools/commit/575541fb2a1d7de39f744eeae3ed3757982efa74))
+
 ## [1.24.1](https://github.com/fevrax/json-tools/compare/v1.24.0...v1.24.1) (2026-05-14)
 
 
