@@ -1,3 +1,10 @@
+## [1.27.1](https://github.com/fevrax/json-tools/compare/v1.27.0...v1.27.1) (2026-08-16)
+
+
+### Bug Fixes
+
+* update js-yaml to 4.3.1 ([81b3ca4](https://github.com/fevrax/json-tools/commit/81b3ca45ef9b5a1d96f333ab916d1969c81c32e3))
+
 # [1.27.0](https://github.com/fevrax/json-tools/compare/v1.26.0...v1.27.0) (2026-06-30)
 
 
