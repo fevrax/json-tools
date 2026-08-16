@@ -4,19 +4,22 @@ import { Icon } from "@iconify/react";
 import { useTheme } from "next-themes";
 
 import toast from "@/utils/toast";
-import { parseJson, stringifyJson } from "@/utils/json";
 import MonacoEditor, {
   MonacoJsonEditorRef,
 } from "@/components/monacoEditor/MonacoJsonEditor.tsx";
 import ToolboxPageTemplate from "@/layouts/toolboxPageTemplate";
-import { convertKeysDeep, type NamingFormat } from "@/utils/keyNamingConverter";
+import {
+  convertJsonKeys,
+  KeyNamingCollisionError,
+  type KeyNamingCollision,
+  type NamingFormat,
+} from "@/utils/keyNamingConverter";
 
 const FORMAT_OPTIONS: {
   format: NamingFormat;
   label: string;
   displayText: string;
   example: string;
-  color: "primary" | "secondary" | "success";
   icon: string;
   inactiveBg: string;
   inactiveBorder: string;
@@ -32,7 +35,6 @@ const FORMAT_OPTIONS: {
     label: "小驼峰",
     displayText: "转小驼峰",
     example: "firstName",
-    color: "primary",
     icon: "solar:arrow-right-linear",
     inactiveBg: "bg-primary-50 dark:bg-primary-950/30",
     inactiveBorder: "border-primary-200 dark:border-primary-800/40",
@@ -49,7 +51,6 @@ const FORMAT_OPTIONS: {
     label: "大驼峰",
     displayText: "转大驼峰",
     example: "FirstName",
-    color: "secondary",
     icon: "solar:arrow-right-linear",
     inactiveBg: "bg-secondary-50 dark:bg-secondary-950/30",
     inactiveBorder: "border-secondary-200 dark:border-secondary-800/40",
@@ -66,7 +67,6 @@ const FORMAT_OPTIONS: {
     label: "小写+下划线",
     displayText: "转下划线",
     example: "first_name",
-    color: "success",
     icon: "solar:arrow-right-linear",
     inactiveBg: "bg-success-50 dark:bg-success-950/30",
     inactiveBorder: "border-success-200 dark:border-success-800/40",
@@ -78,6 +78,38 @@ const FORMAT_OPTIONS: {
     activeBorder: "border-success-500",
     activeShadow: "shadow-success-300/50 dark:shadow-success-900/50",
   },
+  {
+    format: "kebab",
+    label: "短横线",
+    displayText: "转短横线",
+    example: "first-name",
+    icon: "solar:arrow-right-linear",
+    inactiveBg: "bg-warning-50 dark:bg-warning-950/30",
+    inactiveBorder: "border-warning-200 dark:border-warning-800/40",
+    inactiveHoverBg: "hover:bg-warning-100 dark:hover:bg-warning-900/40",
+    inactiveHoverBorder:
+      "hover:border-warning-300 dark:hover:border-warning-700/60",
+    inactiveIconColor: "text-warning-400",
+    activeBg: "bg-gradient-to-br from-warning-500 to-warning-600",
+    activeBorder: "border-warning-500",
+    activeShadow: "shadow-warning-300/50 dark:shadow-warning-900/50",
+  },
+  {
+    format: "constant",
+    label: "大写+下划线",
+    displayText: "转常量",
+    example: "FIRST_NAME",
+    icon: "solar:arrow-right-linear",
+    inactiveBg: "bg-danger-50 dark:bg-danger-950/30",
+    inactiveBorder: "border-danger-200 dark:border-danger-800/40",
+    inactiveHoverBg: "hover:bg-danger-100 dark:hover:bg-danger-900/40",
+    inactiveHoverBorder:
+      "hover:border-danger-300 dark:hover:border-danger-700/60",
+    inactiveIconColor: "text-danger-400",
+    activeBg: "bg-gradient-to-br from-danger-500 to-danger-600",
+    activeBorder: "border-danger-500",
+    activeShadow: "shadow-danger-300/50 dark:shadow-danger-900/50",
+  },
 ];
 
 export default function JsonKeyNamingPage() {
@@ -88,6 +120,13 @@ export default function JsonKeyNamingPage() {
   const [inputValue, setInputValue] = useState("");
   const [outputValue, setOutputValue] = useState("");
   const [activeFormat, setActiveFormat] = useState<NamingFormat | null>(null);
+  const [collisions, setCollisions] = useState<KeyNamingCollision[]>([]);
+
+  const clearConversionResult = () => {
+    setOutputValue("");
+    outputEditorRef.current?.updateValue("");
+    setActiveFormat(null);
+  };
 
   const handleConvert = (format: NamingFormat) => {
     if (!inputValue.trim()) {
@@ -97,17 +136,31 @@ export default function JsonKeyNamingPage() {
     }
 
     try {
-      const parsed = parseJson(inputValue);
-      const converted = convertKeysDeep(parsed, format);
-      const result = stringifyJson(converted, 2);
+      const result = convertJsonKeys(inputValue, format, 2);
 
       setOutputValue(result);
       outputEditorRef.current?.updateValue(result);
       setActiveFormat(format);
+      setCollisions([]);
       toast.success(
         `已转换为${FORMAT_OPTIONS.find((f) => f.format === format)?.label}`,
       );
     } catch (e) {
+      clearConversionResult();
+
+      if (e instanceof KeyNamingCollisionError) {
+        setCollisions(e.collisions);
+        const first = e.collisions[0];
+
+        toast.error(
+          "字段命名冲突，已中止转换",
+          `${first.path}: ${first.sourceKeys.join("、")} → ${first.targetKey}`,
+        );
+
+        return;
+      }
+
+      setCollisions([]);
       toast.error(`JSON 解析失败: ${(e as Error).message}`);
     }
   };
@@ -116,6 +169,7 @@ export default function JsonKeyNamingPage() {
     setInputValue("");
     setOutputValue("");
     setActiveFormat(null);
+    setCollisions([]);
     inputEditorRef.current?.updateValue("");
     outputEditorRef.current?.updateValue("");
     toast.success("内容已清空");
@@ -188,7 +242,7 @@ export default function JsonKeyNamingPage() {
                 </Tooltip>
               </div>
             </div>
-            <div className="flex-1 w-full h-full overflow-hidden">
+            <div className="flex-1 w-full min-h-0 overflow-hidden">
               <MonacoEditor
                 ref={inputEditorRef}
                 height="100%"
@@ -203,7 +257,7 @@ export default function JsonKeyNamingPage() {
         </Card>
 
         {/* 中间按钮列 */}
-        <div className="flex flex-col items-center justify-center gap-3 min-w-28 px-2">
+        <div className="flex flex-col items-center justify-center gap-3 min-w-28 px-2 py-2 overflow-y-auto">
           {FORMAT_OPTIONS.map(
             ({
               format,
@@ -324,7 +378,24 @@ export default function JsonKeyNamingPage() {
                 </Tooltip>
               </div>
             </div>
-            <div className="flex-1 w-full h-full overflow-hidden">
+            {collisions.length > 0 && (
+              <div className="max-h-36 overflow-y-auto border-b border-danger-200 bg-danger-50 px-3 py-2 text-xs text-danger-700 dark:border-danger-800/60 dark:bg-danger-950/30 dark:text-danger-300">
+                <div className="mb-1 font-medium">
+                  检测到 {collisions.length} 处字段命名冲突，未生成转换结果：
+                </div>
+                <ul className="space-y-1 font-mono">
+                  {collisions.map(({ path, sourceKeys, targetKey }) => (
+                    <li key={`${path}:${targetKey}`}>
+                      {path}:{" "}
+                      {sourceKeys.map((key) => JSON.stringify(key)).join("、")}
+                      {" → "}
+                      {JSON.stringify(targetKey)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            <div className="flex-1 w-full min-h-0 overflow-hidden">
               <MonacoEditor
                 ref={outputEditorRef}
                 height="100%"

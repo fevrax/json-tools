@@ -29,8 +29,11 @@ import {
   sortJson,
   parseJson,
   stringifyJson,
-  convertKeysToSnakeCase,
 } from "@/utils/json";
+import {
+  convertJsonKeys,
+  KeyNamingCollisionError,
+} from "@/utils/keyNamingConverter";
 import { updateFoldingDecorations } from "@/components/monacoEditor/decorations/foldingDecoration.ts";
 import {
   TimestampDecoratorState,
@@ -1983,12 +1986,23 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
           if (qp.id === "convert_to_snake_case") {
             try {
               const editorValue = editorRef.current?.getValue() || "";
-              const converted = convertKeysToSnakeCase(editorValue);
+              const converted = convertJsonKeys(editorValue, "snake", 4);
 
               editorRef.current?.setValue(converted);
               setShowAiPrompt(false);
               toast.success("已将所有字段名转换为 snake_case");
-            } catch {
+            } catch (error) {
+              if (error instanceof KeyNamingCollisionError) {
+                const first = error.collisions[0];
+
+                toast.error(
+                  `字段命名冲突（共 ${error.collisions.length} 处）`,
+                  `${first.path}: ${first.sourceKeys.join("、")} → ${first.targetKey}`,
+                );
+
+                return;
+              }
+
               toast.error("转换失败，请检查 JSON 格式是否正确");
             }
 

@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "lint": "eslint -c .eslintrc.json ./src/**/**/*.{ts,tsx} --fix",
+    "test:key-naming": "tsx src/utils/keyNamingConverter.test.ts",
     "preview": "vite preview",
     "semantic-release": "semantic-release"
   },
@@ -80,6 +81,7 @@
     "postcss": "8.4.38",
     "prettier": "3.3.3",
     "semantic-release": "^23.1.1",
+    "tsx": "^4.20.6",
     "typescript": "5.6.3",
     "vite": "^5.4.21",
     "vite-plugin-monaco-editor-esm": "^2.0.2",

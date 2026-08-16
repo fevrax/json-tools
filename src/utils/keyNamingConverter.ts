@@ -1,75 +1,79 @@
 import { isLosslessNumber } from "lossless-json";
 
-export type NamingFormat = "camel" | "pascal" | "snake";
+import { parseJson, stringifyJson } from "@/utils/json";
 
-// 将任意风格的 key 拆分为单词数组
+export type NamingFormat = "camel" | "pascal" | "snake" | "kebab" | "constant";
+
+export interface KeyNamingCollision {
+  path: string;
+  targetKey: string;
+  sourceKeys: string[];
+}
+
+export class KeyNamingCollisionError extends Error {
+  readonly collisions: KeyNamingCollision[];
+
+  constructor(collisions: KeyNamingCollision[]) {
+    super(`检测到 ${collisions.length} 处字段命名冲突`);
+    this.name = "KeyNamingCollisionError";
+    this.collisions = collisions;
+  }
+}
+
+const SPECIAL_KEY_PREFIX = /^[$@#]/u;
+const WORD_SEPARATOR = /[^\p{L}\p{N}]+/u;
+
+/**
+ * 将任意常见命名风格拆分为单词，同时保留 Unicode 字母和相邻数字。
+ */
 function splitWords(key: string): string[] {
-  // 纯数字 key 不拆分
-  if (/^\d+$/.test(key)) return [key];
+  if (!key) return [];
 
-  // 包含下划线 → 按 _ 分割
-  if (key.includes("_")) {
-    return key.split("_").filter(Boolean);
-  }
+  const withBoundaries = key
+    // URLValue -> URL Value
+    .replace(/(\p{Lu}+)(\p{Lu}\p{Ll})/gu, "$1 $2")
+    // userName / 用户Name / version2Value -> user Name / 用户 Name / version2 Value
+    .replace(/([\p{Ll}\p{Lo}\p{Lm}\p{Lt}\p{N}])(\p{Lu})/gu, "$1 $2");
 
-  // camelCase / PascalCase → 大写字母前分割，连续大写作为整体
-  const words: string[] = [];
-  let current = "";
+  return withBoundaries.split(WORD_SEPARATOR).filter(Boolean);
+}
 
-  for (let i = 0; i < key.length; i++) {
-    const ch = key[i];
-    const isUpper = ch >= "A" && ch <= "Z";
+function capitalizeWord(word: string): string {
+  const [first = "", ...rest] = Array.from(word);
 
-    if (isUpper && current.length > 0) {
-      // 检查下一个字符：如果也是大写，则连续大写归为一组
-      const nextIsLower =
-        i + 1 < key.length && key[i + 1] >= "a" && key[i + 1] <= "z";
-      const prevIsLower =
-        current.length > 0 &&
-        current[current.length - 1] >= "a" &&
-        current[current.length - 1] <= "z";
-
-      if (prevIsLower || nextIsLower) {
-        words.push(current);
-        current = ch;
-      } else {
-        current += ch;
-      }
-    } else {
-      current += ch;
-    }
-  }
-
-  if (current) words.push(current);
-
-  return words;
+  return first.toUpperCase() + rest.join("").toLowerCase();
 }
 
 function toCamelCase(words: string[]): string {
   return words
-    .map((w, i) =>
-      i === 0
-        ? w.toLowerCase()
-        : w.charAt(0).toUpperCase() + w.slice(1).toLowerCase(),
+    .map((word, index) =>
+      index === 0 ? word.toLowerCase() : capitalizeWord(word),
     )
     .join("");
 }
 
 function toPascalCase(words: string[]): string {
-  return words
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-    .join("");
+  return words.map(capitalizeWord).join("");
 }
 
 function toSnakeCase(words: string[]): string {
-  return words.map((w) => w.toLowerCase()).join("_");
+  return words.map((word) => word.toLowerCase()).join("_");
 }
 
-function convertKey(key: string, format: NamingFormat): string {
+function toKebabCase(words: string[]): string {
+  return words.map((word) => word.toLowerCase()).join("-");
+}
+
+function toConstantCase(words: string[]): string {
+  return words.map((word) => word.toUpperCase()).join("_");
+}
+
+export function convertKey(key: string, format: NamingFormat): string {
+  if (!key || SPECIAL_KEY_PREFIX.test(key)) return key;
+
   const words = splitWords(key);
 
-  // 单词且无变化的 key 直接返回
-  if (words.length === 1 && words[0] === key) return key;
+  if (words.length === 0) return key;
 
   switch (format) {
     case "camel":
@@ -78,26 +82,106 @@ function convertKey(key: string, format: NamingFormat): string {
       return toPascalCase(words);
     case "snake":
       return toSnakeCase(words);
+    case "kebab":
+      return toKebabCase(words);
+    case "constant":
+      return toConstantCase(words);
   }
 }
 
-// 递归转换 JSON 对象的所有 key
-function convertKeysDeep<T>(value: T, format: NamingFormat): T {
+function escapeJsonPointerSegment(segment: string): string {
+  return segment.replace(/~/g, "~0").replace(/\//g, "~1");
+}
+
+function appendJsonPointer(path: string, segment: string | number): string {
+  return `${path}/${escapeJsonPointerSegment(String(segment))}`;
+}
+
+function convertValue(
+  value: unknown,
+  format: NamingFormat,
+  path: string,
+  collisions: KeyNamingCollision[],
+): unknown {
   if (Array.isArray(value)) {
-    return value.map((v) => convertKeysDeep(v, format)) as T;
+    return value.map((item, index) =>
+      convertValue(item, format, appendJsonPointer(path, index), collisions),
+    );
   }
 
-  if (value !== null && typeof value === "object" && !isLosslessNumber(value)) {
-    const result: Record<string, unknown> = {};
+  if (value === null || typeof value !== "object" || isLosslessNumber(value)) {
+    return value;
+  }
 
-    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
-      result[convertKey(k, format)] = convertKeysDeep(v, format);
+  const convertedEntries = Object.entries(value).map(([sourceKey, item]) => ({
+    sourceKey,
+    targetKey: convertKey(sourceKey, format),
+    value: convertValue(
+      item,
+      format,
+      appendJsonPointer(path, sourceKey),
+      collisions,
+    ),
+  }));
+  const sourceKeysByTarget = new Map<string, string[]>();
+
+  for (const { sourceKey, targetKey } of convertedEntries) {
+    const sourceKeys = sourceKeysByTarget.get(targetKey);
+
+    if (sourceKeys) {
+      sourceKeys.push(sourceKey);
+    } else {
+      sourceKeysByTarget.set(targetKey, [sourceKey]);
     }
-
-    return result as T;
   }
 
-  return value;
+  for (const [targetKey, sourceKeys] of sourceKeysByTarget) {
+    if (sourceKeys.length > 1) {
+      collisions.push({
+        path: path || "/",
+        targetKey,
+        sourceKeys,
+      });
+    }
+  }
+
+  const result: Record<string, unknown> = Object.create(null);
+
+  for (const { targetKey, value: convertedValue } of convertedEntries) {
+    if (!Object.prototype.hasOwnProperty.call(result, targetKey)) {
+      result[targetKey] = convertedValue;
+    }
+  }
+
+  return result;
 }
 
-export { splitWords, toCamelCase, toPascalCase, toSnakeCase, convertKeysDeep };
+/**
+ * 递归转换 JSON 值中的所有对象键。任何层级发生命名冲突时整次转换失败。
+ */
+export function convertKeysDeep<T>(value: T, format: NamingFormat): T {
+  const collisions: KeyNamingCollision[] = [];
+  const converted = convertValue(value, format, "", collisions) as T;
+
+  if (collisions.length > 0) {
+    throw new KeyNamingCollisionError(collisions);
+  }
+
+  return converted;
+}
+
+/**
+ * 解析 JSON 文本、转换全部对象键，并保留 lossless-json 的数值精度。
+ */
+export function convertJsonKeys(
+  jsonString: string,
+  format: NamingFormat,
+  space = 2,
+): string {
+  const parsed = parseJson(jsonString);
+  const converted = convertKeysDeep(parsed, format);
+
+  return stringifyJson(converted, space);
+}
+
+export { splitWords, toCamelCase, toPascalCase, toSnakeCase };

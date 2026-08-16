@@ -54,7 +54,8 @@ const demoTools: Tool[] = [
     id: "jsonKeyNaming",
     name: "JSON 字段命名转换",
     icon: "solar:text-selection-bold",
-    description: "JSON字段命名风格转换，支持小驼峰、大驼峰、下划线命名互转",
+    description:
+      "JSON字段命名风格转换，支持小驼峰、大驼峰、下划线、短横线和常量命名互转",
     path: "/toolbox/jsonKeyNaming",
     category: ["数据处理"],
   },
