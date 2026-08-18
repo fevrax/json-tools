@@ -59,6 +59,15 @@ const demoTools: Tool[] = [
     path: "/toolbox/jsonKeyNaming",
     category: ["数据处理"],
   },
+  {
+    id: "encodingConverter",
+    name: "编码转换",
+    icon: "solar:code-square-bold",
+    description:
+      "实时转换 Base64、Base64URL、URL、Unicode、Hex 和 Binary 编码",
+    path: "/toolbox/encodingConverter",
+    category: ["编码转换", "数据处理"],
+  },
 ];
 
 export const useToolboxStore = create<ToolboxState>((set, get) => ({

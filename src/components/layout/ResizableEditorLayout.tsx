@@ -12,6 +12,7 @@ interface ResizableEditorLayoutProps {
   onResizeComplete?: (leftWidth: number) => void; // 调整完成后的回调
   resizeHandle?: React.ReactNode; // 自定义拖动手柄
   children?: React.ReactNode; // 允许通过children传递面板
+  isStacked?: boolean; // 窄屏时改为垂直排列
 }
 
 const ResizableEditorLayout: React.FC<ResizableEditorLayoutProps> = ({
@@ -25,6 +26,7 @@ const ResizableEditorLayout: React.FC<ResizableEditorLayoutProps> = ({
   onResize,
   onResizeComplete,
   resizeHandle,
+  isStacked = false,
 }) => {
   const [leftWidth, setLeftWidth] = useState(initialLeftWidth);
   const [isDragging, setIsDragging] = useState(false);
@@ -75,6 +77,24 @@ const ResizableEditorLayout: React.FC<ResizableEditorLayoutProps> = ({
     }
   }, [isDragging, leftWidth, onResizeComplete]);
 
+  const handleResizeKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+
+      event.preventDefault();
+      const delta = event.key === "ArrowLeft" ? -2 : 2;
+      const nextWidth = Math.max(
+        minLeftWidth,
+        Math.min(maxLeftWidth, leftWidth + delta),
+      );
+
+      setLeftWidth(nextWidth);
+      onResize?.(nextWidth);
+      onResizeComplete?.(nextWidth);
+    },
+    [leftWidth, maxLeftWidth, minLeftWidth, onResize, onResizeComplete],
+  );
+
   // 添加/移除鼠标事件监听器
   useEffect(() => {
     if (isDragging) {
@@ -114,11 +134,14 @@ const ResizableEditorLayout: React.FC<ResizableEditorLayoutProps> = ({
   // 默认的拖动手柄样式
   const defaultResizeHandle = (
     <div
+      aria-label="调整面板宽度"
       className={cn(
         "w-2 h-full cursor-ew-resize flex items-center justify-center transition-all duration-200",
       )}
       role="button"
       style={{ touchAction: "none" }}
+      tabIndex={0}
+      onKeyDown={handleResizeKeyDown}
       onMouseDown={handleDragStart}
     >
       <div className="h-24 w-1 bg-gray-300 dark:bg-gray-600 rounded-full transition-all duration-200" />
@@ -128,7 +151,11 @@ const ResizableEditorLayout: React.FC<ResizableEditorLayoutProps> = ({
   return (
     <div
       ref={containerRef}
-      className={cn("flex w-full h-full overflow-hidden", className)}
+      className={cn(
+        "flex w-full h-full",
+        isStacked ? "flex-col gap-2 overflow-y-auto" : "overflow-hidden",
+        className,
+      )}
     >
       {/* 处理children作为面板内容 */}
       {children && (
@@ -136,7 +163,11 @@ const ResizableEditorLayout: React.FC<ResizableEditorLayoutProps> = ({
           {/* 左侧面板 */}
           <div
             className="h-full overflow-hidden"
-            style={{ width: `${leftWidth}%` }}
+            style={
+              isStacked
+                ? { width: "100%", minHeight: 280, flex: "1 0 280px" }
+                : { width: `${leftWidth}%` }
+            }
           >
             {Array.isArray(children) ? children[0] : children}
           </div>
@@ -144,6 +175,7 @@ const ResizableEditorLayout: React.FC<ResizableEditorLayoutProps> = ({
           {/* 拖动手柄 - 只有当有多个子元素时才显示 */}
           {Array.isArray(children) &&
             children.length > 1 &&
+            !isStacked &&
             (resizeHandle || defaultResizeHandle)}
 
           {/* 右侧面板 */}
@@ -151,8 +183,10 @@ const ResizableEditorLayout: React.FC<ResizableEditorLayoutProps> = ({
             <div
               className="h-full overflow-hidden flex-1"
               style={{
-                width: `${100 - leftWidth}%`,
-                minWidth: `${100 - maxLeftWidth}%`,
+                width: isStacked ? "100%" : `${100 - leftWidth}%`,
+                minWidth: isStacked ? undefined : `${100 - maxLeftWidth}%`,
+                minHeight: isStacked ? 280 : undefined,
+                flex: isStacked ? "1 0 280px" : undefined,
               }}
             >
               {children[1]}
@@ -168,25 +202,38 @@ const ResizableEditorLayout: React.FC<ResizableEditorLayoutProps> = ({
           {leftPanel && (
             <div
               className="h-full overflow-hidden"
-              style={{ width: `${leftWidth}%` }}
+              style={
+                isStacked
+                  ? { width: "100%", minHeight: 280, flex: "1 0 280px" }
+                  : { width: `${leftWidth}%` }
+              }
             >
               {leftPanel}
             </div>
           )}
 
           {/* 拖动手柄 */}
-          {leftPanel && rightPanel && (resizeHandle || defaultResizeHandle)}
+          {leftPanel &&
+            rightPanel &&
+            !isStacked &&
+            (resizeHandle || defaultResizeHandle)}
 
           {/* 右侧面板 */}
           {rightPanel && (
             <div
               className="h-full overflow-hidden flex-1"
               style={{
-                width: leftPanel ? `${100 - leftWidth}%` : "100%",
+                width: isStacked
+                  ? "100%"
+                  : leftPanel
+                    ? `${100 - leftWidth}%`
+                    : "100%",
                 minWidth:
-                  rightPanel && leftPanel
+                  !isStacked && rightPanel && leftPanel
                     ? `${100 - maxLeftWidth}%`
                     : undefined,
+                minHeight: isStacked ? 280 : undefined,
+                flex: isStacked ? "1 0 280px" : undefined,
               }}
             >
               {rightPanel}

@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "lint": "eslint -c .eslintrc.json ./src/**/**/*.{ts,tsx} --fix",
     "test:key-naming": "tsx src/utils/keyNamingConverter.test.ts",
+    "test:encoding-converter": "tsx src/utils/encodingConverter.test.ts",
     "preview": "vite preview",
     "semantic-release": "semantic-release"
   },

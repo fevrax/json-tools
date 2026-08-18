@@ -9,6 +9,9 @@ const DataFormatConverterPage = React.lazy(
 );
 const JwtParsePage = React.lazy(() => import("./jwtParsePage"));
 const JsonKeyNamingPage = React.lazy(() => import("./jsonKeyNamingPage"));
+const EncodingConverterPage = React.lazy(
+  () => import("./encodingConverterPage"),
+);
 
 export const toolComponentRegistry = {
   jsonAIRepair: JsonAIRepairPage,
@@ -16,6 +19,7 @@ export const toolComponentRegistry = {
   dataFormatConverter: DataFormatConverterPage,
   jwtParse: JwtParsePage,
   jsonKeyNaming: JsonKeyNamingPage,
+  encodingConverter: EncodingConverterPage,
 } satisfies Record<string, React.LazyExoticComponent<React.ComponentType>>;
 
 export type ToolId = keyof typeof toolComponentRegistry;
