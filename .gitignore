@@ -11,7 +11,9 @@ node_modules
 dist
 dist-ssr
 *.local
-.superpowers/
+
+# Local Superpowers workspace data must never be committed
+/.superpowers/
 
 # Superpowers 生成的工作笔记 / 规格文档（非项目源码）
 docs/
