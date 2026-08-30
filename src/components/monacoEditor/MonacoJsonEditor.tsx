@@ -281,8 +281,9 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     enabled: urlDecoratorsEnabled,
   };
 
-  // 图片装饰器状态
-  const imageDecoratorState: ImageDecoratorState = {
+  // 图片装饰器状态必须保持稳定引用：内容校验等普通重渲染不应触发卸载清理。
+  // 同时让编辑器初始化时注册的回调始终读取最新的启用状态和主题。
+  const imageDecoratorStateRef = useRef<ImageDecoratorState>({
     editorRef: editorRef,
     hoverProviderId: { current: null },
     updateTimeoutRef: imageUpdateTimeoutRef,
@@ -291,7 +292,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     enabled: imageDecoratorsEnabled,
     theme: theme == "vs-dark" ? "dark" : "light",
     editorPrefix: "normal",
-  };
+  });
+  const imageDecoratorState = imageDecoratorStateRef.current;
 
   // 错误高亮装饰器状态
   const errorDecoratorState: ErrorDecoratorState = {
@@ -605,6 +607,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
   // 监听主题变化并更新图片装饰器
   useEffect(() => {
+    imageDecoratorState.theme = theme == "vs-dark" ? "dark" : "light";
+
     if (editorRef.current && imageDecoratorsEnabled) {
       updateImageDecorations(editorRef.current, imageDecoratorState);
     }
@@ -976,6 +980,8 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
 
   // 监听图片装饰器启用状态变化
   useEffect(() => {
+    imageDecoratorState.enabled = imageDecoratorsEnabled;
+
     // 使用toggle函数管理装饰器状态
     if (editorRef.current) {
       toggleImageDecorators(
@@ -1959,10 +1965,9 @@ const MonacoJsonEditor: React.FC<MonacoJsonEditorProps> = ({
     }
   }, [urlDecoderEnabled]);
 
-  // 图片装饰器清理useEffect
+  // 仅在组件卸载时清理图片装饰器；状态对象在渲染间保持稳定。
   useEffect(() => {
     return () => {
-      // 组件卸载时清理图片装饰器缓存
       if (imageDecorationManagerRef.current && editorRef.current) {
         clearImageCache(imageDecoratorState);
       }
