@@ -1,3 +1,16 @@
+# [1.28.0](https://github.com/fevrax/json-tools/compare/v1.27.1...v1.28.0) (2026-08-30)
+
+
+### Bug Fixes
+
+* keep image preview decoration after paste ([8a9891e](https://github.com/fevrax/json-tools/commit/8a9891e916dfc01f38058ced1e49e20f7097a78b))
+* 重构 JSON 字段命名转换 ([9374c9a](https://github.com/fevrax/json-tools/commit/9374c9a522e14801159d8749218dc03b8a0666a9))
+
+
+### Features
+
+* add bidirectional encoding converter ([d3b2893](https://github.com/fevrax/json-tools/commit/d3b289360357d13e26da9f023fb9f434702cea4e))
+
 ## [1.27.1](https://github.com/fevrax/json-tools/compare/v1.27.0...v1.27.1) (2026-08-16)
 
 
