@@ -20,6 +20,31 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="JSON Tools" />
     <meta name="application-name" content="JSON Tools" />
+    <meta name="theme-color" content="#f4f4f5" />
+    <script>
+      (() => {
+        const lightThemeColor = "#f4f4f5";
+        const darkThemeColor = "#27272a";
+
+        try {
+          const savedTheme = localStorage.getItem("theme");
+          const prefersDark = window.matchMedia(
+            "(prefers-color-scheme: dark)",
+          ).matches;
+          const isDark =
+            savedTheme === "dark" || (savedTheme === "system" && prefersDark);
+
+          document
+            .querySelector('meta[name="theme-color"]')
+            ?.setAttribute(
+              "content",
+              isDark ? darkThemeColor : lightThemeColor,
+            );
+        } catch {
+          // localStorage 受限时保留浅色回退值。
+        }
+      })();
+    </script>
     <meta name="description" content="强大的JSON工具集，支持格式化、验证、转换、编辑等多种功能" />
   </head>
   <body>

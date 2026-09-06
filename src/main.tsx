@@ -13,6 +13,7 @@ import DefaultLayout from "@/layouts/default";
 import { FontSizeManager } from "@/components/FontSizeManager";
 import UtoolsListener from "@/services/utoolsListener";
 import { PWAUpdateManager } from "@/components/pwa/PWAUpdateManager";
+import { ThemeColorManager } from "@/components/ThemeColorManager";
 import registerServiceWorker from "@/utils/registerSW";
 import { isPWA } from "@/utils/pwa";
 
@@ -84,6 +85,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
     >
       <Provider>
+        <ThemeColorManager />
         <FontSizeManager />
         <DefaultLayout>
           <App />
