@@ -1,3 +1,15 @@
+# [1.29.0](https://github.com/fevrax/json-tools/compare/v1.28.0...v1.29.0) (2026-09-17)
+
+
+### Bug Fixes
+
+* sync PWA title bar with theme ([e94621f](https://github.com/fevrax/json-tools/commit/e94621fcb387b800c7e0207f2e98e926e0da92e2))
+
+
+### Features
+
+* PWA refactoring ([859205f](https://github.com/fevrax/json-tools/commit/859205f25a7310be81b30f21789ce6e3750c6bc4))
+
 # [1.28.0](https://github.com/fevrax/json-tools/compare/v1.27.1...v1.28.0) (2026-08-30)
 
 
