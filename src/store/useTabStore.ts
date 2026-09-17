@@ -803,6 +803,28 @@ let tabsSaveTimeout: NodeJS.Timeout;
 let tabActiveSaveTimeout: NodeJS.Timeout;
 const timeout = 2000;
 
+/**
+ * 立即持久化最新标签页状态。
+ * PWA 更新会在 Service Worker 接管页面后刷新，不能依赖防抖定时器或
+ * beforeunload 中无法被浏览器等待的异步任务。
+ */
+export async function flushTabStore(): Promise<void> {
+  clearTimeout(tabsSaveTimeout);
+  clearTimeout(tabActiveSaveTimeout);
+
+  if (!useSettingsStore.getState().persistentDataEnabled) {
+    return;
+  }
+
+  const { tabs, activeTabKey, nextKey } = useTabStore.getState();
+
+  await Promise.all([
+    storageManager.set(DB_TABS, tabs),
+    storageManager.set(DB_TAB_ACTIVE_KEY, activeTabKey),
+    storageManager.set(DB_TAB_NEXT_KEY, nextKey),
+  ]);
+}
+
 // 历史记录最大保存数量
 const MAX_HISTORY_COUNT = 50;
 
@@ -989,14 +1011,16 @@ syncManager.onUpdate('tabs_meta', (data) => {
 
 // 页面关闭前强制保存
 if (typeof window !== "undefined") {
-  window.addEventListener('beforeunload', async () => {
-    await storageManager.flush();
-  });
+  const persistLatestTabs = () => {
+    void flushTabStore();
+  };
+
+  window.addEventListener("pagehide", persistLatestTabs);
 
   // 页面隐藏时也保存（移动端友好）
-  document.addEventListener('visibilitychange', async () => {
+  document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
-      await storageManager.flush();
+      persistLatestTabs();
     }
   });
 }

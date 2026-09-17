@@ -115,14 +115,35 @@ const DB_SETTINGS = "settings";
 let settingsSaveTimeout: NodeJS.Timeout;
 const timeout = 1000;
 
+const getPersistedSettings = (settings: SettingsState) => ({
+  expandSidebar: settings.expandSidebar,
+  monacoEditorCDN: settings.monacoEditorCDN,
+  chatStyle: settings.chatStyle,
+  fontSize: settings.fontSize,
+  timestampDecoderEnabled: settings.timestampDecoderEnabled,
+  base64DecoderEnabled: settings.base64DecoderEnabled,
+  unicodeDecoderEnabled: settings.unicodeDecoderEnabled,
+  urlDecoderEnabled: settings.urlDecoderEnabled,
+  defaultIndentSize: settings.defaultIndentSize,
+  newTabShortcut: settings.newTabShortcut,
+  closeTabShortcut: settings.closeTabShortcut,
+  persistentDataEnabled: settings.persistentDataEnabled,
+});
+
+const persistSettings = (settings: SettingsState) =>
+  storageManager.set(DB_SETTINGS, getPersistedSettings(settings));
+
+export async function flushSettingsStore(): Promise<void> {
+  clearTimeout(settingsSaveTimeout);
+  await persistSettings(useSettingsStore.getState());
+}
+
 useSettingsStore.subscribe(
   (state) => state,
   (settings) => {
     clearTimeout(settingsSaveTimeout);
     settingsSaveTimeout = setTimeout(async () => {
-      // 只保存数据字段，排除函数（actions）
-      const { setExpandSidebar, setMonacoEditorCDN, setChatStyle, setFontSize, setTimestampDecoderEnabled, setBase64DecoderEnabled, setUnicodeDecoderEnabled, setUrlDecoderEnabled, setDefaultIndentSize, setNewTabShortcut, setCloseTabShortcut, setPersistentDataEnabled, setSettings, syncSettingsStore, ...dataToSave } = settings;
-      await storageManager.set(DB_SETTINGS, dataToSave);
+      await persistSettings(settings);
     }, timeout);
   },
 );

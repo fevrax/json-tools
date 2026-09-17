@@ -14,8 +14,6 @@ import { FontSizeManager } from "@/components/FontSizeManager";
 import UtoolsListener from "@/services/utoolsListener";
 import { PWAUpdateManager } from "@/components/pwa/PWAUpdateManager";
 import { ThemeColorManager } from "@/components/ThemeColorManager";
-import registerServiceWorker from "@/utils/registerSW";
-import { isPWA } from "@/utils/pwa";
 
 // 初始化存储系统
 const initializeStorage = async () => {
@@ -45,14 +43,6 @@ const initializeUtoolsListener = () => {
   }, 0);
 };
 
-// 初始化 PWA Service Worker（仅在 PWA 环境下）
-const initializePWA = async () => {
-  // 只在 PWA 环境下注册 Service Worker
-  if (isPWA() && "serviceWorker" in navigator) {
-    await registerServiceWorker();
-  }
-};
-
 // 监听应用加载完成事件
 if (typeof window !== "undefined") {
   window.addEventListener("load", async () => {
@@ -61,21 +51,12 @@ if (typeof window !== "undefined") {
 
     // 然后初始化其他系统
     initializeUtoolsListener();
-    initializePWA();
-  });
-
-  // 页面关闭前保存数据
-  window.addEventListener("beforeunload", async () => {
-    // 这里会被各个 store 的 beforeunload 处理器覆盖
-    // 但作为一个额外的保险措施
-    console.log("应用即将关闭，确保数据已保存");
   });
 } else {
   // 在开发环境中直接初始化
   (async () => {
     await initializeStorage();
     initializeUtoolsListener();
-    initializePWA();
   })();
 }
 

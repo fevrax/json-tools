@@ -14,15 +14,20 @@ export function ThemeColorManager() {
     const themeColor = document.querySelector<HTMLMetaElement>(
       'meta[name="theme-color"]',
     );
+    const appleStatusBar = document.querySelector<HTMLMetaElement>(
+      'meta[name="apple-mobile-web-app-status-bar-style"]',
+    );
 
-    if (
-      !themeColor ||
-      (resolvedTheme !== "light" && resolvedTheme !== "dark")
-    ) {
+    if (resolvedTheme !== "light" && resolvedTheme !== "dark") {
       return;
     }
 
-    themeColor.content = THEME_COLORS[resolvedTheme];
+    if (themeColor) {
+      themeColor.content = THEME_COLORS[resolvedTheme];
+    }
+    if (appleStatusBar) {
+      appleStatusBar.content = resolvedTheme === "dark" ? "black" : "default";
+    }
   }, [resolvedTheme]);
 
   return null;

@@ -1,33 +1,72 @@
-import { useState, useEffect, useCallback } from "react";
-import {
-  Button,
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  Progress,
-  useDisclosure,
-} from "@heroui/react";
-import { Download, X, WifiOff, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Button, Spinner } from "@heroui/react";
+import { RefreshCw, WifiOff, X } from "lucide-react";
+import { useRegisterSW } from "virtual:pwa-register/react";
 
-import { usePWAUpdate, UpdateStatus } from "@/utils/pwa-updates";
 import toast from "@/utils/toast";
-import { isPWA } from "@/utils/pwa";
+import { flushTabStore } from "@/store/useTabStore";
+import { flushSettingsStore } from "@/store/useSettingsStore";
 
-interface PWAUpdateToastProps {
-  className?: string;
-}
+const UPDATE_CHECK_INTERVAL = 30 * 60 * 1000;
+const UPDATE_REMINDER_DELAY = 30 * 60 * 1000;
 
-// 离线提示组件
-const OfflineToast: React.FC<PWAUpdateToastProps> = ({ className }) => {
-  const [isOffline, setIsOffline] = useState(false);
+const persistAppState = () =>
+  Promise.all([flushTabStore(), flushSettingsStore()]);
+
+export const PWAUpdateManager: React.FC = () => {
+  const [registration, setRegistration] = useState<ServiceWorkerRegistration>();
+  const [isOffline, setIsOffline] = useState(() => !navigator.onLine);
+  const [isSnoozed, setIsSnoozed] = useState(false);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const reminderTimer = useRef<number | undefined>(undefined);
+
+  const reloadAfterSaving = useCallback(() => {
+    void persistAppState()
+      .catch((error) => {
+        console.error("刷新前保存数据失败:", error);
+      })
+      .finally(() => window.location.reload());
+  }, []);
+
+  const {
+    needRefresh: [needRefresh],
+    offlineReady: [offlineReady, setOfflineReady],
+    updateServiceWorker,
+  } = useRegisterSW({
+    onNeedReload: reloadAfterSaving,
+    onRegisteredSW: (_swUrl, nextRegistration) => {
+      setRegistration(nextRegistration);
+    },
+    onRegisterError: (error) => {
+      console.error("Service Worker 注册失败:", error);
+    },
+  });
+
+  const handleUpdate = useCallback(async () => {
+    setIsUpdating(true);
+
+    try {
+      await persistAppState();
+      await updateServiceWorker();
+    } catch (error) {
+      console.error("更新失败:", error);
+      toast.error("更新失败", "数据已保留，请稍后重试");
+      setIsUpdating(false);
+    }
+  }, [updateServiceWorker]);
+
+  const handleSnooze = useCallback(() => {
+    setIsSnoozed(true);
+    window.clearTimeout(reminderTimer.current);
+    reminderTimer.current = window.setTimeout(
+      () => setIsSnoozed(false),
+      UPDATE_REMINDER_DELAY,
+    );
+  }, []);
 
   useEffect(() => {
     const handleOnline = () => setIsOffline(false);
     const handleOffline = () => setIsOffline(true);
-
-    setIsOffline(!navigator.onLine);
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
@@ -38,198 +77,118 @@ const OfflineToast: React.FC<PWAUpdateToastProps> = ({ className }) => {
     };
   }, []);
 
-  if (!isOffline) return null;
+  useEffect(() => {
+    if (!offlineReady) return;
+
+    toast.success("离线功能已就绪", "断网后仍可继续使用已缓存的工具");
+    setOfflineReady(false);
+  }, [offlineReady, setOfflineReady]);
+
+  useEffect(() => {
+    if (!registration) return;
+
+    const checkForUpdate = () => {
+      if (navigator.onLine && document.visibilityState === "visible") {
+        void registration.update().catch((error) => {
+          console.warn("检查 PWA 更新失败:", error);
+        });
+      }
+    };
+
+    const handleVisibilityChange = () => checkForUpdate();
+    const updateTimer = window.setInterval(
+      checkForUpdate,
+      UPDATE_CHECK_INTERVAL,
+    );
+
+    window.addEventListener("online", checkForUpdate);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.clearInterval(updateTimer);
+      window.removeEventListener("online", checkForUpdate);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [registration]);
+
+  useEffect(
+    () => () => {
+      window.clearTimeout(reminderTimer.current);
+    },
+    [],
+  );
+
+  const showUpdate = needRefresh && !isSnoozed;
+
+  if (!isOffline && !showUpdate) return null;
 
   return (
     <div
-      className={`fixed bottom-4 left-4 z-50 bg-orange-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 ${className}`}
+      aria-live="polite"
+      className="pointer-events-none fixed right-4 z-[100] flex w-[min(360px,calc(100vw-2rem))] flex-col gap-2"
+      style={{ bottom: "max(1rem, env(safe-area-inset-bottom))" }}
     >
-      <WifiOff size={18} />
-      <span>网络连接已断开，应用正在离线模式下运行</span>
+      {isOffline ? (
+        <div
+          className="pointer-events-auto flex items-start gap-3 rounded-xl border border-warning/30 bg-content1/95 p-3 text-foreground shadow-lg backdrop-blur"
+          role="status"
+        >
+          <div className="mt-0.5 rounded-lg bg-warning/15 p-2 text-warning">
+            <WifiOff size={18} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold">网络连接已断开</p>
+            <p className="mt-0.5 text-xs leading-relaxed text-default-500">
+              已缓存的本地工具仍可使用，联网功能暂不可用。
+            </p>
+          </div>
+        </div>
+      ) : null}
+
+      {showUpdate ? (
+        <div
+          className="pointer-events-auto rounded-xl border border-divider bg-content1/95 p-3 text-foreground shadow-lg backdrop-blur"
+          role="alert"
+        >
+          <div className="flex items-start gap-3">
+            <div className="mt-0.5 rounded-lg bg-primary/15 p-2 text-primary">
+              <RefreshCw size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm font-semibold">新版本已准备好</p>
+                <Button
+                  isIconOnly
+                  aria-label="30 分钟后提醒"
+                  className="-mr-1 -mt-1 h-7 min-w-7 text-default-400"
+                  isDisabled={isUpdating}
+                  size="sm"
+                  variant="light"
+                  onPress={handleSnooze}
+                >
+                  <X size={16} />
+                </Button>
+              </div>
+              <p className="mt-0.5 text-xs leading-relaxed text-default-500">
+                更新前会保存当前数据，随后自动重新载入。
+              </p>
+              <div className="mt-3 flex justify-end">
+                <Button
+                  color="primary"
+                  isDisabled={isUpdating}
+                  size="sm"
+                  startContent={
+                    isUpdating ? <Spinner color="white" size="sm" /> : null
+                  }
+                  onPress={handleUpdate}
+                >
+                  {isUpdating ? "正在更新" : "立即更新"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };
-
-// 更新提示模态框
-const UpdateModal: React.FC = () => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
-  const [status, setStatus] = useState<UpdateStatus | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const updateManager = usePWAUpdate();
-
-  const handleUpdate = useCallback(async () => {
-    if (!updateManager) return;
-
-    setIsUpdating(true);
-    setProgress(20);
-
-    try {
-      setProgress(40);
-      await updateManager.applyUpdate();
-      setProgress(80);
-
-      // 更新会触发页面重新加载，这里只需要等待
-      setTimeout(() => setProgress(100), 500);
-
-      // 显示更新成功提示
-      toast.success("应用已更新", "新版本已成功安装，页面即将刷新");
-
-      // 延迟刷新，让用户看到成功提示
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-    } catch (error) {
-      console.error("更新失败:", error);
-      toast.error("更新失败", "请稍后重试");
-      setIsUpdating(false);
-      setProgress(0);
-    }
-  }, [updateManager]);
-
-  const handleSkip = useCallback(() => {
-    onClose();
-    // 可以选择稍后提醒，比如在页面关闭前
-    setTimeout(
-      () => {
-        if (updateManager?.isUpdatePending()) {
-          onOpen();
-        }
-      },
-      30 * 60 * 1000,
-    ); // 30 分钟后再次提醒
-  }, [onClose, onOpen, updateManager]);
-
-  useEffect(() => {
-    const unsubscribe = updateManager?.onUpdate((newStatus) => {
-      setStatus(newStatus);
-      if (newStatus.isUpdateAvailable) {
-        onOpen();
-      }
-    });
-
-    // 检查是否已有待处理的更新
-    if (updateManager?.isUpdatePending()) {
-      setStatus({
-        isUpdateAvailable: true,
-        isOfflineReady: true,
-      });
-      onOpen();
-    }
-
-    // 监听热重载事件
-    const handleHotReload = (event: Event) => {
-      const customEvent = event as CustomEvent;
-      const detail = customEvent.detail as any;
-
-      console.log("🔥 收到热重载更新事件:", detail);
-
-      setStatus({
-        isUpdateAvailable: true,
-        isOfflineReady: true,
-        version: detail.version,
-      });
-
-      onOpen();
-    };
-
-    window.addEventListener("pwa-update-available", handleHotReload);
-
-    return () => {
-      unsubscribe?.();
-      window.removeEventListener("pwa-update-available", handleHotReload);
-    };
-  }, [updateManager, onOpen]);
-
-  if (!isOpen || !status?.isUpdateAvailable) return null;
-
-  return (
-    <Modal
-      backdrop={isUpdating ? "blur" : "opaque"}
-      hideCloseButton={isUpdating}
-      isDismissable={!isUpdating}
-      isOpen={isOpen}
-      size="sm"
-      onClose={isUpdating ? undefined : handleSkip}
-    >
-      <ModalContent>
-        {() => (
-          <>
-            <ModalHeader className="flex flex-col gap-1">
-              <div className="flex items-center gap-2">
-                <Download className="text-primary" size={24} />
-                <h3>发现新版本</h3>
-              </div>
-            </ModalHeader>
-            <ModalBody>
-              {isUpdating ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-gray-600">
-                    正在更新应用，请稍候...
-                  </p>
-                  <Progress
-                    className="w-full"
-                    color="primary"
-                    size="sm"
-                    value={progress}
-                  />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600">
-                    新版本已准备好安装，包含最新功能和改进。
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    更新后页面将自动刷新，请保存您的数据，如果开启本地存储则数据不会丢失。
-                  </p>
-                </div>
-              )}
-            </ModalBody>
-            <ModalFooter>
-              {!isUpdating && (
-                <>
-                  <Button
-                    color="default"
-                    startContent={<X size={18} />}
-                    variant="light"
-                    onPress={handleSkip}
-                  >
-                    稍后更新
-                  </Button>
-                  <Button
-                    color="primary"
-                    startContent={<RefreshCw size={18} />}
-                    onPress={handleUpdate}
-                  >
-                    立即更新
-                  </Button>
-                </>
-              )}
-            </ModalFooter>
-          </>
-        )}
-      </ModalContent>
-    </Modal>
-  );
-};
-
-// 主组件
-export const PWAUpdateManager: React.FC = () => {
-  // 只在 PWA 环境下渲染
-  if (!isPWA()) {
-    return null;
-  }
-
-  return (
-    <>
-      {/* 离线提示 */}
-      <OfflineToast />
-
-      {/* 更新模态框 */}
-      <UpdateModal />
-    </>
-  );
-};
-
-// 导出单独的组件供按需使用
-export { OfflineToast, UpdateModal };
