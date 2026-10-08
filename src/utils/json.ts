@@ -6,7 +6,6 @@ import {
   parse as losslessParse,
   stringify as losslessStringify,
   isLosslessNumber,
-  compareLosslessNumber,
 } from "lossless-json";
 
 const rxEscapable =
@@ -283,24 +282,8 @@ export function isArrayOrObject(value: unknown): boolean {
 export function sortJson(data: any, order: "asc" | "desc" = "asc"): string {
   function sortValue(value: any): any {
     if (Array.isArray(value)) {
-      return value.map(sortValue).sort((a, b) => {
-        // 字符串排序
-        if (typeof a === "string" && typeof b === "string") {
-          return order === "asc" ? a.localeCompare(b) : b.localeCompare(a);
-        }
-        // 数字排序
-        if (typeof a === "number" && typeof b === "number") {
-          return order === "asc" ? a - b : b - a;
-        }
-        // LosslessNumber 排序
-        if (isLosslessNumber(a) && isLosslessNumber(b)) {
-          return order === "asc"
-            ? compareLosslessNumber(a, b)
-            : -compareLosslessNumber(a, b);
-        }
-
-        return 0;
-      });
+      // 字段排序不改变数组顺序，只递归处理数组中的对象键。
+      return value.map(sortValue);
     } else if (typeof value === "object" && value !== null) {
       if (isLosslessNumber(value)) {
         // 不需要处理
@@ -318,7 +301,8 @@ export function sortJson(data: any, order: "asc" | "desc" = "asc"): string {
       return order === "asc" ? a.localeCompare(b) : b.localeCompare(a);
     });
 
-    const sortedObj: Record<string, any> = {};
+    // 使用无原型对象，让 __proto__ 也作为普通自有字段保留。
+    const sortedObj: Record<string, any> = Object.create(null);
 
     sortedKeys.forEach((key) => {
       sortedObj[key] = sortValue(obj[key]);
@@ -335,27 +319,50 @@ export function sortJson(data: any, order: "asc" | "desc" = "asc"): string {
 /**
  * 删除 JSON 文本中的注释
  * @param jsonText 包含注释的 JSON 文本
- * @returns 删除注释后的 JSON 文本
+ * @returns 注释替换为空格后的 JSON 文本，保留原始换行和位置
  */
 export function removeJsonComments(jsonText: string): string {
-  // 移除多行注释
-  jsonText = jsonText.replace(/\/\*[\s\S]*?\*\//g, "");
+  const result: string[] = [];
+  let quote: string | null = null;
+  let escaped = false;
+  let comment: "line" | "block" | null = null;
 
-  // 移除单行注释（考虑到可能在引号内的情况）
-  const regex = /("(?:\\.|[^"\\])*")|\/\/.*$/gm;
+  for (let i = 0; i < jsonText.length; i++) {
+    const char = jsonText[i];
+    const next = jsonText[i + 1];
+    const isNewline =
+      char === "\n" || char === "\r" || char === "\u2028" || char === "\u2029";
 
-  jsonText = jsonText.replace(regex, (_match, group) => {
-    if (group) {
-      // 如果匹配到的是引号内的内容，保留它
-      return group;
+    if (comment !== null) {
+      if (comment === "block" && char === "*" && next === "/") {
+        result.push("  ");
+        i++;
+        comment = null;
+      } else {
+        // 保留行列位置，并避免注释两侧的 token 被拼接。
+        result.push(isNewline ? char : " ");
+        if (comment === "line" && isNewline) comment = null;
+      }
+    } else if (quote !== null) {
+      result.push(char);
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === quote) {
+        quote = null;
+      }
+    } else if (char === '"' || char === "'") {
+      quote = char;
+      result.push(char);
+    } else if (char === "/" && (next === "/" || next === "*")) {
+      comment = next === "/" ? "line" : "block";
+      result.push("  ");
+      i++;
+    } else {
+      result.push(char);
     }
+  }
 
-    // 否则，它是一个注释，将其替换为空字符串
-    return "";
-  });
-
-  // 移除可能剩余的空行
-  jsonText = jsonText.replace(/^\s*[\r\n]/gm, "");
-
-  return jsonText;
+  return result.join("");
 }

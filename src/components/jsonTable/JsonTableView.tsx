@@ -18,7 +18,12 @@ import toast from "@/utils/toast";
 import clipboard from "@/utils/clipboard";
 import { useSidebarStore } from "@/store/useSidebarStore";
 import { SidebarKeys } from "@/components/sidebar/Items.tsx";
-import { parseJson, stringifyJson } from "@/utils/json";
+import { parseJson } from "@/utils/json";
+import {
+  convertToCSV,
+  convertToExcel,
+  downloadTableExport,
+} from "@/utils/tableExport";
 
 export interface JsonTableViewRef {
   focus: () => void;
@@ -655,141 +660,44 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
     }
   }, []);
 
-  // 将JSON数据转换为CSV格式
-  const convertToCSV = useCallback(
-    (jsonData: any): string | null => {
-      if (!jsonData) return null;
+  // Parse current props at export time so an effect or stale selection cannot
+  // cause the previous document to be downloaded. JSON null is valid data.
+  const exportCSV = useCallback((): string | null => {
+    try {
+      if (!data.trim()) throw new Error("没有可导出的 JSON 数据");
 
+      return convertToCSV(parseJson(data), selectedPath);
+    } catch (error) {
+      toast.error("导出 CSV 失败：" + (error as Error).message);
+
+      return null;
+    }
+  }, [data, selectedPath]);
+
+  const exportExcel = useCallback((): ArrayBuffer | null => {
+    try {
+      if (!data.trim()) throw new Error("没有可导出的 JSON 数据");
+
+      return convertToExcel(parseJson(data), selectedPath);
+    } catch (error) {
+      toast.error("导出 Excel 失败：" + (error as Error).message);
+
+      return null;
+    }
+  }, [data, selectedPath]);
+
+  const handleExport = useCallback(
+    (format: "csv" | "xlsx") => {
+      const content = format === "csv" ? exportCSV() : exportExcel();
+
+      if (content === null) return;
       try {
-        // 如果选择了特定节点，则只导出该节点
-        let dataToExport = jsonData;
-
-        if (selectedPath && selectedPath !== "root") {
-          const selectedData = getNodeAtPath(selectedPath, jsonData);
-
-          if (selectedData) {
-            dataToExport = selectedData;
-            // 在CSV第一行添加路径信息
-            const pathInfo = `# 选中路径: ${selectedPath}`;
-
-            // 处理选中的单个基本类型值
-            if (typeof selectedData !== "object" || selectedData === null) {
-              return `${pathInfo}\n${String(selectedData)}`;
-            }
-          }
-        }
-
-        // 处理对象数组
-        if (
-          Array.isArray(dataToExport) &&
-          dataToExport.length > 0 &&
-          typeof dataToExport[0] === "object"
-        ) {
-          // 获取所有可能的列
-          const allKeys = new Set<string>();
-
-          dataToExport.forEach((item) => {
-            if (item && typeof item === "object") {
-              Object.keys(item).forEach((key) => allKeys.add(key));
-            }
-          });
-
-          // 创建标题行
-          const headers = Array.from(allKeys);
-          const csvRows = [headers.join(",")];
-
-          // 创建数据行
-          dataToExport.forEach((item) => {
-            const row = headers.map((header) => {
-              const value = item[header];
-
-              // 处理不同类型的值，确保CSV格式正确
-              if (value === null || value === undefined) return "";
-              if (typeof value === "object")
-                return stringifyJson(value)
-                  .replace(/,/g, ";")
-                  .replace(/"/g, '""');
-              if (typeof value === "string")
-                return `"${value.replace(/"/g, '""')}"`;
-
-              return value;
-            });
-
-            csvRows.push(row.join(","));
-          });
-
-          return csvRows.join("\n");
-        }
-
-        // 处理简单对象
-        if (typeof dataToExport === "object" && !Array.isArray(dataToExport)) {
-          const headers = Object.keys(dataToExport);
-          const values = Object.values(dataToExport).map((value) => {
-            if (value === null || value === undefined) return "";
-            if (typeof value === "object")
-              return stringifyJson(value)
-                .replace(/,/g, ";")
-                .replace(/"/g, '""');
-            if (typeof value === "string")
-              return `"${value.replace(/"/g, '""')}"`;
-
-            return value;
-          });
-
-          return [headers.join(","), values.join(",")].join("\n");
-        }
-
-        // 处理简单数组
-        if (Array.isArray(dataToExport)) {
-          const values = dataToExport.map((value) => {
-            if (value === null || value === undefined) return "";
-            if (typeof value === "object")
-              return stringifyJson(value)
-                .replace(/,/g, ";")
-                .replace(/"/g, '""');
-            if (typeof value === "string")
-              return `"${value.replace(/"/g, '""')}"`;
-
-            return value;
-          });
-
-          return values.join("\n");
-        }
-
-        // 处理简单值
-        return String(dataToExport);
+        downloadTableExport(content, format);
       } catch (error) {
-        console.error("转换CSV失败:", error);
-        toast.error("转换CSV失败：" + (error as Error).message);
-
-        return null;
+        toast.error("下载失败：" + (error as Error).message);
       }
     },
-    [jsonData, selectedPath, getNodeAtPath],
-  );
-
-  // 将JSON数据转换为Excel二进制格式
-  const convertToExcel = useCallback(
-    (jsonData: any): ArrayBuffer | null => {
-      // 由于实际生成Excel需要依赖第三方库如xlsx，
-      // 这里使用一个简化的实现方式
-      try {
-        const csv = convertToCSV(jsonData);
-
-        if (!csv) return null;
-
-        // 简单将CSV转为ArrayBuffer，在实际应用中应使用专门的Excel库
-        const encoder = new TextEncoder();
-
-        return encoder.encode(csv).buffer;
-      } catch (error) {
-        console.error("转换Excel失败:", error);
-        toast.error("转换Excel失败：" + (error as Error).message);
-
-        return null;
-      }
-    },
-    [convertToCSV],
+    [exportCSV, exportExcel],
   );
 
   useImperativeHandle(ref, () => ({
@@ -810,14 +718,8 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
       // 返回当前选中的路径
       return selectedPath;
     },
-    exportAsCSV: () => {
-      // 导出为CSV
-      return convertToCSV(jsonData);
-    },
-    exportAsExcel: () => {
-      // 导出为Excel格式
-      return convertToExcel(jsonData);
-    },
+    exportAsCSV: exportCSV,
+    exportAsExcel: exportExcel,
   }));
 
   useEffect(() => {
@@ -858,6 +760,7 @@ const JsonTableView: React.FC<JsonTableViewProps> = ({
         onCopy={onCopy}
         onCustomView={handleCustomView}
         onExpand={handleExpandAll}
+        onExport={handleExport}
         onFilterToggle={handleFilterToggle}
         onGlobalFilterChange={handleGlobalFilterChange}
       />

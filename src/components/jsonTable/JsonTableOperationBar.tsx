@@ -28,6 +28,7 @@ interface JsonTableOperationBarProps {
   onCollapse: () => void;
   onCustomView: (key: "hideEmpty" | "hideNull" | "showAll") => void;
   onClear?: () => boolean;
+  onExport?: (format: "csv" | "xlsx") => void;
   onFilterToggle?: () => void;
   isFilterActive?: boolean;
   globalFilterValue?: string;
@@ -84,6 +85,7 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
   onCollapse,
   onCustomView,
   onClear,
+  onExport,
   onFilterToggle,
   isFilterActive = false,
   globalFilterValue = "",
@@ -293,6 +295,21 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
       });
     }
 
+    if (onExport) {
+      groups.push({
+        key: "export",
+        buttons: (["csv", "xlsx"] as const).map((format) => ({
+          key: `export-${format}`,
+          icon: "solar:download-linear",
+          text: format === "csv" ? "导出 CSV" : "导出 Excel",
+          tooltip: "导出选中节点，未选择时导出全部数据",
+          priority: 60,
+          width: 110,
+          onClick: () => onExport(format),
+        })),
+      });
+    }
+
     return groups;
   }, [
     copyStatus,
@@ -302,6 +319,7 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
     onCollapse,
     onCustomView,
     onClear,
+    onExport,
     onFilterToggle,
     isFilterActive,
     showViewDropdown,
@@ -531,6 +549,7 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
         }}
         isOpen={isMoreDropdownOpen}
         radius="sm"
+        onOpenChange={setMoreDropdownOpen}
       >
         <Tooltip content="更多操作" delay={300}>
           <DropdownTrigger
@@ -551,22 +570,30 @@ const JsonTableOperationBar: React.FC<JsonTableOperationBarProps> = ({
           onMouseEnter={showMoreDropdown}
           onMouseLeave={unShowMoreDropdown}
         >
-          {hiddenButtons.map((item) => (
-            <DropdownItem
-              key={item.key}
-              className="py-2 px-3 hover:bg-default-100 rounded-md"
-              textValue={item.text}
-              onPress={item.onClick}
-            >
-              <div className="flex items-center space-x-2">
-                <Icon
-                  icon={"isStatusButton" in item ? item.icon : item.icon}
-                  width={16}
-                />
-                <span>{"text" in item ? item.text : ""}</span>
-              </div>
-            </DropdownItem>
-          ))}
+          {actionGroups
+            .flatMap((group) => group.buttons)
+            .filter((item) =>
+              hiddenButtons.some((hidden) => hidden.key === item.key),
+            )
+            .map((item) => (
+              <DropdownItem
+                key={item.key}
+                className="py-2 px-3 hover:bg-default-100 rounded-md"
+                textValue={item.text}
+                onPress={() => {
+                  setMoreDropdownOpen(false);
+                  item.onClick();
+                }}
+              >
+                <div className="flex items-center space-x-2">
+                  <Icon
+                    icon={"isStatusButton" in item ? item.icon : item.icon}
+                    width={16}
+                  />
+                  <span>{"text" in item ? item.text : ""}</span>
+                </div>
+              </DropdownItem>
+            ))}
         </DropdownMenu>
       </Dropdown>
     );

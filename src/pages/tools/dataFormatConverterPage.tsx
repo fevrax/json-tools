@@ -12,11 +12,6 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useTheme } from "next-themes";
-import YAML from "js-yaml";
-import { xml2js, js2xml } from "xml-js";
-// @ts-ignore
-import TOML from "@iarna/toml";
-import JSON5 from "json5";
 
 import toast from "@/utils/toast";
 import MonacoEditor, {
@@ -28,7 +23,10 @@ import AIPromptOverlay, {
   QuickPrompt,
 } from "@/components/ai/AIPromptOverlay.tsx";
 import { useOpenAIConfigStore } from "@/store/useOpenAIConfigStore";
-import { parseJson, stringifyJson } from "@/utils/json";
+import {
+  convertDataFormat as convertFormat,
+  formatDataFormat,
+} from "@/utils/dataFormatConverter";
 import { openAIService } from "@/services/openAIService";
 
 // 支持的数据格式
@@ -133,71 +131,7 @@ export default function DataFormatConverterPage() {
     setProcessingStep("正在处理转换...");
 
     try {
-      // 将输入格式转换为JSON对象
-      let jsonData;
-
-      try {
-        switch (inputFormat) {
-          case "json":
-            jsonData = parseJson(inputValue);
-            break;
-          case "json5":
-            jsonData = JSON5.parse(inputValue);
-            break;
-          case "yaml":
-            jsonData = YAML.load(inputValue);
-            break;
-          case "xml":
-            jsonData = xml2js(inputValue, { compact: true });
-            break;
-          case "toml":
-            jsonData = TOML.parse(inputValue);
-            break;
-          default:
-            throw new Error(`不支持的输入格式: ${inputFormat}`);
-        }
-      } catch (e) {
-        toast.error(
-          `无效的${inputFormat.toUpperCase()}格式: ${(e as Error).message}`,
-        );
-        setIsProcessing(false);
-        setProcessingStep("");
-
-        return;
-      }
-
-      // 将JSON对象转换为目标格式
-      let result;
-
-      try {
-        switch (outputFormat) {
-          case "json":
-            result = stringifyJson(jsonData, 2);
-            break;
-          case "json5":
-            result = JSON5.stringify(jsonData, { space: 2 });
-            break;
-          case "yaml":
-            result = YAML.dump(jsonData);
-            break;
-          case "xml":
-            result = js2xml(jsonData, { compact: true, spaces: 2 });
-            break;
-          case "toml":
-            result = TOML.stringify(jsonData);
-            break;
-          default:
-            throw new Error(`不支持的输出格式: ${outputFormat}`);
-        }
-      } catch (e) {
-        toast.error(
-          `转换到${outputFormat.toUpperCase()}失败: ${(e as Error).message}`,
-        );
-        setIsProcessing(false);
-        setProcessingStep("");
-
-        return;
-      }
+      const result = convertFormat(inputValue, inputFormat, outputFormat);
 
       // 更新输出
       setOutputValue(result);
@@ -249,58 +183,34 @@ export default function DataFormatConverterPage() {
     }
   };
 
-  // 格式化输入内容
-  const formatInput = () => {
-    inputEditorRef.current?.format();
-  };
+  // 输入、输出格式化使用与转换相同的无损解析/序列化路径。
+  const formatContent = (side: "input" | "output") => {
+    const value = side === "input" ? inputValue : outputValue;
+    const format = side === "input" ? inputFormat : outputFormat;
 
-  // 格式化输出内容
-  const formatOutput = () => {
-    if (!outputValue) {
+    if (!value) {
       toast.warning("暂无内容可格式化");
 
       return;
     }
 
     try {
-      let formattedOutput = outputValue;
+      const formatted = formatDataFormat(value, format);
 
-      switch (outputFormat) {
-        case "json":
-          const jsonObj = parseJson(outputValue);
-
-          formattedOutput = stringifyJson(jsonObj, 2);
-          break;
-        case "json5":
-          const json5Obj = JSON5.parse(outputValue);
-
-          formattedOutput = JSON5.stringify(json5Obj, { space: 2 });
-          break;
-        case "yaml":
-          // YAML已经是格式化的，但可以重新解析确保格式一致
-          const yamlObj = YAML.load(outputValue);
-
-          formattedOutput = YAML.dump(yamlObj);
-          break;
-        case "xml":
-          // 简单的XML格式化，可能需要更复杂的实现
-          formattedOutput = outputValue
-            .replace(/></g, ">\n<")
-            .replace(/><\/(\w+)>/g, ">\n</$1>");
-          break;
-        case "toml":
-          // TOML格式化可能需要特殊处理
-          break;
-        default:
-          break;
+      if (side === "input") {
+        setInputValue(formatted);
+        inputEditorRef.current?.updateValue(formatted);
+      } else {
+        setOutputValue(formatted);
+        outputEditorRef.current?.updateValue(formatted);
       }
-
-      setOutputValue(formattedOutput);
       toast.success("格式化成功");
     } catch (error) {
       toast.error(`格式化失败: ${(error as Error).message}`);
     }
   };
+  const formatInput = () => formatContent("input");
+  const formatOutput = () => formatContent("output");
 
   // AI 转换处理函数
   const handleAiConvert = async () => {

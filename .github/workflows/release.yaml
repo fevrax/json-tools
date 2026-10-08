@@ -5,6 +5,14 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+
+# Serialize releases and image pushes so an older run cannot overwrite latest.
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
 jobs:
   release:
     name: Release
@@ -13,6 +21,10 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
+    outputs:
+      published: ${{ steps.release.outputs.published }}
+      version: ${{ steps.release.outputs.version }}
+      sha: ${{ steps.release.outputs.sha }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,7 +34,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "lts/*"
+          node-version: "22.14.0"
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v3
@@ -30,12 +42,47 @@ jobs:
           version: 9.12.2
 
       - name: Install dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
+
+      - name: Regression tests
+        run: pnpm test:regressions
 
       - name: Build
         run: pnpm build
 
       - name: Release
+        id: release
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
-        run: npx semantic-release
+        # Use the same config discovery as the CLI (currently package.json).
+        # Emit outputs only after publish/success hooks have completed.
+        run: |
+          node --input-type=module <<'JS'
+          import semanticRelease from 'semantic-release';
+          import { appendFileSync } from 'node:fs';
+
+          const result = await semanticRelease();
+          if (result && result.nextRelease) {
+            const { version, gitHead } = result.nextRelease;
+            if (!/^\d+\.\d+\.\d+$/.test(version) || !/^[0-9a-f]{40}$/.test(gitHead)) {
+              throw new Error('Unexpected stable release version or SHA');
+            }
+            appendFileSync(process.env.GITHUB_OUTPUT,
+              `published=true\nversion=${version}\nsha=${gitHead}\n`);
+          } else {
+            appendFileSync(process.env.GITHUB_OUTPUT, 'published=false\n');
+          }
+          JS
+
+  docker:
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/docker.yaml
+    with:
+      version: ${{ needs.release.outputs.version }}
+      sha: ${{ needs.release.outputs.sha }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}

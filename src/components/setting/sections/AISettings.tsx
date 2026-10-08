@@ -28,7 +28,7 @@ import {
   useOpenAIConfigStore,
   type AIRouteType,
 } from "@/store/useOpenAIConfigStore";
-import { openAIService } from "@/services/openAIService";
+import { OpenAIService, openAIService } from "@/services/openAIService";
 import { isUtoolsAvailable } from "@/utils/env";
 
 /**
@@ -175,21 +175,21 @@ export function AISettings() {
   const testRouteConnection = async (type: AIRouteType, testModel?: string) => {
     setTestingRoute(type);
     setTestResult(null);
+    const testService = OpenAIService.createInstance();
+
     try {
       let modelToTest: string;
 
       if (type === "default") {
-        modelToTest = "json-tools";
+        modelToTest = useOpenAIConfigStore.getState().defaultRoute.model;
       } else if (testModel) {
         modelToTest = testModel;
       } else {
         throw new Error("请选择要测试的模型");
       }
 
-      const originalConfig = { ...openAIService.config };
-
-      openAIService.updateConfig({ routeType: type, model: modelToTest });
-      const response = await openAIService.chat({
+      testService.updateConfig({ routeType: type, model: modelToTest });
+      const response = await testService.chat({
         messages: [{ role: "user", content: "say 1" }],
         model: modelToTest,
       });
@@ -199,7 +199,6 @@ export function AISettings() {
       } else {
         throw new Error("API 返回结果异常");
       }
-      openAIService.updateConfig(originalConfig);
     } catch (error) {
       setTestResult({
         success: false,
@@ -272,24 +271,15 @@ export function AISettings() {
       <GroupLabel>AI 线路</GroupLabel>
       <p className="mb-3 px-4 text-[13px] text-default-500">
         启用或禁用不同的 AI
-        线路，点击「配置」按钮设置线路参数。免费线路始终开启，无法关闭。
+        线路，点击「配置」按钮设置线路参数。站点线路需要由站点管理员启用。
       </p>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <RouteCard
           isSelected
-          description={
-            <>
-              由{" "}
-              <ExternalLink
-                className="text-primary hover:underline"
-                href="https://api.ssooai.com"
-              >
-                SSOOAI
-              </ExternalLink>{" "}
-              提供基础问答，无需配置
-            </>
-          }
+          showConfigure
+          description="使用站点提供的 AI 服务；不可用时可配置私有线路"
           routeType="default"
+          onConfigure={() => handleConfigureRoute("default")}
           onToggle={() => {}}
         />
         <RouteCard

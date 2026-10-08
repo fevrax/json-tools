@@ -110,6 +110,40 @@ docker run -d -p 3300:80 --name json-tools json-tools-next
 
 ## 🚀 快速开始
 
+### AI 线路与服务端密钥
+
+前端不再内置共享 API Key，也不会在未填写密钥时回退到共享凭据。
+浏览器的「站点线路」访问同源 `/api/ai/v1`，由 Docker 容器中的 Nginx
+附加服务端密钥。没有配置时返回明确的 503 错误，本地 JSON 工具不受影响。
+纯静态部署、开发服务器和 uTools 用户可以在设置中使用自己的私有线路或 uTools AI。
+
+Docker 部署可在容器运行时设置以下环境变量（不要使用 `VITE_*` 或构建参数传入密钥）：
+
+两个 Compose 文件都已在 `environment` 中配置以下变量，无需 `.env`。
+直接填写所用 Compose 文件中的 `OPENAI_API_KEY`，留空则关闭站点 AI 线路。
+密钥由容器运行时读取，不要提交填写了真实密钥的 Compose 文件。
+Compose 文件已从 Docker 构建上下文中排除，避免运行时密钥进入镜像层。
+
+```bash
+# 从当前源码构建并启动：
+docker compose -f docker-compose-dev.yml up -d --build
+```
+
+使用已包含本次修复的发布镜像时，执行 `docker compose up -d`。
+修改配置后重新执行对应的 `up -d` 命令使环境变量生效。
+
+- `OPENAI_API_KEY`：OpenAI 兼容服务的 API Key，留空则关闭站点线路。
+- `OPENAI_BASE_URL`：OpenAI 兼容 API 的 HTTPS 基础地址，默认 `https://api.ssooai.com/v1`。
+
+代理仅开放聊天和模型列表接口，默认每个 IP 每分钟 6 次请求、突发 3 次、
+最多 2 个并发连接，单次请求体限制 1 MiB，支持流式响应和客户端断开取消。
+这是一条公开站点线路；部署者应在服务商后台为专用密钥限制可用模型和总额度，
+或在入口增加自己的用户鉴权。反向代理部署时应按实际可信代理配置客户端 IP。
+可在「设置 → AI 设置 → 站点线路」填写上游支持的模型名称。
+
+**升级时必须在服务商后台撤销此前已公开的旧共享密钥，改用新密钥。**
+删除源码中的密钥不会撤销服务商凭据，也不会清除旧构建产物和 Git 历史。
+
 ### 安装依赖
 
 ```bash
@@ -134,6 +168,15 @@ pnpm dev
 ```bash
 pnpm build
 ```
+
+### 回归测试
+
+```bash
+pnpm test:regressions
+```
+
+覆盖格式转换、注释和排序、CSV/XLSX、AI 取消与凭据、服务端代理配置和发布触发逻辑。
+可选设置 `TABLE_EXPORT_PYTHON` 为已安装 `openpyxl` 的 Python 路径，额外验证 XLSX 读取兼容性。
 
 ### 预览生产构建
 

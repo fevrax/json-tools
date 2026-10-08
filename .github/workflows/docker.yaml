@@ -1,46 +1,38 @@
 name: Docker Image CI
 
+# Called only after semantic-release actually publishes a new version.
 on:
-  push:
-    branches:
-      - main
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      sha:
+        required: true
+        type: string
+    secrets:
+      DOCKER_USERNAME:
+        required: true
+      DOCKER_PASSWORD:
+        required: true
+
+permissions:
+  contents: read
 
 env:
   TZ: Asia/Shanghai
 
 jobs:
-  check_commit:
-    name: Check if commit should trigger release
-    runs-on: ubuntu-latest
-    outputs:
-      should_release: ${{ steps.check.outputs.should_release }}
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v3
-
-      - name: Check commit message
-        id: check
-        run: |
-          commit_message="${{ github.event.head_commit.message }}"
-          echo "Commit message: $commit_message"
-          
-          # 检查是否包含触发版本更新的关键字
-          if echo "$commit_message" | grep -qE "^(feat|fix|perf|revert):"; then
-            echo "should_release=true" >> $GITHUB_OUTPUT
-            echo "✅ Found release trigger in commit message"
-          else
-            echo "should_release=false" >> $GITHUB_OUTPUT
-            echo "❌ No release trigger found in commit message"
-          fi
-
   push_to_registry:
     name: Push Docker image to Docker Hub
     runs-on: ubuntu-latest
-    needs: check_commit
-    if: needs.check_commit.outputs.should_release == 'true'
     steps:
       - name: Check out the repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          # Includes any release commit created by @semantic-release/git.
+          ref: ${{ inputs.sha }}
+          persist-credentials: false
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -55,7 +47,7 @@ jobs:
           images: fevrax/json-tools
           tags: |
             type=raw,value=latest
-            type=ref,event=tag
+            type=raw,value=${{ inputs.version }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -69,10 +61,10 @@ jobs:
           context: .
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: fevrax/json-tools:latest
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: |
-            type=gha,scope=${{ github.ref_name }}-${{ github.workflow }}
+            type=gha,scope=docker-main
             type=registry,ref=fevrax/json-tools:latest
           cache-to: |
-            type=gha,scope=${{ github.ref_name }}-${{ github.workflow }},mode=max
+            type=gha,scope=docker-main,mode=max

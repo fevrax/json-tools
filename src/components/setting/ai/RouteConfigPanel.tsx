@@ -120,24 +120,26 @@ function DefaultRouteConfig({
   testing: boolean;
   testResult: TestResult | null;
 }) {
+  const { defaultRoute, updateDefaultRouteConfig } = useOpenAIConfigStore();
+
   return (
     <ConfigSection>
       <div className="mb-3 flex flex-wrap items-center gap-2 text-sm text-default-600">
         <Icon className="text-primary" icon="solar:star-bold" width={18} />
-        默认模型: <span className="font-medium">DeepSeek V4 Pro</span>
-        <span className="text-xs text-primary">
-          (由{" "}
-          <ExternalLink
-            className="text-primary hover:underline"
-            href="https://api.ssooai.com"
-          >
-            SSOOAI
-          </ExternalLink>{" "}
-          提供)
-        </span>
+        此线路由站点管理员提供。如连接失败，请联系管理员或配置私有线路。
       </div>
+      <FormField icon="solar:layers-bold" id="site-model" label="模型名称">
+        <Input
+          id="site-model"
+          placeholder="输入站点支持的模型名称"
+          size="sm"
+          value={defaultRoute.model}
+          variant="bordered"
+          onValueChange={(model) => updateDefaultRouteConfig({ model })}
+        />
+      </FormField>
       <TestConnectionBar
-        disabled={false}
+        disabled={testing || !defaultRoute.model.trim()}
         result={testResult}
         testing={testing}
         onTest={onTest}

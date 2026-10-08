@@ -1,0 +1,7 @@
+# Compose may contain runtime API credentials; exclude it from image layers.
+docker-compose*.yml
+docker-compose*.yaml
+.git
+node_modules
+.pnpm-store
+dist

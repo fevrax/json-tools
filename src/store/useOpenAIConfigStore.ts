@@ -50,7 +50,7 @@ export interface OpenAIConfig {
   customModels: Array<{ value: string; label: string }>;
   // 线路启用状态
   routeEnabled: {
-    default: boolean; // 免费线路始终启用
+    default: boolean; // 站点线路由部署者在服务端配置
     utools: boolean;
     ssooai: boolean;
     custom: boolean;
@@ -82,17 +82,15 @@ const defaultOpenAIConfig: OpenAIConfig = {
   ssooaiModels: [],
   customModels: [],
   routeEnabled: {
-    default: true, // 免费线路强制启用
+    default: true,
     utools: true, // uTools线路默认启用
     ssooai: false,
     custom: false,
   },
 };
 
-// 默认线路的固定 API Key
-export const DEFAULT_ROUTE_API_KEY =
-  "sk-BGoyyv5XIT0geSDjNvih31S89GxezQry9MbNs6MXW9axVKLz";
-export const DEFAULT_ROUTE_PROXY_URL = "https://api.ssooai.com/v1";
+// 默认线路只访问同源服务端代理。共享密钥不得写入前端或 VITE_* 环境变量。
+export const DEFAULT_ROUTE_PROXY_URL = "/api/ai/v1";
 
 const BD_OPENAI_CONFIG_KEY = "openai-config";
 
@@ -544,15 +542,14 @@ export const useOpenAIConfigStore = create<OpenAIConfigStore>()(
 
             switch (state.routeType) {
               case "default":
-                return DEFAULT_ROUTE_API_KEY;
               case "utools":
-                return DEFAULT_ROUTE_API_KEY; // uTools 线路使用默认 API Key
+                return "";
               case "ssooai":
-                return state.ssooaiRoute.apiKey || DEFAULT_ROUTE_API_KEY;
+                return state.ssooaiRoute.apiKey;
               case "custom":
                 return state.customRoute.apiKey;
               default:
-                return DEFAULT_ROUTE_API_KEY;
+                return "";
             }
           },
 
@@ -564,7 +561,7 @@ export const useOpenAIConfigStore = create<OpenAIConfigStore>()(
               case "default":
                 return DEFAULT_ROUTE_PROXY_URL;
               case "utools":
-                return DEFAULT_ROUTE_PROXY_URL; // uTools 线路使用默认 API 地址
+                return "";
               case "ssooai":
                 return state.ssooaiRoute.proxyUrl;
               case "custom":

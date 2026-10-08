@@ -20,6 +20,10 @@ import { cn } from "@heroui/react";
 import MarkdownRenderer from "@/components/ai/MarkdownRenderer.tsx";
 import { CopyIcon, MenuDotsIcon } from "@/components/Icons.tsx";
 import { OpenAIService } from "@/services/openAIService";
+import {
+  AIRequestSlot,
+  createAIRequestId,
+} from "@/services/aiRequestLifecycle";
 import toast from "@/utils/toast";
 import { useSettingsStore } from "@/store/useSettingsStore";
 
@@ -341,6 +345,7 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: number;
+  requestId?: string;
 }
 
 // 定义组件ref的类型
@@ -348,8 +353,10 @@ export interface PromptContainerRef {
   sendMessage: (content: string) => void;
 }
 
+const EMPTY_MESSAGES: Message[] = [];
+
 interface PromptContainerProps {
-  onSubmit?: (prompt: string) => Promise<string>;
+  onSubmit?: (prompt: string, signal?: AbortSignal) => Promise<string>;
   onStopGeneration?: () => void;
   initialMessages?: Message[];
   className?: string;
@@ -369,7 +376,7 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
     {
       onSubmit,
       onStopGeneration,
-      initialMessages = [],
+      initialMessages = EMPTY_MESSAGES,
       className,
       placeholder = "输入您的问题...",
       onApplyCode,
@@ -393,10 +400,13 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
     const { chatStyle } = useSettingsStore();
 
     // AI控制器引用
-    const aiControllerRef = useRef<AbortController | null>(null);
+    const requestSlot = useRef(new AIRequestSlot());
+
+    useEffect(() => () => requestSlot.current.cancel(), []);
 
     // 监听 initialMessages 变化，保持同步
     useEffect(() => {
+      if (requestSlot.current.busy) return;
       setMessages(initialMessages);
 
       // 检查最后一条消息是否正在更新
@@ -434,19 +444,20 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
 
     useEffect(() => {
       // 使用requestAnimationFrame确保DOM已更新
-      requestAnimationFrame(() => {
+      const frame = requestAnimationFrame(() => {
         scrollToBottom();
       });
+
+      return () => cancelAnimationFrame(frame);
     }, [messages]);
 
     // 直接向OpenAI发送请求的方法
-    const sendToOpenAI = async (userPrompt: string): Promise<string> => {
+    const sendToOpenAI = async (
+      userPrompt: string,
+      controller: AbortController,
+      loadingMessage: Message,
+    ): Promise<string> => {
       try {
-        // 创建一个中止控制器用于取消请求
-        const controller = new AbortController();
-
-        aiControllerRef.current = controller;
-
         // 使用OpenAI服务
         const openAiService = OpenAIService.createInstance();
 
@@ -469,56 +480,33 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
 
         let response = "";
 
-        await openAiService.createChatCompletion(messages, {
-          onStart: () => {
-            // 已经在外部设置了loading状态
-          },
-          onChunk: (_chunk, accumulated) => {
-            // 检查是否已取消
-            if (controller.signal.aborted) {
-              throw new Error("已取消生成");
-            }
+        await openAiService.createChatCompletion(
+          messages,
+          {
+            onChunk: (_chunk, accumulated) => {
+              if (!requestSlot.current.owns(controller)) return;
+              response = accumulated;
+              setMessages((prev) => {
+                if (!requestSlot.current.owns(controller)) return prev;
 
-            // 更新响应文本
-            response = accumulated;
-
-            // 更新消息中的内容
-            setMessages((prev) => {
-              const updatedMessages = [...prev];
-
-              if (
-                updatedMessages.length > 0 &&
-                updatedMessages[updatedMessages.length - 1].role === "assistant"
-              ) {
-                const lastMessage = updatedMessages[updatedMessages.length - 1];
-
-                updatedMessages[updatedMessages.length - 1] = {
-                  role: "assistant",
-                  content: accumulated,
-                  timestamp: lastMessage.timestamp, // 保持原有时间戳不变
-                };
-              }
-
-              return updatedMessages;
-            });
-          },
-          onComplete: (final) => {
-            response = final;
-            aiControllerRef.current = null;
-          },
-          onError: (error) => {
-            console.error("AI请求错误:", error);
-
-            if (error.message === "已取消生成") {
-              // 保留已生成内容，什么都不做
-            } else {
+                return prev.map((message) =>
+                  message.requestId === loadingMessage.requestId
+                    ? { ...message, content: accumulated }
+                    : message,
+                );
+              });
+            },
+            onComplete: (final) => {
+              if (requestSlot.current.owns(controller)) response = final;
+            },
+            onError: (error) => {
+              if (!requestSlot.current.owns(controller)) return;
               response = `处理您的请求时发生错误: ${error.message || "未知错误"}`;
               toast.error(`AI响应错误：${error.message || "请稍后重试"}`);
-            }
-
-            aiControllerRef.current = null;
+            },
           },
-        });
+          { signal: controller.signal },
+        );
 
         return response;
       } catch (error: any) {
@@ -563,7 +551,10 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
     const handleSendMessage = async (customPrompt?: string) => {
       const messageContent = customPrompt || prompt;
 
-      if (!messageContent.trim() || isLoading) return;
+      if (!messageContent.trim() || requestSlot.current.busy) return;
+
+      const controller = requestSlot.current.start();
+      const requestId = createAIRequestId();
 
       // 添加用户消息
       const userMessage: Message = {
@@ -586,6 +577,7 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
           role: "assistant",
           content: "",
           timestamp: Date.now(),
+          requestId,
         };
 
         setMessages((prevMessages) => [...prevMessages, loadingMessage]);
@@ -594,36 +586,45 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
 
         // 判断是直接使用API还是通过父组件的onSubmit
         if (useDirectApi) {
-          response = await sendToOpenAI(messageContent);
+          response = await sendToOpenAI(
+            messageContent,
+            controller,
+            loadingMessage,
+          );
         } else {
           // 调用提交处理函数获取AI响应
           response =
-            (await onSubmit?.(messageContent)) ||
+            (await onSubmit?.(messageContent, controller.signal)) ||
             "抱歉，暂时无法处理您的请求。";
         }
 
-        // 更新消息列表，替换加载消息为实际响应
-        setMessages((prevMessages) => [
-          ...prevMessages.slice(0, prevMessages.length - 1),
-          {
-            role: "assistant",
-            content: response,
-            timestamp: loadingMessage.timestamp, // 使用初始加载消息的时间戳
-          },
-        ]);
+        if (!requestSlot.current.owns(controller)) return;
+        setMessages((previous) => {
+          if (controller.signal.aborted) return previous;
+
+          return previous.map((message) =>
+            message.requestId === requestId
+              ? { ...message, content: response }
+              : message,
+          );
+        });
       } catch (error) {
+        if (!requestSlot.current.owns(controller)) return;
         console.error("发送消息时出错:", error);
-        // 更新消息列表，替换加载消息为错误信息
-        setMessages((prevMessages) => [
-          ...prevMessages.slice(0, prevMessages.length - 1),
-          {
-            role: "assistant",
-            content: "处理您的请求时发生错误，请稍后再试。",
-            timestamp: Date.now(),
-          },
-        ]);
+        setMessages((previous) => {
+          if (controller.signal.aborted) return previous;
+
+          return previous.map((message) =>
+            message.requestId === requestId
+              ? { ...message, content: "处理您的请求时发生错误，请稍后再试。" }
+              : message,
+          );
+        });
       } finally {
-        setIsLoading(false);
+        if (requestSlot.current.owns(controller)) {
+          requestSlot.current.finish(controller);
+          setIsLoading(false);
+        }
       }
     };
 
@@ -638,10 +639,7 @@ const PromptContainer = forwardRef<PromptContainerRef, PromptContainerProps>(
     const handleButtonClick = () => {
       if (isLoading) {
         // 如果正在加载中，点击按钮停止生成
-        if (aiControllerRef.current) {
-          aiControllerRef.current.abort();
-          aiControllerRef.current = null;
-        }
+        requestSlot.current.cancel();
         setIsLoading(false);
         onStopGeneration?.();
       } else {
