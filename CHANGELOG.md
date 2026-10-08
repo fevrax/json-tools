@@ -1,3 +1,10 @@
+## [1.29.1](https://github.com/fevrax/json-tools/compare/v1.29.0...v1.29.1) (2026-10-08)
+
+
+### Bug Fixes
+
+* harden data tools and AI proxy ([a35ccd7](https://github.com/fevrax/json-tools/commit/a35ccd7feaa8ed13704650a97b4544062fac4263))
+
 # [1.29.0](https://github.com/fevrax/json-tools/compare/v1.28.0...v1.29.0) (2026-09-17)
 
 
